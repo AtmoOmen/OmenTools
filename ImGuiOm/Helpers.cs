@@ -12,7 +12,7 @@ public static partial class ImGuiOm
             ImGui.SetClipboardText(textToCopy);
     }
 
-    public static void CenterAlignFor(int itemWidth)
+    public static void CenterAlignFor(float itemWidth)
     {
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X / 2 - itemWidth / 2);
     }
