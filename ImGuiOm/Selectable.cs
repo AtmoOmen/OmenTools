@@ -60,4 +60,42 @@ public static partial class ImGuiOm
 
         return result;
     }
+
+    public static bool SelectableTextCentered(string text, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    {
+        ImGui.PushID($"{text}_{flags}");
+        var textSize = ImGui.CalcTextSize(text);
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorPos = ImGui.GetCursorScreenPos();
+        var padding = ImGui.GetStyle().FramePadding.X;
+        var selectableWidth = ImGui.GetContentRegionAvail().X;
+        var selectableHeight = textSize.Y + 2 * padding;
+
+        var result = ImGui.Selectable("", selected, flags, new Vector2(selectableWidth, selectableHeight));
+
+        var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X) / 2, cursorPos.Y + padding);
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+        ImGui.PopID();
+
+        return result;
+    }
+
+    public static bool SelectableTextCentered(string text, ref bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    {
+        ImGui.PushID($"{text}_{flags}");
+        var textSize = ImGui.CalcTextSize(text);
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorPos = ImGui.GetCursorScreenPos();
+        var padding = ImGui.GetStyle().FramePadding.X;
+        var selectableWidth = ImGui.GetContentRegionAvail().X;
+        var selectableHeight = textSize.Y + 2 * padding;
+
+        var result = ImGui.Selectable("", ref selected, flags, new Vector2(selectableWidth, selectableHeight));
+
+        var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X) / 2, cursorPos.Y + padding);
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+        ImGui.PopID();
+
+        return result;
+    }
 }
