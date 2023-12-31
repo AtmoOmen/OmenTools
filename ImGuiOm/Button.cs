@@ -50,4 +50,21 @@ public static partial class ImGuiOm
 
         return result;
     }
+
+    public static unsafe bool ButtonIconSelectable(string id, FontAwesomeIcon icon)
+    {
+        ImGui.PushFont(UiBuilder.IconFont);
+        var size = new Vector2(ImGui.GetContentRegionAvail().X, ImGui.CalcTextSize(icon.ToIconString()).Y);
+        ImGui.PopFont();
+
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.ColorConvertFloat4ToU32(*ImGui.GetStyleColorVec4(ImGuiCol.HeaderActive)));
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.ColorConvertFloat4ToU32(*ImGui.GetStyleColorVec4(ImGuiCol.HeaderHovered)));
+        ImGui.PushStyleColor(ImGuiCol.Button, 0);
+        ImGui.PushFont(UiBuilder.IconFont);
+        var result = ImGui.Button($"{icon.ToIconString()}##{icon.ToIconString()}-{id}", size);
+        ImGui.PopFont();
+        ImGui.PopStyleColor(3);
+
+        return result;
+    }
 }

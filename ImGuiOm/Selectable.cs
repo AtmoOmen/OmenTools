@@ -98,26 +98,4 @@ public static partial class ImGuiOm
 
         return result;
     }
-
-    public static bool SelectableIcon(string id, FontAwesomeIcon icon, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, Vector2 size = default)
-    {
-        var style = ImGui.GetStyle();
-
-        ImGui.PushFont(UiBuilder.IconFont);
-        var result = ImGui.Selectable($"{icon.ToIconString()}##{icon.ToIconString()}-{id}", selected, flags, size);
-        ImGui.PopFont();
-
-        return result;
-    }
-
-    public static bool SelectableIcon(string id, FontAwesomeIcon icon, ref bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, Vector2 size = default)
-    {
-        var style = ImGui.GetStyle();
-
-        ImGui.PushFont(UiBuilder.IconFont);
-        var result = ImGui.Selectable($"{icon.ToIconString()}##{icon.ToIconString()}-{id}", ref selected, flags, size);
-        ImGui.PopFont();
-
-        return result;
-    }
 }
