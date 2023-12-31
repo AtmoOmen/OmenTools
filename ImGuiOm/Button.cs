@@ -2,14 +2,14 @@
 
 public static partial class ImGuiOm
 {
-    public static bool ButtonIcon(FontAwesomeIcon icon, string tooltip = "", Vector2 size = default)
+    public static bool ButtonIcon(string id, FontAwesomeIcon icon, string tooltip = "", Vector2 size = default)
     {
-        ImGui.PushID($"{icon.ToIconString()}_{tooltip}");
+        ImGui.PushID($"{icon.ToIconString()}_{tooltip}_{id}");
         ImGui.PushFont(UiBuilder.IconFont);
         var result = ImGui.Button(icon.ToIconString(), size);
         ImGui.PopFont();
 
-        if (ImGui.IsItemHovered()) Tooltip.TooltipHover(tooltip);
+        if (ImGui.IsItemHovered()) TooltipHover(tooltip);
         ImGui.PopID();
 
         return result;
