@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.ImGuiOm;
 
-public class Checkbox
+public static partial class ImGuiOm
 {
     /// <summary>
     /// Draw a checkbox with a colored label that indicates whether the checkbox is checked.

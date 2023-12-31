@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.ImGuiOm;
 
-public static class Tooltip
+public static partial class ImGuiOm
 {
     public static void TooltipHover(string text, float warpPos = 20f)
     {

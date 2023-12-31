@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.ImGuiOm;
 
-public static class Button
+public static partial class ImGuiOm
 {
     public static bool ButtonIcon(FontAwesomeIcon icon, string tooltip = "", Vector2 size = default)
     {

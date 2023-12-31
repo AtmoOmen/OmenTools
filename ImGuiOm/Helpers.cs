@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.ImGuiOm;
 
-public class Helpers
+public static partial class ImGuiOm
 {
     public static void ClickToCopy(string textToCopy, ImGuiMouseButton mouseButton = ImGuiMouseButton.Right, ImGuiKey? key = null, ImGuiKey? keyConflict = null)
     {

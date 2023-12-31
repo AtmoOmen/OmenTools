@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.ImGuiOm;
 
-public static class Selectable
+public static partial class ImGuiOm
 {
     public static bool SelectableCentered(string text, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, Vector2 size = default)
     {

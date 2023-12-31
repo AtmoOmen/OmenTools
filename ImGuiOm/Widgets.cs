@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.ImGuiOm;
 
-public class Widgets
+public static partial class ImGuiOm
 {
-    
+
 }
