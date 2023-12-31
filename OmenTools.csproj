@@ -11,6 +11,7 @@
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -24,6 +25,11 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 	  <NoWarn>1701;1702;MSB3270</NoWarn>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove=".gitattributes" />
+	  <None Remove=".gitignore" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Reference Include="FFXIVClientStructs">

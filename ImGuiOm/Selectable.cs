@@ -98,4 +98,21 @@ public static partial class ImGuiOm
 
         return result;
     }
+
+    public static bool SelectableIconButton(string id, FontAwesomeIcon icon, string tooltip = "", bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, Vector2 size = default)
+    {
+        var style = ImGui.GetStyle();
+
+        ImGui.PushStyleColor(ImGuiCol.ButtonActive, style.Colors[(int)ImGuiCol.HeaderActive]);
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, style.Colors[(int)ImGuiCol.HeaderHovered]);
+        ImGui.PushStyleColor(ImGuiCol.Button, 0);
+        ImGui.PushFont(UiBuilder.IconFont);
+        var result = ImGui.Selectable($"{icon.ToIconString()}##{icon.ToIconString()}-{id}", selected, flags, size);
+        ImGui.PopFont();
+        ImGui.PopStyleColor(3);
+
+        if (!tooltip.IsNullOrEmpty()) TooltipHover(tooltip);
+
+        return result;
+    }
 }
