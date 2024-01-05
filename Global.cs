@@ -4,3 +4,4 @@ global using Dalamud.Interface;
 global using Dalamud.Interface.Utility;
 global using Dalamud.Interface.Colors;
 global using Dalamud.Utility;
+global using Dalamud.Interface.Utility.Raii;

@@ -5,19 +5,25 @@ public static partial class ImGuiOm
     public static bool ButtonIcon(string id, FontAwesomeIcon icon, string tooltip = "")
     {
         ImGui.PushID($"{id}_{icon}");
+
         var iconText = icon.ToIconString();
         ImGui.PushFont(UiBuilder.IconFont);
-        var vector = ImGui.CalcTextSize(iconText);
+        var iconSize = ImGui.CalcTextSize(iconText) + new Vector2();
         ImGui.PopFont();
+
+        var style = ImGui.GetStyle();
         var windowDrawList = ImGui.GetWindowDrawList();
-        var cursorScreenPos = ImGui.GetCursorScreenPos();
-        var x = vector.X + ImGui.GetStyle().FramePadding.X * 2f;
-        var frameHeight = ImGui.GetFrameHeight();
-        var result = ImGui.Button(string.Empty, new Vector2(x, frameHeight));
-        var pos = new Vector2(cursorScreenPos.X + ImGui.GetStyle().FramePadding.X, cursorScreenPos.Y + ImGui.GetStyle().FramePadding.Y);
+        var cursorPos = ImGui.GetCursorScreenPos();
+        var padding = style.FramePadding;
+        var buttonWidth = iconSize.X + padding.X * 2;
+        var buttonHeight = iconSize.Y + padding.Y * 2;
+        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
+        var iconPos = new Vector2(cursorPos.X + (buttonWidth - iconSize.X + padding.X / 3) / 2, cursorPos.Y + style.FramePadding.Y);
+
         ImGui.PushFont(UiBuilder.IconFont);
-        windowDrawList.AddText(pos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
+        windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
         ImGui.PopFont();
+
         ImGui.PopID();
 
         if (!tooltip.IsNullOrEmpty()) TooltipHover(tooltip);

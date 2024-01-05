@@ -14,6 +14,6 @@ public static partial class ImGuiOm
 
     public static void CenterAlignFor(float itemWidth)
     {
-        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X / 2 - itemWidth / 2);
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (ImGui.GetContentRegionAvail().X - itemWidth) / 2);
     }
 }
