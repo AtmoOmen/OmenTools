@@ -53,8 +53,9 @@ public static partial class ImGuiOm
 
     public static unsafe bool ButtonIconSelectable(string id, FontAwesomeIcon icon)
     {
+        var padding = ImGui.GetStyle().FramePadding.X;
         ImGui.PushFont(UiBuilder.IconFont);
-        var size = new Vector2(ImGui.GetContentRegionAvail().X, Math.Max(ImGui.CalcTextSize(icon.ToIconString()).Y, ImGui.GetContentRegionAvail().Y));
+        var size = new Vector2(ImGui.GetContentRegionAvail().X, ImGui.CalcTextSize(icon.ToIconString()).Y + 2 * padding);
         ImGui.PopFont();
 
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.ColorConvertFloat4ToU32(*ImGui.GetStyleColorVec4(ImGuiCol.HeaderActive)));
