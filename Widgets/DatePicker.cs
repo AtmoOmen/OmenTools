@@ -47,7 +47,7 @@ public class DatePicker
         foreach (var day in _weekDayNames)
         {
             ImGui.TableNextColumn();
-            TextCentered($"{day}_{_viewDate}", day);
+            TextCentered(day);
         }
     }
 
@@ -61,7 +61,7 @@ public class DatePicker
         for (var i = 0; i < firstDayOfWeek; i++)
         {
             ImGui.TableNextColumn();
-            TextCentered($"{i}_{_viewDate}", "");
+            TextCentered("");
         }
 
         for (var day = 1; day <= daysInMonth; day++)

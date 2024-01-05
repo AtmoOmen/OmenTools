@@ -2,6 +2,60 @@
 
 public static partial class ImGuiOm
 {
+    public static bool Selectable(string text, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    {
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
+        var result = ImGui.Selectable(text, selected, flags);
+        return result;
+    }
+
+    public static bool Selectable(string text, ref bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    {
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
+        var result = ImGui.Selectable(text, ref selected, flags);
+        return result;
+    }
+
+    /// <summary>
+    /// Draw a selectable that is able to fill a table cell. Not available for ImGuiSelectableFlags.SpanAllColumns
+    /// </summary>
+    public static bool SelectableFillCell(string text, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    {
+        var textSize = ImGui.CalcTextSize(text);
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorPos = ImGui.GetCursorScreenPos();
+        var padding = ImGui.GetStyle().FramePadding.X;
+        var selectableWidth = ImGui.GetContentRegionAvail().X;
+        var selectableHeight = textSize.Y + 2 * padding;
+
+        var result = ImGui.Selectable("", selected, flags, new Vector2(selectableWidth, selectableHeight));
+
+        var textPos = cursorPos with { Y = cursorPos.Y + padding };
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Draw a selectable that is able to fill a table cell. Not available for ImGuiSelectableFlags.SpanAllColumns
+    /// </summary>
+    public static bool SelectableFillCell(string text, ref bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    {
+        var textSize = ImGui.CalcTextSize(text);
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorPos = ImGui.GetCursorScreenPos();
+        var padding = ImGui.GetStyle().FramePadding.X;
+        var selectableWidth = ImGui.GetContentRegionAvail().X;
+        var selectableHeight = textSize.Y + 2 * padding;
+
+        var result = ImGui.Selectable("", ref selected, flags, new Vector2(selectableWidth, selectableHeight));
+
+        var textPos = cursorPos with { Y = cursorPos.Y + padding };
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+
+        return result;
+    }
+
     public static bool SelectableCentered(string text, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, Vector2 size = default)
     {
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X / 2 - ImGui.CalcTextSize(text).X / 2);

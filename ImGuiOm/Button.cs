@@ -60,7 +60,7 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool ButtonIconSelectable(string id, FontAwesomeIcon icon)
+    public static bool ButtonIconSelectable(string id, FontAwesomeIcon icon, string tooltip = "")
     {
         ImGui.PushID(id);
 
@@ -79,6 +79,8 @@ public static partial class ImGuiOm
         var result = ImGui.Button($"{icon.ToIconString()}##{icon.ToIconString()}-{id}", size);
         ImGui.PopFont();
         ImGui.PopStyleColor(3);
+
+        if (!tooltip.IsNullOrEmpty()) TooltipHover(tooltip);
 
         ImGui.PopID();
 

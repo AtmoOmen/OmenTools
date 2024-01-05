@@ -2,11 +2,15 @@
 
 public static partial class ImGuiOm
 {
-    public static void TextCentered(string id, string text)
+    public static void Text(string text)
     {
-        ImGui.PushID($"{id}_{text}");
-        CenterAlignFor(ImGui.CalcTextSize(text).X);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.X);
         ImGui.Text(text);
-        ImGui.PopID();
+    }
+
+    public static void TextCentered(string text)
+    {
+        CenterAlignFor(ImGui.CalcTextSize(text).X);
+        Text(text);
     }
 }
