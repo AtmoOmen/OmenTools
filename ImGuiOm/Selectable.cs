@@ -113,7 +113,7 @@ public static partial class ImGuiOm
 
         var result = ImGui.Selectable("", selected, flags, new Vector2(selectableWidth, selectableHeight));
 
-        var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X) / 2, cursorPos.Y + padding);
+        var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X + padding) / 2, cursorPos.Y + padding);
         ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
         ImGui.PopFont();
@@ -136,7 +136,7 @@ public static partial class ImGuiOm
 
         var result = ImGui.Selectable("", ref selected, flags, new Vector2(selectableWidth, selectableHeight));
 
-        var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X) / 2, cursorPos.Y + padding);
+        var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X + padding) / 2, cursorPos.Y + padding);
         ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
         ImGui.PopFont();
