@@ -29,4 +29,14 @@ public static partial class ImGuiOm
         ImGui.PopTextWrapPos();
         ImGui.EndDisabled();
     }
+
+    public static void TextIcon(FontAwesomeIcon icon, string text)
+    {
+        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.Text(icon.ToIconString());
+        ImGui.PopFont();
+
+        ImGui.SameLine();
+        Text(text);
+    }
 }
