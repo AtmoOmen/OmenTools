@@ -32,6 +32,7 @@ public static partial class ImGuiOm
 
     public static void TextIcon(FontAwesomeIcon icon, string text)
     {
+        ImGui.AlignTextToFramePadding();
         ImGui.PushFont(UiBuilder.IconFont);
         ImGui.Text(icon.ToIconString());
         ImGui.PopFont();
