@@ -13,4 +13,20 @@ public static partial class ImGuiOm
         CenterAlignFor(ImGui.CalcTextSize(text).X);
         Text(text);
     }
+
+    public static void TextDisabledWrapped(string text)
+    {
+        ImGui.BeginDisabled();
+        ImGui.TextWrapped(text);
+        ImGui.EndDisabled();
+    }
+
+    public static void TextDisabledWrapped(string text, float warpPos)
+    {
+        ImGui.BeginDisabled();
+        ImGui.PushTextWrapPos(ImGui.GetFontSize() * warpPos);
+        Text(text);
+        ImGui.PopTextWrapPos();
+        ImGui.EndDisabled();
+    }
 }
