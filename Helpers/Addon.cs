@@ -4,7 +4,7 @@ public static partial class HelpersOm
 {
     public static unsafe bool IsAddonAndNodesReady(AtkUnitBase* UI)
     {
-        return UI != null && UI->RootNode != null && UI->RootNode->ChildNode != null && UI->UldManager.NodeList != null;
+        return UI != null && UI->IsVisible && UI->UldManager.LoadedState == AtkLoadState.Loaded && UI->RootNode != null && UI->RootNode->ChildNode != null && UI->UldManager.NodeList != null;
     }
 
     public static unsafe string GetWindowTitle(AddonArgs args, uint windowNodeID, uint[]? textNodeIDs = null)
