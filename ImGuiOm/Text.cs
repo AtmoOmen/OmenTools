@@ -30,14 +30,33 @@ public static partial class ImGuiOm
         ImGui.EndDisabled();
     }
 
-    public static void TextIcon(FontAwesomeIcon icon, string text)
+    public static bool TextIcon(FontAwesomeIcon icon, string text)
     {
-        ImGui.AlignTextToFramePadding();
         ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.Text(icon.ToIconString());
+        var iconSize = ImGui.CalcTextSize(icon.ToIconString());
         ImGui.PopFont();
 
-        ImGui.SameLine();
-        Text(text);
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorPos = ImGui.GetCursorScreenPos();
+        var padding = ImGui.GetStyle().FramePadding;
+
+        var textSize = ImGui.CalcTextSize(text);
+        var buttonHeight = Math.Max(iconSize.Y, textSize.Y);
+
+        ImGui.BeginDisabled();
+        ImGui.PushStyleColor(ImGuiCol.Button, 0);
+        var result = ImGui.Button("", new Vector2(iconSize.X + textSize.X + 3 * padding.X, buttonHeight + 2 * padding.Y));
+        ImGui.PopStyleColor();
+        ImGui.EndDisabled();
+
+        var iconPos = new Vector2(cursorPos.X + padding.X, cursorPos.Y + padding.Y);
+        ImGui.PushFont(UiBuilder.IconFont);
+        windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
+        ImGui.PopFont();
+
+        var textPos = new Vector2(iconPos.X + iconSize.X + 2 * padding.X, cursorPos.Y + padding.Y);
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+
+        return result;
     }
 }
