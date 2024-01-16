@@ -1,2 +1,2 @@
 # OmenTools
- Some ImGui Widgets/Tools for Dalamud Plugin Development.
+ Some Widgets/Tools for Dalamud Plugin Development.
