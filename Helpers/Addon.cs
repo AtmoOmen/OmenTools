@@ -7,6 +7,11 @@ public static partial class HelpersOm
         return UI != null && UI->IsVisible && UI->UldManager.LoadedState == AtkLoadState.Loaded && UI->RootNode != null && UI->RootNode->ChildNode != null && UI->UldManager.NodeList != null;
     }
 
+    public static unsafe bool IsUldManagerReady(AtkUldManager* Manager)
+    {
+        return Manager->RootNode != null && Manager->RootNode->ChildNode != null && Manager->NodeList != null;
+    }
+
     public static unsafe string GetWindowTitle(AddonArgs args, uint windowNodeID, uint[]? textNodeIDs = null)
     {
         textNodeIDs ??= new uint[] { 3, 4 };
