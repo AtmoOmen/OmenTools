@@ -12,3 +12,4 @@ global using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 global using Dalamud.Memory;
 global using Dalamud.Game.Text.SeStringHandling;
 global using Dalamud.Game.Text.SeStringHandling.Payloads;
+global using FFXIVClientStructs.FFXIV.Client.Game.Object;
