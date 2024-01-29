@@ -8,4 +8,22 @@ public static partial class HelpersOm
             return string.Empty;
         return Encoding.UTF8.GetString(str.StringPtr, (int)str.BufUsed - 1);
     }
+
+    public static unsafe string ExtractText(this Utf8String s, bool onlyFirst = false)
+    {
+        var str = MemoryHelper.ReadSeString(&s);
+        return str.ExtractText();
+    }
+
+    public static string ExtractText(this SeString seStr, bool onlyFirst = false)
+    {
+        StringBuilder sb = new();
+        foreach (var x in seStr.Payloads)
+        {
+            if (x is not TextPayload tp) continue;
+            sb.Append(tp.Text);
+            if (onlyFirst) break;
+        }
+        return sb.ToString();
+    }
 }

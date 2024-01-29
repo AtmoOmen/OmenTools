@@ -18,8 +18,7 @@ public static partial class HelpersOm
 
         var UI = (AtkUnitBase*)args.Addon;
 
-        if (UI == null || UI->RootNode == null || UI->RootNode->ChildNode == null || UI->UldManager.NodeList == null)
-            return string.Empty;
+        if (!IsAddonAndNodesReady(UI)) return string.Empty;
 
         var windowNode = (AtkComponentBase*)UI->GetComponentNodeById(windowNodeID);
         if (windowNode == null)
@@ -39,8 +38,7 @@ public static partial class HelpersOm
 
         var UI = (AtkUnitBase*)addon;
 
-        if (UI == null || UI->RootNode == null || UI->RootNode->ChildNode == null || UI->UldManager.NodeList == null)
-            return string.Empty;
+        if (!IsAddonAndNodesReady(UI)) return string.Empty;
 
         var windowNode = (AtkComponentBase*)UI->GetComponentNodeById(windowNodeID);
         if (windowNode == null)

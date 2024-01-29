@@ -9,3 +9,6 @@ global using FFXIVClientStructs.FFXIV.Client.System.String;
 global using Dalamud.Interface.Utility.Raii;
 global using FFXIVClientStructs.FFXIV.Component.GUI;
 global using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+global using Dalamud.Memory;
+global using Dalamud.Game.Text.SeStringHandling;
+global using Dalamud.Game.Text.SeStringHandling.Payloads;
