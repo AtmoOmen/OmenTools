@@ -9,13 +9,13 @@ public static partial class HelpersOm
         return Encoding.UTF8.GetString(str.StringPtr, (int)str.BufUsed - 1);
     }
 
-    public static unsafe string ExtractText(this Utf8String s, bool onlyFirst = false)
+    public static unsafe string FetchText(this Utf8String s, bool onlyFirst = false)
     {
         var str = MemoryHelper.ReadSeString(&s);
-        return str.ExtractText();
+        return str.FetchText();
     }
 
-    public static string ExtractText(this SeString seStr, bool onlyFirst = false)
+    public static string FetchText(this SeString seStr, bool onlyFirst = false)
     {
         StringBuilder sb = new();
         foreach (var x in seStr.Payloads)
