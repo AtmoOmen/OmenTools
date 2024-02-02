@@ -1,4 +1,6 @@
-﻿namespace OmenTools.Helpers;
+﻿using Timer = System.Timers.Timer;
+
+namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
@@ -25,5 +27,11 @@ public static partial class HelpersOm
             if (onlyFirst) break;
         }
         return sb.ToString();
+    }
+
+    public static void Restart(this Timer timer)
+    {
+        timer.Stop();
+        timer.Start();
     }
 }
