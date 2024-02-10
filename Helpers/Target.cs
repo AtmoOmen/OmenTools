@@ -4,7 +4,9 @@ public static partial class HelpersOm
 {
     public static unsafe bool CanUseActionOnObject(GameObject* player, GameObject* target, float actionRange)
     {
-        var actionRangeSquared = (actionRange + 0.5f) * (actionRange + 0.5f);
+        var adjustedActionRange = actionRange + 0.5f;
+        var actionRangeSquared = adjustedActionRange * adjustedActionRange;
+
         return GetSquareDistanceFromObject(player, target) <= actionRangeSquared;
     }
 
