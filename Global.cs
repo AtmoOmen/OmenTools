@@ -15,3 +15,4 @@ global using Dalamud.Game.Text.SeStringHandling.Payloads;
 global using FFXIVClientStructs.FFXIV.Client.Game.Object;
 global using System.Diagnostics;
 global using System.Runtime.InteropServices;
+global using FFXIVClientStructs.FFXIV.Client.UI;
