@@ -1,18 +1,18 @@
 ﻿namespace OmenTools.Helpers;
 
-public static partial class HelpersOm
+public static unsafe partial class HelpersOm
 {
-    public static unsafe bool IsAddonAndNodesReady(AtkUnitBase* UI)
+    public static bool IsAddonAndNodesReady(AtkUnitBase* UI)
     {
         return UI != null && UI->IsVisible && UI->UldManager.LoadedState == AtkLoadState.Loaded && UI->RootNode != null && UI->RootNode->ChildNode != null && UI->UldManager.NodeList != null;
     }
 
-    public static unsafe bool IsUldManagerReady(AtkUldManager* Manager)
+    public static bool IsUldManagerReady(AtkUldManager* Manager)
     {
         return Manager->RootNode != null && Manager->RootNode->ChildNode != null && Manager->NodeList != null;
     }
 
-    public static unsafe string GetWindowTitle(AddonArgs args, uint windowNodeID, uint[]? textNodeIDs = null)
+    public static string GetWindowTitle(AddonArgs args, uint windowNodeID, uint[]? textNodeIDs = null)
     {
         textNodeIDs ??= new uint[] { 3, 4 };
 
@@ -32,7 +32,7 @@ public static partial class HelpersOm
         return windowTitle;
     }
 
-    public static unsafe string GetWindowTitle(nint addon, uint windowNodeID, uint[]? textNodeIDs = null)
+    public static string GetWindowTitle(nint addon, uint windowNodeID, uint[]? textNodeIDs = null)
     {
         textNodeIDs ??= new uint[] { 3, 4 };
 
