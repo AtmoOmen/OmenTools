@@ -31,6 +31,25 @@ public static partial class ImGuiOm
         return result;
     }
 
+    public static bool ButtonCompact(string id, string text)
+    {
+        ImGui.PushID(id);
+        var textSize = ImGui.CalcTextSize(text);
+
+        var cursorPos = ImGui.GetCursorScreenPos();
+        var padding = ImGui.GetStyle().FramePadding;
+        var buttonWidth = Math.Max(ImGui.GetContentRegionMax().X, textSize.X + padding.X * 2);
+        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, textSize.Y + (padding.Y * 2)));
+
+        ImGui.GetWindowDrawList()
+            .AddText(new Vector2(cursorPos.X + ((buttonWidth - textSize.X) / 2), cursorPos.Y + padding.Y),
+                ImGui.GetColorU32(ImGuiCol.Text), text);
+        ImGui.SetWindowFontScale(1);
+        ImGui.PopID();
+
+        return result;
+    }
+
     public static bool ButtonIconWithTextVertical(FontAwesomeIcon icon, string text)
     {
         ImGui.PushID($"{text}_{icon.ToIconString()}");
