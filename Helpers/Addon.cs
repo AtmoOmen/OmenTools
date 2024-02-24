@@ -177,4 +177,59 @@ public static unsafe partial class HelpersOm
 
         return false;
     }
+
+    /// <summary>
+    /// Try finding the index of specific ContextMenu addon entry by the text given.
+    /// </summary>
+    /// <param name="addon"></param>
+    /// <param name="text"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static bool TryScanContextMenuText(AtkUnitBase* addon, string text, out int index)
+    {
+        index = -1;
+        if (addon == null) return false;
+
+        var entryCount = addon->AtkValues[0].UInt;
+        if (entryCount == 0) return false;
+
+        for (var i = 0; i < entryCount; i++)
+        {
+            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String);
+            if (!currentString.Contains(text, StringComparison.OrdinalIgnoreCase)) continue;
+
+            index = i;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Try finding the index of specific ContextMenu addon entry by the text given.
+    /// As long as one text in the list is found, it will return the index.
+    /// </summary>
+    /// <param name="addon"></param>
+    /// <param name="texts"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static bool TryScanContextMenuText(AtkUnitBase* addon,IReadOnlyList<string> texts, out int index)
+    {
+        index = -1;
+        if (addon == null) return false;
+
+        var entryCount = addon->AtkValues[0].UInt;
+        if (entryCount == 0) return false;
+
+        for (var i = 0; i < entryCount; i++)
+        {
+            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String);
+            if (!texts.Any(x => currentString.Contains(x, StringComparison.OrdinalIgnoreCase))) continue;
+
+            index = i;
+            return true;
+        }
+
+        return false;
+    }
 }
