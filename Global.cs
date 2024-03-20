@@ -14,5 +14,6 @@ global using Dalamud.Game.Text.SeStringHandling;
 global using Dalamud.Game.Text.SeStringHandling.Payloads;
 global using FFXIVClientStructs.FFXIV.Client.Game.Object;
 global using System.Diagnostics;
+global using Timer = System.Timers.Timer;
 global using System.Runtime.InteropServices;
 global using FFXIVClientStructs.FFXIV.Client.UI;
