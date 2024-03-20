@@ -1,6 +1,4 @@
-﻿using Timer = System.Timers.Timer;
-
-namespace OmenTools.Helpers;
+﻿namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
