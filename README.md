@@ -1,2 +1,2 @@
 # OmenTools
- Some Widgets/Tools for Dalamud Plugin Development.
+Made for myself, everything here mwill undergo significant changes.
