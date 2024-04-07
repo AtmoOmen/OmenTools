@@ -55,6 +55,37 @@ public static unsafe partial class HelpersOm
         }
     }
 
+    public static DateTime UnixTimeStampToDateTime(double unixTimeStampS)
+    {
+        var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        return dtDateTime.AddSeconds(unixTimeStampS).ToLocalTime();
+    }
+
+    public static DateTime UnixTimeStampToDateTime(long unixTimeStampMS)
+    {
+        var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        return dtDateTime.AddMilliseconds(unixTimeStampMS).ToLocalTime();
+    }
+
+    public static Vector4 HexColorToVector4(string hexColor)
+    {
+        if (hexColor.StartsWith('#'))
+            hexColor = hexColor[1..];
+
+        var bytes = new byte[4];
+        for (var i = 0; i < 4; i++)
+        {
+            bytes[i] = byte.Parse(hexColor.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+        }
+
+        var r = bytes[0] / 255f;
+        var g = bytes[1] / 255f;
+        var b = bytes[2] / 255f;
+        var a = bytes.Length > 3 ? bytes[3] / 255f : 1f;
+
+        return new Vector4(r, g, b, a);
+    }
+
     public static string UTF8StringToString(Utf8String str)
     {
         if (str.StringPtr == null || str.BufUsed <= 1)
