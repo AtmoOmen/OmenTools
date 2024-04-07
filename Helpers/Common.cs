@@ -1,4 +1,6 @@
-﻿namespace OmenTools.Helpers;
+﻿using SeString = Lumina.Text.SeString;
+
+namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
@@ -45,7 +47,7 @@ public static unsafe partial class HelpersOm
                 FileName = command,
                 Arguments = arguments,
                 UseShellExecute = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !selectFile,
-                CreateNoWindow = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
+                CreateNoWindow = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             };
             process.Start();
         }
@@ -55,35 +57,67 @@ public static unsafe partial class HelpersOm
         }
     }
 
-    public static DateTime UnixTimeStampToDateTime(double unixTimeStampS)
+    public static DateTime UnixSecondToDateTime(double unixTimeStampS)
     {
         var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         return dtDateTime.AddSeconds(unixTimeStampS).ToLocalTime();
     }
 
-    public static DateTime UnixTimeStampToDateTime(long unixTimeStampMS)
+    public static DateTime UnixMillisecondToDateTime(long unixTimeStampMS)
     {
         var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         return dtDateTime.AddMilliseconds(unixTimeStampMS).ToLocalTime();
     }
 
-    public static Vector4 HexColorToVector4(string hexColor)
+    public static Vector4 HexToVector4(string hexColor, bool includeAlpha = true)
     {
-        if (hexColor.StartsWith('#'))
-            hexColor = hexColor[1..];
+        if (!hexColor.StartsWith("#")) throw new ArgumentException("Invalid hex color format");
 
-        var bytes = new byte[4];
-        for (var i = 0; i < 4; i++)
+        hexColor = hexColor.Substring(1);
+
+        int r, g, b, a;
+        switch (hexColor.Length)
         {
-            bytes[i] = byte.Parse(hexColor.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+            case 3:
+                r = Convert.ToInt32(hexColor.Substring(0, 1), 16) * 17;
+                g = Convert.ToInt32(hexColor.Substring(1, 1), 16) * 17;
+                b = Convert.ToInt32(hexColor.Substring(2, 1), 16) * 17;
+                a = includeAlpha ? 255 : 0;
+                break;
+            case 4:
+                r = Convert.ToInt32(hexColor.Substring(0, 1), 16) * 17;
+                g = Convert.ToInt32(hexColor.Substring(1, 1), 16) * 17;
+                b = Convert.ToInt32(hexColor.Substring(2, 1), 16) * 17;
+                a = Convert.ToInt32(hexColor.Substring(3, 1), 16) * 17;
+                break;
+            case 6:
+                r = Convert.ToInt32(hexColor.Substring(0, 2), 16);
+                g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
+                b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
+                a = includeAlpha ? 255 : 0;
+                break;
+            case 8:
+                r = Convert.ToInt32(hexColor.Substring(0, 2), 16);
+                g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
+                b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
+                a = Convert.ToInt32(hexColor.Substring(6, 2), 16);
+                break;
+            default:
+                throw new ArgumentException("Invalid hex color length");
         }
 
-        var r = bytes[0] / 255f;
-        var g = bytes[1] / 255f;
-        var b = bytes[2] / 255f;
-        var a = bytes.Length > 3 ? bytes[3] / 255f : 1f;
+        return new Vector4(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
+    }
 
-        return new Vector4(r, g, b, a);
+    public static Vector4 DarkenColor(Vector4 originalColor, float darkenAmount)
+    {
+        darkenAmount = Math.Clamp(darkenAmount, 0f, 1f);
+
+        var newR = Math.Max(0, originalColor.X - originalColor.X * darkenAmount);
+        var newG = Math.Max(0, originalColor.Y - originalColor.Y * darkenAmount);
+        var newB = Math.Max(0, originalColor.Z - originalColor.Z * darkenAmount);
+
+        return new Vector4(newR, newG, newB, originalColor.W);
     }
 
     public static string UTF8StringToString(Utf8String str)
@@ -93,7 +127,7 @@ public static unsafe partial class HelpersOm
         return Encoding.UTF8.GetString(str.StringPtr, (int)str.BufUsed - 1);
     }
 
-    public static string FetchText(this Lumina.Text.SeString s, bool onlyFirst = false)
+    public static string FetchText(this SeString s, bool onlyFirst = false)
     {
         return s.ToDalamudString().FetchText(onlyFirst);
     }
@@ -104,7 +138,7 @@ public static unsafe partial class HelpersOm
         return str.FetchText();
     }
 
-    public static string FetchText(this SeString seStr, bool onlyFirst = false)
+    public static string FetchText(this Dalamud.Game.Text.SeStringHandling.SeString seStr, bool onlyFirst = false)
     {
         StringBuilder sb = new();
         foreach (var x in seStr.Payloads)
@@ -113,6 +147,7 @@ public static unsafe partial class HelpersOm
             sb.Append(tp.Text);
             if (onlyFirst) break;
         }
+
         return sb.ToString();
     }
 
