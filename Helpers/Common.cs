@@ -1,4 +1,5 @@
-﻿using SeString = Lumina.Text.SeString;
+﻿using System.Text.RegularExpressions;
+using SeString = Lumina.Text.SeString;
 
 namespace OmenTools.Helpers;
 
@@ -6,40 +7,33 @@ public static unsafe partial class HelpersOm
 {
     public static string MarkdownToPlainText(string markdown)
     {
-        var sb = new StringBuilder(markdown);
+        markdown = Regex.Replace(markdown, @"^\#{1,6}\s*", "", RegexOptions.Multiline);
 
-        // Title, Reference, List, Ordered List, Separator, and Table
-        sb.Replace("#", "").Replace(">", "").Replace("*", "").Replace("-", "").Replace(".", "")
-            .Replace("|", "").Replace("```", "").Replace("``", "").Replace("`", "")
-            .Replace("![", "").Replace("[", "").Replace("](", " ").Replace(")", "")
-            .Replace("___", "").Replace("__", "").Replace("_", "").Replace("~~", "");
+        markdown = Regex.Replace(markdown, @"(?<!\s)(\*{1,2})(.*?)(\*{1,2})(?!\s)", "$2");
+        markdown = Regex.Replace(markdown, @"_{1,2}(.*?)_{1,2}", "$1");
 
-        // HTML Tag
-        var htmlTagIndex = sb.ToString().IndexOf('<');
-        while (htmlTagIndex >= 0)
-        {
-            var endTagIndex = sb.ToString().IndexOf('>', htmlTagIndex);
-            if (endTagIndex > htmlTagIndex)
-            {
-                sb.Remove(htmlTagIndex, endTagIndex - htmlTagIndex + 1);
-            }
-            htmlTagIndex = sb.ToString().IndexOf('<', htmlTagIndex);
-        }
+        markdown = Regex.Replace(markdown, @"(`{1,3})(.*?)(`{1,3})", "$2");
 
-        // Footnote
-        var footnoteIndex = sb.ToString().IndexOf('[');
-        while (footnoteIndex >= 0)
-        {
-            var endFootnoteIndex = sb.ToString().IndexOf(']', footnoteIndex);
-            if (endFootnoteIndex > footnoteIndex)
-            {
-                sb.Remove(footnoteIndex, endFootnoteIndex - footnoteIndex + 1);
-            }
-            footnoteIndex = sb.ToString().IndexOf('[', footnoteIndex);
-        }
+        markdown = Regex.Replace(markdown, @"\[(.*?)\]\((.*?)\)", "$1");
+        markdown = Regex.Replace(markdown, @"\!\[(.*?)\]\((.*?)\)", "$1");
 
-        // Trim and reduce whitespace
-        return System.Text.RegularExpressions.Regex.Replace(sb.ToString().Trim(), @"\s+", " ");
+        markdown = Regex.Replace(markdown, @"^> ?(.*)$", "$1", RegexOptions.Multiline);
+        markdown = Regex.Replace(markdown, @"^-\s+(.*)$", "$1", RegexOptions.Multiline);
+        markdown = Regex.Replace(markdown, @"^\d+\.\s+(.*)$", "$1", RegexOptions.Multiline);
+        markdown = Regex.Replace(markdown, @"^---\s*$", "", RegexOptions.Multiline);
+        markdown = Regex.Replace(markdown, @"^\|[\s\S]+?\|\s*$", "", RegexOptions.Multiline);
+
+        markdown = Regex.Replace(markdown, @"<[^>]*>", "");
+        markdown = Regex.Replace(markdown, @"\[\^(.*?)\]:", "");
+
+        markdown = Regex.Replace(markdown, @"`{1,3}(.*?)`{1,3}", "$1");
+        markdown = Regex.Replace(markdown, @"~~(.*?)~~", "$1");
+
+        markdown = Regex.Replace(markdown, @"[ ]+", " ");
+
+        markdown = Regex.Replace(markdown, @"\n+", "\n");
+
+        return markdown.Trim();
     }
 
     public static bool IsChineseString(string text)
