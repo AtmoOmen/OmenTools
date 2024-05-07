@@ -4,6 +4,54 @@ namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    public static string MarkdownToPlainText(string markdown)
+    {
+        var sb = new StringBuilder(markdown);
+
+        // Title, Reference, List, Ordered List, Separator, and Table
+        sb.Replace("#", "").Replace(">", "").Replace("*", "").Replace("-", "").Replace(".", "")
+            .Replace("|", "").Replace("```", "").Replace("``", "").Replace("`", "")
+            .Replace("![", "").Replace("[", "").Replace("](", " ").Replace(")", "")
+            .Replace("___", "").Replace("__", "").Replace("_", "").Replace("~~", "");
+
+        // HTML Tag
+        var htmlTagIndex = sb.ToString().IndexOf('<');
+        while (htmlTagIndex >= 0)
+        {
+            var endTagIndex = sb.ToString().IndexOf('>', htmlTagIndex);
+            if (endTagIndex > htmlTagIndex)
+            {
+                sb.Remove(htmlTagIndex, endTagIndex - htmlTagIndex + 1);
+            }
+            htmlTagIndex = sb.ToString().IndexOf('<', htmlTagIndex);
+        }
+
+        // Footnote
+        var footnoteIndex = sb.ToString().IndexOf('[');
+        while (footnoteIndex >= 0)
+        {
+            var endFootnoteIndex = sb.ToString().IndexOf(']', footnoteIndex);
+            if (endFootnoteIndex > footnoteIndex)
+            {
+                sb.Remove(footnoteIndex, endFootnoteIndex - footnoteIndex + 1);
+            }
+            footnoteIndex = sb.ToString().IndexOf('[', footnoteIndex);
+        }
+
+        // Trim and reduce whitespace
+        return System.Text.RegularExpressions.Regex.Replace(sb.ToString().Trim(), @"\s+", " ");
+    }
+
+    public static bool IsChineseString(string text)
+    {
+        return text.All(IsChineseCharacter);
+    }
+
+    public static bool IsChineseCharacter(char c)
+    {
+        return (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3400 && c <= 0x4DB5);
+    }
+
     public static void OpenFolder(string path, bool selectFile = false)
     {
         if (string.IsNullOrEmpty(path)) return;
