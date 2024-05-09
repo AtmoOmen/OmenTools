@@ -9,7 +9,7 @@ public static unsafe partial class HelpersOm
     {
         markdown = Regex.Replace(markdown, @"^\#{1,6}\s*", "", RegexOptions.Multiline);
 
-        markdown = Regex.Replace(markdown, @"(?<!\s)(\*{1,2})(.*?)(\*{1,2})(?!\s)", "$2");
+        markdown = Regex.Replace(markdown, @"(\*{1,2})(.*?)(\*{1,2})", "$2");
         markdown = Regex.Replace(markdown, @"_{1,2}(.*?)_{1,2}", "$1");
 
         markdown = Regex.Replace(markdown, @"(`{1,3})(.*?)(`{1,3})", "$2");
