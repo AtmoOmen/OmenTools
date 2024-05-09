@@ -99,7 +99,7 @@ public static unsafe partial class HelpersOm
             };
             process.Start();
         }
-        catch (Exception _)
+        catch (Exception)
         {
             // ignored
         }
