@@ -29,8 +29,14 @@ public static unsafe partial class HelpersOm
         markdown = Regex.Replace(markdown, @"`{1,3}(.*?)`{1,3}", "$1");
         markdown = Regex.Replace(markdown, @"~~(.*?)~~", "$1");
 
-        markdown = Regex.Replace(markdown, @"[ ]+", " ");
+        markdown = Regex.Replace(markdown, @"==([^=]+)==", "$1");
+        markdown = Regex.Replace(markdown, @"\+\+([^+]+)\+\+", "$1");
 
+        markdown = Regex.Replace(markdown, @"::: collapse [^\n]*\n", "");
+        markdown = Regex.Replace(markdown, @"::: segment blue\n", "");
+        markdown = Regex.Replace(markdown, @"\n:::", "");
+
+        markdown = Regex.Replace(markdown, @"[ ]+", " ");
         markdown = Regex.Replace(markdown, @"\n+", "\n");
 
         return markdown.Trim();
