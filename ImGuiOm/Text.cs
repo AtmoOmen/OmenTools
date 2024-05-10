@@ -8,6 +8,15 @@ public static partial class ImGuiOm
         ImGui.Text(text);
     }
 
+    public static void TextImage(string text, nint imageHandle, Vector2 imageSize)
+    {
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.X);
+        ImGui.Image(imageHandle, imageSize);
+
+        ImGui.SameLine();
+        Text(text);
+    }
+
     public static void TextCentered(string text)
     {
         CenterAlignFor(ImGui.CalcTextSize(text).X);
