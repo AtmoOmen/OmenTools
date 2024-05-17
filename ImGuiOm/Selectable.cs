@@ -77,11 +77,10 @@ public static partial class ImGuiOm
         var cursorPos = ImGui.GetCursorScreenPos();
         var textSize = ImGui.CalcTextSize(text);
         var totalHeight = Math.Max(imageSize.Y, textSize.Y);
-        var selectableSize = new Vector2(ImGui.GetContentRegionAvail().X, totalHeight);
 
-        var result = ImGui.Selectable("", selected, flags, selectableSize);
+        var result = ImGui.Selectable("", selected, flags);
 
-        var imagePos = new Vector2(cursorPos.X, cursorPos.Y + ((totalHeight - imageSize.Y) / 2) + 2.5f);
+        var imagePos = cursorPos with { Y = cursorPos.Y + ((totalHeight - imageSize.Y) / 2) + 2.5f };
         windowDrawList.AddImage(imageHandle, imagePos, new Vector2(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
 
         var textPos = new Vector2(cursorPos.X + imageSize.X + ImGui.GetStyle().ItemSpacing.X, cursorPos.Y + ((totalHeight - textSize.Y) / 2) + 2.5f);
@@ -100,11 +99,10 @@ public static partial class ImGuiOm
         var cursorPos = ImGui.GetCursorScreenPos();
         var textSize = ImGui.CalcTextSize(text);
         var totalHeight = Math.Max(imageSize.Y, textSize.Y);
-        var selectableSize = new Vector2(ImGui.GetContentRegionAvail().X, totalHeight);
 
-        var result = ImGui.Selectable("", ref selected, flags, selectableSize);
+        var result = ImGui.Selectable("", ref selected, flags);
 
-        var imagePos = new Vector2(cursorPos.X, cursorPos.Y + ((totalHeight - imageSize.Y) / 2) + 2.5f);
+        var imagePos = cursorPos with { Y = cursorPos.Y + ((totalHeight - imageSize.Y) / 2) + 2.5f };
         windowDrawList.AddImage(imageHandle, imagePos, new Vector2(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
 
         var textPos = new Vector2(cursorPos.X + imageSize.X + ImGui.GetStyle().ItemSpacing.X, cursorPos.Y + ((totalHeight - textSize.Y) / 2) + 2.5f);
@@ -123,9 +121,8 @@ public static partial class ImGuiOm
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding.X;
         var selectableWidth = ImGui.GetContentRegionAvail().X;
-        var selectableHeight = textSize.Y + 2 * padding;
 
-        var result = ImGui.Selectable("", selected, flags, new Vector2(selectableWidth, selectableHeight));
+        var result = ImGui.Selectable("", selected, flags);
 
         var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X) / 2, cursorPos.Y + padding);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
@@ -142,9 +139,8 @@ public static partial class ImGuiOm
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding.X;
         var selectableWidth = ImGui.GetContentRegionAvail().X;
-        var selectableHeight = textSize.Y + 2 * padding;
 
-        var result = ImGui.Selectable("", ref selected, flags, new Vector2(selectableWidth, selectableHeight));
+        var result = ImGui.Selectable("", ref selected, flags);
 
         var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X) / 2, cursorPos.Y + padding);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
@@ -163,9 +159,8 @@ public static partial class ImGuiOm
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding.X;
         var selectableWidth = ImGui.GetContentRegionAvail().X;
-        var selectableHeight = textSize.Y + 2 * padding;
 
-        var result = ImGui.Selectable("", selected, flags, new Vector2(selectableWidth, selectableHeight));
+        var result = ImGui.Selectable("", selected, flags);
 
         var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X + padding) / 2, cursorPos.Y + padding);
         ImGui.PushFont(UiBuilder.IconFont);
@@ -186,9 +181,8 @@ public static partial class ImGuiOm
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding.X;
         var selectableWidth = ImGui.GetContentRegionAvail().X;
-        var selectableHeight = textSize.Y + 2 * padding;
 
-        var result = ImGui.Selectable("", ref selected, flags, new Vector2(selectableWidth, selectableHeight));
+        var result = ImGui.Selectable("", ref selected, flags);
 
         var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X + padding) / 2, cursorPos.Y + padding);
         ImGui.PushFont(UiBuilder.IconFont);
