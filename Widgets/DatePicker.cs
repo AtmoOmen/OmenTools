@@ -4,13 +4,9 @@ namespace OmenTools.Widgets;
 
 public class DatePicker
 {
-    public Vector2 RegionSize { get; private set; }
+    public Vector2 Size { get; private set; }
+    public string[] WeekDays { get; }
 
-    public delegate void DateSelectedDelegate();
-    public event DateSelectedDelegate? DateSelected;
-
-    private readonly string _weekDays;
-    private string[] _weekDayNames;
     private DateTime _viewDate = DateTime.Now;
     private float _datePickerPagingWidth = 200f;
 
@@ -18,41 +14,70 @@ public class DatePicker
     /// Create a Date Picker
     /// </summary>
     /// <param name="localizedWeekDays">Localized week days string, should look like "Sun, Mon, Tue, Wed, Thu, Fri, Sat"</param>
-    public DatePicker(string? localizedWeekDays = null)
+    public DatePicker(string localizedWeekDays = "Sun, Mon, Tue, Wed, Thu, Fri, Sat")
     {
-        _weekDays = localizedWeekDays ?? "Sun, Mon, Tue, Wed, Thu, Fri, Sat";
-        _weekDayNames = _weekDays.Split(',');
+        WeekDays = localizedWeekDays.Split(',');
+        if (WeekDays.Length != 7)
+            throw new ArgumentException("Weekdays array must contain exactly 7 elements.");
     }
 
-    public void Draw(ref DateTime currentDate)
+    public bool Draw(ref DateTime currentDate)
     {
+        var state = false;
         ImGui.BeginGroup();
         DrawHeader();
 
-        using (var table = ImRaii.Table("DatePicker", 7, ImGuiTableFlags.NoBordersInBody))
+        if (ImGui.BeginTable("DatePicker", 7, ImGuiTableFlags.NoBordersInBody))
         {
-            if (table)
-            {
-                DrawWeekDays();
-                DrawDays(ref currentDate);
-            }
+            DrawWeekDays();
+            state = DrawDays(ref currentDate);
+            ImGui.EndTable();
         }
 
         ImGui.EndGroup();
-        RegionSize = ImGui.GetItemRectSize();
+        Size = ImGui.GetItemRectSize();
+
+        return state;
+    }
+
+    public void DrawHeader()
+    {
+        CenterAlignFor(_datePickerPagingWidth);
+
+        ImGui.BeginGroup();
+
+        DrawNavigationButton("LastYear", FontAwesomeIcon.Backward, -1, true);
+
+        ImGui.SameLine();
+        DrawNavigationButton("LastMonth", ImGuiDir.Left, -1, false);
+
+        ImGui.SameLine();
+        ImGui.Text($"{_viewDate:yyyy.MM}");
+
+        ImGui.SameLine();
+        DrawNavigationButton("NextMonth", ImGuiDir.Right, 1, false);
+
+        ImGui.SameLine();
+        DrawNavigationButton("NextYear", FontAwesomeIcon.Forward, 1, true);
+
+        ImGui.EndGroup();
+
+        _datePickerPagingWidth = Math.Max(ImGui.GetItemRectSize().X, Size.X);
     }
 
     private void DrawWeekDays()
     {
-        foreach (var day in _weekDayNames)
+        foreach (var day in WeekDays)
         {
             ImGui.TableNextColumn();
             TextCentered(day);
         }
     }
 
-    private void DrawDays(ref DateTime currentDate)
+    private bool DrawDays(ref DateTime currentDate)
     {
+        var state = false;
+
         ImGui.TableNextRow(ImGuiTableRowFlags.None);
         var firstDayOfMonth = new DateTime(_viewDate.Year, _viewDate.Month, 1);
         var firstDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
@@ -75,33 +100,18 @@ public class DatePicker
                 if (SelectableTextCentered(day.ToString(), false, ImGuiSelectableFlags.DontClosePopups))
                 {
                     currentDate = new DateTime(_viewDate.Year, _viewDate.Month, day);
-                    DateSelected?.Invoke();
+                    state = true;
                 }
                 ImGui.PopStyleColor();
             }
             else if (SelectableTextCentered(day.ToString(), false, ImGuiSelectableFlags.DontClosePopups))
             {
                 currentDate = new DateTime(_viewDate.Year, _viewDate.Month, day);
-                DateSelected?.Invoke();
+                state = true;
             }
         }
-    }
 
-    public void DrawHeader()
-    {
-        CenterAlignFor(_datePickerPagingWidth);
-        ImGui.BeginGroup();
-        DrawNavigationButton("LastYear", FontAwesomeIcon.Backward, -1, true);
-        ImGui.SameLine();
-        DrawNavigationButton("LastMonth", ImGuiDir.Left, -1, false);
-        ImGui.SameLine();
-        ImGui.Text($"{_viewDate:yyyy.MM}");
-        ImGui.SameLine();
-        DrawNavigationButton("NextMonth", ImGuiDir.Right, 1, false);
-        ImGui.SameLine();
-        DrawNavigationButton("NextYear", FontAwesomeIcon.Forward, 1, true);
-        ImGui.EndGroup();
-        _datePickerPagingWidth = (int)ImGui.GetItemRectSize().X;
+        return state;
     }
 
     public void DrawNavigationButton(string id, object icon, int value, bool isYear)
