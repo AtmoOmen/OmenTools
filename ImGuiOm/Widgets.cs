@@ -18,4 +18,18 @@ public static partial class ImGuiOm
         }
     }
 
+    private static void DisableZoneWithHelp(Action interfaceAction, List<KeyValuePair<bool, string>> conditions, 
+        string header = "Disabled for the following reasons")
+    {
+        var isNeedToDisable = conditions.Any(kvp => kvp.Key);
+
+        ImGui.BeginGroup();
+        ImGui.BeginDisabled(isNeedToDisable);
+        interfaceAction.Invoke();
+        ImGui.EndDisabled();
+        ImGui.EndGroup();
+
+        TooltipDisableHelp(conditions, header);
+    }
+
 }
