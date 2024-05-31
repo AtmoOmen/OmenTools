@@ -18,7 +18,7 @@ public static partial class ImGuiOm
         }
     }
 
-    private static void DisableZoneWithHelp(Action interfaceAction, List<KeyValuePair<bool, string>> conditions, 
+    public static void DisableZoneWithHelp(Action interfaceAction, List<KeyValuePair<bool, string>> conditions, 
         string header = "Disabled for the following reasons")
     {
         var isNeedToDisable = conditions.Any(kvp => kvp.Key);
