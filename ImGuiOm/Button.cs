@@ -79,6 +79,39 @@ public static partial class ImGuiOm
         return result;
     }
 
+    public static bool ButtonIconWithTextVertical(FontAwesomeIcon icon, string text, Vector2 buttonSize)
+    {
+        ImGui.PushID($"{text}_{icon.ToIconString()}");
+        ImGui.PushFont(UiBuilder.IconFont);
+        var iconSize = ImGui.CalcTextSize(icon.ToIconString());
+        ImGui.PopFont();
+        var textSize = ImGui.CalcTextSize(text);
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorScreenPos = ImGui.GetCursorScreenPos();
+        var padding = ImGui.GetStyle().FramePadding.X;
+        var spacing = 3f * ImGuiHelpers.GlobalScale;
+
+        var result = ImGui.Button(string.Empty, buttonSize);
+
+        var iconPos = new Vector2(
+            cursorScreenPos.X + ((buttonSize.X - iconSize.X) / 2),
+            cursorScreenPos.Y + padding
+        );
+        var textPos = new Vector2(
+            cursorScreenPos.X + ((buttonSize.X - textSize.X) / 2),
+            cursorScreenPos.Y + padding + iconSize.Y + spacing
+        );
+
+        ImGui.PushFont(UiBuilder.IconFont);
+        windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
+        ImGui.PopFont();
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+
+        ImGui.PopID();
+
+        return result;
+    }
+
     public static bool ButtonIconSelectable(string id, FontAwesomeIcon icon, string tooltip = "")
     {
         ImGui.PushID(id);
