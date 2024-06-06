@@ -1,20 +1,32 @@
-﻿namespace OmenTools.Helpers;
+﻿using static PInvoke.User32;
+
+namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
-
-    public static bool IsGameForeground()
+    public static bool TryFindGameWindow(out nint hwnd)
     {
-        var foregroundWindow = GetForegroundWindow();
-        _ = GetWindowThreadProcessId(foregroundWindow, out var foregroundProcId);
+        hwnd = nint.Zero;
+        while (true)
+        {
+            hwnd = FindWindowEx(nint.Zero, hwnd, "FFXIVGAME", null);
+            if (hwnd == nint.Zero) break;
+            _ = GetWindowThreadProcessId(hwnd, out var pid);
+            if (pid == Environment.ProcessId) break;
+        }
 
-        var currentProcess = Process.GetCurrentProcess();
-        return currentProcess.Id == foregroundProcId;
+        return hwnd != nint.Zero;
+    }
 
+    public static bool ApplicationIsActivated()
+    {
+        var activatedHandle = GetForegroundWindow();
+        if (activatedHandle == nint.Zero)
+            return false;
+
+        var procId = Environment.ProcessId;
+        _ = GetWindowThreadProcessId(activatedHandle, out var activeProcId);
+
+        return activeProcId == procId;
     }
 }
