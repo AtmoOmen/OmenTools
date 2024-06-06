@@ -15,6 +15,6 @@ public static partial class HelpersOm
     public static unsafe float GetRealDistanceFromObject(GameObject* player, GameObject* target)
     {
         var distance = player->Position - target->Position;
-        return MathF.Sqrt((distance.X * distance.X) + (distance.Z * distance.Z));
+        return MathF.Sqrt(distance.X * distance.X + distance.Z * distance.Z);
     }
 }

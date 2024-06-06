@@ -97,7 +97,6 @@ public static unsafe partial class HelpersOm
         var ret = List[0];
         List.RemoveAt(0);
         return ret;
-
     }
 
     public static T? DequeueOrDefault<T>(this Queue<T?> Queue) => Queue.Count > 0 ? Queue.Dequeue() : default;
@@ -115,7 +114,7 @@ public static unsafe partial class HelpersOm
         return -1;
     }
 
-    public static bool ContainsIgnoreCase(this IEnumerable<string> haystack, string needle) 
+    public static bool ContainsIgnoreCase(this IEnumerable<string> haystack, string needle)
         => haystack.Any(x => x.EqualsIgnoreCase(needle));
 
     public static T[] Together<T>(this T[] array, params T[] additionalValues) => array.Union(additionalValues).ToArray();
@@ -152,7 +151,8 @@ public static unsafe partial class HelpersOm
         return arr;
     }
 
-    public static V? GetOrDefault<K, V>(this IDictionary<K, V> dic, K key) => dic.TryGetValue(key, out var value) ? value : default;
+    public static V? GetOrDefault<K, V>(this IDictionary<K, V> dic, K key) =>
+        dic.TryGetValue(key, out var value) ? value : default;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int IncrementOrSet<K>(this IDictionary<K, int> dic, K key, int increment = 1)
@@ -213,7 +213,7 @@ public static unsafe partial class HelpersOm
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool StartsWithAny(this string source, StringComparison stringComparison = StringComparison.Ordinal,
-                                     params string[] values)
+        params string[] values)
         => source.StartsWithAny(values, stringComparison);
 
     public static bool StartsWithAny(
@@ -261,7 +261,7 @@ public static unsafe partial class HelpersOm
     public static IEnumerable<string> Split(this string str, int chunkSize)
     {
         return Enumerable.Range(0, str.Length / chunkSize)
-                         .Select(i => str.Substring(i * chunkSize, chunkSize));
+            .Select(i => str.Substring(i * chunkSize, chunkSize));
     }
 
     public static T FirstOr0<T>(this IEnumerable<T> collection, Func<T, bool> predicate)
@@ -286,7 +286,7 @@ public static unsafe partial class HelpersOm
     public static string? NullWhenEmpty(this string? s)
         => s == string.Empty ? null : s;
 
-    public static IEnumerable<R> SelectMulti<T, R>(this IEnumerable<T> values, params Func<T, R>[] funcs) 
+    public static IEnumerable<R> SelectMulti<T, R>(this IEnumerable<T> values, params Func<T, R>[] funcs)
         => from v in values from x in funcs select x(v);
 
     public static Vector4 Invert(this Vector4 v)
@@ -318,7 +318,7 @@ public static unsafe partial class HelpersOm
     public static bool Invert(this bool b, bool invert) { return invert ? !b : b; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ContainsAll<T>(this IEnumerable<T> source, IEnumerable<T> values) 
+    public static bool ContainsAll<T>(this IEnumerable<T> source, IEnumerable<T> values)
         => values.All(source.Contains);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -357,35 +357,35 @@ public static unsafe partial class HelpersOm
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ContainsAny(this string obj, IEnumerable<string> values) 
+    public static bool ContainsAny(this string obj, IEnumerable<string> values)
         => values.Any(obj.Contains);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ContainsAny(this string obj, params string[] values) 
+    public static bool ContainsAny(this string obj, params string[] values)
         => values.Any(obj.Contains);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ContainsAny(this string obj, StringComparison comp, params string[] values) 
+    public static bool ContainsAny(this string obj, StringComparison comp, params string[] values)
         => values.Any(x => obj.Contains(x, comp));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsAny<T>(this T obj, params T[] values) 
+    public static bool EqualsAny<T>(this T obj, params T[] values)
         => values.Any(x => x != null && x.Equals(obj));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsIgnoreCaseAny(this string obj, params string[] values) 
+    public static bool EqualsIgnoreCaseAny(this string obj, params string[] values)
         => values.Any(x => x.Equals(obj, StringComparison.OrdinalIgnoreCase));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsIgnoreCaseAny(this string obj, IEnumerable<string> values) 
+    public static bool EqualsIgnoreCaseAny(this string obj, IEnumerable<string> values)
         => values.Any(x => x.Equals(obj, StringComparison.OrdinalIgnoreCase));
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsAny<T>(this T obj, IEnumerable<T> values) 
+    public static bool EqualsAny<T>(this T obj, IEnumerable<T> values)
         => values.Any(x => x != null && x.Equals(obj));
 
-    public static IEnumerable<K> FindKeysByValue<K, V>(this IDictionary<K, V> dictionary, V value) 
-        => from x in dictionary where value.Equals(x.Value) select x.Key;
+    public static IEnumerable<K> FindKeysByValue<K, V>(this IDictionary<K, V> dictionary, V value)
+        => from x in dictionary where value != null && value.Equals(x.Value) select x.Key;
 
     public static bool TryGetFirst<K, V>(
         this IDictionary<K, V> dictionary, Func<KeyValuePair<K, V>, bool> predicate, out KeyValuePair<K, V> keyValuePair)
@@ -410,26 +410,26 @@ public static unsafe partial class HelpersOm
                 value = default;
                 return false;
             case IList<TSource> list:
+            {
+                if (list.Count > 0)
                 {
-                    if (list.Count > 0)
-                    {
-                        value = list[0];
-                        return true;
-                    }
-
-                    break;
+                    value = list[0];
+                    return true;
                 }
+
+                break;
+            }
             default:
+            {
+                using IEnumerator<TSource?> e = source.GetEnumerator();
+                if (e.MoveNext())
                 {
-                    using IEnumerator<TSource?> e = source.GetEnumerator();
-                    if (e.MoveNext())
-                    {
-                        value = e.Current;
-                        return true;
-                    }
-
-                    break;
+                    value = e.Current;
+                    return true;
                 }
+
+                break;
+            }
         }
 
         value = default;

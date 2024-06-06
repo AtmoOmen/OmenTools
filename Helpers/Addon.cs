@@ -3,17 +3,18 @@
 public static unsafe partial class HelpersOm
 {
     /// <summary>
-    /// Check whether an addon is ready for reading.
+    ///     Check whether an addon is ready for reading.
     /// </summary>
     /// <param name="UI"></param>
     /// <returns></returns>
     public static bool IsAddonAndNodesReady(AtkUnitBase* UI)
     {
-        return UI != null && UI->IsVisible && UI->UldManager.LoadedState == AtkLoadState.Loaded && UI->RootNode != null && UI->RootNode->ChildNode != null && UI->UldManager.NodeList != null;
+        return UI != null && UI->IsVisible && UI->UldManager.LoadedState == AtkLoadState.Loaded && UI->RootNode != null &&
+               UI->RootNode->ChildNode != null && UI->UldManager.NodeList != null;
     }
 
     /// <summary>
-    /// Check whether the UldManager is ready.
+    ///     Check whether the UldManager is ready.
     /// </summary>
     /// <param name="Manager"></param>
     /// <returns></returns>
@@ -23,7 +24,7 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
-    /// Get the window title of an addon, will prioritize returning the small title.
+    ///     Get the window title of an addon, will prioritize returning the small title.
     /// </summary>
     /// <param name="args"></param>
     /// <param name="windowNodeID"></param>
@@ -50,7 +51,7 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
-    /// Get the window title of an addon, will prioritize returning the small title.
+    ///     Get the window title of an addon, will prioritize returning the small title.
     /// </summary>
     /// <param name="addon"></param>
     /// <param name="windowNodeID"></param>
@@ -77,7 +78,7 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
-    /// Try finding the index of specific SelectString addon entry by the text given.
+    ///     Try finding the index of specific SelectString addon entry by the text given.
     /// </summary>
     /// <param name="addon"></param>
     /// <param name="text"></param>
@@ -102,8 +103,8 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
-    /// Try finding the index of specific SelectString addon entry by the texts given.
-    /// As long as one text in the list is found, it will return the index.
+    ///     Try finding the index of specific SelectString addon entry by the texts given.
+    ///     As long as one text in the list is found, it will return the index.
     /// </summary>
     /// <param name="addon"></param>
     /// <param name="texts"></param>
@@ -128,7 +129,7 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
-    /// Try finding the index of specific SelectIconString addon entry by the text given.
+    ///     Try finding the index of specific SelectIconString addon entry by the text given.
     /// </summary>
     /// <param name="addon"></param>
     /// <param name="text"></param>
@@ -153,8 +154,8 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
-    /// Try finding the index of specific SelectIconString addon entry by the texts given.
-    /// As long as one text in the list is found, it will return the index.
+    ///     Try finding the index of specific SelectIconString addon entry by the texts given.
+    ///     As long as one text in the list is found, it will return the index.
     /// </summary>
     /// <param name="addon"></param>
     /// <param name="texts"></param>
@@ -179,7 +180,7 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
-    /// Try finding the index of specific ContextMenu addon entry by the text given.
+    ///     Try finding the index of specific ContextMenu addon entry by the text given.
     /// </summary>
     /// <param name="addon"></param>
     /// <param name="text"></param>
@@ -206,14 +207,14 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
-    /// Try finding the index of specific ContextMenu addon entry by the text given.
-    /// As long as one text in the list is found, it will return the index.
+    ///     Try finding the index of specific ContextMenu addon entry by the text given.
+    ///     As long as one text in the list is found, it will return the index.
     /// </summary>
     /// <param name="addon"></param>
     /// <param name="texts"></param>
     /// <param name="index"></param>
     /// <returns></returns>
-    public static bool TryScanContextMenuText(AtkUnitBase* addon,IReadOnlyList<string> texts, out int index)
+    public static bool TryScanContextMenuText(AtkUnitBase* addon, IReadOnlyList<string> texts, out int index)
     {
         index = -1;
         if (addon == null) return false;
@@ -234,7 +235,7 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
-    /// Try Detecting Whether The Item To Select Is Enabled.
+    ///     Try Detecting Whether The Item To Select Is Enabled.
     /// </summary>
     /// <param name="textNodePtr"></param>
     /// <returns></returns>

@@ -61,6 +61,7 @@ public static partial class HelpersOm
                 UseShellExecute = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !selectFile,
                 CreateNoWindow = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
             };
+
             process.Start();
         }
         catch (Exception)
@@ -68,5 +69,4 @@ public static partial class HelpersOm
             // ignored
         }
     }
-
 }

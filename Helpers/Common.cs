@@ -41,15 +41,9 @@ public static unsafe partial class HelpersOm
         return markdown.Trim();
     }
 
-    public static bool IsChineseString(string text)
-    {
-        return text.All(IsChineseCharacter);
-    }
+    public static bool IsChineseString(string text) { return text.All(IsChineseCharacter); }
 
-    public static bool IsChineseCharacter(char c)
-    {
-        return (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3400 && c <= 0x4DB5);
-    }
+    public static bool IsChineseCharacter(char c) { return (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3400 && c <= 0x4DB5); }
 
     public static DateTime UnixSecondToDateTime(double unixTimeStampS)
     {
@@ -118,6 +112,7 @@ public static unsafe partial class HelpersOm
     {
         if (str.StringPtr == null || str.BufUsed <= 1)
             return string.Empty;
+
         return Encoding.UTF8.GetString(str.StringPtr, (int)str.BufUsed - 1);
     }
 
