@@ -1,5 +1,4 @@
 ﻿using System.Text.RegularExpressions;
-using SeString = Lumina.Text.SeString;
 
 namespace OmenTools.Helpers;
 
@@ -50,59 +49,6 @@ public static unsafe partial class HelpersOm
     public static bool IsChineseCharacter(char c)
     {
         return (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3400 && c <= 0x4DB5);
-    }
-
-    public static void OpenFolder(string path, bool selectFile = false)
-    {
-        if (string.IsNullOrEmpty(path)) return;
-
-        try
-        {
-            string command;
-            string arguments;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                if (selectFile)
-                {
-                    command = "explorer.exe";
-                    arguments = $"/select,\"{path}\"";
-                }
-                else
-                {
-                    command = "explorer.exe";
-                    arguments = path;
-                }
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                command = "open";
-                arguments = selectFile ? $"-R \"{path}\"" : path;
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                command = "xdg-open";
-                arguments = path;
-            }
-            else
-            {
-                return;
-            }
-
-            using var process = new Process();
-            process.StartInfo = new ProcessStartInfo
-            {
-                FileName = command,
-                Arguments = arguments,
-                UseShellExecute = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !selectFile,
-                CreateNoWindow = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            };
-            process.Start();
-        }
-        catch (Exception)
-        {
-            // ignored
-        }
     }
 
     public static DateTime UnixSecondToDateTime(double unixTimeStampS)
@@ -175,33 +121,19 @@ public static unsafe partial class HelpersOm
         return Encoding.UTF8.GetString(str.StringPtr, (int)str.BufUsed - 1);
     }
 
-    public static string FetchText(this SeString s, bool onlyFirst = false)
+    public static void MoveItemToPosition<T>(List<T> list, Func<T, bool> sourceItemSelector, int targetedIndex)
     {
-        return s.ToDalamudString().FetchText(onlyFirst);
-    }
+        var sourceIndex = -1;
+        for (var i = 0; i < list.Count; i++)
+            if (sourceItemSelector(list[i]))
+            {
+                sourceIndex = i;
+                break;
+            }
 
-    public static string FetchText(this Utf8String s, bool onlyFirst = false)
-    {
-        var str = MemoryHelper.ReadSeString(&s);
-        return str.FetchText();
-    }
-
-    public static string FetchText(this Dalamud.Game.Text.SeStringHandling.SeString seStr, bool onlyFirst = false)
-    {
-        StringBuilder sb = new();
-        foreach (var x in seStr.Payloads)
-        {
-            if (x is not TextPayload tp) continue;
-            sb.Append(tp.Text);
-            if (onlyFirst) break;
-        }
-
-        return sb.ToString();
-    }
-
-    public static void Restart(this Timer timer)
-    {
-        timer.Stop();
-        timer.Start();
+        if (sourceIndex == targetedIndex) return;
+        var item = list[sourceIndex];
+        list.RemoveAt(sourceIndex);
+        list.Insert(targetedIndex, item);
     }
 }

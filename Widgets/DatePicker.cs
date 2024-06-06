@@ -4,14 +4,12 @@ namespace OmenTools.Widgets;
 
 public class DatePicker
 {
-    public Vector2 Size { get; private set; }
-    public string[] WeekDays { get; }
-
-    private DateTime _viewDate = DateTime.Now;
     private float _datePickerPagingWidth = 200f;
 
+    private DateTime _viewDate = DateTime.Now;
+
     /// <summary>
-    /// Create a Date Picker
+    ///     Create a Date Picker
     /// </summary>
     /// <param name="localizedWeekDays">Localized week days string, should look like "Sun, Mon, Tue, Wed, Thu, Fri, Sat"</param>
     public DatePicker(string localizedWeekDays = "Sun, Mon, Tue, Wed, Thu, Fri, Sat")
@@ -20,6 +18,9 @@ public class DatePicker
         if (WeekDays.Length != 7)
             throw new ArgumentException("Weekdays array must contain exactly 7 elements.");
     }
+
+    public Vector2  Size     { get; private set; }
+    public string[] WeekDays { get; }
 
     public bool Draw(ref DateTime currentDate)
     {
@@ -92,7 +93,8 @@ public class DatePicker
         for (var day = 1; day <= daysInMonth; day++)
         {
             ImGui.TableNextColumn();
-            var isCurrentDate = currentDate.Year == _viewDate.Year && currentDate.Month == _viewDate.Month && currentDate.Day == day;
+            var isCurrentDate = currentDate.Year == _viewDate.Year && currentDate.Month == _viewDate.Month &&
+                                currentDate.Day == day;
 
             if (isCurrentDate)
             {
@@ -102,6 +104,7 @@ public class DatePicker
                     currentDate = new DateTime(_viewDate.Year, _viewDate.Month, day);
                     state = true;
                 }
+
                 ImGui.PopStyleColor();
             }
             else if (SelectableTextCentered(day.ToString(), false, ImGuiSelectableFlags.DontClosePopups))
@@ -117,8 +120,6 @@ public class DatePicker
     public void DrawNavigationButton(string id, object icon, int value, bool isYear)
     {
         if (isYear ? ButtonIcon(id, (FontAwesomeIcon)icon) : ImGui.ArrowButton(id, (ImGuiDir)icon))
-        {
             _viewDate = isYear ? _viewDate.AddYears(value) : _viewDate.AddMonths(value);
-        }
     }
 }

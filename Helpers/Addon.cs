@@ -232,4 +232,18 @@ public static unsafe partial class HelpersOm
 
         return false;
     }
+
+    /// <summary>
+    /// Try Detecting Whether The Item To Select Is Enabled.
+    /// </summary>
+    /// <param name="textNodePtr"></param>
+    /// <returns></returns>
+    public static bool IsSelectItemEnabled(AtkTextNode* textNodePtr)
+    {
+        var col = textNodePtr->TextColor;
+        return col is { A: 0xFF, R: 0xEE, G: 0xE1, B: 0xC5 }
+            or { A: 0xFF, R: 0x7D, G: 0x52, B: 0x3B }
+            or { A: 0xFF, R: 0xFF, G: 0xFF, B: 0xFF }
+            or { A: 0xFF, R: 0xEE, G: 0xE1, B: 0xC5 };
+    }
 }

@@ -2,7 +2,8 @@
 
 public static partial class ImGuiOm
 {
-    public static bool Selectable(string text, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    public static bool Selectable(string text, bool selected = false,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
         var result = ImGui.Selectable(text, selected, flags);
@@ -17,9 +18,10 @@ public static partial class ImGuiOm
     }
 
     /// <summary>
-    /// Draw a selectable that is able to fill a table cell. Not available for ImGuiSelectableFlags.SpanAllColumns
+    ///     Draw a selectable that is able to fill a table cell. Not available for ImGuiSelectableFlags.SpanAllColumns
     /// </summary>
-    public static bool SelectableFillCell(string text, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    public static bool SelectableFillCell(string text, bool selected = false,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         var textSize = ImGui.CalcTextSize(text);
         var windowDrawList = ImGui.GetWindowDrawList();
@@ -37,9 +39,10 @@ public static partial class ImGuiOm
     }
 
     /// <summary>
-    /// Draw a selectable that is able to fill a table cell. Not available for ImGuiSelectableFlags.SpanAllColumns
+    ///     Draw a selectable that is able to fill a table cell. Not available for ImGuiSelectableFlags.SpanAllColumns
     /// </summary>
-    public static bool SelectableFillCell(string text, ref bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    public static bool SelectableFillCell(string text, ref bool selected,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         var textSize = ImGui.CalcTextSize(text);
         var windowDrawList = ImGui.GetWindowDrawList();
@@ -56,20 +59,23 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool SelectableCentered(string text, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, Vector2 size = default)
+    public static bool SelectableCentered(string text, bool selected = false,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, Vector2 size = default)
     {
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X / 2 - ImGui.CalcTextSize(text).X / 2);
         return ImGui.Selectable(text, selected, flags, size);
     }
 
-    public static bool SelectableCentered(string text, ref bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, Vector2 size = default)
+    public static bool SelectableCentered(string text, ref bool selected,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, Vector2 size = default)
     {
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ImGui.GetContentRegionAvail().X / 2 - ImGui.CalcTextSize(text).X / 2);
         var result = ImGui.Selectable(text, ref selected, flags, size);
         return result;
     }
 
-    public static bool SelectableImageWithText(IntPtr imageHandle, Vector2 imageSize, string text, bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    public static bool SelectableImageWithText(IntPtr imageHandle, Vector2 imageSize, string text, bool selected,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{imageHandle}_{text}_{imageSize}");
 
@@ -81,10 +87,12 @@ public static partial class ImGuiOm
 
         var result = ImGui.Selectable("", selected, flags, selectableSize);
 
-        var imagePos = new Vector2(cursorPos.X, cursorPos.Y + ((totalHeight - imageSize.Y) / 2) + 2.5f);
+        var imagePos = new Vector2(cursorPos.X, cursorPos.Y + (totalHeight - imageSize.Y) / 2 + 2.5f);
         windowDrawList.AddImage(imageHandle, imagePos, new Vector2(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
 
-        var textPos = new Vector2(cursorPos.X + imageSize.X + ImGui.GetStyle().ItemSpacing.X, cursorPos.Y + ((totalHeight - textSize.Y) / 2) + 2.5f);
+        var textPos = new Vector2(cursorPos.X + imageSize.X + ImGui.GetStyle().ItemSpacing.X,
+            cursorPos.Y + (totalHeight - textSize.Y) / 2 + 2.5f);
+
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         ImGui.PopID();
@@ -92,7 +100,8 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool SelectableImageWithText(IntPtr imageHandle, Vector2 imageSize, string text, ref bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    public static bool SelectableImageWithText(IntPtr imageHandle, Vector2 imageSize, string text, ref bool selected,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{imageHandle}_{text}_{imageSize}");
 
@@ -104,10 +113,12 @@ public static partial class ImGuiOm
 
         var result = ImGui.Selectable("", ref selected, flags, selectableSize);
 
-        var imagePos = new Vector2(cursorPos.X, cursorPos.Y + ((totalHeight - imageSize.Y) / 2) + 2.5f);
+        var imagePos = new Vector2(cursorPos.X, cursorPos.Y + (totalHeight - imageSize.Y) / 2 + 2.5f);
         windowDrawList.AddImage(imageHandle, imagePos, new Vector2(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
 
-        var textPos = new Vector2(cursorPos.X + imageSize.X + ImGui.GetStyle().ItemSpacing.X, cursorPos.Y + ((totalHeight - textSize.Y) / 2) + 2.5f);
+        var textPos = new Vector2(cursorPos.X + imageSize.X + ImGui.GetStyle().ItemSpacing.X,
+            cursorPos.Y + (totalHeight - textSize.Y) / 2 + 2.5f);
+
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         ImGui.PopID();
@@ -115,7 +126,8 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool SelectableTextCentered(string text, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    public static bool SelectableTextCentered(string text, bool selected = false,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{text}_{flags}");
         var textSize = ImGui.CalcTextSize(text);
@@ -134,7 +146,8 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool SelectableTextCentered(string text, ref bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    public static bool SelectableTextCentered(string text, ref bool selected,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{text}_{flags}");
         var textSize = ImGui.CalcTextSize(text);
@@ -153,7 +166,8 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool SelectableIconCentered(string id, FontAwesomeIcon icon, bool selected = false, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    public static bool SelectableIconCentered(string id, FontAwesomeIcon icon, bool selected = false,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{icon}_{id}");
         ImGui.PushFont(UiBuilder.IconFont);
@@ -176,7 +190,8 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool SelectableIconCentered(string id, FontAwesomeIcon icon, ref bool selected, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+    public static bool SelectableIconCentered(string id, FontAwesomeIcon icon, ref bool selected,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{icon}_{id}");
         ImGui.PushFont(UiBuilder.IconFont);
@@ -198,5 +213,4 @@ public static partial class ImGuiOm
 
         return result;
     }
-
 }
