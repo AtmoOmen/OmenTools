@@ -115,6 +115,62 @@ public static partial class ImGuiOm
         return result;
     }
 
+    public static bool ButtonIconWithText(FontAwesomeIcon icon, string text)
+    {
+        ImGui.PushID($"{text}_{icon.ToIconString()}");
+        ImGui.PushFont(UiBuilder.IconFont);
+        var iconSize = ImGui.CalcTextSize(icon.ToIconString());
+        ImGui.PopFont();
+        var textSize = ImGui.CalcTextSize(text);
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorScreenPos = ImGui.GetCursorScreenPos();
+        var padding = ImGui.GetStyle().FramePadding.X;
+        var spacing = ImGui.GetStyle().ItemSpacing.X; ;
+        var buttonWidth = iconSize.X + textSize.X + padding * 2 + spacing;
+        var buttonHeight = Math.Max(iconSize.Y, textSize.Y) + padding * 2;
+
+        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
+
+        var iconPos = new Vector2(cursorScreenPos.X + padding, cursorScreenPos.Y + (buttonHeight - iconSize.Y) / 2);
+        var textPos = new Vector2(iconPos.X + iconSize.X + spacing, cursorScreenPos.Y + (buttonHeight - textSize.Y) / 2);
+
+        ImGui.PushFont(UiBuilder.IconFont);
+        windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
+        ImGui.PopFont();
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+
+        ImGui.PopID();
+
+        return result;
+    }
+
+    public static bool ButtonIconWithText(FontAwesomeIcon icon, string text, Vector2 buttonSize)
+    {
+        ImGui.PushID($"{text}_{icon.ToIconString()}");
+        ImGui.PushFont(UiBuilder.IconFont);
+        var iconSize = ImGui.CalcTextSize(icon.ToIconString());
+        ImGui.PopFont();
+        var textSize = ImGui.CalcTextSize(text);
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorScreenPos = ImGui.GetCursorScreenPos();
+        var padding = ImGui.GetStyle().FramePadding.X;
+        var spacing = ImGui.GetStyle().ItemSpacing.X;
+
+        var result = ImGui.Button(string.Empty, buttonSize);
+
+        var iconPos = new Vector2(cursorScreenPos.X + padding, cursorScreenPos.Y + (buttonSize.Y - iconSize.Y) / 2);
+        var textPos = new Vector2(iconPos.X + iconSize.X + spacing, cursorScreenPos.Y + (buttonSize.Y - textSize.Y) / 2);
+
+        ImGui.PushFont(UiBuilder.IconFont);
+        windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
+        ImGui.PopFont();
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+
+        ImGui.PopID();
+
+        return result;
+    }
+
     public static bool ButtonIconSelectable(string id, FontAwesomeIcon icon, string tooltip = "")
     {
         ImGui.PushID(id);
