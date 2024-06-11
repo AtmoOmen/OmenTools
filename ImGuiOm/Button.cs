@@ -32,6 +32,31 @@ public static partial class ImGuiOm
         return result;
     }
 
+    public static bool ButtonIcon(string id, FontAwesomeIcon icon, Vector2 buttonSize, string tooltip = "")
+    {
+        ImGui.PushID($"{id}_{icon}");
+
+        var iconText = icon.ToIconString();
+        ImGui.PushFont(UiBuilder.IconFont);
+        var iconSize = ImGui.CalcTextSize(iconText);
+        ImGui.PopFont();
+
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorPos = ImGui.GetCursorScreenPos();
+        var result = ImGui.Button(string.Empty, buttonSize);
+        var iconPos = new Vector2(cursorPos.X + (buttonSize.X - iconSize.X) / 2, cursorPos.Y + (buttonSize.Y - iconSize.Y) / 2);
+
+        ImGui.PushFont(UiBuilder.IconFont);
+        windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
+        ImGui.PopFont();
+
+        ImGui.PopID();
+
+        if (!tooltip.IsNullOrEmpty()) ImGuiOm.TooltipHover(tooltip);
+
+        return result;
+    }
+
     public static bool ButtonCompact(string id, string text)
     {
         ImGui.PushID(id);
