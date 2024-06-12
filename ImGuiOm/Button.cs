@@ -113,21 +113,20 @@ public static partial class ImGuiOm
         var iconSize = ImGui.CalcTextSize(icon.ToIconString());
         ImGui.PopFont();
         var textSize = ImGui.CalcTextSize(text);
+        var totalHeight = iconSize.Y + textSize.Y + 3f * ImGuiHelpers.GlobalScale;
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorScreenPos = ImGui.GetCursorScreenPos();
-        var padding = ImGui.GetStyle().FramePadding.X;
-        var spacing = 3f * ImGuiHelpers.GlobalScale;
 
         var result = ImGui.Button(string.Empty, buttonSize);
 
         var iconPos = new Vector2(
             cursorScreenPos.X + (buttonSize.X - iconSize.X) / 2,
-            cursorScreenPos.Y + padding
+            cursorScreenPos.Y + (buttonSize.Y - totalHeight) / 2
         );
 
         var textPos = new Vector2(
             cursorScreenPos.X + (buttonSize.X - textSize.X) / 2,
-            cursorScreenPos.Y + padding + iconSize.Y + spacing
+            iconPos.Y + iconSize.Y + 3f * ImGuiHelpers.GlobalScale
         );
 
         ImGui.PushFont(UiBuilder.IconFont);
