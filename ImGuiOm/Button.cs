@@ -1,4 +1,6 @@
-﻿namespace OmenTools.ImGuiOm;
+﻿using Dalamud.Interface.Internal;
+
+namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
@@ -188,6 +190,72 @@ public static partial class ImGuiOm
         ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
         ImGui.PopFont();
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+
+        ImGui.PopID();
+
+        return result;
+    }
+
+    private static bool ButtonImageWithTextVertical(IDalamudTextureWrap icon, string text)
+    {
+        ImGui.PushID($"{text}_{icon.ImGuiHandle}");
+
+        var iconSize = icon.Size;
+        var textSize = ImGui.CalcTextSize(text);
+        var padding = ImGui.GetStyle().FramePadding.X;
+        var spacing = 3f * ImGuiHelpers.GlobalScale;
+        var buttonWidth = Math.Max(iconSize.X, textSize.X) + padding * 2;
+        var buttonHeight = iconSize.Y + textSize.Y + padding * 2 + spacing;
+
+        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
+
+        var cursorScreenPos = ImGui.GetCursorScreenPos();
+
+        var totalContentHeight = iconSize.Y + textSize.Y + spacing;
+        var verticalOffset = (buttonHeight - totalContentHeight) / 2;
+
+        var iconStartPos = new Vector2(
+            cursorScreenPos.X + ((buttonWidth - iconSize.X) / 2),
+            cursorScreenPos.Y + verticalOffset);
+
+        var iconEndPos = iconStartPos + iconSize;
+
+        var textPos = new Vector2(
+            cursorScreenPos.X + ((buttonWidth - textSize.X) / 2),
+            iconStartPos.Y + iconSize.Y + spacing);
+
+        var windowDrawList = ImGui.GetWindowDrawList();
+        windowDrawList.AddImage(icon.ImGuiHandle, iconStartPos, iconEndPos);
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+
+        ImGui.PopID();
+
+        return result;
+    }
+
+    private static bool ButtonImageWithTextVertical(IDalamudTextureWrap icon, string text, Vector2 buttonSize)
+    {
+        ImGui.PushID($"{text}_{icon.ImGuiHandle}");
+
+        var iconSize = icon.Size;
+        var textSize = ImGui.CalcTextSize(text);
+        var windowDrawList = ImGui.GetWindowDrawList();
+        var cursorScreenPos = ImGui.GetCursorScreenPos();
+
+        var result = ImGui.Button(string.Empty, buttonSize);
+
+        var iconPos = new Vector2(
+            cursorScreenPos.X + ((buttonSize.X - iconSize.X) / 2),
+            cursorScreenPos.Y + ((buttonSize.Y - (iconSize.Y + textSize.Y)) / 2));
+
+        var iconEndPos = iconPos + iconSize;
+
+        var textPos = new Vector2(
+            cursorScreenPos.X + ((buttonSize.X - textSize.X) / 2),
+            iconPos.Y + iconSize.Y);
+
+        windowDrawList.AddImage(icon.ImGuiHandle, iconPos, iconEndPos);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         ImGui.PopID();
