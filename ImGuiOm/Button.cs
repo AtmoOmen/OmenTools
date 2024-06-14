@@ -197,7 +197,7 @@ public static partial class ImGuiOm
         return result;
     }
 
-    private static bool ButtonImageWithTextVertical(IDalamudTextureWrap icon, string text)
+    public static bool ButtonImageWithTextVertical(IDalamudTextureWrap icon, string text)
     {
         ImGui.PushID($"{text}_{icon.ImGuiHandle}");
 
@@ -234,7 +234,7 @@ public static partial class ImGuiOm
         return result;
     }
 
-    private static bool ButtonImageWithTextVertical(IDalamudTextureWrap icon, string text, Vector2 buttonSize)
+    public static bool ButtonImageWithTextVertical(IDalamudTextureWrap icon, string text, Vector2 buttonSize)
     {
         ImGui.PushID($"{text}_{icon.ImGuiHandle}");
 
