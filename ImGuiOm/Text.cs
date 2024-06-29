@@ -39,7 +39,7 @@ public static partial class ImGuiOm
         ImGui.EndDisabled();
     }
 
-    public static bool TextIcon(FontAwesomeIcon icon, string text, bool useStaticFont)
+    public static bool TextIcon(FontAwesomeIcon icon, string text, bool useStaticFont = false)
     {
         if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var iconSize = ImGui.CalcTextSize(icon.ToIconString());
