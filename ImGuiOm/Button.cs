@@ -4,14 +4,14 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
-    public static bool ButtonIcon(string id, FontAwesomeIcon icon, string tooltip = "")
+    public static bool ButtonIcon(string id, FontAwesomeIcon icon, string tooltip = "", bool useStaticFont = false)
     {
         ImGui.PushID($"{id}_{icon}");
 
         var iconText = icon.ToIconString();
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var iconSize = ImGui.CalcTextSize(iconText) + new Vector2();
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
 
         var style = ImGui.GetStyle();
         var windowDrawList = ImGui.GetWindowDrawList();
@@ -23,9 +23,9 @@ public static partial class ImGuiOm
         var iconPos = new Vector2(cursorPos.X + (buttonWidth - iconSize.X + padding.X / 3) / 2,
             cursorPos.Y + style.FramePadding.Y);
 
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
 
         ImGui.PopID();
 
@@ -34,23 +34,23 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool ButtonIcon(string id, FontAwesomeIcon icon, Vector2 buttonSize, string tooltip = "")
+    public static bool ButtonIcon(string id, FontAwesomeIcon icon, Vector2 buttonSize, string tooltip = "", bool useStaticFont = false)
     {
         ImGui.PushID($"{id}_{icon}");
 
         var iconText = icon.ToIconString();
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var iconSize = ImGui.CalcTextSize(iconText);
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
 
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorPos = ImGui.GetCursorScreenPos();
         var result = ImGui.Button(string.Empty, buttonSize);
         var iconPos = new Vector2(cursorPos.X + (buttonSize.X - iconSize.X) / 2, cursorPos.Y + (buttonSize.Y - iconSize.Y) / 2);
 
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
 
         ImGui.PopID();
 
@@ -79,12 +79,12 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool ButtonIconWithTextVertical(FontAwesomeIcon icon, string text)
+    public static bool ButtonIconWithTextVertical(FontAwesomeIcon icon, string text, bool useStaticFont = false)
     {
         ImGui.PushID($"{text}_{icon.ToIconString()}");
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var iconSize = ImGui.CalcTextSize(icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         var textSize = ImGui.CalcTextSize(text);
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorScreenPos = ImGui.GetCursorScreenPos();
@@ -98,9 +98,9 @@ public static partial class ImGuiOm
         var iconPos = new Vector2(cursorScreenPos.X + (buttonWidth - iconSize.X) / 2, cursorScreenPos.Y + padding);
         var textPos = new Vector2(cursorScreenPos.X + (buttonWidth - textSize.X) / 2, iconPos.Y + iconSize.Y + spacing);
 
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         ImGui.PopID();
@@ -108,12 +108,12 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool ButtonIconWithTextVertical(FontAwesomeIcon icon, string text, Vector2 buttonSize)
+    public static bool ButtonIconWithTextVertical(FontAwesomeIcon icon, string text, Vector2 buttonSize, bool useStaticFont = false)
     {
         ImGui.PushID($"{text}_{icon.ToIconString()}");
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var iconSize = ImGui.CalcTextSize(icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         var textSize = ImGui.CalcTextSize(text);
         var totalHeight = iconSize.Y + textSize.Y + 3f * ImGuiHelpers.GlobalScale;
         var windowDrawList = ImGui.GetWindowDrawList();
@@ -131,9 +131,9 @@ public static partial class ImGuiOm
             iconPos.Y + iconSize.Y + 3f * ImGuiHelpers.GlobalScale
         );
 
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         ImGui.PopID();
@@ -141,12 +141,12 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool ButtonIconWithText(FontAwesomeIcon icon, string text)
+    public static bool ButtonIconWithText(FontAwesomeIcon icon, string text, bool useStaticFont = false)
     {
         ImGui.PushID($"{text}_{icon.ToIconString()}");
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var iconSize = ImGui.CalcTextSize(icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         var textSize = ImGui.CalcTextSize(text);
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorScreenPos = ImGui.GetCursorScreenPos();
@@ -160,9 +160,9 @@ public static partial class ImGuiOm
         var iconPos = new Vector2(cursorScreenPos.X + padding, cursorScreenPos.Y + (buttonHeight - iconSize.Y) / 2);
         var textPos = new Vector2(iconPos.X + iconSize.X + spacing, cursorScreenPos.Y + (buttonHeight - textSize.Y) / 2);
 
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         ImGui.PopID();
@@ -170,12 +170,12 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool ButtonIconWithText(FontAwesomeIcon icon, string text, Vector2 buttonSize)
+    public static bool ButtonIconWithText(FontAwesomeIcon icon, string text, Vector2 buttonSize, bool useStaticFont = false)
     {
         ImGui.PushID($"{text}_{icon.ToIconString()}");
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var iconSize = ImGui.CalcTextSize(icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         var textSize = ImGui.CalcTextSize(text);
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorScreenPos = ImGui.GetCursorScreenPos();
@@ -187,9 +187,9 @@ public static partial class ImGuiOm
         var iconPos = new Vector2(cursorScreenPos.X + padding, cursorScreenPos.Y + (buttonSize.Y - iconSize.Y) / 2);
         var textPos = new Vector2(iconPos.X + iconSize.X + spacing, cursorScreenPos.Y + (buttonSize.Y - textSize.Y) / 2);
 
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         ImGui.PopID();
@@ -263,7 +263,7 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool ButtonIconSelectable(string id, FontAwesomeIcon icon, string tooltip = "")
+    public static bool ButtonIconSelectable(string id, FontAwesomeIcon icon, string tooltip = "", bool useStaticFont = false)
     {
         ImGui.PushID(id);
 
@@ -271,16 +271,16 @@ public static partial class ImGuiOm
         var padding = style.FramePadding.X;
         var colors = style.Colors;
 
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var size = new Vector2(ImGui.GetContentRegionAvail().X, ImGui.CalcTextSize(icon.ToIconString()).Y + 2 * padding);
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
 
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive]);
         ImGui.PushStyleColor(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered]);
         ImGui.PushStyleColor(ImGuiCol.Button, 0);
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var result = ImGui.Button($"{icon.ToIconString()}##{icon.ToIconString()}-{id}", size);
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         ImGui.PopStyleColor(3);
 
         if (!tooltip.IsNullOrEmpty()) TooltipHover(tooltip);

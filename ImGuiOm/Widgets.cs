@@ -2,12 +2,12 @@
 
 public static partial class ImGuiOm
 {
-    public static void HelpMarker(string tooltip, float warpPos = 20f, FontAwesomeIcon icon = FontAwesomeIcon.InfoCircle)
+    public static void HelpMarker(string tooltip, float warpPos = 20f, FontAwesomeIcon icon = FontAwesomeIcon.InfoCircle, bool useStaticFont = false)
     {
         ImGui.SameLine();
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         if (ImGui.IsItemHovered())
         {
             ImGui.BeginTooltip();

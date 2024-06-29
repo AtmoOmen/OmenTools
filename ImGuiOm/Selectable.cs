@@ -167,12 +167,12 @@ public static partial class ImGuiOm
     }
 
     public static bool SelectableIconCentered(string id, FontAwesomeIcon icon, bool selected = false,
-        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, bool useStaticFont = false)
     {
         ImGui.PushID($"{icon}_{id}");
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var textSize = ImGui.CalcTextSize(icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding.X;
@@ -182,21 +182,21 @@ public static partial class ImGuiOm
         var result = ImGui.Selectable("", selected, flags, new Vector2(selectableWidth, selectableHeight));
 
         var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X + padding) / 2, cursorPos.Y + padding);
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         ImGui.PopID();
 
         return result;
     }
 
     public static bool SelectableIconCentered(string id, FontAwesomeIcon icon, ref bool selected,
-        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, bool useStaticFont = false)
     {
         ImGui.PushID($"{icon}_{id}");
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         var textSize = ImGui.CalcTextSize(icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding.X;
@@ -206,9 +206,9 @@ public static partial class ImGuiOm
         var result = ImGui.Selectable("", ref selected, flags, new Vector2(selectableWidth, selectableHeight));
 
         var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X + padding) / 2, cursorPos.Y + padding);
-        ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        ImGui.PopFont();
+        if (useStaticFont) ImGui.PopFont();
         ImGui.PopID();
 
         return result;
