@@ -10,10 +10,11 @@ public static partial class ImGuiOm
 
     public static void TextImage(string text, nint imageHandle, Vector2 imageSize)
     {
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.X);
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
         ImGui.Image(imageHandle, imageSize);
 
         ImGui.SameLine();
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetStyle().FramePadding.Y);
         Text(text);
     }
 
