@@ -41,27 +41,21 @@ public static unsafe partial class HelpersOm
         return markdown.Trim();
     }
 
-    public static bool IsChineseString(string text) { return text.All(IsChineseCharacter); }
+    public static bool IsChineseString(string text) => text.All(IsChineseCharacter);
 
-    public static bool IsChineseCharacter(char c) { return (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3400 && c <= 0x4DB5); }
+    public static bool IsChineseCharacter(char c) => (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3400 && c <= 0x4DB5);
 
-    public static DateTime UnixSecondToDateTime(double unixTimeStampS)
-    {
-        var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        return dtDateTime.AddSeconds(unixTimeStampS).ToLocalTime();
-    }
+    public static DateTime UnixSecondToDateTime(long unixTimeStampS) 
+        => DateTimeOffset.FromUnixTimeSeconds(unixTimeStampS).LocalDateTime;
 
-    public static DateTime UnixMillisecondToDateTime(long unixTimeStampMS)
-    {
-        var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        return dtDateTime.AddMilliseconds(unixTimeStampMS).ToLocalTime();
-    }
+    public static DateTime UnixMillisecondToDateTime(long unixTimeStampMS) 
+        => DateTimeOffset.FromUnixTimeMilliseconds(unixTimeStampMS).LocalDateTime;
 
     public static Vector4 HexToVector4(string hexColor, bool includeAlpha = true)
     {
-        if (!hexColor.StartsWith("#")) throw new ArgumentException("Invalid hex color format");
+        if (!hexColor.StartsWith('#')) throw new ArgumentException("Invalid hex color format");
 
-        hexColor = hexColor.Substring(1);
+        hexColor = hexColor[1..];
 
         int r, g, b, a;
         switch (hexColor.Length)
@@ -104,6 +98,17 @@ public static unsafe partial class HelpersOm
         var newR = Math.Max(0, originalColor.X - originalColor.X * darkenAmount);
         var newG = Math.Max(0, originalColor.Y - originalColor.Y * darkenAmount);
         var newB = Math.Max(0, originalColor.Z - originalColor.Z * darkenAmount);
+
+        return new Vector4(newR, newG, newB, originalColor.W);
+    }
+    
+    public static Vector4 LightenColor(Vector4 originalColor, float lightenAmount)
+    {
+        lightenAmount = Math.Clamp(lightenAmount, 0f, 1f);
+
+        var newR = Math.Min(1, originalColor.X + (1 - originalColor.X) * lightenAmount);
+        var newG = Math.Min(1, originalColor.Y + (1 - originalColor.Y) * lightenAmount);
+        var newB = Math.Min(1, originalColor.Z + (1 - originalColor.Z) * lightenAmount);
 
         return new Vector4(newR, newG, newB, originalColor.W);
     }
