@@ -11,7 +11,6 @@
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
