@@ -1,11 +1,40 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Dalamud.Game.ClientState.Objects.Types;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Lumina.Excel.GeneratedSheets;
 using SeString = Lumina.Text.SeString;
 
 namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    public static Character* ToStruct(this ICharacter chara) => (Character*)chara.Address;
+
+    public static BattleChara* ToBCStruct(this ICharacter chara) => (BattleChara*)chara.Address;
+
+    public static GameObject* ToStruct(this IGameObject obj) => (GameObject*)obj.Address;
+
+    public static BitmapFontIcon ToBitmapFontIcon(this ClassJob? job)
+    {
+        if (job == null || job.RowId == 0) return BitmapFontIcon.NewAdventurer;
+        var fontIcon = job.RowId + 127;
+        if(fontIcon > 167) return BitmapFontIcon.NewAdventurer;
+
+        return (BitmapFontIcon)fontIcon;
+    }
+
+    public static string ExtractPlaceName(this TerritoryType row)
+        => row.PlaceName?.Value?.Name?.RawString ?? string.Empty;
+
+    public static Vector2 ToVector2(this Vector3 vector3)
+        => new(vector3.X, vector3.Z);
+
+    public static Vector3 ToVector3(this Vector2 vector2, float Y)
+        => new(vector2.X, Y, vector2.Y);
+
+    public static Vector3 ToPosition(this Level level) => new(level.X, level.Y, level.Z);
+
     public static string ExtractText(this SeString s, bool onlyFirst = false) => s.ToDalamudString().ExtractText(onlyFirst);
 
     public static string ExtractText(this Utf8String s)

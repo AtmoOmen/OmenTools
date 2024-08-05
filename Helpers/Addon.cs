@@ -2,16 +2,12 @@
 
 public static unsafe partial class HelpersOm
 {
-    public static bool IsAddonAndNodesReady(AtkUnitBase* UI)
-    {
-        return UI != null && UI->IsVisible && UI->UldManager.LoadedState == AtkLoadState.Loaded && UI->RootNode != null &&
-               UI->RootNode->ChildNode != null && UI->UldManager.NodeList != null;
-    }
+    public static bool IsAddonAndNodesReady(AtkUnitBase* UI) =>
+        UI != null && UI->IsVisible && UI->UldManager.LoadedState == AtkLoadState.Loaded && UI->RootNode != null &&
+        UI->RootNode->ChildNode != null && UI->UldManager.NodeList != null;
 
-    public static bool IsUldManagerReady(AtkUldManager* Manager)
-    {
-        return Manager->RootNode != null && Manager->RootNode->ChildNode != null && Manager->NodeList != null;
-    }
+    public static bool IsUldManagerReady(AtkUldManager* Manager) 
+        => Manager->RootNode != null && Manager->RootNode->ChildNode != null && Manager->NodeList != null;
 
     public static string GetWindowTitle(AddonArgs args, uint windowNodeID, uint[]? textNodeIDs = null)
         => GetWindowTitle(args.Addon, windowNodeID, textNodeIDs);
