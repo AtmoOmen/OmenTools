@@ -10,7 +10,7 @@ public static partial class HelpersOm
         {
             FileSystem.DeleteFile(filePath, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
         }
-        catch (Exception _)
+        catch (Exception)
         {
             // ignored
         }
@@ -70,7 +70,7 @@ public static partial class HelpersOm
         }
     }
 
-    private static async Task DeleteFileAsync(string filePath)
+    public static async Task DeleteFileAsync(string filePath)
     {
         const int maxRetries = 3;
         const int delayMilliseconds = 100;
