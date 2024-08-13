@@ -73,6 +73,65 @@ public static unsafe partial class HelpersOm
         }
     }
     
+    public static bool TryReplaceIgnoreCase(this ReadOnlySpan<char> origText, ReadOnlySpan<char> input, ReadOnlySpan<char> replacement, out string? result)
+    {
+        result = null;
+        if (origText.IsEmpty || input.IsEmpty)
+            return false;
+
+        var index = s_compareInfo.IndexOf(origText, input, s_compareOptions);
+        if (index == -1)
+            return false;
+
+        result = ReplaceAll(origText, input, replacement);
+        return true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static string ReplaceAll(ReadOnlySpan<char> origText, ReadOnlySpan<char> input, ReadOnlySpan<char> replacement)
+    {
+        var inputLength        = input.Length;
+        var replacementLength  = replacement.Length;
+        var capacityMultiplier = Math.Max(1, replacementLength / inputLength);
+    
+        char[]? rentedArray = null;
+        Span<char> buffer = origText.Length <= 256
+            ? stackalloc char[256]
+            : (rentedArray = ArrayPool<char>.Shared.Rent(origText.Length * capacityMultiplier));
+
+        try
+        {
+            var writePos   = 0;
+            var startIndex = 0;
+            while (true)
+            {
+                var remainingText = origText.Slice(startIndex);
+                var index         = s_compareInfo.IndexOf(remainingText, input, s_compareOptions);
+                if (index == -1)
+                {
+                    remainingText.CopyTo(buffer.Slice(writePos));
+                    writePos += remainingText.Length;
+                    break;
+                }
+
+                origText.Slice(startIndex, index).CopyTo(buffer.Slice(writePos));
+                writePos += index;
+
+                replacement.CopyTo(buffer.Slice(writePos));
+                writePos += replacementLength;
+
+                startIndex += index + inputLength;
+            }
+
+            return new string(buffer.Slice(0, writePos));
+        }
+        finally
+        {
+            if (rentedArray != null)
+                ArrayPool<char>.Shared.Return(rentedArray);
+        }
+    }
+    
     public static Character* ToStruct(this ICharacter chara) => (Character*)chara.Address;
 
     public static BattleChara* ToBCStruct(this ICharacter chara) => (BattleChara*)chara.Address;
