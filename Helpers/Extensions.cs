@@ -19,6 +19,7 @@ using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using SeString = Lumina.Text.SeString;
 using Timer = System.Timers.Timer;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Helpers;
 
@@ -26,6 +27,8 @@ public static unsafe partial class HelpersOm
 {
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
+
+    public static AtkUnitBase* ToAtkUnitBase(this nint ptr) => (AtkUnitBase*)ptr;
 
     private static string GetMarkerPlaceName(this MapMarker marker)
     {

@@ -1,4 +1,7 @@
-﻿using Dalamud.Game;
+﻿global using static OmenTools.Helpers.HelpersOm;
+global using static OmenTools.Infos.InfosOm;
+
+using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using Dalamud.IoC;

@@ -7,6 +7,38 @@ namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    public static bool IsScreenReady()
+    {
+        if (NowLoading != null && NowLoading->IsVisible) return false;
+        if (FadeMiddle != null && FadeMiddle->IsVisible) return false;
+        if (FadeBack != null && FadeBack->IsVisible) return false;
+
+        return true;
+    }
+
+    public static bool TryGetAddonByName<T>(string addonName, out T* addonPtr) where T : unmanaged
+    {
+        var a = DService.Gui.GetAddonByName(addonName);
+        if (a == nint.Zero)
+        {
+            addonPtr = null;
+            return false;
+        }
+
+        addonPtr = (T*)a;
+        return true;
+    }
+
+    public static T* GetAddonByName<T>(string addonName) where T : unmanaged
+    {
+        var a = DService.Gui.GetAddonByName(addonName);
+        if (a == nint.Zero) return null;
+
+        return (T*)a;
+    }
+
+    public static AtkUnitBase* GetAddonByName(string name) => GetAddonByName<AtkUnitBase>(name);
+
     public static bool IsAddonAndNodesReady(AtkUnitBase* UI) =>
         UI != null && UI->IsVisible && UI->UldManager.LoadedState == AtkLoadState.Loaded && UI->RootNode != null &&
         UI->RootNode->ChildNode != null && UI->UldManager.NodeList != null;
