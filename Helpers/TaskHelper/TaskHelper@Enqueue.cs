@@ -23,19 +23,17 @@ public partial class TaskHelper
         }
     }
 
-    public void DelayNext(int delayMS, bool useFrameThrottler = false, uint weight = 0) =>
-        DelayNext("DelayNextEnqueue", delayMS, useFrameThrottler, weight);
-
-    public void DelayNext(string uniqueName, int delayMS, bool useFrameThrottler = false, uint weight = 0)
+    public void DelayNext(int delayMS, string uniqueName = "DelayNextEnqueue", 
+        bool useFrameThrottler = false, uint weight = 0)
     {
         IThrottler<string> throttler = useFrameThrottler ? FrameThrottler : Throttler;
 
         Enqueue(() => throttler.Throttle(uniqueName, delayMS),
-                $"{throttler.GetType().Name}.Throttle({uniqueName}, {delayMS})",
-                weight: weight);
+            $"{throttler.GetType().Name}.Throttle({uniqueName}, {delayMS})",
+            weight: weight);
         Enqueue(() => throttler.Check(uniqueName),
-                $"{throttler.GetType().Name}.Check({uniqueName})",
-                weight: weight);
+            $"{throttler.GetType().Name}.Check({uniqueName})",
+            weight: weight);
 
         MaxTasks += 2;
     }

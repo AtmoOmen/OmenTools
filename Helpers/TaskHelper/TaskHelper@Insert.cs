@@ -26,10 +26,8 @@ public partial class TaskHelper
         return newQueue;
     }
 
-    public void InsertDelayNext(int delayMS, bool useFrameThrottler = false, uint weight = 0) =>
-        InsertDelayNext("DelayNextInsert", delayMS, useFrameThrottler, weight);
-
-    public void InsertDelayNext(string uniqueName, int delayMS, bool useFrameThrottler = false, uint weight = 0)
+    public void InsertDelayNext(int delayMS, string uniqueName = "DelayNextInsert", 
+        bool useFrameThrottler = false, uint weight = 0)
     {
         IThrottler<string> throttler = useFrameThrottler ? FrameThrottler : Throttler;
 
