@@ -8,7 +8,7 @@ namespace OmenTools;
 
 public class Service
 {
-    public void Init(IDalamudPluginInterface pluginInterface)
+    public static void Init(IDalamudPluginInterface pluginInterface)
     {
         PluginInterface = pluginInterface;
         UiBuilder       = pluginInterface.UiBuilder;
