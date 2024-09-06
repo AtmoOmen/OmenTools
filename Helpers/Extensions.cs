@@ -3,13 +3,16 @@ using Dalamud.Game.ClientState.Objects.Types;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Net;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Hooking;
 using Dalamud.Memory;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using ImGuiNET;
@@ -24,6 +27,53 @@ public static unsafe partial class HelpersOm
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
+    public static void SaveToBinaryFile(this WebResponse response, string filePath)
+    {
+        var       buffer = new byte[1024];
+        using var rs     = response.GetResponseStream();
+        using var fileStream = new FileStream(
+            filePath,
+            FileMode.OpenOrCreate,
+            FileAccess.Write,
+            FileShare.ReadWrite
+        );
+
+        while (true)
+        {
+            var count = rs.Read(buffer, 0, buffer.Length);
+            if (count <= 0)
+            {
+                break;
+            }
+
+            fileStream.Write(buffer, 0, count);
+        }
+    }
+
+    public static unsafe bool Interact(this IGameObject? gameObject) 
+        => gameObject != null && TargetSystem.Instance()->InteractWithObject(gameObject.ToStruct()) != 0;
+
+    public static IGameObject? FindNearest(this IEnumerable<IGameObject> gameObjects, 
+        Vector3                                                          source,
+        Func<IGameObject, bool>                                          predicate) =>
+        gameObjects.Where(predicate).MinBy(x => Vector3.Distance(source, x.Position));
+
+    public static void Toggle<T>(this Hook<T>? hook, bool? isEnabled = null) where T : Delegate
+    {
+        if (hook == null || hook.IsDisposed) return;
+
+        if (isEnabled == null)
+        {
+            if (hook.IsEnabled) hook.Disable();
+            else hook.Enable();
+        }
+        else
+        {
+            if (isEnabled.Value) hook.Enable();
+            else hook.Disable();
+        }
+    }
+    
     public static bool TryReplaceIgnoreCase(this string origText, string input, string replacement, out string? result)
     {
         result = null;
