@@ -27,6 +27,20 @@ public static unsafe partial class HelpersOm
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
+    private static string GetMarkerPlaceName(this MapMarker marker)
+    {
+        var placeName = marker.GetMarkerLabel();
+        if (placeName != string.Empty) return placeName;
+
+        var mapSymbol = LuminaCache.GetRow<MapSymbol>(marker.Icon);
+        return mapSymbol?.PlaceName.Value?.Name.ToDalamudString().TextValue ?? string.Empty;
+    }
+
+    public static string GetMarkerLabel(this MapMarker marker)
+        => LuminaCache.GetRow<PlaceName>(marker.PlaceNameSubtext.Row)!.Name.ToDalamudString().TextValue;
+
+    public static Vector2 GetPosition(this MapMarker marker) => new(marker.X, marker.Y);
+
     public static Vector3 ToVector3(this Vector2 vector2) 
         => vector2.ToVector3(DService.ClientState.LocalPlayer?.Position.Y ?? 0);
     

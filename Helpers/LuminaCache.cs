@@ -55,4 +55,9 @@ public static class LuminaCache
     }
 
     public static void ClearCache() => Cache.Clear();
+
+    public static void Uninit()
+    {
+        ClearCache();
+    }
 }

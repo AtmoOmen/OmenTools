@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.ClientState.Objects;
+﻿using Dalamud.Game;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -21,6 +22,8 @@ public class DService
     {
         TaskHelper.DisposeAll();
         ThrottlerHelper.Uninit();
+        LuminaCache.Uninit();
+        ImageHelper.Uninit();
     }
     
     [PluginService] public static IAddonLifecycle      AddonLifecycle  { get; private set; } = null!;
@@ -59,6 +62,7 @@ public class DService
     [PluginService] public static ITitleScreenMenu     TitleScreenMenu { get; private set; } = null!;
     [PluginService] public static IToastGui            Toast           { get; private set; } = null!;
 
-    public static IDalamudPluginInterface PI        { get; private set; } = null!;
-    public static IUiBuilder              UiBuilder { get; private set; } = null!;
+    public static IDalamudPluginInterface PI         { get; private set; } = null!;
+    public static IUiBuilder              UiBuilder  { get; private set; } = null!;
+    public static SigScanner              SigScanner { get; private set; } = new();
 }
