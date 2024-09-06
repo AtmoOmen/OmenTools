@@ -24,6 +24,7 @@ public class DService
     public static void Uninit()
     {
         TaskHelper.DisposeAll();
+        MemoryPatch.DisposeAll();
         ThrottlerHelper.Uninit();
         LuminaCache.Uninit();
         ImageHelper.Uninit();
