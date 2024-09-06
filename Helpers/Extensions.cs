@@ -27,6 +27,16 @@ public static unsafe partial class HelpersOm
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
+    public static Vector3 ToVector3(this Vector2 vector2) 
+        => vector2.ToVector3(DService.ClientState.LocalPlayer?.Position.Y ?? 0);
+    
+    public static unsafe bool TargetInteract(this IGameObject? gameObject)
+    {
+        if (gameObject == null) return false;
+        DService.Targets.Target = gameObject;
+        return TargetSystem.Instance()->InteractWithObject(gameObject.ToStruct()) != 0;
+    }
+    
     public static void SaveToBinaryFile(this WebResponse response, string filePath)
     {
         var       buffer = new byte[1024];

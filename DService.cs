@@ -47,7 +47,7 @@ public class DService
     [PluginService] public static IPartyFinderGui      PartyFinder     { get; private set; } = null!;
     [PluginService] public static IPartyList           PartyList       { get; private set; } = null!;
     [PluginService] public static IPluginLog           Log             { get; private set; } = null!;
-    [PluginService] public static ITargetManager       Target          { get; private set; } = null!;
+    [PluginService] public static ITargetManager       Targets         { get; private set; } = null!;
     [PluginService] public static ITextureProvider     Texture         { get; private set; } = null!;
     [PluginService] public static ITitleScreenMenu     TitleScreenMenu { get; private set; } = null!;
     [PluginService] public static IToastGui            Toast           { get; private set; } = null!;
