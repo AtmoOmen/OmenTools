@@ -3,6 +3,7 @@ using Dalamud.Interface;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using OmenTools.Helpers;
 
 namespace OmenTools;
 
@@ -14,6 +15,11 @@ public class DService
         UiBuilder       = pluginInterface.UiBuilder;
         
         pluginInterface.Create<DService>();
+    }
+
+    public static void Uninit()
+    {
+        TaskHelper.DisposeAll();
     }
     
     [PluginService] public static IAddonLifecycle      AddonLifecycle  { get; private set; } = null!;
