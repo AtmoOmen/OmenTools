@@ -6,14 +6,14 @@ using Dalamud.Plugin.Services;
 
 namespace OmenTools;
 
-public class DSvc
+public class DService
 {
     public static void Init(IDalamudPluginInterface pluginInterface)
     {
         PluginInterface = pluginInterface;
         UiBuilder       = pluginInterface.UiBuilder;
         
-        pluginInterface.Create<DSvc>();
+        pluginInterface.Create<DService>();
     }
     
     [PluginService] public static IAddonLifecycle      AddonLifecycle  { get; private set; } = null!;
