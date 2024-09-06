@@ -13,6 +13,7 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<ResolveComReferenceSilent>true</ResolveComReferenceSilent>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -40,11 +41,11 @@
 
 	<ItemGroup>
 	  <COMReference Include="WMPLib">
-	    <WrapperTool>tlbimp</WrapperTool>
 	    <VersionMinor>0</VersionMinor>
 	    <VersionMajor>1</VersionMajor>
 	    <Guid>6bf52a50-394a-11d3-b153-00c04f79faa6</Guid>
 	    <Lcid>0</Lcid>
+	    <WrapperTool>tlbimp</WrapperTool>
 	    <Isolated>false</Isolated>
 	    <EmbedInteropTypes>true</EmbedInteropTypes>
 	  </COMReference>

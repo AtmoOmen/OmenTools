@@ -28,7 +28,7 @@ public sealed unsafe class ChatHelper
         fixed (byte* pMessage = message)
         {
             var mes = Utf8String.FromSequence(pMessage);
-            ProcessChatBox(UIModule.Instance(), mes, IntPtr.Zero, 0);
+            ProcessChatBox!(UIModule.Instance(), mes, IntPtr.Zero, 0);
             mes->Dtor(true);
         }
     }

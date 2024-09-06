@@ -12,13 +12,13 @@ public static class LuminaCache
 
     public static ExcelSheet<T>? Get<T>() where T : ExcelRow => TryGetAndCacheSheet<T>(out var sheet) ? sheet : null;
 
-    public static bool TryGet<T>(out ExcelSheet<T> sheet) where T : ExcelRow => TryGetAndCacheSheet(out sheet);
+    public static bool TryGet<T>(out ExcelSheet<T>? sheet) where T : ExcelRow => TryGetAndCacheSheet(out sheet);
 
     public static T? GetRow<T>(uint rowID) where T : ExcelRow => TryGetRow<T>(rowID, out var item) ? item : null;
 
     public static bool TryGetRow<T>(uint rowID, out T? item) where T : ExcelRow
     {
-        if (!TryGetAndCacheSheet<T>(out var sheet))
+        if (!TryGetAndCacheSheet<T>(out var sheet) || sheet == null)
         {
             item = null;
             return false;
