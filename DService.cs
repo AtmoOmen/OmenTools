@@ -11,7 +11,7 @@ public class DService
 {
     public static void Init(IDalamudPluginInterface pluginInterface)
     {
-        PluginInterface = pluginInterface;
+        PI = pluginInterface;
         UiBuilder       = pluginInterface.UiBuilder;
         
         pluginInterface.Create<DService>();
@@ -20,6 +20,7 @@ public class DService
     public static void Uninit()
     {
         TaskHelper.DisposeAll();
+        ThrottlerHelper.Uninit();
     }
     
     [PluginService] public static IAddonLifecycle      AddonLifecycle  { get; private set; } = null!;
@@ -48,7 +49,7 @@ public class DService
     [PluginService] public static IKeyState            KeyState        { get; private set; } = null!;
     [PluginService] public static IMarketBoard         MarketBoard     { get; private set; } = null!;
     [PluginService] public static INamePlateGui        NamePlateGui    { get; private set; } = null!;
-    [PluginService] public static INotificationManager DalamudNotice   { get; private set; } = null!;
+    [PluginService] public static INotificationManager DNotice         { get; private set; } = null!;
     [PluginService] public static IObjectTable         ObjectTable     { get; private set; } = null!;
     [PluginService] public static IPartyFinderGui      PartyFinder     { get; private set; } = null!;
     [PluginService] public static IPartyList           PartyList       { get; private set; } = null!;
@@ -58,6 +59,6 @@ public class DService
     [PluginService] public static ITitleScreenMenu     TitleScreenMenu { get; private set; } = null!;
     [PluginService] public static IToastGui            Toast           { get; private set; } = null!;
 
-    public static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-    public static IUiBuilder              UiBuilder       { get; private set; } = null!;
+    public static IDalamudPluginInterface PI        { get; private set; } = null!;
+    public static IUiBuilder              UiBuilder { get; private set; } = null!;
 }
