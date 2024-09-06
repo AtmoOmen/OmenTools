@@ -1,4 +1,7 @@
-﻿namespace OmenTools.ImGuiOm;
+﻿using Dalamud.Interface.Colors;
+using ImGuiNET;
+
+namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {

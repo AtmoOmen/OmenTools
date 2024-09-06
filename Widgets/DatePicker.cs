@@ -1,4 +1,7 @@
-﻿using static OmenTools.ImGuiOm.ImGuiOm;
+﻿using System.Numerics;
+using Dalamud.Interface;
+using ImGuiNET;
+using static OmenTools.ImGuiOm.ImGuiOm;
 
 namespace OmenTools.Widgets;
 

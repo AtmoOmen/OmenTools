@@ -1,4 +1,11 @@
-﻿namespace OmenTools.ImGuiOm;
+﻿using System.Numerics;
+using Dalamud.Interface;
+using Dalamud.Interface.Textures.TextureWraps;
+using Dalamud.Interface.Utility;
+using Dalamud.Utility;
+using ImGuiNET;
+
+namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {

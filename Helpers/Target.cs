@@ -1,4 +1,6 @@
-﻿namespace OmenTools.Helpers;
+﻿using FFXIVClientStructs.FFXIV.Client.Game.Object;
+
+namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {

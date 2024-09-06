@@ -1,4 +1,8 @@
-﻿namespace OmenTools.ImGuiOm;
+﻿using System.Numerics;
+using Dalamud.Interface;
+using ImGuiNET;
+
+namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {

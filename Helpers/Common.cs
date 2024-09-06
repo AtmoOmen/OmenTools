@@ -1,4 +1,7 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Numerics;
+using System.Text;
+using System.Text.RegularExpressions;
+using FFXIVClientStructs.FFXIV.Client.System.String;
 
 namespace OmenTools.Helpers;
 

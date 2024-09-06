@@ -1,4 +1,6 @@
-﻿namespace OmenTools.ImGuiOm;
+﻿using ImGuiNET;
+
+namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
