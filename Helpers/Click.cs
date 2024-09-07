@@ -1,6 +1,4 @@
-﻿using OmenTools.Infos;
-
-namespace OmenTools.Helpers;
+﻿namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
@@ -33,7 +31,7 @@ public static unsafe partial class HelpersOm
         if (!IsAddonAndNodesReady(SelectString)) return false;
         if (!TryScanSelectStringText(SelectString, text, out var index)) return false;
 
-        return SelectString(index);
+        return ClickSelectString(index);
     }
 
     public static bool ClickSelectString(string text)
@@ -41,7 +39,7 @@ public static unsafe partial class HelpersOm
         if (!IsAddonAndNodesReady(SelectString)) return false;
         if (!TryScanSelectStringText(SelectString, text, out var index)) return false;
 
-        return SelectString(index);
+        return ClickSelectString(index);
     }
 
     public static bool ClickSelectString(int index)
@@ -55,8 +53,8 @@ public static unsafe partial class HelpersOm
     public static bool ClickSelectIconString(IReadOnlyList<string> text)
     {
         if (!IsAddonAndNodesReady(SelectIconString)) return false;
-
         if (!TryScanSelectIconStringText(SelectIconString, text, out var index)) return false;
+
         Callback(SelectIconString, true, index);
         return true;
     }
