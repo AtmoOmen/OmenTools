@@ -4,6 +4,7 @@ namespace OmenTools.Infos;
 
 public static unsafe partial class InfosOm
 {
+    public static AtkUnitBase* Repair                   => GetAddonByName("Repair");
     public static AtkUnitBase* Inventory                => GetAddonByName("Inventory");
     public static AtkUnitBase* InventoryLarge           => GetAddonByName("InventoryLarge");
     public static AtkUnitBase* InventoryExpansion       => GetAddonByName("InventoryExpansion");
