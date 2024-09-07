@@ -4,78 +4,78 @@ namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
-    public static bool ContextMenu(IReadOnlyList<string> text)
+    public static bool ClickContextMenu(IReadOnlyList<string> text)
     {
-        if (!IsAddonAndNodesReady(InfosOm.ContextMenu)) return false;
-        if (!TryScanContextMenuText(InfosOm.ContextMenu, text, out var index)) return false;
+        if (!IsAddonAndNodesReady(ContextMenu)) return false;
+        if (!TryScanContextMenuText(ContextMenu, text, out var index)) return false;
 
-        return ContextMenu(index);
+        return ClickContextMenu(index);
     }
 
-    public static bool ContextMenu(string text)
+    public static bool ClickContextMenu(string text)
     {
-        if (!IsAddonAndNodesReady(InfosOm.ContextMenu)) return false;
-        if (!TryScanContextMenuText(InfosOm.ContextMenu, text, out var index)) return false;
+        if (!IsAddonAndNodesReady(ContextMenu)) return false;
+        if (!TryScanContextMenuText(ContextMenu, text, out var index)) return false;
 
-        return ContextMenu(index);
+        return ClickContextMenu(index);
     }
 
-    public static bool ContextMenu(int index)
+    public static bool ClickContextMenu(int index)
     {
-        if (!IsAddonAndNodesReady(InfosOm.ContextMenu)) return false;
+        if (!IsAddonAndNodesReady(ContextMenu)) return false;
 
-        Callback(InfosOm.ContextMenu, true, 0, index, 0U, 0, 0);
+        Callback(ContextMenu, true, 0, index, 0U, 0, 0);
         return true;
     }
 
-    public static bool SelectString(IReadOnlyList<string> text)
+    public static bool ClickSelectString(IReadOnlyList<string> text)
     {
-        if (!IsAddonAndNodesReady(InfosOm.SelectString)) return false;
-        if (!TryScanSelectStringText(InfosOm.SelectString, text, out var index)) return false;
+        if (!IsAddonAndNodesReady(SelectString)) return false;
+        if (!TryScanSelectStringText(SelectString, text, out var index)) return false;
 
         return SelectString(index);
     }
 
-    public static bool SelectString(string text)
+    public static bool ClickSelectString(string text)
     {
-        if (!IsAddonAndNodesReady(InfosOm.SelectString)) return false;
-        if (!TryScanSelectStringText(InfosOm.SelectString, text, out var index)) return false;
+        if (!IsAddonAndNodesReady(SelectString)) return false;
+        if (!TryScanSelectStringText(SelectString, text, out var index)) return false;
 
         return SelectString(index);
     }
 
-    public static bool SelectString(int index)
+    public static bool ClickSelectString(int index)
     {
-        if (!IsAddonAndNodesReady(InfosOm.SelectString)) return false;
+        if (!IsAddonAndNodesReady(SelectString)) return false;
 
-        Callback(InfosOm.SelectString, true, index);
+        Callback(SelectString, true, index);
         return true;
     }
 
-    public static bool SelectIconString(IReadOnlyList<string> text)
+    public static bool ClickSelectIconString(IReadOnlyList<string> text)
     {
-        if (!IsAddonAndNodesReady(InfosOm.SelectIconString)) return false;
+        if (!IsAddonAndNodesReady(SelectIconString)) return false;
 
-        if (!TryScanSelectIconStringText(InfosOm.SelectIconString, text, out var index)) return false;
-        Callback(InfosOm.SelectIconString, true, index);
+        if (!TryScanSelectIconStringText(SelectIconString, text, out var index)) return false;
+        Callback(SelectIconString, true, index);
         return true;
     }
 
-    public static bool SelectIconString(string text)
+    public static bool ClickSelectIconString(string text)
     {
-        if (!IsAddonAndNodesReady(InfosOm.SelectIconString)) return false;
+        if (!IsAddonAndNodesReady(SelectIconString)) return false;
 
-        if (!TryScanSelectIconStringText(InfosOm.SelectIconString, text, out var index)) return false;
+        if (!TryScanSelectIconStringText(SelectIconString, text, out var index)) return false;
 
-        Callback(InfosOm.SelectIconString, true, index);
+        Callback(SelectIconString, true, index);
         return true;
     }
 
-    public static bool SelectIconString(int index)
+    public static bool ClickSelectIconString(int index)
     {
-        if (!IsAddonAndNodesReady(InfosOm.SelectIconString)) return false;
+        if (!IsAddonAndNodesReady(SelectIconString)) return false;
 
-        Callback(InfosOm.SelectIconString, true, index);
+        Callback(SelectIconString, true, index);
         return true;
     }
 }
