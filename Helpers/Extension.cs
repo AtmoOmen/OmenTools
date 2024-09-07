@@ -30,6 +30,11 @@ public static unsafe partial class HelpersOm
 
     public static AtkUnitBase* ToAtkUnitBase(this nint ptr) => (AtkUnitBase*)ptr;
 
+    public static List<MapMarker> GetMapMarkers(this Map map) =>
+        LuminaCache.Get<MapMarker>()?
+            .Where(x => x.RowId == map.MapMarkerRange)
+            .ToList() ?? [];
+
     private static string GetMarkerPlaceName(this MapMarker marker)
     {
         var placeName = marker.GetMarkerLabel();

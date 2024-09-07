@@ -12,6 +12,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* Dialogue                 => GetAddonByName("Dialogue");
     public static AtkUnitBase* Shop                     => GetAddonByName("Shop");
     public static AtkUnitBase* SelectString             => GetAddonByName("SelectString");
+    public static AtkUnitBase* SelectIconString         => GetAddonByName("SelectIconString");
     public static AtkUnitBase* InputNumeric             => GetAddonByName("InputNumeric");
     public static AtkUnitBase* ChatLog                  => GetAddonByName("ChatLog");
     public static AtkUnitBase* CharaCard                => GetAddonByName("CharaCard");

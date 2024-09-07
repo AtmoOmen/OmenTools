@@ -13,6 +13,7 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<UseWindowsForms>true</UseWindowsForms>
 		<ResolveComReferenceSilent>true</ResolveComReferenceSilent>
 	</PropertyGroup>
 
