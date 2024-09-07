@@ -1,4 +1,8 @@
-﻿namespace OmenTools.Helpers;
+﻿using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using OmenTools.Infos;
+
+namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
@@ -75,5 +79,24 @@ public static unsafe partial class HelpersOm
 
         Callback(SelectIconString, true, index);
         return true;
+    }
+
+    public static void ClickAddonComponent(
+        AtkComponentBase* unitbase, AtkComponentNode* target, uint which, EventType type, EventData? eventData = null,
+        InputData? inputData = null)
+    {
+        EventData? newEventData = null;
+        InputData? newInputData = null;
+        if (eventData == null)
+            newEventData = EventData.ForNormalTarget(target, unitbase);
+
+        if (inputData == null)
+            newInputData = InputData.Empty();
+
+        InvokeReceiveEvent(&unitbase->AtkEventListener, type, which, eventData ?? newEventData!,
+            inputData ?? newInputData!);
+
+        newEventData?.Dispose();
+        newInputData?.Dispose();
     }
 }

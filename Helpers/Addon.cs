@@ -16,6 +16,12 @@ public static unsafe partial class HelpersOm
     private delegate byte FireCallbackDelegate(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState);
     private static readonly FireCallbackDelegate? FireCallback;
 
+    public delegate IntPtr ReceiveEventDelegate(
+        AtkEventListener* eventListener, EventType evt, uint which, void* eventData, void* inputData);
+
+    public delegate nint InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
+    public static InvokeListener? Listener;
+
     public static void Callback(nint unitBasePtr, bool updateState, params object[] args)
     {
         var unitBase = unitBasePtr.ToAtkUnitBase();
@@ -32,6 +38,19 @@ public static unsafe partial class HelpersOm
 
         using var atkValues = new AtkValueArray(args);
         FireCallback!(unitBase, atkValues.Length, atkValues.Pointer, (byte)(updateState ? 1 : 0));
+    }
+
+    public static ReceiveEventDelegate GetReceiveEvent(AtkEventListener* listener)
+    {
+        var receiveEventAddress = new IntPtr(listener->VirtualTable->ReceiveEvent);
+        return Marshal.GetDelegateForFunctionPointer<ReceiveEventDelegate>(receiveEventAddress);
+    }
+
+    public static void InvokeReceiveEvent(
+        AtkEventListener* eventListener, EventType type, uint which, EventData eventData, InputData inputData)
+    {
+        var receiveEvent = GetReceiveEvent(eventListener);
+        receiveEvent(eventListener, type, which, eventData.Data, inputData.Data);
     }
 
     public static bool IsScreenReady()

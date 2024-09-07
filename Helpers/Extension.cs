@@ -20,6 +20,7 @@ using Lumina.Excel.GeneratedSheets;
 using SeString = Lumina.Text.SeString;
 using Timer = System.Timers.Timer;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using OmenTools.Infos;
 
 namespace OmenTools.Helpers;
 
@@ -29,6 +30,49 @@ public static unsafe partial class HelpersOm
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
     public static AtkUnitBase* ToAtkUnitBase(this nint ptr) => (AtkUnitBase*)ptr;
+
+    public static void ClickAddonButton(
+        this AtkComponentButton target, AtkComponentBase* addon, uint which, EventType type = EventType.CHANGE,
+        EventData? eventData = null)
+        => ClickAddonComponent(addon, target.AtkComponentBase.OwnerNode, which, type, eventData);
+
+    public static void ClickRadioButton(
+        this AtkComponentRadioButton target, AtkComponentBase* addon, uint which, EventType type = EventType.CHANGE)
+        => ClickAddonComponent(addon, target.OwnerNode, which, type);
+
+    public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon, AtkEvent* eventData)
+        => Listener.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
+
+    public static void ClickAddonButton(this AtkCollisionNode target, AtkUnitBase* addon, AtkEvent* eventData)
+        => Listener.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
+
+    public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon)
+    {
+        var btnRes = target.AtkComponentBase.OwnerNode->AtkResNode;
+        var evt = btnRes.AtkEventManager.Event;
+
+        addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
+    }
+
+    public static void ClickAddonButton(this AtkCollisionNode target, AtkUnitBase* addon)
+    {
+        var btnRes = target.AtkResNode;
+        var evt = btnRes.AtkEventManager.Event;
+
+        while (evt->Type != AtkEventType.MouseClick)
+            evt = evt->NextEvent;
+
+        addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
+    }
+
+
+    public static void ClickRadioButton(this AtkComponentRadioButton target, AtkUnitBase* addon)
+    {
+        var btnRes = target.OwnerNode->AtkResNode;
+        var evt = btnRes.AtkEventManager.Event;
+
+        addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
+    }
 
     public static List<MapMarker> GetMapMarkers(this Map map) =>
         LuminaCache.Get<MapMarker>()?
