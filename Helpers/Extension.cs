@@ -41,10 +41,10 @@ public static unsafe partial class HelpersOm
         => ClickAddonComponent(addon, target.OwnerNode, which, type);
 
     public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon, AtkEvent* eventData)
-        => Listener.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
+        => Listener!.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
 
     public static void ClickAddonButton(this AtkCollisionNode target, AtkUnitBase* addon, AtkEvent* eventData)
-        => Listener.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
+        => Listener!.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
 
     public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon)
     {
