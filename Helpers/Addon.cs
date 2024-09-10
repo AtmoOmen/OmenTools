@@ -25,7 +25,7 @@ public static unsafe partial class HelpersOm
     public delegate nint InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
     public static InvokeListener? Listener;
 
-    private static void OutlineNode(AtkResNode* node)
+    public static void OutlineNode(AtkResNode* node)
     {
         var position = GetNodePosition(node);
         var scale = GetNodeScale(node);
@@ -36,7 +36,7 @@ public static unsafe partial class HelpersOm
         ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport).AddRect(position, position + size, nodeVisible ? 0xFF00FF00 : 0xFF0000FF);
     }
 
-    private static Vector2 GetNodePosition(AtkResNode* node)
+    public static Vector2 GetNodePosition(AtkResNode* node)
     {
         var pos = new Vector2(node->X, node->Y);
         pos -= new Vector2(node->OriginX * (node->ScaleX - 1), node->OriginY * (node->ScaleY - 1));
@@ -52,7 +52,7 @@ public static unsafe partial class HelpersOm
         return pos;
     }
 
-    private static Vector2 GetNodeScale(AtkResNode* node)
+    public static Vector2 GetNodeScale(AtkResNode* node)
     {
         if (node == null) return new Vector2(1, 1);
         var scale = new Vector2(node->ScaleX, node->ScaleY);
@@ -65,7 +65,7 @@ public static unsafe partial class HelpersOm
         return scale;
     }
 
-    private static bool GetNodeVisible(AtkResNode* node)
+    public static bool GetNodeVisible(AtkResNode* node)
     {
         if (node == null) return false;
         while (node != null)
