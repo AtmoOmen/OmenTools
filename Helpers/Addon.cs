@@ -1,10 +1,13 @@
 ﻿using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiNET;
 using OmenTools.Infos;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace OmenTools.Helpers;
@@ -21,6 +24,58 @@ public static unsafe partial class HelpersOm
 
     public delegate nint InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
     public static InvokeListener? Listener;
+
+    private static void OutlineNode(AtkResNode* node)
+    {
+        var position = GetNodePosition(node);
+        var scale = GetNodeScale(node);
+        var size = new Vector2(node->Width, node->Height) * scale;
+
+        var nodeVisible = GetNodeVisible(node);
+        position += ImGui.GetMainViewport().Pos;
+        ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport).AddRect(position, position + size, nodeVisible ? 0xFF00FF00 : 0xFF0000FF);
+    }
+
+    private static Vector2 GetNodePosition(AtkResNode* node)
+    {
+        var pos = new Vector2(node->X, node->Y);
+        pos -= new Vector2(node->OriginX * (node->ScaleX - 1), node->OriginY * (node->ScaleY - 1));
+        var par = node->ParentNode;
+        while (par != null)
+        {
+            pos *= new Vector2(par->ScaleX, par->ScaleY);
+            pos += new Vector2(par->X, par->Y);
+            pos -= new Vector2(par->OriginX * (par->ScaleX - 1), par->OriginY * (par->ScaleY - 1));
+            par = par->ParentNode;
+        }
+
+        return pos;
+    }
+
+    private static Vector2 GetNodeScale(AtkResNode* node)
+    {
+        if (node == null) return new Vector2(1, 1);
+        var scale = new Vector2(node->ScaleX, node->ScaleY);
+        while (node->ParentNode != null)
+        {
+            node = node->ParentNode;
+            scale *= new Vector2(node->ScaleX, node->ScaleY);
+        }
+
+        return scale;
+    }
+
+    private static bool GetNodeVisible(AtkResNode* node)
+    {
+        if (node == null) return false;
+        while (node != null)
+        {
+            if (!node->IsVisible()) return false;
+            node = node->ParentNode;
+        }
+
+        return true;
+    }
 
     public static void Callback(nint unitBasePtr, bool updateState, params object[] args)
     {
