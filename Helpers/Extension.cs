@@ -29,6 +29,110 @@ public static unsafe partial class HelpersOm
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
+    public static List<nint> SearchSimpleNodesByType(this AtkUldManager manager, NodeType type)
+    {
+        var result = new List<nint>();
+        for (var i = 0; i < manager.NodeListCount; i++)
+        {
+            var node = manager.NodeList[i];
+            // 非 SimpleNode
+            if (node == null || (int)node->Type > 1000) continue;
+            if (node->Type != type) continue;
+
+            result.Add((nint)node);
+        }
+
+        return result;
+    }
+
+    public static T* SearchSimpleNodeByType<T>(this AtkUldManager manager, NodeType type) where T : unmanaged
+    {
+        for (var i = 0; i < manager.NodeListCount; i++)
+        {
+            var node = manager.NodeList[i];
+            // 非 SimpleNode
+            if (node == null || (int)node->Type > 1000) continue;
+            if (node->Type != type) continue;
+
+            return (T*)node;
+        }
+
+        return null;
+    }
+
+    public static nint SearchSimpleNodeByType(this AtkUldManager manager, NodeType type)
+    {
+        for (var i = 0; i < manager.NodeListCount; i++)
+        {
+            var node = manager.NodeList[i];
+            // 非 SimpleNode
+            if (node == null || (int)node->Type > 1000) continue;
+            if (node->Type != type) continue;
+
+            return (nint)node;
+        }
+
+        return nint.Zero;
+    }
+
+    public static List<nint> SearchComponentNodesByType(this AtkUldManager manager, ComponentType type)
+    {
+        var result = new List<nint>();
+        for (var i = 0; i < manager.NodeListCount; i++)
+        {
+            var node = manager.NodeList[i];
+            // 非 ComponentNode
+            if (node == null || (int)node->Type < 1000) continue;
+
+            var componentNode = (AtkComponentNode*)node;
+            var componentInfo = componentNode->Component->UldManager;
+            var objectInfo = (AtkUldComponentInfo*)componentInfo.Objects;
+            if (objectInfo == null || objectInfo->ComponentType != type) continue;
+
+            result.Add((nint)componentNode->Component);
+        }
+
+        return result;
+    }
+
+    public static T* SearchComponentNodeByType<T>(this AtkUldManager manager, ComponentType type) where T : unmanaged
+    {
+        for (var i = 0; i < manager.NodeListCount; i++)
+        {
+            var node = manager.NodeList[i];
+            // 非 ComponentNode
+            if (node == null || (int)node->Type < 1000) continue;
+
+            var componentNode = (AtkComponentNode*)node;
+            var componentInfo = componentNode->Component->UldManager;
+            var objectInfo = (AtkUldComponentInfo*)componentInfo.Objects;
+            if (objectInfo == null || objectInfo->ComponentType != type) continue;
+
+            return (T*)componentNode->Component;
+        }
+
+        return null;
+    }
+
+    public static nint SearchComponentNodeByType(this AtkUldManager manager, ComponentType type)
+    {
+        for (var i = 0; i < manager.NodeListCount; i++)
+        {
+            var node = manager.NodeList[i];
+            // 非 ComponentNode
+            if (node == null || (int)node->Type < 1000) continue;
+
+            var componentNode = (AtkComponentNode*)node;
+            var componentInfo = componentNode->Component->UldManager;
+            var objectInfo = (AtkUldComponentInfo*)componentInfo.Objects;
+            if (objectInfo == null || objectInfo->ComponentType != type) continue;
+
+            return (nint)componentNode->Component;
+        }
+
+        return nint.Zero;
+    }
+
     public static AtkUnitBase* ToAtkUnitBase(this nint ptr) => (AtkUnitBase*)ptr;
 
     public static void ClickAddonButton(
