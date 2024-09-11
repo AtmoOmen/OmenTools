@@ -4,25 +4,6 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
-    public static bool InputLabelLeft(string label, Func<bool> origInputFunc)
-    {
-        ImGui.AlignTextToFramePadding();
-        ImGui.Text(label);
-
-        ImGui.SameLine();
-        return origInputFunc();
-    }
-
-    public static bool InputLabelLeft(string label, float width, Func<bool> origInputFunc)
-    {
-        ImGui.AlignTextToFramePadding();
-        ImGui.Text(label);
-
-        ImGui.SameLine();
-        ImGui.SetNextItemWidth(width);
-        return origInputFunc();
-    }
-
     public static bool InputUInt(string label, ref uint v)
     {
         var tempV = (int)v;
