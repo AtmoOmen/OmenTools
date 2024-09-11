@@ -13,6 +13,16 @@ public static partial class ImGuiOm
         return origInputFunc();
     }
 
+    public static bool InputLabelLeft(string label, float width, Func<bool> origInputFunc)
+    {
+        ImGui.AlignTextToFramePadding();
+        ImGui.Text(label);
+
+        ImGui.SameLine();
+        ImGui.SetNextItemWidth(width);
+        return origInputFunc();
+    }
+
     public static bool InputUInt(string label, ref uint v)
     {
         var tempV = (int)v;
