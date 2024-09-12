@@ -193,7 +193,7 @@ public static unsafe partial class HelpersOm
     }
 
     public static string GetMarkerLabel(this MapMarker marker)
-        => LuminaCache.GetRow<PlaceName>(marker.PlaceNameSubtext.Row)!.Name.ToDalamudString().TextValue;
+        => marker.PlaceNameSubtext?.Value?.Name?.ToDalamudString().TextValue ?? string.Empty;
 
     public static Vector2 GetPosition(this MapMarker marker) => new(marker.X, marker.Y);
 
