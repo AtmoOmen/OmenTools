@@ -65,6 +65,12 @@ public static partial class HelpersOm
     public static float MapToWorldY(float mapValue, int zOffset, bool correctZOffset = false) 
         => (correctZOffset && zOffset == -10000) ? mapValue * 100f : mapValue * 100f + zOffset;
 
+    public static List<MapMarker> GetZoneMapMarkers(uint zoneID) =>
+        LuminaCache.Get<Map>()!
+            .Where(x => x.TerritoryType.Row == zoneID)
+            .SelectMany(x => x.GetMapMarkers())
+            .ToList();
+
     public static List<MapMarker> GetMapMarkers(uint mapID)
-        => GetMapMarkers(LuminaCache.GetRow<Map>(mapID)!);
+        => LuminaCache.GetRow<Map>(mapID)!.GetMapMarkers();
 }
