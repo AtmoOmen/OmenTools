@@ -29,6 +29,15 @@ public static unsafe partial class HelpersOm
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
+    public static TValue GetOrAdd<TKey, TValue>(
+        this IDictionary<TKey, TValue> dictionary, TKey key, Func<TKey, TValue> valueFactory)
+    {
+        if(dictionary.TryGetValue(key, out var value)) return value;
+        value = valueFactory(key);
+        dictionary[key] = value;
+        return value;
+    }
+
     public static List<nint> SearchSimpleNodesByType(this AtkUldManager manager, NodeType type)
     {
         var result = new List<nint>();
