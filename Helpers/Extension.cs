@@ -29,6 +29,12 @@ public static unsafe partial class HelpersOm
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
+    public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> items)
+    {
+        foreach (var item in items) 
+            collection.Add(item);
+    }
+
     public static TValue GetOrAdd<TKey, TValue>(
         this IDictionary<TKey, TValue> dictionary, TKey key, Func<TKey, TValue> valueFactory)
     {
