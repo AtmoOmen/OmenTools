@@ -29,6 +29,15 @@ public static unsafe partial class HelpersOm
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
+    public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+    {
+        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (action == null) throw new ArgumentNullException(nameof(action));
+
+        foreach (var item in source)
+            action(item);
+    }
+
     public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> items)
     {
         foreach (var item in items) 
