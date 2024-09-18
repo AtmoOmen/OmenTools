@@ -30,6 +30,33 @@ public static unsafe partial class HelpersOm
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
+    public static ConcurrentBag<T> ToConcurrentBag<T>(this IEnumerable<T> source)
+    {
+        if (source == null) throw new ArgumentNullException(nameof(source));
+
+        return new ConcurrentBag<T>(source);
+    }
+
+    public static ConcurrentDictionary<TKey, TValue> ToConcurrentDictionary<TSource, TKey, TValue>(
+        this IEnumerable<TSource> source,
+        Func<TSource, TKey> keySelector,
+        Func<TSource, TValue> valueSelector) where TKey : notnull
+    {
+        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (keySelector == null) throw new ArgumentNullException(nameof(keySelector));
+        if (valueSelector == null) throw new ArgumentNullException(nameof(valueSelector));
+
+        return new ConcurrentDictionary<TKey, TValue>(
+            source.ToDictionary(keySelector, valueSelector));
+    }
+
+    public static ConcurrentDictionary<TKey, TSource> ToConcurrentDictionary<TSource, TKey>(
+        this IEnumerable<TSource> source,
+        Func<TSource, TKey> keySelector) where TKey : notnull
+    {
+        return source.ToConcurrentDictionary(keySelector, item => item);
+    }
+
     public static void AddRange<T>(this ConcurrentBag<T> bag, IEnumerable<T> items)
     {
         if (bag == null) throw new ArgumentNullException(nameof(bag));
