@@ -21,6 +21,7 @@ using SeString = Lumina.Text.SeString;
 using Timer = System.Timers.Timer;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using OmenTools.Infos;
+using System.Collections.Concurrent;
 
 namespace OmenTools.Helpers;
 
@@ -28,6 +29,43 @@ public static unsafe partial class HelpersOm
 {
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
+
+    public static void AddRange<T>(this ConcurrentBag<T> bag, IEnumerable<T> items)
+    {
+        if (bag == null) throw new ArgumentNullException(nameof(bag));
+        if (items == null) throw new ArgumentNullException(nameof(items));
+
+        foreach (var item in items)
+            bag.Add(item);
+    }
+
+    public static void ForEach<T>(this ConcurrentBag<T> bag, Action<T> action)
+    {
+        if (bag == null) throw new ArgumentNullException(nameof(bag));
+        if (action == null) throw new ArgumentNullException(nameof(action));
+
+        foreach (var item in bag)
+            action(item);
+    }
+
+    public static void AddRange<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, IEnumerable<KeyValuePair<TKey, TValue>> items) 
+        where TKey : notnull
+    {
+        if (dictionary == null) throw new ArgumentNullException(nameof(dictionary));
+        if (items == null) throw new ArgumentNullException(nameof(items));
+
+        foreach (var item in items)
+            dictionary.TryAdd(item.Key, item.Value);
+    }
+
+    public static void ForEach<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, Action<TKey, TValue> action) where TKey : notnull
+    {
+        if (dictionary == null) throw new ArgumentNullException(nameof(dictionary));
+        if (action == null) throw new ArgumentNullException(nameof(action));
+
+        foreach (var kvp in dictionary)
+            action(kvp.Key, kvp.Value);
+    }
 
     public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
     {
