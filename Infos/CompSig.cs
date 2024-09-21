@@ -20,13 +20,13 @@ public record CompSig(string Signature, string? SignatureCN = null)
         return !string.IsNullOrWhiteSpace(signature);
     }
 
-    public nint ScanModule()
+    public nint ScanText()
     {
         if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return nint.Zero;
         return DService.SigScanner.ScanText(sig);
     }
 
-    public unsafe T* ScanModule<T>() where T : unmanaged
+    public unsafe T* ScanText<T>() where T : unmanaged
     {
         if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return null;
         return (T*)DService.SigScanner.ScanText(sig);
