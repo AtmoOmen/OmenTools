@@ -23,13 +23,13 @@ public record CompSig(string Signature, string? SignatureCN = null)
     public nint ScanModule()
     {
         if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return nint.Zero;
-        return DService.SigScanner.ScanModule(sig);
+        return DService.SigScanner.ScanText(sig);
     }
 
     public unsafe T* ScanModule<T>() where T : unmanaged
     {
         if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return null;
-        return (T*)DService.SigScanner.ScanModule(sig);
+        return (T*)DService.SigScanner.ScanText(sig);
     }
 
     public nint GetStatic()
