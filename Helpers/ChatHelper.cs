@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using OmenTools.Infos;
 
 namespace OmenTools.Helpers;
 
@@ -11,13 +12,13 @@ public sealed unsafe class ChatHelper
     private static readonly Lazy<ChatHelper> LazyInstance = new(() => new ChatHelper());
     private delegate void ProcessChatBoxDelegate(UIModule* module, Utf8String* message, nint a3, byte a4);
 
+    private static readonly CompSig ProcessChatBoxSig = new("48 89 5C 24 ?? 57 48 83 EC 20 48 8B FA 48 8B D9 45 84 C9");
     private static readonly ProcessChatBoxDelegate? ProcessChatBox;
 
     static ChatHelper()
     {
         ProcessChatBox ??=
-            Marshal.GetDelegateForFunctionPointer<ProcessChatBoxDelegate>(
-                DService.SigScanner.ScanText("48 89 5C 24 ?? 57 48 83 EC 20 48 8B FA 48 8B D9 45 84 C9"));
+            Marshal.GetDelegateForFunctionPointer<ProcessChatBoxDelegate>(ProcessChatBoxSig.ScanText());
     }
 
     public static ChatHelper Instance => LazyInstance.Value;
