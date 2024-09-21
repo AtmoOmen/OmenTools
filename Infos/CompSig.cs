@@ -19,4 +19,28 @@ public record CompSig(string Signature, string? SignatureCN = null)
 
         return !string.IsNullOrWhiteSpace(signature);
     }
+
+    public nint ScanModule()
+    {
+        if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return nint.Zero;
+        return DService.SigScanner.ScanModule(sig);
+    }
+
+    public unsafe T* ScanModule<T>() where T : unmanaged
+    {
+        if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return null;
+        return (T*)DService.SigScanner.ScanModule(sig);
+    }
+
+    public nint GetStatic()
+    {
+        if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return nint.Zero;
+        return DService.SigScanner.GetStaticAddressFromSig(sig);
+    }
+
+    public unsafe T* GetStatic<T>() where T : unmanaged
+    {
+        if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return null;
+        return (T*)DService.SigScanner.GetStaticAddressFromSig(sig);
+    }
 }
