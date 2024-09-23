@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.Infos;
 
-public static unsafe partial class InfosOm
+public static partial class InfosOm
 {
     public static class QuestIcons
     {
