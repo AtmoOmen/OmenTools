@@ -1,2 +1,2 @@
 # OmenTools
-Made for myself, everything here mwill undergo significant changes.
+Made for myself, everything here may undergo significant changes at any time.
