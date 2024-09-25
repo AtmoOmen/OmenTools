@@ -62,4 +62,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* SubmarinePartsMenu       => GetAddonByName("SubmarinePartsMenu");
     public static AtkUnitBase* ContentsFinderConfirm    => GetAddonByName("ContentsFinderConfirm");
     public static AtkUnitBase* LookingForGroupDetail    => GetAddonByName("LookingForGroupDetail");
+    public static AtkUnitBase* LookingForGroupCondition => GetAddonByName("LookingForGroupCondition");
 }
