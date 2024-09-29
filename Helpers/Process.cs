@@ -79,5 +79,45 @@ public static partial class HelpersOm
         }
     }
 
+    public static void SendKeydown(Keys key) => SendKeydown((int)key);
+
+    public static void SendKeyup(Keys key) => SendKeyup((int)key);
+
+    public static void SendKeydown(int key)
+    {
+        if (!TryFindGameWindow(out var h))
+        {
+            DService.Log.Error("未能找到游戏窗口, 按键按下发送失败");
+            return;
+        }
+
+        SendMessage(h, WindowMessage.WM_KEYDOWN, key, 0);
+    }
+
+    public static void SendKeyup(int key)
+    {
+        if (!TryFindGameWindow(out var h))
+        {
+            DService.Log.Error("未能找到游戏窗口, 按键释放发送失败");
+            return;
+        }
+
+        SendMessage(h, WindowMessage.WM_KEYUP, key, 0);
+    }
+
+    public static bool SendKeypressLongPress(int key, int durationMilliseconds)
+    {
+        if (!TryFindGameWindow(out var h))
+        {
+            DService.Log.Error("未能找到游戏窗口, 按键发送失败");
+            return false;
+        }
+
+        SendMessage(h, WindowMessage.WM_KEYDOWN, key, 0);
+        Thread.Sleep(durationMilliseconds); // 长按时间
+        SendMessage(h, WindowMessage.WM_KEYUP, key, 0);
+        return true;
+    }
+
     public static int MAKEWPARAM(int l, int h) => (l & 0xFFFF) | (h << 16);
 }
