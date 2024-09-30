@@ -26,7 +26,7 @@ public static unsafe partial class HelpersOm
     public delegate nint InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
     public static InvokeListener? Listener;
 
-    private static bool IsInventoryFull(IEnumerable<InventoryType> inventoryTypes)
+    public static bool IsInventoryFull(IEnumerable<InventoryType> inventoryTypes)
     {
         var manager = InventoryManager.Instance();
         if (manager == null) return true;
