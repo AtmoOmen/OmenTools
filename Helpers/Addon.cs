@@ -1,6 +1,7 @@
 ﻿using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -24,6 +25,26 @@ public static unsafe partial class HelpersOm
 
     public delegate nint InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
     public static InvokeListener? Listener;
+
+    private static bool IsInventoryFull(IEnumerable<InventoryType> inventoryTypes)
+    {
+        var manager = InventoryManager.Instance();
+        if (manager == null) return true;
+
+        foreach (var inventoryType in inventoryTypes)
+        {
+            var container = manager->GetInventoryContainer(inventoryType);
+            if (container == null || container->Loaded == 0) continue;
+
+            for (var index = 0; index < container->Size; index++)
+            {
+                var slot = container->GetInventorySlot(index);
+                if (slot->ItemId == 0) return false;
+            }
+        }
+
+        return true;
+    }
 
     public static void OutlineNode(AtkResNode* node)
     {
