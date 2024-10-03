@@ -22,6 +22,8 @@ using Timer = System.Timers.Timer;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using OmenTools.Infos;
 using System.Collections.Concurrent;
+using Dalamud.Game.ClientState.Party;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
 
 namespace OmenTools.Helpers;
 
@@ -29,6 +31,8 @@ public static unsafe partial class HelpersOm
 {
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
+
+    public static PartyMember* ToStruct(this IPartyMember partyMember) => (PartyMember*)partyMember.Address;
 
     public static ConcurrentBag<T> ToConcurrentBag<T>(this IEnumerable<T> source)
     {
