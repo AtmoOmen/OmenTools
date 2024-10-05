@@ -1,9 +1,31 @@
-﻿using static PInvoke.User32;
+﻿using System.Runtime.InteropServices;
+using static PInvoke.User32;
 
 namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool VirtualProtect(nint lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
+
+    private const uint PAGE_READWRITE = 0x04;
+
+    public static unsafe void WriteProtectedMemory<T>(nint targetAddress, T value) where T : unmanaged
+    {
+        var size = (uint)Marshal.SizeOf(typeof(T));
+
+        var success = VirtualProtect(targetAddress, size, PAGE_READWRITE, out var oldProtect);
+        if (!success)
+        {
+            throw new InvalidOperationException("Failed to change memory protection.");
+        }
+
+        var ptr = targetAddress.ToPointer();
+        *(T*)ptr = value;
+
+        VirtualProtect(targetAddress, size, oldProtect, out _);
+    }
+
     public static bool TryFindGameWindow(out nint hwnd)
     {
         hwnd = nint.Zero;
