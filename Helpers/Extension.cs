@@ -24,6 +24,7 @@ using OmenTools.Infos;
 using System.Collections.Concurrent;
 using Dalamud.Game.ClientState.Party;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
+using Aetheryte = Lumina.Excel.GeneratedSheets.Aetheryte;
 
 namespace OmenTools.Helpers;
 
@@ -31,6 +32,27 @@ public static unsafe partial class HelpersOm
 {
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
+
+    public static Vector2 GetPositionWorld(this Aetheryte aetheryte)
+    {
+        var mapRow = aetheryte.Territory?.Value?.Map.Value;
+        if (mapRow == null) return new();
+
+        return MapToWorld(GetPositionMap(aetheryte), mapRow);
+    }
+
+    public static Vector2 GetPositionMap(this Aetheryte aetheryte)
+    {
+        var mapRow = aetheryte.Territory?.Value?.Map.Value;
+        if (mapRow == null) return new();
+
+        var result = LuminaCache.Get<MapMarker>()?
+            .Where(x => x.DataType == 3 && x.RowId == mapRow.MapMarkerRange && x.DataKey == aetheryte.RowId)
+            .Select(x => TextureToMap(x.X, x.Y, mapRow.SizeFactor))
+            .FirstOrDefault();
+
+        return result ?? new();
+    }
 
     public static PartyMember* ToStruct(this IPartyMember partyMember) => (PartyMember*)partyMember.Address;
 
