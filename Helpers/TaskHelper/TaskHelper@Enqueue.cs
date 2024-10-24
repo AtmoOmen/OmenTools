@@ -29,10 +29,10 @@ public partial class TaskHelper
         IThrottler<string> throttler = useFrameThrottler ? FrameThrottler : Throttler;
 
         Enqueue(() => throttler.Throttle(uniqueName, delayMS),
-            $"{throttler.GetType().Name}.Throttle({uniqueName}, {delayMS})",
+            $"{uniqueName} (Delay)",
             weight: weight);
         Enqueue(() => throttler.Check(uniqueName),
-            $"{throttler.GetType().Name}.Check({uniqueName})",
+            $"{uniqueName} (DelayCheck)",
             weight: weight);
 
         MaxTasks += 2;
