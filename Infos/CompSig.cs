@@ -1,4 +1,5 @@
-﻿using Dalamud.Game;
+﻿using System.Runtime.InteropServices;
+using Dalamud.Game;
 
 namespace OmenTools.Infos;
 
@@ -43,4 +44,7 @@ public record CompSig(string Signature, string? SignatureCN = null)
         if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return null;
         return (T*)DService.SigScanner.GetStaticAddressFromSig(sig);
     }
+
+    public T GetDelegate<T>() 
+        => Marshal.GetDelegateForFunctionPointer<T>(ScanText());
 }
