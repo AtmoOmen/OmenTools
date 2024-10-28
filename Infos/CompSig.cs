@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using Dalamud.Game;
+using Dalamud.Hooking;
 
 namespace OmenTools.Infos;
 
@@ -45,6 +46,9 @@ public record CompSig(string Signature, string? SignatureCN = null)
         return (T*)DService.SigScanner.GetStaticAddressFromSig(sig);
     }
 
-    public T GetDelegate<T>() 
+    public T GetDelegate<T>() where T : Delegate
         => Marshal.GetDelegateForFunctionPointer<T>(ScanText());
+
+    public Hook<T> GetHook<T>(T detour) where T : Delegate
+        => DService.Hook.HookFromSignature(Get() ?? string.Empty, detour);
 }
