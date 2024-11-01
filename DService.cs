@@ -26,7 +26,6 @@ public class DService
         TaskHelper.DisposeAll();
         MemoryPatch.DisposeAll();
         ThrottlerHelper.Uninit();
-        LuminaCache.Uninit();
         ImageHelper.Uninit();
     }
     
