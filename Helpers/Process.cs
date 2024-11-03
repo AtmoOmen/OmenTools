@@ -127,7 +127,7 @@ public static partial class HelpersOm
         SendMessage(h, WindowMessage.WM_KEYUP, key, 0);
     }
 
-    public static bool SendKeypressLongPress(int key, int durationMilliseconds)
+    public static async Task<bool> SendKeypressLongPressAsync(Keys key, int durationMilliseconds)
     {
         if (!TryFindGameWindow(out var h))
         {
@@ -135,11 +135,12 @@ public static partial class HelpersOm
             return false;
         }
 
-        SendMessage(h, WindowMessage.WM_KEYDOWN, key, 0);
-        Thread.Sleep(durationMilliseconds); // 长按时间
-        SendMessage(h, WindowMessage.WM_KEYUP, key, 0);
+        SendMessage(h, WindowMessage.WM_KEYDOWN, (int)key, 0);
+        await Task.Delay(durationMilliseconds);
+        SendMessage(h, WindowMessage.WM_KEYUP, (int)key, 0);
         return true;
     }
+
 
     public static int MAKEWPARAM(int l, int h) => (l & 0xFFFF) | (h << 16);
 }
