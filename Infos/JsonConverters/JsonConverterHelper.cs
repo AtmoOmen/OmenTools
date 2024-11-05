@@ -1,11 +1,10 @@
-﻿using System.ComponentModel;
-using System.Text.Json;
+﻿using Newtonsoft.Json;
 
 namespace OmenTools.Infos;
 
 public partial class InfosOm
 {
-    public static readonly JsonSerializerOptions JsonOptions = new()
+    public static readonly JsonSerializerSettings JsonSettings = new()
     {
         Converters =
         {
@@ -14,7 +13,7 @@ public partial class InfosOm
             new Vector4Converter(),
             new DateTimeConverter(),
             new TimeSpanConverter(),
-            new VersionConverter(),
+            new VersionConverter()
         }
     };
 }

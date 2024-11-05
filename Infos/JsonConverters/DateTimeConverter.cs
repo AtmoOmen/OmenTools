@@ -1,13 +1,13 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace OmenTools.Infos;
 
 public class DateTimeConverter : JsonConverter<DateTime>
 {
-    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) 
-        => DateTime.Parse(reader.GetString() ?? string.Empty);
+    public override DateTime ReadJson(JsonReader reader, Type objectType, DateTime existingValue, bool hasExistingValue, JsonSerializer serializer) => DateTime.Parse((string?)reader.Value ?? string.Empty);
 
-    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
-        => writer.WriteStringValue(value.ToString("o"));
+    public override void WriteJson(JsonWriter writer, DateTime value, JsonSerializer serializer)
+    {
+        writer.WriteValue(value.ToString("o"));
+    }
 }
