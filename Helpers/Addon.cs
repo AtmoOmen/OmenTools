@@ -4,6 +4,7 @@ using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using OmenTools.Infos;
@@ -25,6 +26,31 @@ public static unsafe partial class HelpersOm
 
     public delegate nint InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
     public static InvokeListener? Listener;
+
+    public static bool OpenInventoryItemContext(InventoryItem item)
+        => OpenInventoryItemContext(item.Container, (ushort)item.Slot);
+
+    public static bool OpenInventoryItemContext(InventoryType type, ushort slot)
+    {
+        var agent = AgentInventoryContext.Instance();
+        if (agent == null) return false;
+
+        agent->OpenForItemSlot(type, slot, GetActiveInventoryAddonID());
+        return true;
+    }
+
+    public static uint GetActiveInventoryAddonID()
+    {
+        if (Inventory == null) return 0;
+        if (InventoryLarge == null) return 0;
+        if (InventoryExpansion == null) return 0;
+
+        if (IsAddonAndNodesReady(Inventory)) return Inventory->Id;
+        if (IsAddonAndNodesReady(InventoryLarge)) return InventoryLarge->Id;
+        if (IsAddonAndNodesReady(InventoryExpansion)) return InventoryExpansion->Id;
+
+        return 0;
+    }
 
     public static bool IsInventoryFull(IEnumerable<InventoryType> inventoryTypes)
     {
