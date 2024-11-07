@@ -21,6 +21,7 @@ public class LuminaSearcher<T> where T : ExcelRow
             .OrderBy(item => orderFunc(item).Length)
             .ThenBy(x => x.RowId)
             .ToList();
+
         SearchResult = Data.Take(resultLimit).ToList();
         this.resultLimit = resultLimit;
         this.throttleInterval = throttleInterval;
@@ -30,7 +31,6 @@ public class LuminaSearcher<T> where T : ExcelRow
             .Select(item => searchFuncs.Select(func => func(item)).ToList())
             .ToList();
     }
-
 
     public Guid Guid { get; init; }
     public IReadOnlyList<T> Data { get; init; }
@@ -89,7 +89,11 @@ public class LuminaSearcher<T> where T : ExcelRow
             }
         });
 
-        var resultIndexes = indexes.Take(resultLimit).ToList();
+        var resultIndexes = indexes
+            .OrderBy(i => i)
+            .Take(resultLimit)
+            .ToList();
+
         SearchResult = resultIndexes.Select(index => Data[index]).ToList();
         cache[keyword] = resultIndexes;
     }
