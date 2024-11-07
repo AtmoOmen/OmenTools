@@ -10,22 +10,26 @@ public class LuminaSearcher<T> where T : ExcelRow
     public LuminaSearcher(
         IEnumerable<T> data,
         Func<T, string>[] searchFuncs,
+        Func<T, string> orderFunc,
         int resultLimit = 100,
         int throttleInterval = 100,
         int retryInterval = 50,
         int maxRetries = 3)
     {
         Guid = Guid.NewGuid();
-        Data = data.ToList();
+        Data = data
+            .OrderBy(item => orderFunc(item).Length)
+            .ToList();
         SearchResult = Data.Take(resultLimit).ToList();
         this.resultLimit = resultLimit;
         this.throttleInterval = throttleInterval;
         this.retryInterval = retryInterval;
         this.maxRetries = maxRetries;
         preprocessedData = Data
-                            .Select(item => searchFuncs.Select(func => func(item)).ToList())
-                            .ToList();
+            .Select(item => searchFuncs.Select(func => func(item)).ToList())
+            .ToList();
     }
+
 
     public Guid Guid { get; init; }
     public IReadOnlyList<T> Data { get; init; }
