@@ -19,6 +19,7 @@ public class LuminaSearcher<T> where T : ExcelRow
         Guid = Guid.NewGuid();
         Data = data
             .OrderBy(item => orderFunc(item).Length)
+            .ThenBy(x => x.RowId)
             .ToList();
         SearchResult = Data.Take(resultLimit).ToList();
         this.resultLimit = resultLimit;
