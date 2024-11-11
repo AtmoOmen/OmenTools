@@ -27,6 +27,55 @@ public static unsafe partial class HelpersOm
     public delegate nint InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
     public static InvokeListener? Listener;
 
+    public static bool TryGetInventoryItems(IEnumerable<InventoryType> targetTypes,
+        Func<InventoryItem, bool> predicateFunc, out List<InventoryItem> itemResult)
+    {
+        itemResult = [];
+
+        var manager = InventoryManager.Instance();
+        if(manager == null) return false;
+
+        foreach (var type in targetTypes)
+        {
+            var container = manager->GetInventoryContainer(type);
+            if(container == null || container->Loaded != 1) return false;
+            for (var i = 0; i < container->Size; i++)
+            {
+                var slot = container->GetInventorySlot(i);
+                if(slot == null || !predicateFunc(*slot)) continue;
+
+                itemResult.Add(*slot);
+            }
+        }
+
+        return itemResult.Count > 0;
+    }
+
+    public static bool TryGetFirstInventoryItem(IEnumerable<InventoryType> targetTypes, Func<InventoryItem, bool> predicateFunc, out InventoryItem* itemResult)
+    {
+        itemResult = null;
+
+        var manager = InventoryManager.Instance();
+        if(manager == null) return false;
+
+        foreach (var type in targetTypes)
+        {
+            var container = manager->GetInventoryContainer(type);
+            if(container == null || container->Loaded != 1) return false;
+            for (var i = 0; i < container->Size; i++)
+            {
+                var slot = container->GetInventorySlot(i);
+                if(slot == null || !predicateFunc(*slot)) continue;
+                if (!predicateFunc(*slot)) continue;
+
+                itemResult = slot;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static bool OpenInventoryItemContext(InventoryItem item)
         => OpenInventoryItemContext(item.Container, (ushort)item.Slot);
 
