@@ -41,6 +41,7 @@ public static unsafe partial class HelpersOm
                 case '?':
                 case '|':
                 case ':':
+                case '：':
                     sb.Append(' ');
                     break;
                 case '&':
