@@ -498,10 +498,14 @@ public static unsafe partial class HelpersOm
     public static BitmapFontIcon ToBitmapFontIcon(this ClassJob? job)
     {
         if (job == null || job.RowId == 0) return BitmapFontIcon.NewAdventurer;
-        var fontIcon = job.RowId + 127;
-        if(fontIcon > 167) return BitmapFontIcon.NewAdventurer;
 
-        return (BitmapFontIcon)fontIcon;
+        return job.RowId switch
+        {
+            < 1 => BitmapFontIcon.NewAdventurer,
+            < 41 => (BitmapFontIcon)job.RowId + 127,
+            41 or 42 => (BitmapFontIcon)job.RowId + 129,
+            _ => BitmapFontIcon.NewAdventurer
+        };
     }
 
     public static string ExtractPlaceName(this TerritoryType row)
