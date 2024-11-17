@@ -3,7 +3,7 @@ using Lumina.Excel;
 
 namespace OmenTools.Helpers;
 
-public class LuminaSearcher<T> where T : ExcelRow
+public class LuminaSearcher<T> where T : struct, IExcelRow<T>
 {
     private static readonly Throttler<Guid> SearchThrottler = new();
 

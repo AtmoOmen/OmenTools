@@ -4,40 +4,22 @@ namespace OmenTools.Helpers;
 
 public static class LuminaCache
 {
-    public static ExcelSheet<T>? Get<T>() where T : struct, IExcelRow<T>
-    {
-        try
-        {
-            return DService.Data.GetExcelSheet<T>();
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    public static ExcelSheet<T> Get<T>() where T : struct, IExcelRow<T> 
+        => DService.Data.GetExcelSheet<T>();
 
-    public static SubrowExcelSheet<T>? GetSub<T>() where T : struct, IExcelSubrow<T>
-    {
-        try
-        {
-            return DService.Data.GetSubrowExcelSheet<T>();
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    public static SubrowExcelSheet<T> GetSub<T>() where T : struct, IExcelSubrow<T> 
+        => DService.Data.GetSubrowExcelSheet<T>();
 
-    public static bool TryGet<T>(out ExcelSheet<T>? sheet) where T : struct, IExcelRow<T>
+    public static bool TryGet<T>(out ExcelSheet<T> sheet) where T : struct, IExcelRow<T>
     {
         sheet = Get<T>();
-        return sheet != null;
+        return true;
     }
 
-    public static bool TryGetSub<T>(out SubrowExcelSheet<T>? sheet) where T : struct, IExcelSubrow<T>
+    public static bool TryGetSub<T>(out SubrowExcelSheet<T> sheet) where T : struct, IExcelSubrow<T>
     {
         sheet = GetSub<T>();
-        return sheet != null;
+        return true;
     }
 
     public static T? GetRow<T>(uint rowID) where T : struct, IExcelRow<T>

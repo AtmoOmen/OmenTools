@@ -16,7 +16,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using SeString = Lumina.Text.SeString;
 using Timer = System.Timers.Timer;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -24,7 +23,8 @@ using OmenTools.Infos;
 using System.Collections.Concurrent;
 using Dalamud.Game.ClientState.Party;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
-using Aetheryte = Lumina.Excel.GeneratedSheets.Aetheryte;
+using Lumina.Excel.Sheets;
+using Aetheryte = Lumina.Excel.Sheets.Aetheryte;
 
 namespace OmenTools.Helpers;
 
@@ -35,23 +35,26 @@ public static unsafe partial class HelpersOm
 
     public static Vector2 GetPositionWorld(this Aetheryte aetheryte)
     {
-        var mapRow = aetheryte.Territory?.Value?.Map.Value;
+        var mapRow = aetheryte.Territory.ValueNullable?.Map.ValueNullable;
         if (mapRow == null) return new();
 
-        return MapToWorld(GetPositionMap(aetheryte), mapRow);
+        return MapToWorld(GetPositionMap(aetheryte), (Map)mapRow);
     }
 
     public static Vector2 GetPositionMap(this Aetheryte aetheryte)
     {
-        var mapRow = aetheryte.Territory?.Value?.Map.Value;
+        var mapRow = aetheryte.Territory.ValueNullable?.Map.ValueNullable;
         if (mapRow == null) return new();
 
-        var result = LuminaCache.Get<MapMarker>()?
-            .Where(x => x.DataType == 3 && x.RowId == mapRow.MapMarkerRange && x.DataKey == aetheryte.RowId)
-            .Select(x => TextureToMap(x.X, x.Y, mapRow.SizeFactor))
+        var mapRowNotNull = (Map)mapRow;
+
+        var result = LuminaCache.GetSub<MapMarker>()
+            .SelectMany(x => x)
+            .Where(x => x.DataType == 3 && x.RowId == mapRowNotNull.MapMarkerRange && x.DataKey.RowId == aetheryte.RowId)
+            .Select(x => TextureToMap(x.X, x.Y, mapRowNotNull.SizeFactor))
             .FirstOrDefault();
 
-        return result ?? new();
+        return result;
     }
 
     public static PartyMember* ToStruct(this IPartyMember partyMember) => (PartyMember*)partyMember.Address;
@@ -260,17 +263,17 @@ public static unsafe partial class HelpersOm
         => ClickAddonComponent(addon, target.OwnerNode, which, type);
 
     public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon, AtkEvent* eventData)
-        => Listener!.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
+        => Listener!.Invoke((nint)addon, eventData->State.EventType, eventData->Param, eventData);
 
     public static void ClickAddonButton(this AtkCollisionNode target, AtkUnitBase* addon, AtkEvent* eventData)
-        => Listener!.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
+        => Listener!.Invoke((nint)addon, eventData->State.EventType, eventData->Param, eventData);
 
     public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon)
     {
         var btnRes = target.AtkComponentBase.OwnerNode->AtkResNode;
         var evt = btnRes.AtkEventManager.Event;
 
-        addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
+        addon->ReceiveEvent(evt->State.EventType, (int)evt->Param, btnRes.AtkEventManager.Event);
     }
 
     public static void ClickAddonButton(this AtkCollisionNode target, AtkUnitBase* addon)
@@ -278,10 +281,10 @@ public static unsafe partial class HelpersOm
         var btnRes = target.AtkResNode;
         var evt = btnRes.AtkEventManager.Event;
 
-        while (evt->Type != AtkEventType.MouseClick)
+        while (evt->State.EventType != AtkEventType.MouseClick)
             evt = evt->NextEvent;
 
-        addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
+        addon->ReceiveEvent(evt->State.EventType, (int)evt->Param, btnRes.AtkEventManager.Event);
     }
 
 
@@ -290,12 +293,13 @@ public static unsafe partial class HelpersOm
         var btnRes = target.OwnerNode->AtkResNode;
         var evt = btnRes.AtkEventManager.Event;
 
-        addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
+        addon->ReceiveEvent(evt->State.EventType, (int)evt->Param, btnRes.AtkEventManager.Event);
     }
 
     public static List<MapMarker> GetMapMarkers(this Map map) =>
-        LuminaCache.Get<MapMarker>()?
+        LuminaCache.GetSub<MapMarker>()
             .Where(x => x.RowId == map.MapMarkerRange)
+            .SelectMany(x => x)
             .ToList() ?? [];
 
     private static string GetMarkerPlaceName(this MapMarker marker)
@@ -304,11 +308,11 @@ public static unsafe partial class HelpersOm
         if (placeName != string.Empty) return placeName;
 
         var mapSymbol = LuminaCache.GetRow<MapSymbol>(marker.Icon);
-        return mapSymbol?.PlaceName.Value?.Name.ToDalamudString().TextValue ?? string.Empty;
+        return mapSymbol?.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
     }
 
     public static string GetMarkerLabel(this MapMarker marker)
-        => marker.PlaceNameSubtext?.Value?.Name?.ToDalamudString().TextValue ?? string.Empty;
+        => marker.PlaceNameSubtext.ValueNullable?.Name.ExtractText() ?? string.Empty;
 
     public static Vector2 GetPosition(this MapMarker marker) => new(marker.X, marker.Y);
 
@@ -497,19 +501,19 @@ public static unsafe partial class HelpersOm
 
     public static BitmapFontIcon ToBitmapFontIcon(this ClassJob? job)
     {
-        if (job == null || job.RowId == 0) return BitmapFontIcon.NewAdventurer;
+        if (job == null || job.Value.RowId == 0) return BitmapFontIcon.NewAdventurer;
 
-        return job.RowId switch
+        return job.Value.RowId switch
         {
             < 1 => BitmapFontIcon.NewAdventurer,
-            < 41 => (BitmapFontIcon)job.RowId + 127,
-            41 or 42 => (BitmapFontIcon)job.RowId + 129,
+            < 41 => (BitmapFontIcon)job.Value.RowId + 127,
+            41 or 42 => (BitmapFontIcon)job.Value.RowId + 129,
             _ => BitmapFontIcon.NewAdventurer
         };
     }
 
     public static string ExtractPlaceName(this TerritoryType row)
-        => row.PlaceName?.Value?.Name?.RawString ?? string.Empty;
+        => row.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
 
     public static Vector2 ToVector2(this Vector3 vector3)
         => new(vector3.X, vector3.Z);
