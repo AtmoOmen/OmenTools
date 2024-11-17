@@ -22,43 +22,45 @@ public static class LuminaCache
         return true;
     }
 
-    public static T? GetRow<T>(uint rowID) where T : struct, IExcelRow<T>
+    public static T GetRow<T>(uint rowID) where T : struct, IExcelRow<T>
     {
         var sheet = TryGet<T>(out var excelSheet) ? excelSheet : null;
-        if (sheet == null) return null;
+        if (sheet == null) return default;
+        
         try
         {
             return sheet.GetRow(rowID);
         }
         catch
         {
-            return null;
+            return default;
         }
     }
 
-    public static T? GetSubRow<T>(uint rowID) where T : struct, IExcelSubrow<T>
+    public static T GetSubRow<T>(uint rowID) where T : struct, IExcelSubrow<T>
     {
         var sheet = TryGetSub<T>(out var excelSheet) ? excelSheet : null;
-        if (sheet == null) return null;
+        if (sheet == null) return default;
+
         try
         {
             return sheet.GetRow(rowID).FirstOrDefault();
         }
         catch
         {
-            return null;
+            return default;
         }
     }
 
-    public static bool TryGetRow<T>(uint rowID, out T? item) where T : struct, IExcelRow<T>
+    public static bool TryGetRow<T>(uint rowID, out T item) where T : struct, IExcelRow<T>
     {
         item = GetRow<T>(rowID);
-        return item.HasValue;
+        return item.RowId != default(T).RowId;
     }
 
-    public static bool TryGetSubRow<T>(uint rowID, out T? item) where T : struct, IExcelSubrow<T>
+    public static bool TryGetSubRow<T>(uint rowID, out T item) where T : struct, IExcelSubrow<T>
     {
         item = GetSubRow<T>(rowID);
-        return item.HasValue;
+        return item.RowId != default(T).RowId;
     }
 }
