@@ -54,13 +54,13 @@ public static class LuminaCache
         }
     }
 
-    public static SubrowCollection<T>? GetSubRow<T>(uint rowID) where T : struct, IExcelSubrow<T>
+    public static T? GetSubRow<T>(uint rowID) where T : struct, IExcelSubrow<T>
     {
         var sheet = TryGetSub<T>(out var excelSheet) ? excelSheet : null;
         if (sheet == null) return null;
         try
         {
-            return sheet.GetRow(rowID);
+            return sheet.GetRow(rowID).FirstOrDefault();
         }
         catch
         {
@@ -74,7 +74,7 @@ public static class LuminaCache
         return item.HasValue;
     }
 
-    public static bool TryGetSubRow<T>(uint rowID, out SubrowCollection<T>? item) where T : struct, IExcelSubrow<T>
+    public static bool TryGetSubRow<T>(uint rowID, out T? item) where T : struct, IExcelSubrow<T>
     {
         item = GetSubRow<T>(rowID);
         return item.HasValue;
