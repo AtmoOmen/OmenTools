@@ -16,9 +16,27 @@ public static class LuminaCache
         }
     }
 
+    public static SubrowExcelSheet<T>? GetSub<T>() where T : struct, IExcelSubrow<T>
+    {
+        try
+        {
+            return DService.Data.GetSubrowExcelSheet<T>();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static bool TryGet<T>(out ExcelSheet<T>? sheet) where T : struct, IExcelRow<T>
     {
         sheet = Get<T>();
+        return sheet != null;
+    }
+
+    public static bool TryGetSub<T>(out SubrowExcelSheet<T>? sheet) where T : struct, IExcelSubrow<T>
+    {
+        sheet = GetSub<T>();
         return sheet != null;
     }
 
@@ -26,7 +44,20 @@ public static class LuminaCache
     {
         var sheet = TryGet<T>(out var excelSheet) ? excelSheet : null;
         if (sheet == null) return null;
+        try
+        {
+            return sheet.GetRow(rowID);
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
+    public static SubrowCollection<T>? GetSubRow<T>(uint rowID) where T : struct, IExcelSubrow<T>
+    {
+        var sheet = TryGetSub<T>(out var excelSheet) ? excelSheet : null;
+        if (sheet == null) return null;
         try
         {
             return sheet.GetRow(rowID);
@@ -40,6 +71,12 @@ public static class LuminaCache
     public static bool TryGetRow<T>(uint rowID, out T? item) where T : struct, IExcelRow<T>
     {
         item = GetRow<T>(rowID);
+        return item.HasValue;
+    }
+
+    public static bool TryGetSubRow<T>(uint rowID, out SubrowCollection<T>? item) where T : struct, IExcelSubrow<T>
+    {
+        item = GetSubRow<T>(rowID);
         return item.HasValue;
     }
 }
