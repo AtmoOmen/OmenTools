@@ -308,7 +308,8 @@ public static unsafe partial class HelpersOm
         if (placeName != string.Empty) return placeName;
 
         var mapSymbol = LuminaCache.GetRow<MapSymbol>(marker.Icon);
-        return mapSymbol?.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
+        if (mapSymbol.RowId == 0) return string.Empty;
+        return mapSymbol.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
     }
 
     public static string GetMarkerLabel(this MapMarker marker)

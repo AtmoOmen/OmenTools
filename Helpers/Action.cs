@@ -9,13 +9,13 @@ public static unsafe partial class HelpersOm
     {
         if (DService.ClientState.LocalPlayer is not { } player) return false;
         var data = LuminaCache.GetRow<Action>(actionID);
-        if (data == null) return false;
+        if (data.RowId == 0) return false;
 
-        var unlockLink = data.Value.UnlockLink.RowId;
+        var unlockLink = data.UnlockLink.RowId;
         var unlockLinkCondition =
             unlockLink == 0 || UIState.Instance()->IsUnlockLinkUnlockedOrQuestCompleted(unlockLink);
 
-        var unlockLevel = data.Value.ClassJobLevel;
+        var unlockLevel = data.ClassJobLevel;
         var unlockLevelCondition = unlockLevel == 0 || unlockLevel <= player.Level;
 
         return unlockLinkCondition && unlockLevelCondition;
