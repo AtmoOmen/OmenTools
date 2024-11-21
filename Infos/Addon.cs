@@ -70,4 +70,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* LookingForGroupCondition => GetAddonByName("LookingForGroupCondition");
     public static AtkUnitBase* FreeCompanyChest         => GetAddonByName("FreeCompanyChest");
     public static AtkUnitBase* TripleTriadCoinExchange  => GetAddonByName("TripleTriadCoinExchange");
+    public static AtkUnitBase* ShopCardDialog           => GetAddonByName("ShopCardDialog");
 }
