@@ -23,13 +23,15 @@ public sealed unsafe class ChatHelper
 
     public static ChatHelper Instance => LazyInstance.Value;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SendMessageUnsafe(Utf8String* message)
+        => ProcessChatBox!(UIModule.Instance(), message, nint.Zero, 0);
+    
     public void SendMessageUnsafe(ReadOnlySpan<byte> message)
     {
         fixed (byte* pMessage = message)
         {
             var mes = Utf8String.FromSequence(pMessage);
-            ProcessChatBox!(UIModule.Instance(), mes, IntPtr.Zero, 0);
+            ProcessChatBox!(UIModule.Instance(), mes, nint.Zero, 0);
             mes->Dtor(true);
         }
     }
