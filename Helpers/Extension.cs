@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using Dalamud.Game.ClientState.Objects.Types;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using System.Diagnostics.CodeAnalysis;
@@ -987,5 +987,14 @@ public static unsafe partial class HelpersOm
             value = default;
             return false;
         }
+    }
+
+    public static void Swap<T>(this IList<T> list, int index1, int index2)
+    {
+        if (index1 < 0 || index1 >= list.Count || index2 < 0 || index2 >= list.Count)
+        {
+            throw new IndexOutOfRangeException("无法交换元素，因为其中一个索引无效");
+        }
+        (list[index1], list[index2]) = (list[index2], list[index1]);
     }
 }
