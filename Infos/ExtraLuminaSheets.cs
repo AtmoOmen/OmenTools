@@ -8,8 +8,8 @@ public readonly struct CraftLeveClient(ExcelPage page, uint offset, uint row) : 
 {
     public uint RowId => row;
 
-    public readonly ReadOnlySeString Name => page.ReadString(offset, offset);
-    public readonly ReadOnlySeString Text => page.ReadString(offset, offset + 1);
+    public readonly ReadOnlySeString Name => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text => page.ReadString(offset + 4, offset);
 
     static CraftLeveClient IExcelRow<CraftLeveClient>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
@@ -20,8 +20,8 @@ public readonly struct CompanySubmarine(ExcelPage page, uint offset, uint row) :
 {
     public uint RowId => row;
 
-    public readonly ReadOnlySeString Name => page.ReadString(offset, offset);
-    public readonly ReadOnlySeString Text => page.ReadString(offset, offset + 1);
+    public readonly ReadOnlySeString Name => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text => page.ReadString(offset + 4, offset);
 
     static CompanySubmarine IExcelRow<CompanySubmarine>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
@@ -32,8 +32,8 @@ public readonly struct AetheryteTransport(ExcelPage page, uint offset, uint row)
 {
     public uint RowId => row;
 
-    public readonly ReadOnlySeString Identifier => page.ReadString(offset, offset);
-    public readonly ReadOnlySeString Text => page.ReadString(offset, offset + 1);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
     static AetheryteTransport IExcelRow<AetheryteTransport>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
@@ -44,8 +44,8 @@ public readonly struct RetainerCall(ExcelPage page, uint offset, uint row) : IEx
 {
     public uint RowId => row;
 
-    public readonly ReadOnlySeString Identifier => page.ReadString(offset, offset);
-    public readonly ReadOnlySeString Text => page.ReadString(offset, offset + 1);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
     static RetainerCall IExcelRow<RetainerCall>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
@@ -56,8 +56,8 @@ public readonly struct HousingGardeningPlant(ExcelPage page, uint offset, uint r
 {
     public uint RowId => row;
 
-    public readonly ReadOnlySeString Identifier => page.ReadString(offset, offset);
-    public readonly ReadOnlySeString Text => page.ReadString(offset, offset + 1);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
     static HousingGardeningPlant IExcelRow<HousingGardeningPlant>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
@@ -68,8 +68,8 @@ public readonly struct HousingPersonalRoomEntrance(ExcelPage page, uint offset, 
 {
     public uint RowId => row;
 
-    public readonly ReadOnlySeString Identifier => page.ReadString(offset, offset);
-    public readonly ReadOnlySeString Text => page.ReadString(offset, offset + 1);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
     static HousingPersonalRoomEntrance IExcelRow<HousingPersonalRoomEntrance>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
@@ -80,8 +80,8 @@ public readonly struct HouFixCompanySubmarine(ExcelPage page, uint offset, uint 
 {
     public uint RowId => row;
 
-    public readonly ReadOnlySeString Identifier => page.ReadString(offset, offset);
-    public readonly ReadOnlySeString Text => page.ReadString(offset, offset + 1);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
     static HouFixCompanySubmarine IExcelRow<HouFixCompanySubmarine>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
@@ -92,8 +92,8 @@ public readonly struct CompanyManufactory(ExcelPage page, uint offset, uint row)
 {
     public uint RowId => row;
 
-    public readonly ReadOnlySeString Identifier => page.ReadString(offset, offset);
-    public readonly ReadOnlySeString Text => page.ReadString(offset, offset + 1);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
     static CompanyManufactory IExcelRow<CompanyManufactory>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
