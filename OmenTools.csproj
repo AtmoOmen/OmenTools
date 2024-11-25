@@ -14,6 +14,7 @@
 		<BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<UseWindowsForms>true</UseWindowsForms>
+		<EnableWindowsTargeting>true</EnableWindowsTargeting>
 		<ResolveComReferenceSilent>true</ResolveComReferenceSilent>
 	</PropertyGroup>
 
