@@ -6,6 +6,7 @@
 		<OutputType>Library</OutputType>
 		<TargetFramework>net8.0-windows</TargetFramework>
 		<RollForward>Major</RollForward>
+		<WindowsDesktopSdkVersion>8.0.0</WindowsDesktopSdkVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
