@@ -997,4 +997,19 @@ public static unsafe partial class HelpersOm
         }
         (list[index1], list[index2]) = (list[index2], list[index1]);
     }
+
+    public static char SEChar(this uint integer) =>
+        integer switch
+        {
+            1 => '\ue0b1',
+            2 => '\ue0b2',
+            3 => '\ue0b3',
+            4 => '\ue0b4',
+            5 => '\ue0b5',
+            6 => '\ue0b6',
+            7 => '\ue0b7',
+            8 => '\ue0b8',
+            9 => '\ue0b9',
+            _ => char.MinValue,
+        };
 }
