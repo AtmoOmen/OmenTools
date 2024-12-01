@@ -213,6 +213,19 @@ public static unsafe partial class HelpersOm
         return true;
     }
 
+    public static bool TryGetAddonByName(string addonName, out AtkUnitBase* addonPtr)
+    {
+        var a = DService.Gui.GetAddonByName(addonName);
+        if (a == nint.Zero)
+        {
+            addonPtr = null;
+            return false;
+        }
+
+        addonPtr = (AtkUnitBase*)a;
+        return true;
+    }
+    
     public static bool TryGetAddonByName<T>(string addonName, out T* addonPtr) where T : unmanaged
     {
         var a = DService.Gui.GetAddonByName(addonName);
