@@ -72,4 +72,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* TripleTriadCoinExchange  => GetAddonByName("TripleTriadCoinExchange");
     public static AtkUnitBase* ShopCardDialog           => GetAddonByName("ShopCardDialog");
     public static AtkUnitBase* SatisfactionSupply       => GetAddonByName("SatisfactionSupply");
+    public static AtkUnitBase* GatheringMasterpiece     => GetAddonByName("GatheringMasterpiece");
 }
