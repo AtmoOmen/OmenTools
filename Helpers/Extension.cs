@@ -1012,4 +1012,38 @@ public static unsafe partial class HelpersOm
             9 => '\ue0b9',
             _ => char.MinValue,
         };
+
+    public static string LowerAndHalfWidth(this string input)
+    {
+        var result = new char[input.Length];
+        for (var i = 0; i < input.Length; i++)
+        {
+            var c = input[i];
+            switch (c)
+            {
+                case '／':
+                    result[i] = '/';
+                    break;
+                case '　':
+                    result[i] = ' ';
+                    break;
+                default:
+                {
+                    if (c.IsFullWidth())
+                        result[i] = char.ToLowerInvariant(c.HalfWidth());
+                    else
+                        result[i] = char.ToLowerInvariant(c);
+                    break;
+                }
+            }
+        }
+
+        return new string(result);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsFullWidth(this char c) => c is >= '\uFF01' and <= '\uFF5E';
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static char HalfWidth(this char c) => (char)(c - 0xFEE0);
 }
