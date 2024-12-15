@@ -73,4 +73,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* ShopCardDialog           => GetAddonByName("ShopCardDialog");
     public static AtkUnitBase* SatisfactionSupply       => GetAddonByName("SatisfactionSupply");
     public static AtkUnitBase* GatheringMasterpiece     => GetAddonByName("GatheringMasterpiece");
+    public static AtkUnitBase* NamePlate                => GetAddonByName("NamePlate");
 }
