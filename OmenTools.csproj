@@ -4,7 +4,7 @@
 
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
-		<TargetFramework>net9.0-windows</TargetFramework>
+		<TargetFramework>net8.0-windows</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -35,14 +35,23 @@
 		<Compile Remove="bin\**" />
 		<EmbeddedResource Remove="bin\**" />
 		<None Remove="bin\**" />
-		<Compile Remove="SimpleAudioPlayer\**" />
-		<EmbeddedResource Remove="SimpleAudioPlayer\**" />
-		<None Remove="SimpleAudioPlayer\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Remove=".gitattributes" />
 		<None Remove=".gitignore" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <COMReference Include="WMPLib">
+	    <VersionMinor>0</VersionMinor>
+	    <VersionMajor>1</VersionMajor>
+	    <Guid>6bf52a50-394a-11d3-b153-00c04f79faa6</Guid>
+	    <Lcid>0</Lcid>
+	    <WrapperTool>tlbimp</WrapperTool>
+	    <Isolated>false</Isolated>
+	    <EmbedInteropTypes>true</EmbedInteropTypes>
+	  </COMReference>
 	</ItemGroup>
 
 	<ItemGroup>
