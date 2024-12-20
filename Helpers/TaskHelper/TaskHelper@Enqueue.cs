@@ -7,7 +7,7 @@ public partial class TaskHelper
         EnsureQueueExists(weight);
         var queue = Queues.First(q => q.Weight == weight);
         queue.Tasks.Add(new TaskHelperTask(task, timeLimitMs ?? TimeLimitMS, abortOnTimeout ?? AbortOnTimeout, name));
-        MaxTasks++;
+        hasPendingTask = true;
     }
 
     public void Enqueue(Action task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, uint weight = 0)
@@ -35,6 +35,6 @@ public partial class TaskHelper
             $"{uniqueName} (DelayCheck)",
             weight: weight);
 
-        MaxTasks += 2;
+        hasPendingTask = true;
     }
 }
