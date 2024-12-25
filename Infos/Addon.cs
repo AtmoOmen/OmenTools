@@ -26,6 +26,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* FadeMiddle               => GetAddonByName("FadeMiddle");
     public static AtkUnitBase* FreeCompanyChest         => GetAddonByName("FreeCompanyChest");
     public static AtkUnitBase* FreeCompanyMember        => GetAddonByName("FreeCompanyMember");
+    public static AtkUnitBase* FriendList               => GetAddonByName("FriendList");
     public static AtkUnitBase* FocusTargetInfo          => GetAddonByName("_FocusTargetInfo");
     public static AtkUnitBase* GatheringMasterpiece     => GetAddonByName("GatheringMasterpiece");
     public static AtkUnitBase* GrandCompanySupplyReward => GetAddonByName("GrandCompanySupplyReward");
