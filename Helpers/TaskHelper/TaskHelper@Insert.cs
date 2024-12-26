@@ -16,7 +16,7 @@ public partial class TaskHelper
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight) ?? AddQueueAndGet(weight);
         queue.Tasks.Insert(0, task);
-        MaxTasks++;
+        HasPendingTask = true;
     }
 
     private TaskHelperQueue AddQueueAndGet(uint weight)
@@ -38,6 +38,6 @@ public partial class TaskHelper
                $"{uniqueName} (Delay)",
                weight: weight);
 
-        MaxTasks += 2;
+        HasPendingTask = true;
     }
 }

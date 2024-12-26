@@ -20,7 +20,7 @@ public partial class TaskHelper : IDisposable
     public  List<string>               TaskStack       => Queues.SelectMany(q => q.Tasks.Select(t => t.Name)).ToList();
     public  int                        NumQueuedTasks => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
     public  bool                       IsBusy => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0);
-    public  int                        MaxTasks        { get; private set; }
+    private bool                       HasPendingTask  { get; set; } = false;
     public  bool                       AbortOnTimeout  { get; set; } = true;
     public  long                       AbortAt         { get; private set; }
     public  bool                       ShowDebug       { get; set; } = false;
@@ -40,6 +40,8 @@ public partial class TaskHelper : IDisposable
 
     private void ProcessNextTask()
     {
+        if(HasPendingTask == false) return;
+        
         foreach (var queue in Queues)
         {
             if(!queue.Tasks.TryDequeue(out var task)) continue;
@@ -51,7 +53,7 @@ public partial class TaskHelper : IDisposable
             break;
         }
 
-        if (CurrentTask == null) MaxTasks = 0;
+        if (CurrentTask == null) HasPendingTask = false;
     }
 
     private void ExecuteCurrentTask()
