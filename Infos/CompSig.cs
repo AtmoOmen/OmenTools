@@ -22,7 +22,7 @@ public record CompSig(string Signature, int? Offset = null, string? SignatureCN 
         return !string.IsNullOrWhiteSpace(signature);
     }
 
-    public int GetOffset() => (OffsetCN != null && IsClientCN ? OffsetCN : Offset) ?? 0;
+    public int GetOffset() => (Get() == Signature ? Offset : Get() == SignatureCN ? OffsetCN : 0) ?? 0;
 
     public nint ScanText()
     {
