@@ -7,7 +7,7 @@ namespace OmenTools.Infos;
 /// <summary>
 /// Composite Signatures 复合签名
 /// </summary>
-public record CompSig(string Signature, int? Offset = null, string? SignatureCN = null, int? OffsetCN = null)
+public record CompSig(string Signature, string? SignatureCN = null)
 {
     public static bool IsClientCN => DService.ClientState.ClientLanguage == (ClientLanguage)4;
 
@@ -22,23 +22,17 @@ public record CompSig(string Signature, int? Offset = null, string? SignatureCN 
     private bool TryGetValidSignature(out string sig)
         => TryGet(out sig!) && !string.IsNullOrWhiteSpace(sig);
 
-    private int GetOffset() => IsClientCN && OffsetCN.HasValue ? OffsetCN.Value : Offset ?? 0;
-
     public nint ScanText()
-        => TryGetValidSignature(out var sig) 
-               ? DService.SigScanner.ScanText(sig) + GetOffset() 
-               : nint.Zero;
+        => TryGetValidSignature(out var sig) ? DService.SigScanner.ScanText(sig) : nint.Zero;
 
     public unsafe T* ScanText<T>() where T : unmanaged
-        => (T*)ScanText();
+        => TryGetValidSignature(out var sig) ? (T*)DService.SigScanner.ScanText(sig) : null;
 
     public nint GetStatic()
-        => TryGetValidSignature(out var sig)
-               ? DService.SigScanner.GetStaticAddressFromSig(sig) + GetOffset()
-               : nint.Zero;
+        => TryGetValidSignature(out var sig) ? DService.SigScanner.GetStaticAddressFromSig(sig) : nint.Zero;
 
     public unsafe T* GetStatic<T>() where T : unmanaged
-        => (T*)GetStatic();
+        => TryGetValidSignature(out var sig) ? (T*)DService.SigScanner.GetStaticAddressFromSig(sig) : null;
 
     public T GetDelegate<T>() where T : Delegate
         => Marshal.GetDelegateForFunctionPointer<T>(ScanText());
