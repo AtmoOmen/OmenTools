@@ -15,34 +15,34 @@ public record CompSig(string Signature, int? Offset = null, string? SignatureCN 
 
     public bool TryGet(out string? signature)
     {
-        signature = !string.IsNullOrWhiteSpace(Signature) && IsClientCN && !string.IsNullOrWhiteSpace(SignatureCN)
-            ? SignatureCN
-            : Signature;
-
+        signature = IsClientCN && !string.IsNullOrWhiteSpace(SignatureCN) ? SignatureCN : Signature;
         return !string.IsNullOrWhiteSpace(signature);
     }
 
-    public int GetOffset() => (Get() == Signature ? Offset : Get() == SignatureCN ? OffsetCN : 0) ?? 0;
+    private bool TryGetValidSignature(out string sig)
+        => TryGet(out sig!) && !string.IsNullOrWhiteSpace(sig);
+
+    private int GetOffset() => IsClientCN && OffsetCN.HasValue ? OffsetCN.Value : Offset ?? 0;
 
     public nint ScanText()
-    {
-        if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return nint.Zero;
-        return DService.SigScanner.ScanText(sig) + GetOffset();
-    }
+        => TryGetValidSignature(out var sig) 
+               ? DService.SigScanner.ScanText(sig) + GetOffset() 
+               : nint.Zero;
 
-    public unsafe T* ScanText<T>() where T : unmanaged => (T*)ScanText();
+    public unsafe T* ScanText<T>() where T : unmanaged
+        => (T*)ScanText();
 
     public nint GetStatic()
-    {
-        if (!TryGet(out var sig) || string.IsNullOrWhiteSpace(sig)) return nint.Zero;
-        return DService.SigScanner.GetStaticAddressFromSig(sig) + GetOffset();
-    }
+        => TryGetValidSignature(out var sig)
+               ? DService.SigScanner.GetStaticAddressFromSig(sig) + GetOffset()
+               : nint.Zero;
 
-    public unsafe T* GetStatic<T>() where T : unmanaged => (T*)GetStatic();
+    public unsafe T* GetStatic<T>() where T : unmanaged
+        => (T*)GetStatic();
 
     public T GetDelegate<T>() where T : Delegate
         => Marshal.GetDelegateForFunctionPointer<T>(ScanText());
 
     public Hook<T> GetHook<T>(T detour) where T : Delegate
-        => DService.Hook.HookFromAddress(ScanText(), detour);
+        => DService.Hook.HookFromSignature(Get() ?? string.Empty, detour);
 }
