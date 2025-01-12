@@ -34,15 +34,17 @@ public static class LuminaCache
         return sheet?.GetRowOrDefault(rowID)?.FirstOrDefault();
     }
 
-    public static bool TryGetRow<T>(uint rowID, out T? item) where T : struct, IExcelRow<T>
+    public static bool TryGetRow<T>(uint rowID, out T item) where T : struct, IExcelRow<T>
     {
-        item = GetRow<T>(rowID);
-        return item != null;
+        var row = GetRow<T>(rowID);
+        item = row.GetValueOrDefault();
+        return row != null;
     }
 
-    public static bool TryGetSubRow<T>(uint rowID, out T? item) where T : struct, IExcelSubrow<T>
+    public static bool TryGetSubRow<T>(uint rowID, out T item) where T : struct, IExcelSubrow<T>
     {
-        item = GetSubRow<T>(rowID);
-        return item != null;
+        var row = GetSubRow<T>(rowID);
+        item = row.GetValueOrDefault();
+        return row != null;
     }
 }
