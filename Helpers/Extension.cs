@@ -38,6 +38,27 @@ public static unsafe partial class HelpersOm
     public const BindingFlags StaticFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
     public const BindingFlags InstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
+    public static char ToSEChar(this uint integer) =>
+        integer switch
+        {
+            1 => '\ue0b1',
+            2 => '\ue0b2',
+            3 => '\ue0b3',
+            4 => '\ue0b4',
+            5 => '\ue0b5',
+            6 => '\ue0b6',
+            7 => '\ue0b7',
+            8 => '\ue0b8',
+            9 => '\ue0b9',
+            _ => char.MinValue,
+        };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsFullWidth(this char c) => c is >= '\uFF01' and <= '\uFF5E';
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static char ToHalfWidth(this char c) => (char)(c - 0xFEE0);
+    
     public static string ToLowerAndHalfWidth(this string input)
     {
         if (string.IsNullOrEmpty(input))
@@ -78,23 +99,23 @@ public static unsafe partial class HelpersOm
         if (field != null)
             field.SetValue(obj, value);
         else
-            obj?.GetType()?.GetProperty(name, AllFlags)?.SetValue(obj, value);
+            obj.GetType().GetProperty(name, AllFlags)?.SetValue(obj, value);
     }
 
     public static object? GetStaticFoP(this object obj, string type, string name) =>
-        obj?.GetType()?.Assembly?.GetType(type)?.GetField(name, StaticFlags)?.GetValue(null)
-        ?? obj?.GetType()?.Assembly?.GetType(type)?.GetProperty(name, StaticFlags)?.GetValue(null);
+        obj.GetType().Assembly.GetType(type)?.GetField(name, StaticFlags)?.GetValue(null)
+        ?? obj.GetType().Assembly.GetType(type)?.GetProperty(name, StaticFlags)?.GetValue(null);
 
     public static T? GetStaticFoP<T>(this object obj, string type, string name) 
         => (T?)GetStaticFoP(obj, type, name);
 
     public static void SetStaticFoP(this object obj, string type, string name, object value)
     {
-        var field = obj?.GetType()?.Assembly?.GetType(type)?.GetField(name, StaticFlags);
+        var field = obj.GetType().Assembly.GetType(type)?.GetField(name, StaticFlags);
         if (field != null)
             field.SetValue(null, value);
         else
-            obj?.GetType()?.Assembly?.GetType(type)?.GetProperty(name, StaticFlags)?.SetValue(null, value);
+            obj.GetType().Assembly.GetType(type)?.GetProperty(name, StaticFlags)?.SetValue(null, value);
     }
 
     /// <returns>Object returned by the target method</returns>
@@ -383,9 +404,8 @@ public static unsafe partial class HelpersOm
         var placeName = marker.GetMarkerLabel();
         if (placeName != string.Empty) return placeName;
 
-        var mapSymbol = LuminaCache.GetRow<MapSymbol>(marker.Icon);
-        if (mapSymbol == null) return string.Empty;
-        return mapSymbol?.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
+        if (!LuminaCache.TryGetRow<MapSymbol>(marker.Icon, out var symbol)) return string.Empty;
+        return symbol.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
     }
 
     public static string GetMarkerLabel(this MapMarker marker)
