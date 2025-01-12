@@ -38,6 +38,33 @@ public static unsafe partial class HelpersOm
     public const BindingFlags StaticFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
     public const BindingFlags InstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
+    public static string ToLowerAndHalfWidth(this string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        var lowercase = input.ToLower();
+            
+        var result = new StringBuilder();
+        foreach (var c in lowercase)
+        {
+            switch (c)
+            {
+                case '　':
+                    result.Append(' ');
+                    continue;
+                case >= '！' and <= '～':
+                    result.Append((char)(c - 0xFEE0));
+                    continue;
+                default:
+                    result.Append(c);
+                    break;
+            }
+        }
+
+        return result.ToString();
+    }
+    
     public static object? GetFoP(this object obj, string name) =>
         obj.GetType().GetField(name, AllFlags)?.GetValue(obj)
         ?? obj.GetType().GetProperty(name, AllFlags)?.GetValue(obj);
