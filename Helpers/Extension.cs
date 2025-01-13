@@ -609,6 +609,19 @@ public static unsafe partial class HelpersOm
         };
     }
 
+    public static BitmapFontIcon ToBitmapFontIcon(this ClassJob job)
+    {
+        if (job.RowId == 0) return BitmapFontIcon.NewAdventurer;
+
+        return job.RowId switch
+        {
+            < 1 => BitmapFontIcon.NewAdventurer,
+            < 41 => (BitmapFontIcon)job.RowId + 127,
+            41 or 42 => (BitmapFontIcon)job.RowId + 129,
+            _ => BitmapFontIcon.NewAdventurer
+        };
+    }
+
     public static string ExtractPlaceName(this TerritoryType row)
         => row.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
 
