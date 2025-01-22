@@ -395,9 +395,9 @@ public static unsafe partial class HelpersOm
 
     public static List<MapMarker> GetMapMarkers(this Map map) =>
         LuminaCache.GetSub<MapMarker>()
-            .Where(x => x.RowId == map.MapMarkerRange)
             .SelectMany(x => x)
-            .ToList() ?? [];
+            .Where(x => x.RowId == map.MapMarkerRange)
+            .ToList();
 
     private static string GetMarkerPlaceName(this MapMarker marker)
     {
