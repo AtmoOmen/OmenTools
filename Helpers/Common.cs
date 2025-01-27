@@ -1,12 +1,20 @@
-﻿using System.Numerics;
+﻿using System.Buffers.Binary;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using ImGuiNET;
 
 namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    public static Vector4 UIColorToVector4Color(uint uiColorRowColor)
+        => ImGui.ColorConvertU32ToFloat4(UIColorToU32Color(uiColorRowColor));
+    
+    public static uint UIColorToU32Color(uint uiColorRowColor)
+        => BinaryPrimitives.ReverseEndianness(uiColorRowColor) | 0xFF000000u;
+    
     public static string MarkdownToPlainText(string markdown)
     {
         markdown = Regex.Replace(markdown, @"^\#{1,6}\s*", "", RegexOptions.Multiline);
