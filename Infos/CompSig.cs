@@ -28,11 +28,11 @@ public record CompSig(string Signature, string? SignatureCN = null)
     public unsafe T* ScanText<T>() where T : unmanaged
         => TryGetValidSignature(out var sig) ? (T*)DService.SigScanner.ScanText(sig) : null;
 
-    public nint GetStatic()
-        => TryGetValidSignature(out var sig) ? DService.SigScanner.GetStaticAddressFromSig(sig) : nint.Zero;
+    public nint GetStatic(int offset = 0)
+        => TryGetValidSignature(out var sig) ? DService.SigScanner.GetStaticAddressFromSig(sig, offset) : nint.Zero;
 
-    public unsafe T* GetStatic<T>() where T : unmanaged
-        => TryGetValidSignature(out var sig) ? (T*)DService.SigScanner.GetStaticAddressFromSig(sig) : null;
+    public unsafe T* GetStatic<T>(int offset = 0) where T : unmanaged
+        => TryGetValidSignature(out var sig) ? (T*)DService.SigScanner.GetStaticAddressFromSig(sig, offset) : null;
 
     public T GetDelegate<T>() where T : Delegate
         => Marshal.GetDelegateForFunctionPointer<T>(ScanText());
