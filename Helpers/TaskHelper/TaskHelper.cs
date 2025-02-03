@@ -109,13 +109,13 @@ public partial class TaskHelper : IDisposable
 
     private void HandleTimeout(Exception e)
     {
-        DService.Log.Error("执行任务超时", e);
+        DService.Log.Error(e, "执行任务超时");
         CurrentTask = null;
     }
 
     private void HandleError(Exception e)
     {
-        DService.Log.Error("执行任务过程中出现错误", e);
+        DService.Log.Error(e, "执行任务过程中出现错误");
         CurrentTask = null;
     }
 
