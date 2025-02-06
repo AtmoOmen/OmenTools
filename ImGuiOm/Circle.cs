@@ -5,7 +5,7 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
-    private static void CircleOutlined(
+    public static void CircleOutlined(
         Vector2 center, float radius, uint fillColor, uint outlineColor = 0xFF000000, float outlineThickness = 1.5f,
         ImDrawListPtr? drawList = null)
     {
