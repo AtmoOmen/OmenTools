@@ -73,4 +73,24 @@ public static partial class ImGuiOm
 
         return result;
     }
+
+    public static void TextOutlined(
+        Vector2 position, uint textColor, string text, uint outlineColor = 0xFF000000, float outlineThickness = 1.5f,
+        ImDrawListPtr? drawList = null)
+    {
+        drawList ??= ImGui.GetBackgroundDrawList();
+
+        // 8 方向阴影
+        for (var x = -outlineThickness; x <= outlineThickness; x += 0.5f)
+        {
+            for (var y = -outlineThickness; y <= outlineThickness; y += 0.5f)
+            {
+                if (x == 0 && y == 0) continue;
+                drawList?.AddText(position + new Vector2(x, y), outlineColor, text);
+            }
+        }
+
+        // 原始文字
+        drawList?.AddText(position, textColor, text);
+    }
 }
