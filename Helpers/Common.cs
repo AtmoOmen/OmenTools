@@ -9,6 +9,15 @@ namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    public static float WorldDirHToCharaRotation(Vector2 direction) 
+        => direction == Vector2.Zero ? 0f : MathF.Atan2(direction.X, direction.Y);
+
+    public static float CharaRotationSymmetricTransform(float rotation) 
+        => MathF.IEEERemainder(rotation + MathF.PI, 2 * MathF.PI);
+    
+    public static float CameraDirHToCharaRotation(float cameraDirH)
+        => (cameraDirH - MathF.PI) % (2 * MathF.PI);
+    
     public static Vector4 UIColorToVector4Color(uint uiColorRowColor)
         => ImGui.ColorConvertU32ToFloat4(UIColorToU32Color(uiColorRowColor));
     
