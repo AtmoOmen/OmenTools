@@ -4,6 +4,8 @@ namespace OmenTools.Infos;
 
 public static unsafe partial class InfosOm
 {
+    public static AtkUnitBase* VoteMvp                  => GetAddonByName("VoteMvp");
+    public static AtkUnitBase* BannerMIP                => GetAddonByName("BannerMIP");
     public static AtkUnitBase* AirShipExplorationDetail => GetAddonByName("AirShipExplorationDetail");
     public static AtkUnitBase* AirShipExplorationResult => GetAddonByName("AirShipExplorationResult");
     public static AtkUnitBase* Bank                     => GetAddonByName("Bank");
