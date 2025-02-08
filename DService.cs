@@ -27,7 +27,10 @@ public class DService
         MemoryPatch.DisposeAll();
         ThrottlerHelper.Uninit();
         ImageHelper.Uninit();
+        TrayNotify.Uninit();
     }
+
+    public void InitTrayNotify(Icon icon) => TrayNotify.Init(icon);
     
     [PluginService] public static IAddonLifecycle      AddonLifecycle  { get; private set; } = null!;
     [PluginService] public static IAddonEventManager   AddonEvent      { get; private set; } = null!;
