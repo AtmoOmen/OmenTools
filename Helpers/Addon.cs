@@ -706,6 +706,18 @@ public static unsafe partial class HelpersOm
 
         parent->UldManager.UpdateDrawNodeList();
     }
+    
+    public static void LinkNodeAtEnd(AtkResNode* imageNode, AtkComponentBase* parent) 
+    {
+        var node                                   = parent->UldManager.RootNode;
+        while (node->PrevSiblingNode != null) node = node->PrevSiblingNode;
+
+        node->PrevSiblingNode      = imageNode;
+        imageNode->NextSiblingNode = node;
+        imageNode->ParentNode      = node->ParentNode;
+        
+        parent->UldManager.UpdateDrawNodeList();
+    }
 
     public static void UnlinkNode<T>(T* atkNode, AtkComponentNode* componentNode) where T : unmanaged
     {
