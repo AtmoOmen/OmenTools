@@ -19,8 +19,10 @@ public static class TrayNotify
     {
         lock (QueueLock)
         {
+            MultiMessagesReceived = multiMessagesReceived;
+            
             savedIcon?.Dispose();
-            savedIcon = (Icon)icon.Clone();
+            savedIcon = icon;
         }
     }
 
