@@ -5,30 +5,26 @@ namespace OmenTools.Helpers;
 public static class TrayNotify
 {
     private static NotifyIcon? Tray { get; set; }
+    private static Icon?       Icon { get; set; }
 
-    private static string MultiMessagesReceived { get; set; } = string.Empty;
+    private static string      MultiMessagesReceived { get; set; } = string.Empty;
     
     private static readonly Queue<BalloonTipMessage> MessageQueue = [];
     private static readonly object                   QueueLock    = new();
-    private static          Icon?                    savedIcon;
     private static          Timer?                   displayTimer;
     private static          Timer?                   delayTimer;
     private static          bool                     isDisposed;
 
     internal static void Init(Icon icon, string multiMessagesReceived)
     {
-        lock (QueueLock)
-        {
-            MultiMessagesReceived = multiMessagesReceived;
-            
-            savedIcon?.Dispose();
-            savedIcon = icon;
-        }
+        MultiMessagesReceived = multiMessagesReceived;
+
+        Icon ??= icon;
     }
 
     public static void ShowBalloonTip(string title, string message, ToolTipIcon icon = ToolTipIcon.Info)
     {
-        if (isDisposed || savedIcon == null) return;
+        if (isDisposed || Icon == null) return;
 
         lock (QueueLock)
         {
@@ -53,7 +49,7 @@ public static class TrayNotify
         {
             if (Tray == null)
             {
-                Tray = new NotifyIcon { Icon = savedIcon };
+                Tray = new NotifyIcon { Icon = Icon };
                 
                 displayTimer = new Timer(5000) { AutoReset = false };
                 displayTimer.Elapsed += (_, _) => ProcessNextMessage();
@@ -113,16 +109,12 @@ public static class TrayNotify
 
     internal static void Uninit()
     {
-        lock (QueueLock)
-        {
-            isDisposed = true;
-            MessageQueue.Clear();
-            
-            savedIcon?.Dispose();
-            savedIcon = null;
-            
-            CleanupTray();
-        }
+        isDisposed = true;
+        MessageQueue.Clear();
+        
+        Icon = null;
+        
+        CleanupTray();
     }
 
     private readonly struct BalloonTipMessage(string title, string message, ToolTipIcon icon)
