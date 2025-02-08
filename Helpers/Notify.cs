@@ -1,12 +1,15 @@
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.ImGuiNotification;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
+    private static unsafe bool IsWindowBackground => Framework.Instance()->WindowInactive;
+    
     public static unsafe void ContentHintBlue(string message, int hundredMS = 30) =>
         RaptureAtkModule.Instance()->ShowTextGimmickHint(message, RaptureAtkModule.TextGimmickHintStyle.Info, hundredMS);
 
@@ -25,7 +28,7 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        TrayNotify.ShowBalloonTip(title ?? message, message);
+        if (IsWindowBackground) TrayNotify.ShowBalloonTip(title ?? message, message);
     }
 
     public static void NotificationWarning(string message, string? title = null)
@@ -40,7 +43,7 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Warning);
+        if (IsWindowBackground) TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Warning);
     }
 
     public static void NotificationError(string message, string? title = null)
@@ -55,7 +58,7 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Error);
+        if (IsWindowBackground) TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Error);
     }
 
     public static void NotificationInfo(string message, string? title = null)
@@ -70,7 +73,7 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        TrayNotify.ShowBalloonTip(title ?? message, message);
+        if (IsWindowBackground) TrayNotify.ShowBalloonTip(title ?? message, message);
     }
 
     public static void ChatError(string message, SeString? prefix = null)
