@@ -13,45 +13,65 @@ public static partial class HelpersOm
     public static unsafe void ContentHintRed(string message, int hundredMS = 30) =>
         RaptureAtkModule.Instance()->ShowTextGimmickHint(message, RaptureAtkModule.TextGimmickHintStyle.Warning, hundredMS);
 
-    public static void NotificationSuccess(string message, string? title = null) => DService.DNotice.AddNotification(new()
+    public static void NotificationSuccess(string message, string? title = null)
     {
-        Title = title ?? message,
-        Content = message,
-        Type = NotificationType.Success,
-        Minimized = false,
-        InitialDuration = TimeSpan.FromSeconds(3),
-        ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
-    });
+        DService.DNotice.AddNotification(new()
+        {
+            Title                              = title ?? message,
+            Content                            = message,
+            Type                               = NotificationType.Success,
+            Minimized                          = false,
+            InitialDuration                    = TimeSpan.FromSeconds(3),
+            ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
+        });
+        
+        TrayNotify.ShowBalloonTip(title ?? message, message);
+    }
 
-    public static void NotificationWarning(string message, string? title = null) => DService.DNotice.AddNotification(new()
+    public static void NotificationWarning(string message, string? title = null)
     {
-        Title = title ?? message,
-        Content = message,
-        Type = NotificationType.Warning,
-        Minimized = false,
-        InitialDuration = TimeSpan.FromSeconds(3),
-        ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
-    });
+        DService.DNotice.AddNotification(new()
+        {
+            Title                              = title ?? message,
+            Content                            = message,
+            Type                               = NotificationType.Warning,
+            Minimized                          = false,
+            InitialDuration                    = TimeSpan.FromSeconds(3),
+            ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
+        });
+        
+        TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Warning);
+    }
 
-    public static void NotificationError(string message, string? title = null) => DService.DNotice.AddNotification(new()
+    public static void NotificationError(string message, string? title = null)
     {
-        Title = title ?? message,
-        Content = message,
-        Type = NotificationType.Error,
-        Minimized = false,
-        InitialDuration = TimeSpan.FromSeconds(3),
-        ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
-    });
+        DService.DNotice.AddNotification(new()
+        {
+            Title                              = title ?? message,
+            Content                            = message,
+            Type                               = NotificationType.Error,
+            Minimized                          = false,
+            InitialDuration                    = TimeSpan.FromSeconds(3),
+            ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
+        });
+        
+        TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Error);
+    }
 
-    public static void NotificationInfo(string message, string? title = null) => DService.DNotice.AddNotification(new()
+    public static void NotificationInfo(string message, string? title = null)
     {
-        Title = title ?? message,
-        Content = message,
-        Type = NotificationType.Info,
-        Minimized = false,
-        InitialDuration = TimeSpan.FromSeconds(3),
-        ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
-    });
+        DService.DNotice.AddNotification(new()
+        {
+            Title                              = title ?? message,
+            Content                            = message,
+            Type                               = NotificationType.Info,
+            Minimized                          = false,
+            InitialDuration                    = TimeSpan.FromSeconds(3),
+            ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
+        });
+        
+        TrayNotify.ShowBalloonTip(title ?? message, message);
+    }
 
     public static void ChatError(string message, SeString? prefix = null)
     {
