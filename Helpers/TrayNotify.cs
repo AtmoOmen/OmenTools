@@ -5,44 +5,60 @@ namespace OmenTools.Helpers;
 public static class TrayNotify
 {
     private static NotifyIcon? Tray { get; set; }
+
+    private static string MultiMessagesReceived { get; set; } = string.Empty;
     
     private static readonly Queue<BalloonTipMessage> MessageQueue = [];
-    private static readonly object QueueLock = new();
-    private static Icon? _savedIcon;
-    private static Timer? _displayTimer;
-    private static bool _isDisposed;
-    private static bool _isFirstMessage = true;
+    private static readonly object                   QueueLock    = new();
+    private static          Icon?                    savedIcon;
+    private static          Timer?                   displayTimer;
+    private static          Timer?                   delayTimer;
+    private static          bool                     isDisposed;
 
-    internal static void Init(Icon icon)
+    internal static void Init(Icon icon, string multiMessagesReceived)
     {
         lock (QueueLock)
         {
-            _savedIcon?.Dispose();
-            _savedIcon = (Icon)icon.Clone();
+            savedIcon?.Dispose();
+            savedIcon = (Icon)icon.Clone();
         }
     }
 
     public static void ShowBalloonTip(string title, string message, ToolTipIcon icon = ToolTipIcon.Info)
     {
-        if (_isDisposed || _savedIcon == null) return;
+        if (isDisposed || savedIcon == null) return;
 
         lock (QueueLock)
         {
             MessageQueue.Enqueue(new BalloonTipMessage(title, message, icon));
-            
-            if (Tray == null)
+
+            // 首次启动延迟
+            if (delayTimer == null)
             {
-                CreateTray();
-                _displayTimer = new Timer { AutoReset = false };
-                _displayTimer.Elapsed += (_, _) => ProcessNextMessage();
+                delayTimer = new Timer(500) { AutoReset = false };
+                delayTimer.Elapsed += (_, _) => StartProcessing();
             }
 
-            if (!_displayTimer!.Enabled)
+            // 重置
+            delayTimer.Stop();
+            delayTimer.Start();
+        }
+    }
+
+    private static void StartProcessing()
+    {
+        lock (QueueLock)
+        {
+            if (Tray == null)
             {
-                // 首条消息延迟500ms
-                _displayTimer.Interval = _isFirstMessage ? 500 : 3000;
-                _displayTimer.Start();
+                Tray = new NotifyIcon { Icon = savedIcon };
+                
+                displayTimer = new Timer(5000) { AutoReset = false };
+                displayTimer.Elapsed += (_, _) => ProcessNextMessage();
             }
+
+            Tray.Visible = true;
+            ProcessNextMessage();
         }
     }
 
@@ -50,48 +66,31 @@ public static class TrayNotify
     {
         lock (QueueLock)
         {
-            if (_isDisposed || MessageQueue.Count == 0)
+            if (isDisposed || MessageQueue.Count == 0)
             {
                 CleanupTray();
                 return;
             }
 
-            // 处理消息合并逻辑
-            var remaining = MessageQueue.Count - 1;
-            if (remaining >= 2)
+            // 剩余消息 >= 2 时显示汇总
+            if (MessageQueue.Count >= 2)
             {
-                var msg = MessageQueue.Dequeue();
-                var mergedMsg = new BalloonTipMessage(msg.Title, $"收到了 {remaining + 1} 条新消息", msg.Icon);
-                
+                var count = MessageQueue.Count;
                 MessageQueue.Clear();
-                MessageQueue.Enqueue(mergedMsg);
-            }
 
-            CreateTray();
-            var currentMsg = MessageQueue.Dequeue();
-            Tray!.ShowBalloonTip(3000, currentMsg.Title, currentMsg.Message, currentMsg.Icon);
-
-            // 更新定时器间隔
-            _isFirstMessage = false;
-            _displayTimer!.Interval = 3000;
-            
-            if (MessageQueue.Count > 0)
-            {
-                _displayTimer.Start();
+                Tray!.ShowBalloonTip(5000,
+                                     string.Format(MultiMessagesReceived, count),
+                                     string.Format(MultiMessagesReceived, count),
+                                     ToolTipIcon.Info);
             }
             else
             {
-                CleanupTray();
+                var msg = MessageQueue.Dequeue();
+                Tray!.ShowBalloonTip(5000, msg.Title, msg.Message, msg.Icon);
             }
-        }
-    }
 
-    private static void CreateTray()
-    {
-        if (Tray == null)
-        {
-            Tray = new NotifyIcon { Icon = _savedIcon };
-            Tray.Visible = true;
+            // 下条消息计时
+            displayTimer!.Start();
         }
     }
 
@@ -103,19 +102,23 @@ public static class TrayNotify
         Tray.Dispose();
         Tray = null;
         
-        _displayTimer?.Dispose();
-        _displayTimer = null;
-        _isFirstMessage = true; // 重置首条消息状态
+        displayTimer?.Dispose();
+        displayTimer = null;
+        
+        delayTimer?.Dispose();
+        delayTimer = null;
     }
 
     internal static void Uninit()
     {
         lock (QueueLock)
         {
-            _isDisposed = true;
+            isDisposed = true;
             MessageQueue.Clear();
-            _savedIcon?.Dispose();
-            _savedIcon = null;
+            
+            savedIcon?.Dispose();
+            savedIcon = null;
+            
             CleanupTray();
         }
     }
