@@ -1,9 +1,7 @@
-﻿using System.Buffers.Binary;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using FFXIVClientStructs.FFXIV.Client.System.String;
-using ImGuiNET;
 
 namespace OmenTools.Helpers;
 
@@ -17,12 +15,6 @@ public static unsafe partial class HelpersOm
     
     public static float CameraDirHToCharaRotation(float cameraDirH)
         => (cameraDirH - MathF.PI) % (2 * MathF.PI);
-    
-    public static Vector4 UIColorToVector4Color(uint uiColorRowColor)
-        => ImGui.ColorConvertU32ToFloat4(UIColorToU32Color(uiColorRowColor));
-    
-    public static uint UIColorToU32Color(uint uiColorRowColor)
-        => BinaryPrimitives.ReverseEndianness(uiColorRowColor) | 0xFF000000u;
     
     public static string MarkdownToPlainText(string markdown)
     {
@@ -70,68 +62,6 @@ public static unsafe partial class HelpersOm
 
     public static DateTime UnixMillisecondToDateTime(long unixTimeStampMS) 
         => DateTimeOffset.FromUnixTimeMilliseconds(unixTimeStampMS).LocalDateTime;
-
-    public static Vector4 HexToVector4(string hexColor, bool includeAlpha = true)
-    {
-        if (!hexColor.StartsWith('#')) throw new ArgumentException("Invalid hex color format");
-
-        hexColor = hexColor[1..];
-
-        int r, g, b, a;
-        switch (hexColor.Length)
-        {
-            case 3:
-                r = Convert.ToInt32(hexColor.Substring(0, 1), 16) * 17;
-                g = Convert.ToInt32(hexColor.Substring(1, 1), 16) * 17;
-                b = Convert.ToInt32(hexColor.Substring(2, 1), 16) * 17;
-                a = includeAlpha ? 255 : 0;
-                break;
-            case 4:
-                r = Convert.ToInt32(hexColor.Substring(0, 1), 16) * 17;
-                g = Convert.ToInt32(hexColor.Substring(1, 1), 16) * 17;
-                b = Convert.ToInt32(hexColor.Substring(2, 1), 16) * 17;
-                a = Convert.ToInt32(hexColor.Substring(3, 1), 16) * 17;
-                break;
-            case 6:
-                r = Convert.ToInt32(hexColor.Substring(0, 2), 16);
-                g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
-                b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
-                a = includeAlpha ? 255 : 0;
-                break;
-            case 8:
-                r = Convert.ToInt32(hexColor.Substring(0, 2), 16);
-                g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
-                b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
-                a = Convert.ToInt32(hexColor.Substring(6, 2), 16);
-                break;
-            default:
-                throw new ArgumentException("Invalid hex color length");
-        }
-
-        return new Vector4(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
-    }
-
-    public static Vector4 DarkenColor(Vector4 originalColor, float darkenAmount)
-    {
-        darkenAmount = Math.Clamp(darkenAmount, 0f, 1f);
-
-        var newR = Math.Max(0, originalColor.X - originalColor.X * darkenAmount);
-        var newG = Math.Max(0, originalColor.Y - originalColor.Y * darkenAmount);
-        var newB = Math.Max(0, originalColor.Z - originalColor.Z * darkenAmount);
-
-        return new Vector4(newR, newG, newB, originalColor.W);
-    }
-    
-    public static Vector4 LightenColor(Vector4 originalColor, float lightenAmount)
-    {
-        lightenAmount = Math.Clamp(lightenAmount, 0f, 1f);
-
-        var newR = Math.Min(1, originalColor.X + (1 - originalColor.X) * lightenAmount);
-        var newG = Math.Min(1, originalColor.Y + (1 - originalColor.Y) * lightenAmount);
-        var newB = Math.Min(1, originalColor.Z + (1 - originalColor.Z) * lightenAmount);
-
-        return new Vector4(newR, newG, newB, originalColor.W);
-    }
 
     public static string UTF8StringToString(Utf8String str)
     {

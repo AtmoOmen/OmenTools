@@ -706,6 +706,18 @@ public static unsafe partial class HelpersOm
 
         parent->UldManager.UpdateDrawNodeList();
     }
+    
+    public static void LinkNodeAtEnd(AtkResNode* imageNode, AtkComponentBase* parent) 
+    {
+        var node                                   = parent->UldManager.RootNode;
+        while (node->PrevSiblingNode != null) node = node->PrevSiblingNode;
+
+        node->PrevSiblingNode      = imageNode;
+        imageNode->NextSiblingNode = node;
+        imageNode->ParentNode      = node->ParentNode;
+        
+        parent->UldManager.UpdateDrawNodeList();
+    }
 
     public static void UnlinkNode<T>(T* atkNode, AtkComponentNode* componentNode) where T : unmanaged
     {
@@ -736,6 +748,20 @@ public static unsafe partial class HelpersOm
         FreePartsList(node->PartsList);
         FreeImageNode(node);
     }
+    
+    public static void UnlinkAndFreeImageNode(AtkImageNode* node, AtkComponentNode* parent)
+    {
+        if (node->AtkResNode.PrevSiblingNode is not null)
+            node->AtkResNode.PrevSiblingNode->NextSiblingNode = node->AtkResNode.NextSiblingNode;
+
+        if (node->AtkResNode.NextSiblingNode is not null)
+            node->AtkResNode.NextSiblingNode->PrevSiblingNode = node->AtkResNode.PrevSiblingNode;
+
+        parent->Component->UldManager.UpdateDrawNodeList();
+
+        FreePartsList(node->PartsList);
+        FreeImageNode(node);
+    }
 
     public static void UnlinkAndFreeTextNode(AtkTextNode* node, AtkUnitBase* parent)
     {
@@ -746,6 +772,18 @@ public static unsafe partial class HelpersOm
             node->AtkResNode.NextSiblingNode->PrevSiblingNode = node->AtkResNode.PrevSiblingNode;
 
         parent->UldManager.UpdateDrawNodeList();
+        FreeTextNode(node);
+    }
+
+    public static void UnlinkAndFreeTextNode(AtkTextNode* node, AtkComponentNode* parent)
+    {
+        if(node->AtkResNode.PrevSiblingNode is not null)
+            node->AtkResNode.PrevSiblingNode->NextSiblingNode = node->AtkResNode.NextSiblingNode;
+
+        if(node->AtkResNode.NextSiblingNode is not null)
+            node->AtkResNode.NextSiblingNode->PrevSiblingNode = node->AtkResNode.PrevSiblingNode;
+
+        parent->Component->UldManager.UpdateDrawNodeList();
         FreeTextNode(node);
     }
 }
