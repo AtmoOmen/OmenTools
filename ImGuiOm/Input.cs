@@ -1,62 +1,66 @@
 ﻿using ImGuiNET;
-using System.Runtime.InteropServices;
 
 namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
+    #region UInt
+
     public static bool InputUInt(string label, ref uint value) 
-        => InputUIntInternal(label, ref value, null, null, null, ImGuiInputTextFlags.None);
+        => InputScalarInternal(label, ImGuiDataType.U32, ref value);
 
     public static bool InputUInt(string label, ref uint value, uint step) 
-        => InputUIntInternal(label, ref value, step, null, null, ImGuiInputTextFlags.None);
+        => InputScalarInternal(label, ImGuiDataType.U32, ref value, step);
 
     public static bool InputUInt(string label, ref uint value, uint step, uint step_fast) 
-        => InputUIntInternal(label, ref value, step, step_fast, null, ImGuiInputTextFlags.None);
+        => InputScalarInternal(label, ImGuiDataType.U32, ref value, step, step_fast);
 
     public static bool InputUInt(string label, ref uint value, uint step, uint step_fast, ImGuiInputTextFlags flags) 
-        => InputUIntInternal(label, ref value, step, step_fast, null, flags);
+        => InputScalarInternal(label, ImGuiDataType.U32, ref value, step, step_fast, flags: flags);
 
-    private static bool InputUIntInternal(string label, ref uint value, uint? step, uint? step_fast, string? format, ImGuiInputTextFlags flags)
+    #endregion
+
+    #region Byte
+
+    public static bool InputByte(string label, ref byte value)
+        => InputScalarInternal(label, ImGuiDataType.U8, ref value);
+
+    public static bool InputByte(string label, ref byte value, byte step)
+        => InputScalarInternal(label, ImGuiDataType.U8, ref value, step);
+
+    public static bool InputByte(string label, ref byte value, byte step, byte step_fast)
+        => InputScalarInternal(label, ImGuiDataType.U8, ref value, step, step_fast);
+
+    public static bool InputByte(string label, ref byte value, byte step, byte step_fast, ImGuiInputTextFlags flags)
+        => InputScalarInternal(label, ImGuiDataType.U8, ref value, step, step_fast, flags: flags);
+
+    #endregion
+
+    private static unsafe bool InputScalarInternal<T>(
+        string label, ImGuiDataType dataType, ref T value, T? step = null, T? step_fast = null, string? format = null,
+        ImGuiInputTextFlags flags = ImGuiInputTextFlags.None) where T : unmanaged
     {
-        var valuePtr = Marshal.AllocHGlobal(sizeof(uint));
-        try
+        var valuePtr = stackalloc T[1];
+        *valuePtr = value;
+
+        T* stepPtr     = null;
+        T* stepFastPtr = null;
+
+        if (step.HasValue)
         {
-            Marshal.WriteInt32(valuePtr, unchecked((int)value));
-
-            var stepPtr = nint.Zero;
-            var stepFastPtr = nint.Zero;
-
-            if (step.HasValue)
-            {
-                stepPtr = Marshal.AllocHGlobal(sizeof(uint));
-                Marshal.WriteInt32(stepPtr, unchecked((int)step.Value));
-            }
-
-            if (step_fast.HasValue)
-            {
-                stepFastPtr = Marshal.AllocHGlobal(sizeof(uint));
-                Marshal.WriteInt32(stepFastPtr, unchecked((int)step_fast.Value));
-            }
-
-            try
-            {
-                var result = ImGui.InputScalar(label, ImGuiDataType.U32, valuePtr, stepPtr, stepFastPtr, format, flags);
-                if (result)
-                {
-                    value = unchecked((uint)Marshal.ReadInt32(valuePtr));
-                }
-                return result;
-            }
-            finally
-            {
-                if (stepPtr != IntPtr.Zero) Marshal.FreeHGlobal(stepPtr);
-                if (stepFastPtr != IntPtr.Zero) Marshal.FreeHGlobal(stepFastPtr);
-            }
+            var stepVal = step.Value;
+            stepPtr = &stepVal;
         }
-        finally
+
+        if (step_fast.HasValue)
         {
-            Marshal.FreeHGlobal(valuePtr);
+            var stepFastVal = step_fast.Value;
+            stepFastPtr = &stepFastVal;
         }
+
+        var result = ImGui.InputScalar(label, dataType, (nint)valuePtr, (nint)stepPtr, (nint)stepFastPtr, format, flags);
+
+        if (result) value = *valuePtr;
+        return result;
     }
 }
