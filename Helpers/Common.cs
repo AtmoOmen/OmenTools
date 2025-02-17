@@ -4,6 +4,30 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
+    public static async Task WaitForCondition(Func<bool> condition, TimeSpan? timeout = null)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+
+        _ = Task.Run(async () =>
+        {
+            while (!condition())
+            {
+                await Task.Delay(100);
+                if (tcs.Task.IsCompleted) return;
+            }
+
+            tcs.TrySetResult(true);
+        });
+
+        if (timeout.HasValue)
+        {
+            using var cts = new CancellationTokenSource(timeout.Value);
+            cts.Token.Register(() => tcs.TrySetCanceled());
+        }
+
+        await tcs.Task;
+    }
+    
     public static float WorldDirHToCharaRotation(Vector2 direction) 
         => direction == Vector2.Zero ? 0f : MathF.Atan2(direction.X, direction.Y);
 
