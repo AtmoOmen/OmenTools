@@ -1,5 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using Action = Lumina.Excel.GeneratedSheets.Action;
+using Action = Lumina.Excel.Sheets.Action;
 
 namespace OmenTools.Helpers;
 
@@ -11,11 +11,11 @@ public static unsafe partial class HelpersOm
         var data = LuminaCache.GetRow<Action>(actionID);
         if (data == null) return false;
 
-        var unlockLink = data.UnlockLink;
+        var unlockLink = data?.UnlockLink.RowId ?? 0;
         var unlockLinkCondition =
             unlockLink == 0 || UIState.Instance()->IsUnlockLinkUnlockedOrQuestCompleted(unlockLink);
 
-        var unlockLevel = data.ClassJobLevel;
+        var unlockLevel = data?.ClassJobLevel ?? 0;
         var unlockLevelCondition = unlockLevel == 0 || unlockLevel <= player.Level;
 
         return unlockLinkCondition && unlockLevelCondition;

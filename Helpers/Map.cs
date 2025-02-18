@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 
 namespace OmenTools.Helpers;
 
@@ -66,11 +66,11 @@ public static partial class HelpersOm
         => (correctZOffset && zOffset == -10000) ? mapValue * 100f : mapValue * 100f + zOffset;
 
     public static List<MapMarker> GetZoneMapMarkers(uint zoneID) =>
-        LuminaCache.Get<Map>()!
-            .Where(x => x.TerritoryType.Row == zoneID)
+        LuminaCache.Get<Map>()
+            .Where(x => x.TerritoryType.RowId == zoneID)
             .SelectMany(x => x.GetMapMarkers())
             .ToList();
 
     public static List<MapMarker> GetMapMarkers(uint mapID)
-        => LuminaCache.GetRow<Map>(mapID)!.GetMapMarkers();
+        => LuminaCache.TryGetRow<Map>(mapID, out var row) ? row.GetMapMarkers() : [];
 }

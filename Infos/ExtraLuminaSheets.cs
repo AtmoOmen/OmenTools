@@ -1,126 +1,100 @@
 ﻿using Lumina.Excel;
-using Lumina;
-using Lumina.Data;
-using Lumina.Text;
+using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Infos;
 
 [Sheet("leve/CraftLeveClient")]
-public class CraftLeveClient : ExcelRow
+public readonly struct CraftLeveClient(ExcelPage page, uint offset, uint row) : IExcelRow<CraftLeveClient>
 {
-    public SeString? Name { get; set; }
-    public SeString? Text { get; set; }
+    public uint RowId => row;
 
-    public override void PopulateData(RowParser parser, GameData gameData, Language language)
-    {
-        base.PopulateData(parser, gameData, language);
+    public readonly ReadOnlySeString Name => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text => page.ReadString(offset + 4, offset);
 
-        Name = parser.ReadColumn<SeString>(0);
-        Text = parser.ReadColumn<SeString>(1);
-    }
+    static CraftLeveClient IExcelRow<CraftLeveClient>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
 }
 
 [Sheet("custom/004/HouFixCompanySubmarine_00447")]
-public class CompanySubmarine : ExcelRow
+public readonly struct CompanySubmarine(ExcelPage page, uint offset, uint row) : IExcelRow<CompanySubmarine>
 {
-    public SeString? Name { get; set; }
-    public SeString? Text { get; set; }
+    public uint RowId => row;
 
-    public override void PopulateData(RowParser parser, GameData gameData, Language language)
-    {
-        base.PopulateData(parser, gameData, language);
+    public readonly ReadOnlySeString Name => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text => page.ReadString(offset + 4, offset);
 
-        Name = parser.ReadColumn<SeString>(0);
-        Text = parser.ReadColumn<SeString>(1);
-    }
+    static CompanySubmarine IExcelRow<CompanySubmarine>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
 }
 
 [Sheet("transport/Aetheryte")]
-public class AetheryteTransport : ExcelRow
+public readonly struct AetheryteTransport(ExcelPage page, uint offset, uint row) : IExcelRow<AetheryteTransport>
 {
-    public SeString? Identifier { get; set; }
-    public SeString? Text { get; set; }
+    public uint RowId => row;
 
-    public override void PopulateData(RowParser parser, GameData gameData, Language language)
-    {
-        base.PopulateData(parser, gameData, language);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
-        Identifier = parser.ReadColumn<SeString>(0);
-        Text = parser.ReadColumn<SeString>(1);
-    }
+    static AetheryteTransport IExcelRow<AetheryteTransport>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
 }
 
 [Sheet("custom/000/CmnDefRetainerCall_00010")]
-public class RetainerCall : ExcelRow
+public readonly struct RetainerCall(ExcelPage page, uint offset, uint row) : IExcelRow<RetainerCall>
 {
-    public SeString? Identifier { get; set; }
-    public SeString? Text { get; set; }
+    public uint RowId => row;
 
-    public override void PopulateData(RowParser parser, GameData gameData, Language language)
-    {
-        base.PopulateData(parser, gameData, language);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
-        Identifier = parser.ReadColumn<SeString>(0);
-        Text = parser.ReadColumn<SeString>(1);
-    }
+    static RetainerCall IExcelRow<RetainerCall>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
 }
 
 [Sheet("custom/001/CmnDefHousingGardeningPlant_00151")]
-public class HousingGardeningPlant : ExcelRow
+public readonly struct HousingGardeningPlant(ExcelPage page, uint offset, uint row) : IExcelRow<HousingGardeningPlant>
 {
-    public SeString? Identifier { get; set; }
-    public SeString? Text { get; set; }
+    public uint RowId => row;
 
-    public override void PopulateData(RowParser parser, GameData gameData, Language language)
-    {
-        base.PopulateData(parser, gameData, language);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
-        Identifier = parser.ReadColumn<SeString>(0);
-        Text = parser.ReadColumn<SeString>(1);
-    }
+    static HousingGardeningPlant IExcelRow<HousingGardeningPlant>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
 }
 
 [Sheet("custom/001/CmnDefHousingPersonalRoomEntrance_00178")]
-public class HousingPersonalRoomEntrance : ExcelRow
+public readonly struct HousingPersonalRoomEntrance(ExcelPage page, uint offset, uint row) : IExcelRow<HousingPersonalRoomEntrance>
 {
-    public SeString? Identifier { get; set; }
-    public SeString? Text { get; set; }
+    public uint RowId => row;
 
-    public override void PopulateData(RowParser parser, GameData gameData, Language language)
-    {
-        base.PopulateData(parser, gameData, language);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
-        Identifier = parser.ReadColumn<SeString>(0);
-        Text = parser.ReadColumn<SeString>(1);
-    }
+    static HousingPersonalRoomEntrance IExcelRow<HousingPersonalRoomEntrance>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
 }
 
 [Sheet("custom/004/HouFixCompanySubmarine_00447")]
-public class HouFixCompanySubmarine : ExcelRow
+public readonly struct HouFixCompanySubmarine(ExcelPage page, uint offset, uint row) : IExcelRow<HouFixCompanySubmarine>
 {
-    public SeString? Identifier { get; set; }
-    public SeString? Text { get; set; }
+    public uint RowId => row;
 
-    public override void PopulateData(RowParser parser, GameData gameData, Language language)
-    {
-        base.PopulateData(parser, gameData, language);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
-        Identifier = parser.ReadColumn<SeString>(0);
-        Text = parser.ReadColumn<SeString>(1);
-    }
+    static HouFixCompanySubmarine IExcelRow<HouFixCompanySubmarine>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
 }
 
 [Sheet("custom/001/CmnDefCompanyManufactory_00150")]
-public class CompanyManufactory : ExcelRow
+public readonly struct CompanyManufactory(ExcelPage page, uint offset, uint row) : IExcelRow<CompanyManufactory>
 {
-    public SeString? Identifier { get; set; }
-    public SeString? Text { get; set; }
+    public uint RowId => row;
 
-    public override void PopulateData(RowParser parser, GameData gameData, Language language)
-    {
-        base.PopulateData(parser, gameData, language);
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
-        Identifier = parser.ReadColumn<SeString>(0);
-        Text = parser.ReadColumn<SeString>(1);
-    }
+    static CompanyManufactory IExcelRow<CompanyManufactory>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
 }

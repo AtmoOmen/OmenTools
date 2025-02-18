@@ -16,15 +16,16 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 using SeString = Lumina.Text.SeString;
 using Timer = System.Timers.Timer;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using OmenTools.Infos;
 using System.Collections.Concurrent;
+using System.Reflection;
 using Dalamud.Game.ClientState.Party;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
-using Aetheryte = Lumina.Excel.GeneratedSheets.Aetheryte;
+using Lumina.Excel.Sheets;
+using Aetheryte = Lumina.Excel.Sheets.Aetheryte;
 
 namespace OmenTools.Helpers;
 
@@ -32,43 +33,97 @@ public static unsafe partial class HelpersOm
 {
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
+
+    public const BindingFlags AllFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+    public const BindingFlags StaticFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+    public const BindingFlags InstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+
+    public static char ToSEChar(this uint integer) =>
+        integer switch
+        {
+            1 => '\ue0b1',
+            2 => '\ue0b2',
+            3 => '\ue0b3',
+            4 => '\ue0b4',
+            5 => '\ue0b5',
+            6 => '\ue0b6',
+            7 => '\ue0b7',
+            8 => '\ue0b8',
+            9 => '\ue0b9',
+            _ => char.MinValue,
+        };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsFullWidth(this char c) => c is >= '\uFF01' and <= '\uFF5E';
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static char ToHalfWidth(this char c) => (char)(c - 0xFEE0);
+    
+    public static string ToLowerAndHalfWidth(this string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return input;
+
+        var lowercase = input.ToLower();
+            
+        var result = new StringBuilder();
+        foreach (var c in lowercase)
+        {
+            switch (c)
+            {
+                case '　':
+                    result.Append(' ');
+                    continue;
+                case >= '！' and <= '～':
+                    result.Append((char)(c - 0xFEE0));
+                    continue;
+                default:
+                    result.Append(c);
+                    break;
+            }
+        }
+
+        return result.ToString();
+    }
     
     public static object? GetFoP(this object obj, string name) =>
-        obj.GetType().GetField(name, BindingAllFlags)?.GetValue(obj)
-        ?? obj.GetType().GetProperty(name, BindingAllFlags)?.GetValue(obj);
-    
-    public static T? GetFoP<T>(this object obj, string name) => (T?)GetFoP(obj, name);
-    
+        obj.GetType().GetField(name, AllFlags)?.GetValue(obj)
+        ?? obj.GetType().GetProperty(name, AllFlags)?.GetValue(obj);
+
+    public static T? GetFoP<T>(this object obj, string name) 
+        => (T?)GetFoP(obj, name);
+
     public static void SetFoP(this object obj, string name, object value)
     {
-        var field = obj.GetType().GetField(name, BindingAllFlags);
+        var field = obj.GetType().GetField(name, AllFlags);
         if (field != null)
             field.SetValue(obj, value);
         else
-            obj.GetType().GetProperty(name, BindingAllFlags)?.SetValue(obj, value);
+            obj.GetType().GetProperty(name, AllFlags)?.SetValue(obj, value);
     }
 
     public static object? GetStaticFoP(this object obj, string type, string name) =>
-        obj.GetType().Assembly.GetType(type)?.GetField(name, BindingStaticFlags)?.GetValue(null)
-        ?? obj.GetType().Assembly.GetType(type)?.GetProperty(name, BindingStaticFlags)?.GetValue(null);
+        obj.GetType().Assembly.GetType(type)?.GetField(name, StaticFlags)?.GetValue(null)
+        ?? obj.GetType().Assembly.GetType(type)?.GetProperty(name, StaticFlags)?.GetValue(null);
 
     public static T? GetStaticFoP<T>(this object obj, string type, string name) 
         => (T?)GetStaticFoP(obj, type, name);
 
     public static void SetStaticFoP(this object obj, string type, string name, object value)
     {
-        var field = obj.GetType().Assembly.GetType(type)?.GetField(name, BindingStaticFlags);
+        var field = obj.GetType().Assembly.GetType(type)?.GetField(name, StaticFlags);
         if (field != null)
             field.SetValue(null, value);
         else
-            obj.GetType().Assembly.GetType(type)?.GetProperty(name, BindingStaticFlags)?.SetValue(null, value);
+            obj.GetType().Assembly.GetType(type)?.GetProperty(name, StaticFlags)?.SetValue(null, value);
     }
 
+    /// <returns>Object returned by the target method</returns>
     public static object? Call(this object obj, string name, object[] @params, bool matchExactArgumentTypes = false)
     {
         var info = !matchExactArgumentTypes
-                       ? obj.GetType().GetMethod(name, BindingAllFlags)
-                       : obj.GetType().GetMethod(name, BindingAllFlags, @params.Select(x => x.GetType()).ToArray());
+                       ? obj.GetType().GetMethod(name, AllFlags)
+                       : obj.GetType().GetMethod(name, AllFlags, @params.Select(x => x.GetType()).ToArray());
         return info?.Invoke(obj, @params);
     }
 
@@ -77,23 +132,26 @@ public static unsafe partial class HelpersOm
 
     public static Vector2 GetPositionWorld(this Aetheryte aetheryte)
     {
-        var mapRow = aetheryte.Territory?.Value?.Map.Value;
+        var mapRow = aetheryte.Territory.ValueNullable?.Map.ValueNullable;
         if (mapRow == null) return new();
 
-        return MapToWorld(GetPositionMap(aetheryte), mapRow);
+        return MapToWorld(GetPositionMap(aetheryte), (Map)mapRow);
     }
 
     public static Vector2 GetPositionMap(this Aetheryte aetheryte)
     {
-        var mapRow = aetheryte.Territory?.Value?.Map.Value;
+        var mapRow = aetheryte.Territory.ValueNullable?.Map.ValueNullable;
         if (mapRow == null) return new();
 
-        var result = LuminaCache.Get<MapMarker>()?
-            .Where(x => x.DataType == 3 && x.RowId == mapRow.MapMarkerRange && x.DataKey == aetheryte.RowId)
-            .Select(x => TextureToMap(x.X, x.Y, mapRow.SizeFactor))
+        var mapRowNotNull = (Map)mapRow;
+
+        var result = LuminaCache.GetSub<MapMarker>()
+            .SelectMany(x => x)
+            .Where(x => x.DataType == 3 && x.RowId == mapRowNotNull.MapMarkerRange && x.DataKey.RowId == aetheryte.RowId)
+            .Select(x => TextureToMap(x.X, x.Y, mapRowNotNull.SizeFactor))
             .FirstOrDefault();
 
-        return result ?? new();
+        return result;
     }
 
     public static PartyMember* ToStruct(this IPartyMember partyMember) => (PartyMember*)partyMember.Address;
@@ -302,17 +360,17 @@ public static unsafe partial class HelpersOm
         => ClickAddonComponent(addon, target.OwnerNode, which, type);
 
     public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon, AtkEvent* eventData)
-        => Listener!.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
+        => Listener!.Invoke((nint)addon, eventData->State.EventType, eventData->Param, eventData);
 
     public static void ClickAddonButton(this AtkCollisionNode target, AtkUnitBase* addon, AtkEvent* eventData)
-        => Listener!.Invoke((nint)addon, eventData->Type, eventData->Param, eventData);
+        => Listener!.Invoke((nint)addon, eventData->State.EventType, eventData->Param, eventData);
 
     public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon)
     {
         var btnRes = target.AtkComponentBase.OwnerNode->AtkResNode;
         var evt = btnRes.AtkEventManager.Event;
 
-        addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
+        addon->ReceiveEvent(evt->State.EventType, (int)evt->Param, btnRes.AtkEventManager.Event);
     }
 
     public static void ClickAddonButton(this AtkCollisionNode target, AtkUnitBase* addon)
@@ -320,10 +378,10 @@ public static unsafe partial class HelpersOm
         var btnRes = target.AtkResNode;
         var evt = btnRes.AtkEventManager.Event;
 
-        while (evt->Type != AtkEventType.MouseClick)
+        while (evt->State.EventType != AtkEventType.MouseClick)
             evt = evt->NextEvent;
 
-        addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
+        addon->ReceiveEvent(evt->State.EventType, (int)evt->Param, btnRes.AtkEventManager.Event);
     }
 
 
@@ -332,25 +390,26 @@ public static unsafe partial class HelpersOm
         var btnRes = target.OwnerNode->AtkResNode;
         var evt = btnRes.AtkEventManager.Event;
 
-        addon->ReceiveEvent(evt->Type, (int)evt->Param, btnRes.AtkEventManager.Event);
+        addon->ReceiveEvent(evt->State.EventType, (int)evt->Param, btnRes.AtkEventManager.Event);
     }
 
     public static List<MapMarker> GetMapMarkers(this Map map) =>
-        LuminaCache.Get<MapMarker>()?
+        LuminaCache.GetSub<MapMarker>()
+            .SelectMany(x => x)
             .Where(x => x.RowId == map.MapMarkerRange)
-            .ToList() ?? [];
+            .ToList();
 
     private static string GetMarkerPlaceName(this MapMarker marker)
     {
         var placeName = marker.GetMarkerLabel();
         if (placeName != string.Empty) return placeName;
 
-        var mapSymbol = LuminaCache.GetRow<MapSymbol>(marker.Icon);
-        return mapSymbol?.PlaceName.Value?.Name.ToDalamudString().TextValue ?? string.Empty;
+        if (!LuminaCache.TryGetRow<MapSymbol>(marker.Icon, out var symbol)) return string.Empty;
+        return symbol.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
     }
 
     public static string GetMarkerLabel(this MapMarker marker)
-        => marker.PlaceNameSubtext?.Value?.Name?.ToDalamudString().TextValue ?? string.Empty;
+        => marker.PlaceNameSubtext.ValueNullable?.Name.ExtractText() ?? string.Empty;
 
     public static Vector2 GetPosition(this MapMarker marker) => new(marker.X, marker.Y);
 
@@ -539,7 +598,20 @@ public static unsafe partial class HelpersOm
 
     public static BitmapFontIcon ToBitmapFontIcon(this ClassJob? job)
     {
-        if (job == null || job.RowId == 0) return BitmapFontIcon.NewAdventurer;
+        if (job == null || job.Value.RowId == 0) return BitmapFontIcon.NewAdventurer;
+
+        return job.Value.RowId switch
+        {
+            < 1 => BitmapFontIcon.NewAdventurer,
+            < 41 => (BitmapFontIcon)job.Value.RowId + 127,
+            41 or 42 => (BitmapFontIcon)job.Value.RowId + 129,
+            _ => BitmapFontIcon.NewAdventurer
+        };
+    }
+
+    public static BitmapFontIcon ToBitmapFontIcon(this ClassJob job)
+    {
+        if (job.RowId == 0) return BitmapFontIcon.NewAdventurer;
 
         return job.RowId switch
         {
@@ -551,7 +623,7 @@ public static unsafe partial class HelpersOm
     }
 
     public static string ExtractPlaceName(this TerritoryType row)
-        => row.PlaceName?.Value?.Name?.RawString ?? string.Empty;
+        => row.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
 
     public static Vector2 ToVector2(this Vector3 vector3)
         => new(vector3.X, vector3.Z);
@@ -1039,53 +1111,4 @@ public static unsafe partial class HelpersOm
         }
         (list[index1], list[index2]) = (list[index2], list[index1]);
     }
-
-    public static char SEChar(this uint integer) =>
-        integer switch
-        {
-            1 => '\ue0b1',
-            2 => '\ue0b2',
-            3 => '\ue0b3',
-            4 => '\ue0b4',
-            5 => '\ue0b5',
-            6 => '\ue0b6',
-            7 => '\ue0b7',
-            8 => '\ue0b8',
-            9 => '\ue0b9',
-            _ => char.MinValue,
-        };
-
-    public static string LowerAndHalfWidth(this string input)
-    {
-        var result = new char[input.Length];
-        for (var i = 0; i < input.Length; i++)
-        {
-            var c = input[i];
-            switch (c)
-            {
-                case '／':
-                    result[i] = '/';
-                    break;
-                case '　':
-                    result[i] = ' ';
-                    break;
-                default:
-                {
-                    if (c.IsFullWidth())
-                        result[i] = char.ToLowerInvariant(c.HalfWidth());
-                    else
-                        result[i] = char.ToLowerInvariant(c);
-                    break;
-                }
-            }
-        }
-
-        return new string(result);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsFullWidth(this char c) => c is >= '\uFF01' and <= '\uFF5E';
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static char HalfWidth(this char c) => (char)(c - 0xFEE0);
 }
