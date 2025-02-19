@@ -62,7 +62,7 @@ public sealed unsafe class ChatHelper
     private static string SanitiseText(string text)
     {
         var uText = Utf8String.FromString(text);
-        uText->SanitizeString(0x27F, (Utf8String*)nint.Zero);
+        uText->SanitizeString((AllowedEntities)0x27F, (Utf8String*)nint.Zero);
         var sanitised = uText->ToString();
         uText->Dtor(true);
         return sanitised;
