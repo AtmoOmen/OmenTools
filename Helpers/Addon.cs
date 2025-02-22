@@ -176,16 +176,14 @@ public static unsafe partial class HelpersOm
     public static void Callback(nint unitBasePtr, bool updateState, params object[] args)
     {
         var unitBase = unitBasePtr.ToAtkUnitBase();
-        if (unitBase == null)
-            throw new ArgumentNullException($"回调界面为空: {nameof(unitBase)}");
+        if (unitBase == null) return;
 
         Callback(unitBase, updateState, args);
     }
 
     public static void Callback(AtkUnitBase* unitBase, bool updateState, params object[] args)
     {
-        if (unitBase == null)
-            throw new ArgumentNullException($"回调界面为空: {nameof(unitBase)}");
+        if (unitBase == null) return;
 
         using var atkValues = new AtkValueArray(args);
         FireCallback!(unitBase, atkValues.Length, atkValues.Pointer, (byte)(updateState ? 1 : 0));
