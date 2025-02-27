@@ -82,4 +82,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* MiragePrismPrismSetConvert  => GetAddonByName("MiragePrismPrismSetConvert");
     public static AtkUnitBase* MiragePrismPrismSetConvertC => GetAddonByName("MiragePrismPrismSetConvertC");
     public static AtkUnitBase* WeeklyBingo                 => GetAddonByName("WeeklyBingo");
+    public static AtkUnitBase* WeeklyPuzzle                => GetAddonByName("WeeklyPuzzle");
 }
