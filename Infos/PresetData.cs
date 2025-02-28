@@ -24,6 +24,7 @@ public class PresetData
     public static Dictionary<uint, ContentFinderCondition> HighEndContents => highEndContents.Value;
     public static Dictionary<uint, Item>                   Materias        => materias.Value;
     public static Dictionary<uint, Emote>                  Emotes          => emotes.Value;
+    public static Dictionary<uint, ClassJob>               ClassJobs       => classJobs.Value;
     public static ISharedImmediateTexture                  Icon            => icon.Value;
 
     public static bool TryGetContent(uint rowID, out ContentFinderCondition content)
@@ -144,6 +145,11 @@ public class PresetData
         new(() => LuminaCache.Get<Emote>()
                              .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()) &&
                                          !string.IsNullOrWhiteSpace(x.TextCommand.Value.Command.ExtractText()))
+                             .ToDictionary(x => x.RowId, x => x));
+
+    private static readonly Lazy<Dictionary<uint, ClassJob>> classJobs =
+        new(() => LuminaCache.Get<ClassJob>()
+                             .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
                              .ToDictionary(x => x.RowId, x => x));
 
     #endregion
