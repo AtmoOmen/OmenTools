@@ -25,7 +25,6 @@ public class PresetSheet
     public static Dictionary<uint, Item>                   Materias        => materias.Value;
     public static Dictionary<uint, Emote>                  Emotes          => emotes.Value;
     public static Dictionary<uint, ClassJob>               ClassJobs       => classJobs.Value;
-    public static ISharedImmediateTexture                  Icon            => icon.Value;
 
     public static bool TryGetContent(uint rowID, out ContentFinderCondition content)
         => Contents.TryGetValue(rowID, out content);
@@ -51,9 +50,6 @@ public class PresetSheet
                                          (x.RowId > 1000 && x.RowId != 1200 && 
                                           IsChineseString(x.Name.ExtractText())))
                              .ToDictionary(x => x.RowId, x => x));
-
-    private static readonly Lazy<ISharedImmediateTexture> icon =
-        new(() => DService.Texture.GetFromFile(Path.Join(DService.PI.AssemblyLocation.DirectoryName, "Assets", "icon.png")));
 
     private static readonly Lazy<Dictionary<uint, ContentFinderCondition>> highEndContents =
         new(() => LuminaCache.Get<ContentFinderCondition>()
