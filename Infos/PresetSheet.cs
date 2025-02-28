@@ -6,7 +6,7 @@ using Status = Lumina.Excel.Sheets.Status;
 
 namespace OmenTools.Infos;
 
-public class PresetData
+public class PresetSheet
 {
     public static Dictionary<uint, Action>                 PlayerActions   => playerActions.Value;
     public static Dictionary<uint, Status>                 Statuses        => statuses.Value;
