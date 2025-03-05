@@ -21,10 +21,7 @@ public class PresetSheet
     public static Dictionary<uint, Item>                   Seeds           => seeds.Value;
     public static Dictionary<uint, Item>                   Soils           => soils.Value;
     public static Dictionary<uint, Item>                   Fertilizers     => fertilizers.Value;
-    public static Dictionary<uint, ContentFinderCondition> HighEndContents => highEndContents.Value;
     public static Dictionary<uint, Item>                   Materias        => materias.Value;
-    public static Dictionary<uint, Emote>                  Emotes          => emotes.Value;
-    public static Dictionary<uint, ClassJob>               ClassJobs       => classJobs.Value;
 
     public static bool TryGetContent(uint rowID, out ContentFinderCondition content)
         => Contents.TryGetValue(rowID, out content);
@@ -50,12 +47,6 @@ public class PresetSheet
                                          (x.RowId > 1000 && x.RowId != 1200 && 
                                           IsChineseString(x.Name.ExtractText())))
                              .ToDictionary(x => x.RowId, x => x));
-
-    private static readonly Lazy<Dictionary<uint, ContentFinderCondition>> highEndContents =
-        new(() => LuminaCache.Get<ContentFinderCondition>()
-                             .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()) && x.HighEndDuty)
-                             .DistinctBy(x => x.TerritoryType.RowId)
-                             .ToDictionary(x => x.TerritoryType.RowId, x => x));
 
     private static readonly Lazy<Dictionary<uint, Item>> seeds =
         new(() => LuminaCache.Get<Item>()
@@ -135,17 +126,6 @@ public class PresetSheet
     private static readonly Lazy<Dictionary<uint, Item>> materias =
         new(() => LuminaCache.Get<Item>()
                              .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()) && x.FilterGroup == 13)
-                             .ToDictionary(x => x.RowId, x => x));
-
-    private static readonly Lazy<Dictionary<uint, Emote>> emotes =
-        new(() => LuminaCache.Get<Emote>()
-                             .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()) &&
-                                         !string.IsNullOrWhiteSpace(x.TextCommand.Value.Command.ExtractText()))
-                             .ToDictionary(x => x.RowId, x => x));
-
-    private static readonly Lazy<Dictionary<uint, ClassJob>> classJobs =
-        new(() => LuminaCache.Get<ClassJob>()
-                             .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
                              .ToDictionary(x => x.RowId, x => x));
 
     #endregion
