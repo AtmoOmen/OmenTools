@@ -35,6 +35,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* GatheringMasterpiece        => GetAddonByName("GatheringMasterpiece");
     public static AtkUnitBase* GrandCompanySupplyReward    => GetAddonByName("GrandCompanySupplyReward");
     public static AtkUnitBase* GrandCompanySupplyList      => GetAddonByName("GrandCompanySupplyList");
+    public static AtkUnitBase* GrandCompanyExchange        => GetAddonByName("GrandCompanyExchange");
     public static AtkUnitBase* HousingGoods                => GetAddonByName("HousingGoods");
     public static AtkUnitBase* ItemSearchResult            => GetAddonByName("ItemSearchResult");
     public static AtkUnitBase* Inventory                   => GetAddonByName("Inventory");
