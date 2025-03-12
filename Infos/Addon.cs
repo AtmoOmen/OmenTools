@@ -84,4 +84,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* MiragePrismPrismSetConvertC => GetAddonByName("MiragePrismPrismSetConvertC");
     public static AtkUnitBase* WeeklyBingo                 => GetAddonByName("WeeklyBingo");
     public static AtkUnitBase* WeeklyPuzzle                => GetAddonByName("WeeklyPuzzle");
+    public static AtkUnitBase* ShopExchangeCurrencyDialog  => GetAddonByName("ShopExchangeCurrencyDialog");
 }
