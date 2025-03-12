@@ -38,7 +38,7 @@ public static unsafe partial class HelpersOm
         foreach (var type in targetTypes)
         {
             var container = manager->GetInventoryContainer(type);
-            if(container == null || container->Loaded != 1) return false;
+            if(container == null || !container->IsLoaded) return false;
             for (var i = 0; i < container->Size; i++)
             {
                 var slot = container->GetInventorySlot(i);
@@ -61,7 +61,7 @@ public static unsafe partial class HelpersOm
         foreach (var type in targetTypes)
         {
             var container = manager->GetInventoryContainer(type);
-            if(container == null || container->Loaded != 1) return false;
+            if(container == null || !container->IsLoaded) return false;
             for (var i = 0; i < container->Size; i++)
             {
                 var slot = container->GetInventorySlot(i);
@@ -109,7 +109,7 @@ public static unsafe partial class HelpersOm
         foreach (var inventoryType in inventoryTypes)
         {
             var container = manager->GetInventoryContainer(inventoryType);
-            if (container == null || container->Loaded == 0) continue;
+            if (container == null || !container->IsLoaded) continue;
 
             for (var index = 0; index < container->Size; index++)
             {
