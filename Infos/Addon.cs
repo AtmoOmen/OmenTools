@@ -85,4 +85,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* WeeklyBingo                 => GetAddonByName("WeeklyBingo");
     public static AtkUnitBase* WeeklyPuzzle                => GetAddonByName("WeeklyPuzzle");
     public static AtkUnitBase* ShopExchangeCurrencyDialog  => GetAddonByName("ShopExchangeCurrencyDialog");
+    public static AtkUnitBase* AOZNotebookPresetList       => GetAddonByName("AOZNotebookPresetList");
 }
