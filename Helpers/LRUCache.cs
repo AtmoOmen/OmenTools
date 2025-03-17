@@ -128,6 +128,40 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         } finally { lockSlim.ExitWriteLock(); }
     }
 
+    public TValue GetOrAddPermanent(TKey key, Func<TKey, TValue> valueFactory)
+    {
+        IncrementTotalRequests();
+
+        if (TryGet(key, out var value))
+        {
+            IncrementCacheHits();
+            return value;
+        }
+
+        lockSlim.EnterWriteLock();
+        try
+        {
+            if (cache.TryGetValue(key, out var node))
+            {
+                IncrementCacheHits();
+                lruList.Remove(node);
+                lruList.AddFirst(node);
+                return node.Value.Value;
+            }
+
+            value = valueFactory(key);
+
+            if (cache.Count >= capacity)
+                RemoveOldest();
+
+            var cacheItem = new CacheItem(key, value, DateTime.MaxValue, true);
+            var newNode   = lruList.AddFirst(cacheItem);
+            cache.Add(key, newNode);
+
+            return value;
+        } finally { lockSlim.ExitWriteLock(); }
+    }
+
     public bool TryGet(TKey key, out TValue value)
     {
         IncrementTotalRequests();
@@ -167,18 +201,21 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         } finally { lockSlim.ExitUpgradeableReadLock(); }
     }
 
-    public bool TryUpdate(TKey key, TValue newValue, TimeSpan? expiration = null)
+    public bool TryUpdate(TKey key, TValue newValue, TimeSpan? expiration = null, bool? isPermanent = null)
     {
         lockSlim.EnterWriteLock();
         try
         {
             if (cache.TryGetValue(key, out var node))
             {
-                var newExpiration = expiration.HasValue
-                                        ? DateTime.UtcNow.Add(expiration.Value)
-                                        : DateTime.UtcNow.Add(defaultExpiration);
+                var currentIsPermanent = isPermanent ?? node.Value.IsPermanent;
+                var newExpiration = currentIsPermanent 
+                    ? DateTime.MaxValue 
+                    : (expiration.HasValue
+                        ? DateTime.UtcNow.Add(expiration.Value)
+                        : DateTime.UtcNow.Add(defaultExpiration));
 
-                var newCacheItem = new CacheItem(key, newValue, newExpiration);
+                var newCacheItem = new CacheItem(key, newValue, newExpiration, currentIsPermanent);
 
                 lruList.Remove(node);
                 var newNode = lruList.AddFirst(newCacheItem);
@@ -214,8 +251,38 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         lockSlim.EnterWriteLock();
         try
         {
+            // 保留永久项
+            var permanentItems = cache.Where(pair => pair.Value.Value.IsPermanent).ToList();
+            
             cache.Clear();
             lruList.Clear();
+            
+            // 重新添加永久项
+            foreach (var item in permanentItems)
+            {
+                var cacheItem = item.Value.Value;
+                var newNode = lruList.AddFirst(cacheItem);
+                cache.Add(cacheItem.Key, newNode);
+            }
+
+            ResetStats();
+        } finally { lockSlim.ExitWriteLock(); }
+    }
+
+    public void ClearAll(bool includePermanentItems = false)
+    {
+        lockSlim.EnterWriteLock();
+        try
+        {
+            if (includePermanentItems)
+            {
+                cache.Clear();
+                lruList.Clear();
+            }
+            else
+            {
+                Clear();
+            }
 
             ResetStats();
         } finally { lockSlim.ExitWriteLock(); }
@@ -241,7 +308,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    public void AddOrUpdateAll(IEnumerable<KeyValuePair<TKey, TValue>> items, TimeSpan? expiration = null)
+    public void AddOrUpdateAll(IEnumerable<KeyValuePair<TKey, TValue>> items, TimeSpan? expiration = null, bool isPermanent = false)
     {
         if (items == null) return;
 
@@ -250,12 +317,14 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         {
             foreach (var item in items)
             {
-                var expirationTime = DateTime.UtcNow.Add(expiration ?? defaultExpiration);
+                var expirationTime = isPermanent 
+                    ? DateTime.MaxValue 
+                    : DateTime.UtcNow.Add(expiration ?? defaultExpiration);
 
                 if (cache.TryGetValue(item.Key, out var existingNode))
                 {
                     lruList.Remove(existingNode);
-                    var newCacheItem = new CacheItem(item.Key, item.Value, expirationTime);
+                    var newCacheItem = new CacheItem(item.Key, item.Value, expirationTime, isPermanent);
                     var newNode      = lruList.AddFirst(newCacheItem);
                     cache[item.Key] = newNode;
                 }
@@ -264,10 +333,34 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
                     if (cache.Count >= capacity)
                         RemoveOldest();
 
-                    var cacheItem = new CacheItem(item.Key, item.Value, expirationTime);
+                    var cacheItem = new CacheItem(item.Key, item.Value, expirationTime, isPermanent);
                     var newNode   = lruList.AddFirst(cacheItem);
                     cache.Add(item.Key, newNode);
                 }
+            }
+        } finally { lockSlim.ExitWriteLock(); }
+    }
+
+    public void AddOrUpdatePermanent(TKey key, TValue value)
+    {
+        lockSlim.EnterWriteLock();
+        try
+        {
+            if (cache.TryGetValue(key, out var existingNode))
+            {
+                lruList.Remove(existingNode);
+                var newCacheItem = new CacheItem(key, value, DateTime.MaxValue, true);
+                var newNode      = lruList.AddFirst(newCacheItem);
+                cache[key] = newNode;
+            }
+            else
+            {
+                if (cache.Count >= capacity)
+                    RemoveOldest();
+
+                var cacheItem = new CacheItem(key, value, DateTime.MaxValue, true);
+                var newNode   = lruList.AddFirst(cacheItem);
+                cache.Add(key, newNode);
             }
         } finally { lockSlim.ExitWriteLock(); }
     }
@@ -283,7 +376,19 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
 
     private void RemoveOldest()
     {
-        if (lruList.Last != null)
+        var current = lruList.Last;
+        
+        while (current != null && current.Value.IsPermanent)
+        {
+            current = current.Previous;
+        }
+        
+        if (current != null)
+        {
+            cache.Remove(current.Value.Key);
+            lruList.Remove(current);
+        }
+        else if (lruList.Last != null)
         {
             cache.Remove(lruList.Last.Value.Key);
             lruList.RemoveLast();
@@ -306,7 +411,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
                 {
                     var next = current.Previous;
 
-                    if (current.Value.ExpirationTime < now)
+                    if (!current.Value.IsPermanent && current.Value.ExpirationTime < now)
                     {
                         cache.Remove(current.Value.Key);
                         lruList.Remove(current);
@@ -344,7 +449,6 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
             {
                 try
                 {
-                    // 超过 100mb 时
                     if (GC.GetTotalMemory(false) > 1024 * 1024 * 100)
                     {
                         TrimCache(0.5);
@@ -368,11 +472,34 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         lockSlim.EnterWriteLock();
         try
         {
-            var itemsToRemove = (int)(cache.Count * percentage);
-            for (var i = 0; i < itemsToRemove && lruList.Last != null; i++)
+            // 计算要移除的项数，但排除永久项
+            var nonPermanentCount = 0;
+            var current = lruList.Last;
+            while (current != null)
             {
-                cache.Remove(lruList.Last.Value.Key);
-                lruList.RemoveLast();
+                if (!current.Value.IsPermanent)
+                {
+                    nonPermanentCount++;
+                }
+                current = current.Previous;
+            }
+            
+            var itemsToRemove = (int)(nonPermanentCount * percentage);
+            
+            current = lruList.Last;
+            for (var i = 0; i < itemsToRemove && current != null;)
+            {
+                var next = current.Previous;
+                
+                // 只移除非永久项
+                if (!current.Value.IsPermanent)
+                {
+                    cache.Remove(current.Value.Key);
+                    lruList.Remove(current);
+                    i++;
+                }
+                
+                current = next;
             }
         } finally { lockSlim.ExitWriteLock(); }
     }
@@ -389,6 +516,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
 
         if (disposing)
         {
+            ClearAll(true);
             cleanupTimer.Dispose();
             lockSlim.Dispose();
             isDisposed = true;
@@ -405,12 +533,14 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         public TKey     Key            { get; }
         public TValue   Value          { get; }
         public DateTime ExpirationTime { get; }
+        public bool     IsPermanent    { get; }
 
-        public CacheItem(TKey key, TValue value, DateTime expirationTime)
+        public CacheItem(TKey key, TValue value, DateTime expirationTime, bool isPermanent = false)
         {
             Key            = key;
             Value          = value;
             ExpirationTime = expirationTime;
+            IsPermanent    = isPermanent;
         }
     }
 }
