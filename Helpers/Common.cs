@@ -1,9 +1,29 @@
 ﻿using System.Numerics;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
+    public static void ExportToClipboard<T>(T config) where T : class
+    {
+        var json   = JsonConvert.SerializeObject(config, JsonSettings);
+        var base64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+        Clipboard.SetText(base64);
+    }
+
+    public static T? ImportFromClipboard<T>() where T : class
+    {
+        var base64 = Clipboard.GetText();
+        if (string.IsNullOrEmpty(base64)) return null;
+        
+        var json   = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+        var config = JsonConvert.DeserializeObject<T>(json, JsonSettings);
+        
+        return config;
+    }
+    
     public static async Task WaitForCondition(Func<bool> condition, TimeSpan? timeout = null)
     {
         var tcs = new TaskCompletionSource<bool>();
