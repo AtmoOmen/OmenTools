@@ -9,6 +9,8 @@ namespace OmenTools.Infos;
 /// </summary>
 public record CompSig(string Signature, string? SignatureCN = null)
 {
+    public nint Address { get; private set; }
+
     public static bool IsClientCN => DService.ClientState.ClientLanguage == (ClientLanguage)4;
 
     public string? Get() => TryGet(out var sig) ? sig : null;
@@ -23,10 +25,20 @@ public record CompSig(string Signature, string? SignatureCN = null)
         => TryGet(out sig!) && !string.IsNullOrWhiteSpace(sig);
 
     public nint ScanText()
-        => TryGetValidSignature(out var sig) ? DService.SigScanner.ScanText(sig) : nint.Zero;
+    {
+        if (TryGetValidSignature(out var sig) && DService.SigScanner.TryScanText(sig, out var address))
+            Address = address;
+        
+        return Address;
+    }
 
     public unsafe T* ScanText<T>() where T : unmanaged
-        => TryGetValidSignature(out var sig) ? (T*)DService.SigScanner.ScanText(sig) : null;
+    {
+        if (TryGetValidSignature(out var sig) && DService.SigScanner.TryScanText(sig, out var address))
+            Address = address;
+        
+        return (T*)Address;
+    }
 
     public nint GetStatic(int offset = 0)
         => TryGetValidSignature(out var sig) ? DService.SigScanner.GetStaticAddressFromSig(sig, offset) : nint.Zero;
