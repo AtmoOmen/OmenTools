@@ -145,7 +145,7 @@ public static unsafe partial class HelpersOm
 
         var mapRowNotNull = (Map)mapRow;
 
-        var result = LuminaCache.GetSub<MapMarker>()
+        var result = LuminaGetter.GetSub<MapMarker>()
             .SelectMany(x => x)
             .Where(x => x.DataType == 3 && x.RowId == mapRowNotNull.MapMarkerRange && x.DataKey.RowId == aetheryte.RowId)
             .Select(x => TextureToMap(x.X, x.Y, mapRowNotNull.SizeFactor))
@@ -394,7 +394,7 @@ public static unsafe partial class HelpersOm
     }
 
     public static List<MapMarker> GetMapMarkers(this Map map) =>
-        LuminaCache.GetSub<MapMarker>()
+        LuminaGetter.GetSub<MapMarker>()
             .SelectMany(x => x)
             .Where(x => x.RowId == map.MapMarkerRange)
             .ToList();
@@ -404,7 +404,7 @@ public static unsafe partial class HelpersOm
         var placeName = marker.GetMarkerLabel();
         if (placeName != string.Empty) return placeName;
 
-        if (!LuminaCache.TryGetRow<MapSymbol>(marker.Icon, out var symbol)) return string.Empty;
+        if (!LuminaGetter.TryGetRow<MapSymbol>(marker.Icon, out var symbol)) return string.Empty;
         return symbol.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty;
     }
 

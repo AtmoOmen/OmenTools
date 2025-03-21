@@ -2,7 +2,7 @@
 
 namespace OmenTools.Helpers;
 
-public static class LuminaCache
+public static class LuminaGetter
 {
     public static ExcelSheet<T> Get<T>() where T : struct, IExcelRow<T> 
         => DService.Data.GetExcelSheet<T>();

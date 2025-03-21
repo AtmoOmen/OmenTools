@@ -8,7 +8,7 @@ public static unsafe partial class HelpersOm
     public static bool IsActionUnlocked(uint actionID)
     {
         if (DService.ClientState.LocalPlayer is not { } player) return false;
-        var data = LuminaCache.GetRow<Action>(actionID);
+        var data = LuminaGetter.GetRow<Action>(actionID);
         if (data == null) return false;
 
         var unlockLink = data?.UnlockLink.RowId ?? 0;

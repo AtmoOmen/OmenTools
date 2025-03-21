@@ -59,16 +59,24 @@ public static partial class ImGuiOm
     public static void HelpMarker(string tooltip, float warpPos = 20f, FontAwesomeIcon icon = FontAwesomeIcon.InfoCircle, bool useStaticFont = false)
     {
         ImGui.SameLine();
-        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
-        if (useStaticFont) ImGui.PopFont();
-        if (ImGui.IsItemHovered())
+
+        using (ImRaii.Group())
         {
-            using (ImRaii.Tooltip())
+            if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
+
+            var origPosY = ImGui.GetCursorPosY();
+            ImGui.SetCursorPosY(origPosY + (ImGui.GetStyle().FramePadding.Y * 0.5f));
+            ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
+            ImGui.SetCursorPosY(origPosY);
+            if (useStaticFont) ImGui.PopFont();
+            if (ImGui.IsItemHovered())
             {
-                using (ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos))
+                using (ImRaii.Tooltip())
                 {
-                    ImGui.TextUnformatted(tooltip);
+                    using (ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos))
+                    {
+                        ImGui.TextUnformatted(tooltip);
+                    }
                 }
             }
         }
