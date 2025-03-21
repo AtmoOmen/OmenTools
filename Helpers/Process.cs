@@ -25,6 +25,23 @@ public static partial class HelpersOm
 
         VirtualProtect(targetAddress, size, oldProtect, out _);
     }
+    
+    public static unsafe T ReadProtectedMemory<T>(IntPtr sourceAddress) where T : unmanaged
+    {
+        var size = (uint)Marshal.SizeOf(typeof(T));
+
+        var success = VirtualProtect(sourceAddress, size, PAGE_READWRITE, out var oldProtect);
+        if (!success)
+        {
+            throw new InvalidOperationException("Failed to change memory protection.");
+        }
+
+        var value = *(T*)sourceAddress.ToPointer();
+
+        VirtualProtect(sourceAddress, size, oldProtect, out _);
+
+        return value;
+    }
 
     public static bool TryFindGameWindow(out nint hwnd)
     {
