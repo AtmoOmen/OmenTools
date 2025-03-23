@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
 using OmenTools;
 using OmenTools.Helpers;
@@ -240,5 +241,21 @@ public class ContentsFinderHelper
         public bool Unknown9;
         
         public ContentsFinderOption Clone() => this;
+
+        public static unsafe ContentsFinderOption Get()
+        {
+            var finder = UIState.Instance()->ContentsFinder;
+            return new()
+            {
+                Config817to820            = true,
+                ExplorerMode              = finder.IsExplorerMode,
+                IsLimitedLevelingRoulette = finder.IsLimitedLevelingRoulette,
+                LevelSync                 = finder.IsLevelSync,
+                LootRules                 = finder.LootRules,
+                MinimalIL                 = finder.IsMinimalIL,
+                SilenceEcho               = finder.IsSilenceEcho,
+                UnrestrictedParty         = finder.IsUnrestrictedParty,
+            };
+        }
     }
 }
