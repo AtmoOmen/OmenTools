@@ -22,7 +22,6 @@ public class PresetSheet
     public static Dictionary<uint, Item>                   Soils           => soils.Value;
     public static Dictionary<uint, Item>                   Fertilizers     => fertilizers.Value;
     public static Dictionary<uint, Item>                   Materias        => materias.Value;
-    public static Dictionary<uint, Map>                    Maps            => maps.Value;
 
     public static bool TryGetContent(uint rowID, out ContentFinderCondition content)
         => Contents.TryGetValue(rowID, out content);
@@ -128,10 +127,6 @@ public class PresetSheet
         new(() => LuminaGetter.Get<Item>()
                              .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()) && x.FilterGroup == 13)
                              .ToDictionary(x => x.RowId, x => x));
-
-    private static readonly Lazy<Dictionary<uint, Map>> maps =
-        new(() => LuminaGetter.Get<Map>()
-                              .ToDictionary(x => x.RowId, x => x));
 
     #endregion
 }
