@@ -10,7 +10,7 @@ public static partial class HelpersOm
 
     static HelpersOm()
     {
-        FireCallback ??= Marshal.GetDelegateForFunctionPointer<FireCallbackDelegate>(FireCallbackSig.ScanText());
-        Listener ??= Marshal.GetDelegateForFunctionPointer<InvokeListener>(ListenerSig.ScanText());
+        FireCallback ??= FireCallbackSig.GetDelegate<FireCallbackDelegate>();
+        Listener     ??= ListenerSig.GetDelegate<InvokeListener>();
     }
 }
