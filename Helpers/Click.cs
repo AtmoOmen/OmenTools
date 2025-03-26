@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using OmenTools.Infos;
 
@@ -6,6 +7,48 @@ namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    public static bool ClickSelectYesnoConfirm(string? textToContain = null)
+    {
+        if (!IsAddonAndNodesReady(SelectYesno)) return false;
+        if (!string.IsNullOrWhiteSpace(textToContain))
+        {
+            var text = SelectYesno->GetTextNodeById(2)->NodeText.ExtractText();
+            if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain, StringComparison.OrdinalIgnoreCase)) return false;
+        }
+
+        var addon = (AddonSelectYesno*)SelectYesno;
+        addon->ConfirmCheckBox->ClickAddonCheckBox(SelectYesno, 3);
+        return true;
+    }
+    
+    public static bool ClickSelectYesnoNo(string? textToContain = null)
+    {
+        if (!IsAddonAndNodesReady(SelectYesno)) return false;
+        if (!string.IsNullOrWhiteSpace(textToContain))
+        {
+            var text = SelectYesno->GetTextNodeById(2)->NodeText.ExtractText();
+            if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain, StringComparison.OrdinalIgnoreCase)) return false;
+        }
+
+        var addon = (AddonSelectYesno*)SelectYesno;
+        addon->NoButton->ClickAddonButton(SelectYesno);
+        return true;
+    }
+    
+    public static bool ClickSelectYesnoYes(string? textToContain = null)
+    {
+        if (!IsAddonAndNodesReady(SelectYesno)) return false;
+        if (!string.IsNullOrWhiteSpace(textToContain))
+        {
+            var text = SelectYesno->GetTextNodeById(2)->NodeText.ExtractText();
+            if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain, StringComparison.OrdinalIgnoreCase)) return false;
+        }
+
+        var addon = (AddonSelectYesno*)SelectYesno;
+        addon->YesButton->ClickAddonButton(SelectYesno);
+        return true;
+    }
+    
     public static bool ClickContextMenu(IReadOnlyList<string> text)
     {
         if (!IsAddonAndNodesReady(ContextMenu)) return false;
@@ -82,6 +125,15 @@ public static unsafe partial class HelpersOm
     }
 
     public static void ClickAddonComponent(
+        AtkUnitBase* addon, AtkComponentNode* target, uint which, EventType type, EventData? eventData = null, InputData? inputData = null)
+    {
+        eventData ??= EventData.ForNormalTarget(target, addon);
+        inputData ??= InputData.Empty();
+
+        InvokeReceiveEvent(&addon->AtkEventListener, type, which, eventData, inputData);
+    }
+
+    public static void ClickAddonComponent(
         AtkComponentBase* unitbase, AtkComponentNode* target, uint which, EventType type, EventData? eventData = null,
         InputData? inputData = null)
     {
@@ -98,5 +150,21 @@ public static unsafe partial class HelpersOm
 
         newEventData?.Dispose();
         newInputData?.Dispose();
+    }
+    
+    public static void ClickAddonStage(AtkUnitBase* addon, uint which, EventType type = EventType.MOUSE_CLICK)
+    {
+        var target = AtkStage.Instance();
+
+        var eventData = EventData.ForNormalTarget(target, addon);
+        var inputData = InputData.Empty();
+
+        InvokeReceiveEvent(&addon->AtkEventListener, type, which, eventData, inputData);
+    }
+    
+    public static void ClickAddonButtonIndex(AtkUnitBase* addon, int nodeIndex)
+    {
+        var node = (AtkComponentButton*)addon->UldManager.NodeList[nodeIndex];
+        node->ClickAddonButton(addon);
     }
 }

@@ -350,14 +350,14 @@ public static unsafe partial class HelpersOm
 
     public static AtkUnitBase* ToAtkUnitBase(this nint ptr) => (AtkUnitBase*)ptr;
 
-    public static void ClickAddonButton(
-        this AtkComponentButton target, AtkComponentBase* addon, uint which, EventType type = EventType.CHANGE,
-        EventData? eventData = null)
-        => ClickAddonComponent(addon, target.AtkComponentBase.OwnerNode, which, type, eventData);
+    public static void ClickAddonRadioButton(this AtkComponentRadioButton target, AtkUnitBase* addon, uint which, EventType type = EventType.CHANGE)
+        => ClickAddonComponent(addon, (&target)->OwnerNode, which, type);
 
-    public static void ClickRadioButton(
-        this AtkComponentRadioButton target, AtkComponentBase* addon, uint which, EventType type = EventType.CHANGE)
-        => ClickAddonComponent(addon, target.OwnerNode, which, type);
+    public static void ClickAddonCheckBox(this AtkComponentCheckBox target, AtkUnitBase* addon, uint which, EventType type = EventType.CHANGE)
+        => ClickAddonComponent(addon, (&target)->AtkComponentButton.AtkComponentBase.OwnerNode, which, type);
+
+    public static void ClickAddonDragDrop(this AtkComponentDragDrop target, AtkUnitBase* addon, uint which, EventType type = EventType.ICON_TEXT_ROLL_OUT)
+        => ClickAddonComponent(addon, (&target)->AtkComponentBase.OwnerNode, which, type);
 
     public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon, AtkEvent* eventData)
         => Listener!.Invoke((nint)addon, eventData->State.EventType, eventData->Param, eventData);
@@ -383,7 +383,6 @@ public static unsafe partial class HelpersOm
 
         addon->ReceiveEvent(evt->State.EventType, (int)evt->Param, btnRes.AtkEventManager.Event);
     }
-
 
     public static void ClickRadioButton(this AtkComponentRadioButton target, AtkUnitBase* addon)
     {
