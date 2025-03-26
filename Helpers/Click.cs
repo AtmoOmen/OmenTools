@@ -7,6 +7,25 @@ namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    public static bool ClickTalk()
+    {
+        if (Talk == null) return false;
+        
+        var evt = stackalloc AtkEvent[1]
+        {
+            new()
+            {
+                Listener = (AtkEventListener*)Talk,
+                State    = new() { StateFlags = (AtkEventStateFlags)132 },
+                Target   = &AtkStage.Instance()->AtkEventTarget,
+            },
+        };
+        
+        var data = stackalloc AtkEventData[1];
+        Talk->ReceiveEvent(AtkEventType.MouseClick, 0, evt, data);
+        return true;
+    }
+    
     public static bool ClickSelectYesnoConfirm(string? textToContain = null)
     {
         if (!IsAddonAndNodesReady(SelectYesno)) return false;
