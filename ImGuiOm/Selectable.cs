@@ -78,7 +78,7 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool SelectableImageWithText(IntPtr imageHandle, Vector2 imageSize, string text, bool selected,
+    public static bool SelectableImageWithText(nint imageHandle, Vector2 imageSize, string text, bool selected,
         ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{imageHandle}_{text}_{imageSize}");
@@ -104,7 +104,7 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool SelectableImageWithText(IntPtr imageHandle, Vector2 imageSize, string text, ref bool selected,
+    public static bool SelectableImageWithText(nint imageHandle, Vector2 imageSize, string text, ref bool selected,
         ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{imageHandle}_{text}_{imageSize}");

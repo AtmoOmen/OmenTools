@@ -21,7 +21,7 @@ public static unsafe partial class HelpersOm
     private delegate byte FireCallbackDelegate(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState);
     private static readonly FireCallbackDelegate? FireCallback;
 
-    public delegate IntPtr ReceiveEventDelegate(
+    public delegate nint ReceiveEventDelegate(
         AtkEventListener* eventListener, EventType evt, uint which, void* eventData, void* inputData);
 
     public delegate nint InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
@@ -191,7 +191,7 @@ public static unsafe partial class HelpersOm
 
     public static ReceiveEventDelegate GetReceiveEvent(AtkEventListener* listener)
     {
-        var receiveEventAddress = new IntPtr(listener->VirtualTable->ReceiveEvent);
+        var receiveEventAddress = new nint(listener->VirtualTable->ReceiveEvent);
         return Marshal.GetDelegateForFunctionPointer<ReceiveEventDelegate>(receiveEventAddress);
     }
 
@@ -283,7 +283,7 @@ public static unsafe partial class HelpersOm
         var entryCount = ((AddonSelectString*)addon)->PopupMenu.PopupMenu.EntryCount;
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String);
+            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String.Value);
             if (!currentString.Contains(text, StringComparison.OrdinalIgnoreCase)) continue;
 
             index = i;
@@ -301,7 +301,7 @@ public static unsafe partial class HelpersOm
         var entryCount = ((AddonSelectString*)addon)->PopupMenu.PopupMenu.EntryCount;
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String);
+            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String.Value);
             if (!texts.Any(x => currentString.Contains(x, StringComparison.OrdinalIgnoreCase))) continue;
 
             index = i;
@@ -319,7 +319,7 @@ public static unsafe partial class HelpersOm
         var entryCount = ((AddonSelectIconString*)addon)->PopupMenu.PopupMenu.EntryCount;
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i * 3 + 7].String);
+            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[(i * 3) + 7].String.Value);
             if (!currentString.Contains(text, StringComparison.OrdinalIgnoreCase)) continue;
 
             index = i;
@@ -337,7 +337,7 @@ public static unsafe partial class HelpersOm
         var entryCount = ((AddonSelectIconString*)addon)->PopupMenu.PopupMenu.EntryCount;
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i * 3 + 7].String);
+            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[(i * 3) + 7].String.Value);
             if (!texts.Any(x => currentString.Contains(x, StringComparison.OrdinalIgnoreCase))) continue;
 
             index = i;
@@ -357,7 +357,7 @@ public static unsafe partial class HelpersOm
 
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String);
+            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String.Value);
             if (!currentString.Contains(text, StringComparison.OrdinalIgnoreCase)) continue;
 
             index = i;
@@ -377,7 +377,7 @@ public static unsafe partial class HelpersOm
 
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String);
+            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String.Value);
             if (!texts.Any(x => currentString.Contains(x, StringComparison.OrdinalIgnoreCase))) continue;
 
             index = i;
@@ -396,9 +396,9 @@ public static unsafe partial class HelpersOm
             or { A: 0xFF, R: 0xEE, G: 0xE1, B: 0xC5 };
     }
 
-    public static IntPtr Alloc(ulong size) => new(IMemorySpace.GetUISpace()->Malloc(size, 8UL));
+    public static nint Alloc(ulong size) => new(IMemorySpace.GetUISpace()->Malloc(size, 8UL));
 
-    public static IntPtr Alloc(int size)
+    public static nint Alloc(int size)
     {
         if (size <= 0) throw new ArgumentException("待分配内存的大小必须为正数");
         return Alloc((ulong)size);
@@ -491,9 +491,9 @@ public static unsafe partial class HelpersOm
     private static AtkResNode** ExpandNodeList(AtkResNode** originalList, ushort originalSize, ushort newSize = 0)
     {
         if (newSize <= originalSize) newSize = (ushort)(originalSize + 1);
-        var oldListPtr = new IntPtr(originalList);
+        var oldListPtr = new nint(originalList);
         var newListPtr = Alloc((ulong)((newSize + 1) * 8));
-        var clone = new IntPtr[originalSize];
+        var clone = new nint[originalSize];
         Marshal.Copy(oldListPtr, clone, 0, originalSize);
         Marshal.Copy(clone, 0, newListPtr, originalSize);
         return (AtkResNode**)newListPtr;
@@ -514,7 +514,7 @@ public static unsafe partial class HelpersOm
 
         var allocation = Alloc((ulong)size);
         var bytes = new byte[size];
-        Marshal.Copy(new IntPtr(original), bytes, 0, bytes.Length);
+        Marshal.Copy(new nint(original), bytes, 0, bytes.Length);
         Marshal.Copy(bytes, 0, allocation, bytes.Length);
 
         var newNode = (AtkResNode*)allocation;

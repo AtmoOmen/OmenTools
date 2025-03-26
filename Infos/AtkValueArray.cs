@@ -17,7 +17,7 @@ public unsafe class AtkValueArray : IDisposable
             EncodeValue(i, values[i]);
     }
 
-    public IntPtr    Address { get; }
+    public nint      Address { get; }
     public AtkValue* Pointer { get; }
     public int       Length  { get; }
 
@@ -27,7 +27,7 @@ public unsafe class AtkValueArray : IDisposable
     {
         for (var i = 0; i < Length; i++)
             if (Pointer[i].Type == ValueType.String)
-                Marshal.FreeHGlobal((IntPtr)Pointer[i].String);
+                Marshal.FreeHGlobal((nint)Pointer[i].String.Value);
         
         Marshal.FreeHGlobal(Address);
     }

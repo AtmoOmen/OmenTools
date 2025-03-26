@@ -26,7 +26,7 @@ public static partial class HelpersOm
         VirtualProtect(targetAddress, size, oldProtect, out _);
     }
     
-    public static unsafe T ReadProtectedMemory<T>(IntPtr sourceAddress) where T : unmanaged
+    public static unsafe T ReadProtectedMemory<T>(nint sourceAddress) where T : unmanaged
     {
         var size = (uint)Marshal.SizeOf(typeof(T));
 
