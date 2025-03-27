@@ -2,99 +2,87 @@
 
 <Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<OutputType>Library</OutputType>
-		<TargetFramework>net9.0-windows</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-		<PlatformTarget>AnyCPU</PlatformTarget>
-		<BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<UseWindowsForms>true</UseWindowsForms>
-		<ResolveComReferenceSilent>true</ResolveComReferenceSilent>
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net9.0-windows</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <PlatformTarget>AnyCPU</PlatformTarget>
+        <BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <UseWindowsForms>true</UseWindowsForms>
+        <ResolveComReferenceSilent>true</ResolveComReferenceSilent>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
-	</PropertyGroup>
+    </PropertyGroup>
 
-	<PropertyGroup>
-		<DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-	</PropertyGroup>
+    <PropertyGroup>
+        <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
+    </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<NoWarn>1701;1702;MSB3270</NoWarn>
-		<DebugType>none</DebugType>
-	</PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <NoWarn>1701;1702;MSB3270</NoWarn>
+        <DebugType>none</DebugType>
+    </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<NoWarn>1701;1702;MSB3270</NoWarn>
-		<DebugType>none</DebugType>
-	</PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <NoWarn>1701;1702;MSB3270</NoWarn>
+        <DebugType>none</DebugType>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<Compile Remove="bin\**" />
-		<EmbeddedResource Remove="bin\**" />
-		<None Remove="bin\**" />
-	</ItemGroup>
+    <ItemGroup>
+        <Compile Remove="bin\**"/>
+        <EmbeddedResource Remove="bin\**"/>
+        <None Remove="bin\**"/>
+    </ItemGroup>
 
-	<ItemGroup>
-		<None Remove=".gitattributes" />
-		<None Remove=".gitignore" />
-	</ItemGroup>
+    <ItemGroup>
+        <None Remove=".gitattributes"/>
+        <None Remove=".gitignore"/>
+    </ItemGroup>
 
-	<ItemGroup>
-	  <COMReference Include="WMPLib">
-	    <VersionMinor>0</VersionMinor>
-	    <VersionMajor>1</VersionMajor>
-	    <Guid>6bf52a50-394a-11d3-b153-00c04f79faa6</Guid>
-	    <Lcid>0</Lcid>
-	    <WrapperTool>tlbimp</WrapperTool>
-	    <Isolated>false</Isolated>
-	    <EmbedInteropTypes>true</EmbedInteropTypes>
-	  </COMReference>
-	</ItemGroup>
-
-	<ItemGroup>
-		<Reference Include="FFXIVClientStructs">
-			<HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
+    <ItemGroup>
+        <Reference Include="FFXIVClientStructs">
+            <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
         <Reference Include="InteropGenerator.Runtime">
             <HintPath>$(DalamudLibPath)InteropGenerator.Runtime.dll</HintPath>
             <Private>false</Private>
         </Reference>
-		<Reference Include="Newtonsoft.Json">
-			<HintPath>$(DalamudLibPath)Newtonsoft.Json.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="Dalamud">
-			<HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="ImGui.NET">
-			<HintPath>$(DalamudLibPath)ImGui.NET.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="ImGuiScene">
-			<HintPath>$(DalamudLibPath)ImGuiScene.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="Lumina">
-			<HintPath>$(DalamudLibPath)Lumina.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="Lumina.Excel">
-			<HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
-		<Reference Include="PInvoke.User32">
-			<HintPath>$(DalamudLibPath)PInvoke.User32.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-		<Reference Include="PInvoke.Windows.Core">
-			<HintPath>$(DalamudLibPath)PInvoke.Windows.Core.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-	</ItemGroup>
+        <Reference Include="Newtonsoft.Json">
+            <HintPath>$(DalamudLibPath)Newtonsoft.Json.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="Dalamud">
+            <HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="ImGui.NET">
+            <HintPath>$(DalamudLibPath)ImGui.NET.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="ImGuiScene">
+            <HintPath>$(DalamudLibPath)ImGuiScene.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="Lumina">
+            <HintPath>$(DalamudLibPath)Lumina.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="Lumina.Excel">
+            <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="PInvoke.User32">
+            <HintPath>$(DalamudLibPath)PInvoke.User32.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="PInvoke.Windows.Core">
+            <HintPath>$(DalamudLibPath)PInvoke.Windows.Core.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
 </Project>

@@ -28,7 +28,7 @@ public static partial class HelpersOm
     {
         var tcs = new TaskCompletionSource<bool>();
 
-        _ = Task.Run(async () =>
+        _ = DService.Framework.RunOnTick(async () =>
         {
             while (!condition())
             {
