@@ -72,7 +72,7 @@ public class ContentsFinderHelper
     public static void RequestDutySupport(uint dawnContentID)
     {
         ExecuteCommand(ExecuteCommandFlag.RequestDutySupport, 0, 0, 0, 0);
-        if (DService.ClientState.LocalPlayer is not { } localPlayer) return;
+        if (DService.ObjectTable.LocalPlayer is not { } localPlayer) return;
         var localRole = localPlayer.ClassJob.Value.Role;
 
         if (!LuminaGetter.TryGetRow<DawnContent>(dawnContentID, out var content)) return;

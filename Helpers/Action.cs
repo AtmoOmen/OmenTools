@@ -7,7 +7,7 @@ public static unsafe partial class HelpersOm
 {
     public static bool IsActionUnlocked(uint actionID)
     {
-        if (DService.ClientState.LocalPlayer is not { } player) return false;
+        if (DService.ObjectTable.LocalPlayer is not { } player) return false;
         var data = LuminaGetter.GetRow<Action>(actionID);
         if (data == null) return false;
 

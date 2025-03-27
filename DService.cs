@@ -8,6 +8,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using OmenTools.Helpers;
+using OmenTools.Service;
 
 namespace OmenTools;
 
@@ -19,6 +20,8 @@ public class DService
         UiBuilder       = pluginInterface.UiBuilder;
         
         pluginInterface.Create<DService>();
+        ObjectTable = new ObjectTable();
+        Targets = new TargetManager();
     }
 
     public static void Uninit()
@@ -60,16 +63,16 @@ public class DService
     [PluginService] public static IMarketBoard         MarketBoard     { get; private set; } = null!;
     [PluginService] public static INamePlateGui        NamePlateGui    { get; private set; } = null!;
     [PluginService] public static INotificationManager DNotice         { get; private set; } = null!;
-    [PluginService] public static IObjectTable         ObjectTable     { get; private set; } = null!;
     [PluginService] public static IPartyFinderGui      PartyFinder     { get; private set; } = null!;
     [PluginService] public static IPartyList           PartyList       { get; private set; } = null!;
     [PluginService] public static IPluginLog           Log             { get; private set; } = null!;
-    [PluginService] public static ITargetManager       Targets         { get; private set; } = null!;
     [PluginService] public static ITextureProvider     Texture         { get; private set; } = null!;
     [PluginService] public static ITitleScreenMenu     TitleScreenMenu { get; private set; } = null!;
     [PluginService] public static IToastGui            Toast           { get; private set; } = null!;
 
-    public static IDalamudPluginInterface PI         { get; private set; } = null!;
-    public static IUiBuilder              UiBuilder  { get; private set; } = null!;
+    public static IDalamudPluginInterface PI          { get; private set; } = null!;
+    public static IUiBuilder              UiBuilder   { get; private set; } = null!;
+    public static IObjectTable            ObjectTable { get; private set; } = null!;
+    public static ITargetManager          Targets     { get; private set; } = null!;
     public static SigScanner              SigScanner { get; private set; } = new();
 }

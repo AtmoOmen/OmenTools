@@ -42,7 +42,7 @@ public static partial class InfosOm
         || DService.Condition[ConditionFlag.Fishing]
         || DService.Condition[ConditionFlag.Transformed]
         || DService.Condition[ConditionFlag.UsingHousingFunctions]
-        || DService.ClientState.LocalPlayer?.IsTargetable != true;
+        || DService.ObjectTable.LocalPlayer?.IsTargetable != true;
 
     public static bool BetweenAreas => DService.Condition[ConditionFlag.BetweenAreas] || DService.Condition[ConditionFlag.BetweenAreas51];
 

@@ -1,11 +1,14 @@
 ﻿using System.Numerics;
 using System.Text;
+using Lumina.Excel;
 using Newtonsoft.Json;
 
 namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
+    public static RowRef<T> CreateRef<T>(uint rowId) where T : struct, IExcelRow<T> => new(DService.Data.Excel, rowId);
+    
     public static void ExportToClipboard<T>(T config) where T : class
     {
         var json   = JsonConvert.SerializeObject(config, JsonSettings);
