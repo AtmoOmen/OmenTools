@@ -17,6 +17,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* CharaCard                   => GetAddonByName("CharaCard");
     public static AtkUnitBase* CharacterInspect            => GetAddonByName("CharacterInspect");
     public static AtkUnitBase* CharaSelectListMenu         => GetAddonByName("_CharaSelectListMenu");
+    public static AtkUnitBase* CharaSelect                 => GetAddonByName("CharaSelect");
     public static AtkUnitBase* CharaSelectWorldServer      => GetAddonByName("_CharaSelectWorldServer");
     public static AtkUnitBase* ChatLog                     => GetAddonByName("ChatLog");
     public static AtkUnitBase* ColorantColoring            => GetAddonByName("ColorantColoring");
