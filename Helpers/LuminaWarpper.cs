@@ -10,4 +10,10 @@ public static class LuminaWarpper
     
     public static string GetActionName(uint rowID) =>
         LuminaGetter.TryGetRow<Action>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static string GetWorldName(uint rowID) =>
+        LuminaGetter.TryGetRow<World>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+
+    public static string GetItemName(uint rowID) =>
+        LuminaGetter.TryGetRow<Item>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 }
