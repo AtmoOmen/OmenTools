@@ -16,12 +16,12 @@ public class DService
 {
     public static void Init(IDalamudPluginInterface pluginInterface)
     {
-        PI = pluginInterface;
-        UiBuilder       = pluginInterface.UiBuilder;
-        
         pluginInterface.Create<DService>();
+        
+        PI          = pluginInterface;
+        UiBuilder   = pluginInterface.UiBuilder;
         ObjectTable = new ObjectTable();
-        Targets = new TargetManager();
+        Targets     = new TargetManager();
     }
 
     public static void Uninit()
