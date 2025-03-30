@@ -372,7 +372,7 @@ internal sealed partial class ObjectTable
     {
         internal BattleChara(nint address) : base(address) { }
 
-        public StatusList StatusList => null!;
+        public StatusList StatusList => new(this.Struct->GetStatusManager());
 
         public bool IsCasting => Struct->GetCastInfo()->IsCasting > 0;
 
@@ -390,7 +390,7 @@ internal sealed partial class ObjectTable
 
         public float TotalCastTime => Struct->GetCastInfo()->TotalCastTime;
 
-        protected internal new CSBattleChara* Struct => (CSBattleChara*)Address;
+        protected new CSBattleChara* Struct => (CSBattleChara*)Address;
     }
 
     internal unsafe class BattleNpc : BattleChara, IBattleNpc
@@ -519,6 +519,8 @@ public interface INpc : ICharacter { }
 
 public interface IBattleChara : ICharacter
 {
+    public StatusList StatusList { get; }
+
     public bool IsCasting { get; }
 
     public bool IsCastInterruptible { get; }
