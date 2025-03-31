@@ -7,7 +7,7 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    public static RowRef<T> CreateRef<T>(uint rowId) where T : struct, IExcelRow<T> => new(DService.Data.Excel, rowId);
+    public static RowRef<T> LuminaCreateRef<T>(uint rowId) where T : struct, IExcelRow<T> => new(DService.Data.Excel, rowId);
     
     public static void ExportToClipboard<T>(T config) where T : class
     {

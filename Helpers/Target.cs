@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.Object;
+﻿using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace OmenTools.Helpers;
 

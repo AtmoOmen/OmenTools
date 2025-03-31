@@ -1,25 +1,16 @@
 ﻿using System.Collections;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Excel;
+using LuminaStatus = Lumina.Excel.Sheets.Status;
+using CSStatus = FFXIVClientStructs.FFXIV.Client.Game.Status;
 
 namespace OmenTools.Service;
 
-public sealed unsafe partial class StatusList
+public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status>, ICollection
 {
-    internal StatusList(nint address) => this.Address = address;
+    public StatusList(void* pointer) : this((nint)pointer) { }
     
-    internal StatusList(void* pointer) : this((nint)pointer) { }
-
-    public nint Address { get; }
-
-    public int Length => Struct->NumValidStatuses;
-
-    private static int StatusSize { get; } = Marshal.SizeOf<FFXIVClientStructs.FFXIV.Client.Game.Status>();
-
-    private FFXIVClientStructs.FFXIV.Client.Game.StatusManager* Struct => 
-        (FFXIVClientStructs.FFXIV.Client.Game.StatusManager*)this.Address;
-
     public Status? this[int index]
     {
         get
@@ -27,16 +18,12 @@ public sealed unsafe partial class StatusList
             if (index < 0 || index > this.Length)
                 return null;
 
-            var addr = this.GetStatusAddress(index);
-            return CreateStatusReference(addr);
+            return new Status(Address);
         }
     }
 
-    public static StatusList? CreateStatusListReference(nint statusManager) => 
-        DService.ClientState.LocalContentId == 0 ? null : statusManager == nint.Zero ? null : new StatusList(statusManager);
-
-    public static Status? CreateStatusReference(nint address) => 
-        DService.ClientState.LocalContentId == 0 ? null : address == nint.Zero ? null : new Status(address);
+    public nint Address { get; } = address;
+    public int  Length  => Struct->NumValidStatuses;
 
     public nint GetStatusAddress(int index)
     {
@@ -45,10 +32,7 @@ public sealed unsafe partial class StatusList
 
         return (nint)Unsafe.AsPointer(ref this.Struct->Status[index]);
     }
-}
-
-public sealed partial class StatusList : IReadOnlyCollection<Status>, ICollection
-{
+    
     int IReadOnlyCollection<Status>.Count => this.Length;
 
     int ICollection.Count => this.Length;
@@ -80,28 +64,19 @@ public sealed partial class StatusList : IReadOnlyCollection<Status>, ICollectio
             index++;
         }
     }
+    
+    private StatusManager* Struct => (StatusManager*)this.Address;
 }
 
-public unsafe class Status
+public unsafe class Status(nint address)
 {
-    internal Status(nint address) => this.Address = address;
+    public nint                 Address       { get; } = address;
+    public uint                 StatusId      => this.Struct->StatusId;
+    public RowRef<LuminaStatus> GameData      => LuminaCreateRef<LuminaStatus>(this.Struct->StatusId);
+    public ushort               Param         => this.Struct->Param;
+    public float                RemainingTime => this.Struct->RemainingTime;
+    public uint                 SourceId      => this.Struct->SourceId;
+    public IGameObject?         SourceObject  => DService.ObjectTable.SearchById(this.SourceId);
 
-    public nint Address { get; }
-
-    public uint StatusId => this.Struct->StatusId;
-
-    public RowRef<Lumina.Excel.Sheets.Status> GameData => CreateRef<Lumina.Excel.Sheets.Status>(this.Struct->StatusId);
-
-    public ushort Param => this.Struct->Param;
-
-    [Obsolete($"Replaced with {nameof(Param)}", true)]
-    public byte StackCount => (byte)this.Struct->Param;
-
-    public float RemainingTime => this.Struct->RemainingTime;
-
-    public uint SourceId => this.Struct->SourceId;
-    
-    public IGameObject? SourceObject => DService.ObjectTable.SearchById(this.SourceId);
-
-    private FFXIVClientStructs.FFXIV.Client.Game.Status* Struct => (FFXIVClientStructs.FFXIV.Client.Game.Status*)this.Address;
+    private CSStatus* Struct => (CSStatus*)this.Address;
 }

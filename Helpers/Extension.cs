@@ -1,6 +1,4 @@
 using System.Buffers;
-using Dalamud.Game.ClientState.Objects.Types;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net;
@@ -13,13 +11,10 @@ using Dalamud.Hooking;
 using Dalamud.Memory;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.String;
-using ImGuiNET;
 using SeString = Lumina.Text.SeString;
 using Timer = System.Timers.Timer;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using OmenTools.Infos;
 using System.Collections.Concurrent;
 using System.Reflection;
 using Dalamud.Game.ClientState.Party;
@@ -586,14 +581,6 @@ public static unsafe partial class HelpersOm
                 ArrayPool<char>.Shared.Return(rentedArray);
         }
     }
-    
-    public static Character* ToStruct(this ICharacter chara) => (Character*)chara.Address;
-
-    public static BattleChara* ToBCStruct(this ICharacter chara) => (BattleChara*)chara.Address;
-
-    public static GameObject* ToStruct(this IGameObject obj) => (GameObject*)obj.Address;
-    
-    public static BattleChara* ToBCStruct(this IGameObject obj) => (BattleChara*)obj.Address;
 
     public static BitmapFontIcon ToBitmapFontIcon(this ClassJob? job)
     {
