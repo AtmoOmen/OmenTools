@@ -28,6 +28,16 @@ public enum ExecuteCommandFlag
     /// <para><c>param1</c>: 目标 Object ID (无目标为: -536870912, 即 int.MinValue / 4)</para>
     /// </remarks>
     Target = 3,
+    
+    /// <summary>
+    /// PVP 快捷发言
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: QuickChat Row ID</para>
+    /// <para><c>param2</c>: 参数 1</para>
+    /// <para><c>param3</c>: 参数 2</para>
+    /// </remarks>
+    PVPQuickChat = 5,
 
     /// <summary>
     /// 下坐骑
