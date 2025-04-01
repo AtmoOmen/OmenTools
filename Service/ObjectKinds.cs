@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Text.SeStringHandling;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel;
@@ -175,19 +176,20 @@ public unsafe class Character(nint address) : GameObject(address), ICharacter
 
 public unsafe class BattleChara(nint address) : Character(address), IBattleChara
 {
-    public StatusList StatusList          => new(this.Struct->GetStatusManager());
-    public bool       IsCasting           => CastInfo != null && CastInfo->IsCasting     > 0;
-    public bool       IsCastInterruptible => CastInfo != null && CastInfo->Interruptible > 0;
-    public byte       CastActionType      => (byte)(CastInfo != null ? (byte)CastInfo->ActionType : 0);
-    public uint       CastActionId        => CastInfo != null ? CastInfo->ActionId : 0;
-    public ulong      CastTargetObjectId  => CastInfo != null ? CastInfo->TargetId : 0xE0000000;
-    public float      CurrentCastTime     => CastInfo != null ? CastInfo->CurrentCastTime : -1;
-    public float      BaseCastTime        => CastInfo != null ? CastInfo->BaseCastTime : -1;
-    public float      TotalCastTime       => CastInfo != null ? CastInfo->TotalCastTime : -1;
+    public StatusList   StatusList          => new(this.Struct->GetStatusManager());
+    public bool         IsCasting           => CastInfo.IsCasting     > 0;
+    public bool         IsCastInterruptible => CastInfo.Interruptible > 0;
+    public ActionType   CastActionType      => CastInfo.ActionType;
+    public uint         CastActionId        => CastInfo.ActionId;
+    public ulong        CastTargetObjectId  => CastInfo.TargetId;
+    public IGameObject? CastTargetObject    => DService.ObjectTable.SearchById(CastTargetObjectId);
+    public float        CurrentCastTime     => CastInfo.CurrentCastTime != 0 ? CastInfo.CurrentCastTime : -1;
+    public float        BaseCastTime        => CastInfo.BaseCastTime    != 0 ? CastInfo.BaseCastTime : -1;
+    public float        TotalCastTime       => CastInfo.TotalCastTime   != 0 ? CastInfo.TotalCastTime : -1;
 
     public new CSBattleChara* ToStruct() => Struct;
 
-    private       CastInfo*      CastInfo => &Struct->CastInfo;
+    private       CastInfo       CastInfo => Struct->CastInfo;
     protected new CSBattleChara* Struct   => (CSBattleChara*)Address;
 }
 
@@ -292,15 +294,16 @@ public interface ICharacter : IGameObject
 
 public interface IBattleChara : ICharacter
 {
-    public StatusList StatusList          { get; }
-    public bool       IsCasting           { get; }
-    public bool       IsCastInterruptible { get; }
-    public byte       CastActionType      { get; }
-    public uint       CastActionId        { get; }
-    public ulong      CastTargetObjectId  { get; }
-    public float      CurrentCastTime     { get; }
-    public float      BaseCastTime        { get; }
-    public float      TotalCastTime       { get; }
+    public StatusList   StatusList          { get; }
+    public bool         IsCasting           { get; }
+    public bool         IsCastInterruptible { get; }
+    public ActionType   CastActionType      { get; }
+    public uint         CastActionId        { get; }
+    public ulong        CastTargetObjectId  { get; }
+    public IGameObject? CastTargetObject    { get; }
+    public float        CurrentCastTime     { get; }
+    public float        BaseCastTime        { get; }
+    public float        TotalCastTime       { get; }
     
     public new unsafe CSBattleChara* ToStruct();
 }
