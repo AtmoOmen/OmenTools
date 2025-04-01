@@ -187,7 +187,7 @@ public unsafe class BattleChara(nint address) : Character(address), IBattleChara
 
     public new CSBattleChara* ToStruct() => Struct;
 
-    private       CastInfo*      CastInfo => Struct->GetCastInfo();
+    private       CastInfo*      CastInfo => &Struct->CastInfo;
     protected new CSBattleChara* Struct   => (CSBattleChara*)Address;
 }
 
