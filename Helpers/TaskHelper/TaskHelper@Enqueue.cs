@@ -6,25 +6,20 @@ public partial class TaskHelper
     {
         EnsureQueueExists(weight);
         var queue = Queues.First(q => q.Weight == weight);
-        queue.Tasks.Add(new TaskHelperTask(task, timeLimitMs ?? TimeLimitMS, abortOnTimeout ?? AbortOnTimeout, name));
+        queue.Tasks.Add(new(task, timeLimitMs ?? TimeLimitMS, abortOnTimeout ?? AbortOnTimeout, name));
         HasPendingTask = true;
     }
 
-    public void Enqueue(Action task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, uint weight = 0)
-    {
+    public void Enqueue(Action task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, uint weight = 0) => 
         Enqueue(() => { task(); return true; }, name, timeLimitMs, abortOnTimeout, weight);
-    }
 
     private void EnsureQueueExists(uint weight)
     {
-        if (Queues.All(q => q.Weight != weight))
-        {
-            Queues.Add(new TaskHelperQueue(weight));
-        }
+        if (!Queues.All(q => q.Weight != weight)) return;
+        Queues.Add(new(weight));
     }
 
-    public void DelayNext(int delayMS, string uniqueName = "DelayNextEnqueue", 
-        bool useFrameThrottler = false, uint weight = 0)
+    public void DelayNext(int delayMS, string uniqueName = "DelayNextEnqueue", bool useFrameThrottler = false, uint weight = 0)
     {
         IThrottler<string> throttler = useFrameThrottler ? FrameThrottler : Throttler;
 
