@@ -15,7 +15,7 @@ using Ornament = Lumina.Excel.Sheets.Ornament;
 
 namespace OmenTools.Service;
 
-public unsafe class GameObject(nint address) : IGameObject
+internal unsafe class GameObject(nint address) : IGameObject
 {
     public SeString              Name             => SeString.Parse(Struct->Name);
     public ulong                 GameObjectId     => Struct->GetGameObjectId();
@@ -52,7 +52,7 @@ public unsafe class GameObject(nint address) : IGameObject
     public CSGameObject* ToStruct() => Struct;
     
     public nint Address { get; internal set; } = address;
-
+    
     public static implicit operator bool(GameObject? gameObject) => IsValid(gameObject);
 
     public static bool operator ==(GameObject? gameObject1, GameObject? gameObject2)
@@ -79,7 +79,7 @@ public unsafe class GameObject(nint address) : IGameObject
     protected internal CSGameObject* Struct => (CSGameObject*)Address;
 }
 
-public unsafe class Character(nint address) : GameObject(address), ICharacter
+internal unsafe class Character(nint address) : GameObject(address), ICharacter
 {
     public float                ModelScale          => Struct->CharacterData.ModelScale;
     public int                  ModelCharaId        => Struct->ModelContainer.ModelCharaId;
@@ -174,7 +174,7 @@ public unsafe class Character(nint address) : GameObject(address), ICharacter
     protected internal new CSCharacter* Struct => (CSCharacter*)Address;
 }
 
-public unsafe class BattleChara(nint address) : Character(address), IBattleChara
+internal unsafe class BattleChara(nint address) : Character(address), IBattleChara
 {
     public StatusList   StatusList          => new(this.Struct->GetStatusManager());
     public bool         IsCasting           => CastInfo.IsCasting     > 0;
@@ -193,18 +193,18 @@ public unsafe class BattleChara(nint address) : Character(address), IBattleChara
     protected new CSBattleChara* Struct   => (CSBattleChara*)Address;
 }
 
-public class EventObj(nint address) : GameObject(address), IEventObj;
+internal class EventObj(nint address) : GameObject(address), IEventObj;
 
-public class Npc(nint address) : Character(address), INpc;
+internal class Npc(nint address) : Character(address), INpc;
 
-public unsafe class BattleNpc(nint address) : BattleChara(address), IBattleNpc
+internal unsafe class BattleNpc(nint address) : BattleChara(address), IBattleNpc
 {
     public BattleNpcSubKind BattleNpcKind => (BattleNpcSubKind)Struct->Character.GameObject.SubKind;
 
     public override ulong TargetObjectId => Struct->Character.TargetId;
 }
 
-public unsafe class PlayerCharacter(nint address) : BattleChara(address), IPlayerCharacter
+internal unsafe class PlayerCharacter(nint address) : BattleChara(address), IPlayerCharacter
 {
     public override ulong TargetObjectId => Struct->LookAt.Controller.Params[0].TargetParam.TargetId;
 }
@@ -245,6 +245,8 @@ public interface IGameObject : IEquatable<IGameObject>
     public bool IsValid();
 
     public unsafe CSGameObject* ToStruct();
+    
+    public static IGameObject Create(nint address) => new GameObject(address);
 }
 
 public interface ICharacter : IGameObject
@@ -290,6 +292,8 @@ public interface ICharacter : IGameObject
     public RowRef<Companion>?   CurrentMinion       { get; }
     
     public new unsafe CSCharacter* ToStruct();
+    
+    public new static ICharacter Create(nint address) => new Character(address);
 }
 
 public interface IBattleChara : ICharacter
@@ -306,18 +310,31 @@ public interface IBattleChara : ICharacter
     public float        TotalCastTime       { get; }
     
     public new unsafe CSBattleChara* ToStruct();
+    
+    public new static IBattleChara Create(nint address) => new BattleChara(address);
 }
 
 public interface IBattleNpc : IBattleChara
 {
     BattleNpcSubKind BattleNpcKind { get; }
+    
+    public new static IBattleNpc Create(nint address) => new BattleNpc(address);
 }
 
-public interface IEventObj : IGameObject;
+public interface IEventObj : IGameObject
+{
+    public new static IEventObj Create(nint address) => new EventObj(address);
+}
 
-public interface INpc : ICharacter;
+public interface INpc : ICharacter
+{
+    public new static INpc Create(nint address) => new Npc(address);
+}
 
-public interface IPlayerCharacter : IBattleChara;
+public interface IPlayerCharacter : IBattleChara
+{
+    public new static IPlayerCharacter Create(nint address) => new PlayerCharacter(address);
+}
 
 public enum BattalionFlags : byte
 {
