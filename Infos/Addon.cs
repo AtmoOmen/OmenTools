@@ -94,4 +94,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* RetainerTaskResult          => GetAddonByName("RetainerTaskResult");
     public static AtkUnitBase* RetainerTaskAsk             => GetAddonByName("RetainerTaskAsk");
     public static AtkUnitBase* SalvageDialog               => GetAddonByName("SalvageDialog");
+    public static AtkUnitBase* SalvageItemSelector         => GetAddonByName("SalvageItemSelector");
 }

@@ -2,15 +2,11 @@ namespace OmenTools.Helpers;
 
 public partial class TaskHelper
 {
-    public void Insert(Func<bool?> task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, uint weight = 0)
-    {
+    public void Insert(Func<bool?> task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, uint weight = 0) => 
         InsertQueueTask(new TaskHelperTask(task, timeLimitMs ?? TimeLimitMS, abortOnTimeout ?? AbortOnTimeout, name), weight);
-    }
 
-    public void Insert(Action task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, uint weight = 0)
-    {
+    public void Insert(Action task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, uint weight = 0) => 
         Insert(() => { task(); return true; }, name, timeLimitMs, abortOnTimeout, weight);
-    }
 
     private void InsertQueueTask(TaskHelperTask task, uint weight)
     {
@@ -26,17 +22,12 @@ public partial class TaskHelper
         return newQueue;
     }
 
-    public void InsertDelayNext(int delayMS, string uniqueName = "DelayNextInsert", 
-        bool useFrameThrottler = false, uint weight = 0)
+    public void InsertDelayNext(int delayMS, string uniqueName = "DelayNextInsert", bool useFrameThrottler = false, uint weight = 0)
     {
         IThrottler<string> throttler = useFrameThrottler ? FrameThrottler : Throttler;
 
-        Insert(() => throttler.Check(uniqueName),
-               $"{uniqueName} (DelayCheck)",
-               weight: weight);
-        Insert(() => throttler.Throttle(uniqueName, delayMS),
-               $"{uniqueName} (Delay)",
-               weight: weight);
+        Insert(() => throttler.Check(uniqueName),             $"{uniqueName} (DelayCheck)", weight: weight);
+        Insert(() => throttler.Throttle(uniqueName, delayMS), $"{uniqueName} (Delay)", weight: weight);
 
         HasPendingTask = true;
     }

@@ -2,14 +2,13 @@ namespace OmenTools.Helpers;
 
 public partial class TaskHelper : IDisposable
 {
-    private static readonly List<TaskHelper>       Instances = [];
-    private readonly        FrameThrottler<string> FrameThrottler;
-    private readonly        Throttler<string>      Throttler;
-
+    private static readonly List<TaskHelper> Instances = [];
+    
     public TaskHelper()
     {
         FrameThrottler = new(() => (long)DService.UiBuilder.FrameCount);
-        Throttler = new();
+        Throttler      = new();
+        
         DService.Framework.Update += Tick;
         Instances.Add(this);
     }
@@ -18,42 +17,43 @@ public partial class TaskHelper : IDisposable
     public  string                     CurrentTaskName => CurrentTask?.Name ?? string.Empty;
     private SortedSet<TaskHelperQueue> Queues          { get; } = [new(1), new(0)];
     public  List<string>               TaskStack       => Queues.SelectMany(q => q.Tasks.Select(t => t.Name)).ToList();
-    public  int                        NumQueuedTasks => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
-    public  bool                       IsBusy => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0);
-    private bool                       HasPendingTask  { get; set; } = false;
+    public  int                        NumQueuedTasks  => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
+    public  bool                       IsBusy          => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0);
+    private bool                       HasPendingTask  { get; set; }
     public  bool                       AbortOnTimeout  { get; set; } = true;
     public  long                       AbortAt         { get; private set; }
-    public  bool                       ShowDebug       { get; set; } = false;
-    public  int                        TimeLimitMS { get; set; } = 10000;
+    public  bool                       ShowDebug       { get; set; }
+    public  int                        TimeLimitMS     { get; set; } = 10000;
+    
+    private readonly FrameThrottler<string> FrameThrottler;
+    private readonly Throttler<string>      Throttler;
 
     private void Tick(object? _)
     {
         if (CurrentTask == null)
-        {
             ProcessNextTask();
-        }
         else
-        {
             ExecuteCurrentTask();
-        }
     }
 
     private void ProcessNextTask()
     {
-        if(HasPendingTask == false) return;
+        if (HasPendingTask == false) return;
         
         foreach (var queue in Queues)
         {
-            if(!queue.Tasks.TryDequeue(out var task)) continue;
+            if (!queue.Tasks.TryDequeue(out var task)) continue;
             
             CurrentTask = task;
-            if (ShowDebug) DService.Log.Debug($"开始执行任务: {CurrentTask?.Name ?? "(无名称)"}");
+            if (ShowDebug) 
+                Debug($"开始执行任务: {CurrentTask?.Name ?? "(无名称)"}");
 
             AbortAt = Environment.TickCount64 + CurrentTask?.TimeLimitMS ?? 0;
             break;
         }
 
-        if (CurrentTask == null) HasPendingTask = false;
+        if (CurrentTask == null) 
+            HasPendingTask = false;
     }
 
     private void ExecuteCurrentTask()
@@ -61,6 +61,7 @@ public partial class TaskHelper : IDisposable
         try
         {
             if (CurrentTask == null) return;
+            
             var result = CurrentTask.Action();
             switch (result)
             {
@@ -75,47 +76,46 @@ public partial class TaskHelper : IDisposable
                     break;
             }
         }
-        catch (TimeoutException e)
-        {
-            HandleTimeout(e);
-        }
         catch (Exception e)
         {
-            HandleError(e);
+            HandleError(CurrentTask?.Name ?? "(无名称)", e);
         }
     }
 
     private void CompleteTask()
     {
-        if (ShowDebug) DService.Log.Debug($"已完成任务: {CurrentTask?.Name ?? "(无名称)"}");
+        if (ShowDebug) 
+            Debug($"已完成任务: {CurrentTask?.Name ?? "(无名称)"}");
         
         CurrentTask = null;
     }
 
     private void CheckForTimeout()
     {
-        if(Environment.TickCount64 <= AbortAt) return;
+        if (Environment.TickCount64 <= AbortAt) return;
+
+        var reason = $"任务 {CurrentTask?.Name ?? "(无名称)"} 执行时间过长";
         if (CurrentTask?.AbortOnTimeout ?? true)
-            AbortAllTasks($"任务 {CurrentTask?.Name ?? "(无名称)"} 执行时间过长");
+            AbortAllTasks(reason);
         else
-            DService.Log.Warning($"任务 {CurrentTask?.Name ?? "(无名称)"} 执行时间过长，但设置为不终止其他任务。");
+            HandleTimeout(reason);
     }
 
     private void AbortAllTasks(string reason = "无")
     {
-        DService.Log.Warning($"正在清理所有剩余任务 (原因: {reason})");
+        Warning($"放弃了所有剩余任务 (原因: {reason})");
         Abort();
     }
 
-    private void HandleTimeout(Exception e)
+    private void HandleError(string name, Exception e)
     {
-        DService.Log.Error(e, "执行任务超时");
+        Error($"执行任务 {name} 过程中出现错误", e);
         CurrentTask = null;
     }
 
-    private void HandleError(Exception e)
+    private void HandleTimeout(string reason)
     {
-        DService.Log.Error(e, "执行任务过程中出现错误");
+        Warning($"放弃了当前任务 (原因: {reason})");
         CurrentTask = null;
     }
 
@@ -134,7 +134,8 @@ public partial class TaskHelper : IDisposable
         return true;
     }
 
-    public bool RemoveQueue(uint weight) => Queues.RemoveWhere(q => q.Weight == weight) > 0;
+    public bool RemoveQueue(uint weight) => 
+        Queues.RemoveWhere(q => q.Weight == weight) > 0;
 
     public void RemoveAllTasks(uint weight) =>
         Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks.Clear();
@@ -145,7 +146,7 @@ public partial class TaskHelper : IDisposable
     public bool RemoveLastTask(uint weight)
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
-        if(!(queue?.Tasks.Count > 0)) return false;
+        if (!(queue?.Tasks.Count > 0)) return false;
         
         queue.Tasks.RemoveAt(queue.Tasks.Count - 1);
         return true;
@@ -160,6 +161,7 @@ public partial class TaskHelper : IDisposable
             queue.Tasks.RemoveRange(0, actualCountToRemove);
             return true;
         }
+
         return false;
     }
 
@@ -167,6 +169,7 @@ public partial class TaskHelper : IDisposable
     {
         foreach (var queue in Queues)
             queue.Tasks.Clear();
+        
         CurrentTask = null;
     }
 
@@ -186,7 +189,7 @@ public partial class TaskHelper : IDisposable
         }
 
         if (disposedCount > 0)
-            DService.Log.Debug($"已自动清理了 {disposedCount} 个队列管理器");
+            Debug($"已自动清理了 {disposedCount} 个队列管理器");
 
         Instances.Clear();
     }
