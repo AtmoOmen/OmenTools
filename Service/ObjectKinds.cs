@@ -81,6 +81,7 @@ internal unsafe class GameObject(nint address) : IGameObject
 
 internal unsafe class Character(nint address) : GameObject(address), ICharacter
 {
+    public short                TransformationId    => Struct->TransformationId;
     public float                ModelScale          => Struct->CharacterData.ModelScale;
     public int                  ModelCharaId        => Struct->ModelContainer.ModelCharaId;
     public int                  ModelSkeletonId     => Struct->ModelContainer.ModelSkeletonId;
@@ -251,6 +252,7 @@ public interface IGameObject : IEquatable<IGameObject>
 
 public interface ICharacter : IGameObject
 {
+    public short                TransformationId    { get; }
     public float                ModelScale          { get; }
     public int                  ModelCharaId        { get; }
     public int                  ModelSkeletonId     { get; }
