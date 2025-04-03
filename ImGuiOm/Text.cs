@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using Dalamud.Interface;
+using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
@@ -74,23 +75,29 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static void TextOutlined(
-        Vector2 position, uint textColor, string text, uint outlineColor = 0xFF000000, float outlineThickness = 1.5f,
-        ImDrawListPtr? drawList = null)
+    public static void TextOutlined(Vector4 textColor, string text, Vector4 outlineColor = default, float outlineThickness = 1.5f)
     {
-        drawList ??= ImGui.GetBackgroundDrawList();
+        if (outlineColor == default)
+            outlineColor = new Vector4(0, 0, 0, 1);
 
-        // 8 方向阴影
-        for (var x = -outlineThickness; x <= outlineThickness; x += 0.5f)
+        var originalPos = ImGui.GetCursorPos();
+        using (ImRaii.Group())
         {
-            for (var y = -outlineThickness; y <= outlineThickness; y += 0.5f)
+            // 8 方向阴影
+            for (var x = -outlineThickness; x <= outlineThickness; x += 0.5f)
             {
-                if (x == 0 && y == 0) continue;
-                drawList?.AddText(position + new Vector2(x, y), outlineColor, text);
-            }
-        }
+                for (var y = -outlineThickness; y <= outlineThickness; y += 0.5f)
+                {
+                    if (x == 0 && y == 0) continue;
 
-        // 原始文字
-        drawList?.AddText(position, textColor, text);
+                    ImGui.SetCursorPos(originalPos + new Vector2(x, y));
+                    ImGui.TextColored(outlineColor, text);
+                }
+            }
+
+            // 原始文字
+            ImGui.SetCursorPos(originalPos);
+            ImGui.TextColored(textColor, text);
+        }
     }
 }
