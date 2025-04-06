@@ -16,4 +16,7 @@ public static class LuminaWarpper
 
     public static string GetItemName(uint rowID) =>
         LuminaGetter.TryGetRow<Item>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static string GetStatusName(uint rowID) =>
+        LuminaGetter.TryGetRow<Status>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 }
