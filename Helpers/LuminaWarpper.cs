@@ -1,5 +1,6 @@
 ﻿using Lumina.Excel.Sheets;
 using Action = Lumina.Excel.Sheets.Action;
+using Status = Lumina.Excel.Sheets.Status;
 
 namespace OmenTools.Helpers;
 
