@@ -26,13 +26,18 @@ public static unsafe partial class HelpersOm
         return true;
     }
     
+    public static bool ClickSelectYesnoConfirm(IReadOnlyList<string> text) => 
+        text.Select(x => ClickSelectYesnoConfirm(x)).Any(x => x);
+    
     public static bool ClickSelectYesnoConfirm(string? textToContain = null)
     {
         if (!IsAddonAndNodesReady(SelectYesno)) return false;
         if (!string.IsNullOrWhiteSpace(textToContain))
         {
-            var text = SelectYesno->GetTextNodeById(2)->NodeText.ExtractText();
-            if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain, StringComparison.OrdinalIgnoreCase)) return false;
+            var text = SelectYesno->GetTextNodeById(2)->NodeText.ExtractText().Replace("\n", string.Empty);
+            if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain.Replace("\n", string.Empty), 
+                                                                   StringComparison.OrdinalIgnoreCase))
+                return false;
         }
 
         var addon = (AddonSelectYesno*)SelectYesno;
@@ -40,26 +45,36 @@ public static unsafe partial class HelpersOm
         return true;
     }
     
+    public static bool ClickSelectYesnoNo(IReadOnlyList<string> text) => 
+        text.Select(x => ClickSelectYesnoNo(x)).Any(x => x);
+    
     public static bool ClickSelectYesnoNo(string? textToContain = null)
     {
         if (!IsAddonAndNodesReady(SelectYesno)) return false;
         if (!string.IsNullOrWhiteSpace(textToContain))
         {
-            var text = SelectYesno->GetTextNodeById(2)->NodeText.ExtractText();
-            if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain, StringComparison.OrdinalIgnoreCase)) return false;
+            var text = SelectYesno->GetTextNodeById(2)->NodeText.ExtractText().Replace("\n", string.Empty);
+            if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain.Replace("\n", string.Empty), 
+                                                                   StringComparison.OrdinalIgnoreCase)) 
+                return false;
         }
 
         Callback(SelectYesno, true, 1);
         return true;
     }
     
+    public static bool ClickSelectYesnoYes(IReadOnlyList<string> text) => 
+        text.Select(x => ClickSelectYesnoYes(x)).Any(x => x);
+
     public static bool ClickSelectYesnoYes(string? textToContain = null)
     {
         if (!IsAddonAndNodesReady(SelectYesno)) return false;
         if (!string.IsNullOrWhiteSpace(textToContain))
         {
-            var text = SelectYesno->GetTextNodeById(2)->NodeText.ExtractText();
-            if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain, StringComparison.OrdinalIgnoreCase)) return false;
+            var text = SelectYesno->GetTextNodeById(2)->NodeText.ExtractText().Replace("\n", string.Empty);
+            if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain.Replace("\n", string.Empty), 
+                                                                   StringComparison.OrdinalIgnoreCase)) 
+                return false;
         }
 
         Callback(SelectYesno, true, 0);
