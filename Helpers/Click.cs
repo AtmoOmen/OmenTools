@@ -49,8 +49,7 @@ public static unsafe partial class HelpersOm
             if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain, StringComparison.OrdinalIgnoreCase)) return false;
         }
 
-        var addon = (AddonSelectYesno*)SelectYesno;
-        addon->NoButton->ClickAddonButton(SelectYesno);
+        Callback(SelectYesno, true, 1);
         return true;
     }
     
@@ -63,8 +62,7 @@ public static unsafe partial class HelpersOm
             if (!string.IsNullOrWhiteSpace(text) && !text.Contains(textToContain, StringComparison.OrdinalIgnoreCase)) return false;
         }
 
-        var addon = (AddonSelectYesno*)SelectYesno;
-        addon->YesButton->ClickAddonButton(SelectYesno);
+        Callback(SelectYesno, true, 0);
         return true;
     }
     
