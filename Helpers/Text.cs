@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -49,7 +50,7 @@ public static unsafe partial class HelpersOm
 
     public static bool IsChineseCharacter(char c) => (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3400 && c <= 0x4DB5);
     
-    public static Utf8String* FormatNumberByChineseNotation(int num, string lang = "ChineseSimplified", int minusColor = -1, int unitColor = -1)
+    public static Utf8String* FormatUtf8NumberByChineseNotation(int num, string lang = "ChineseSimplified", int minusColor = -1, int unitColor = -1)
     {
         if (num == 0) return Utf8String.FromString("0");
 
@@ -143,13 +144,111 @@ public static unsafe partial class HelpersOm
                    : Utf8String.FromSequence(new SeString().Append(payloads).Encode());
     }
     
-    public static Utf8String* FormatNumberByTenThousand(int number)
+    public static Utf8String* FormatUtf8NumberByTenThousand(int number)
     {
         var numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
         numberFormat.NumberGroupSizes     = [4];
         numberFormat.NumberGroupSeparator = ",";
         
         return Utf8String.FromString(number.ToString("N0", numberFormat));
+    }
+
+    public static string FormatNumberByChineseNotation(int num, string lang = "ChineseSimplified")
+    {
+        if (num == 0) return "0";
+
+        var 亿 = "亿";
+        var 万 = "万";
+        var 零 = "零";
+        switch (lang)
+        {
+            case "ChineseTraditional":
+                亿 = "億";
+                万 = "萬";
+                break;
+            case "Japanese":
+                亿 = "億";
+                零 = "0";
+                break;
+        }
+
+        var isNegative = num < 0;
+        num = Math.Abs(num);
+
+        var yi               = num              / 100000000;
+        var remainingAfterYi = num              % 100000000;
+        var wan              = remainingAfterYi / 10000;
+        var ge               = remainingAfterYi % 10000;
+
+        var builder = new StringBuilder();
+
+        if (isNegative) { builder.Append("-"); }
+
+        var hasYi  = yi  > 0;
+        var hasWan = wan > 0;
+        var hasGe  = ge  > 0;
+
+        // 亿
+        if (hasYi)
+        {
+            builder.Append(yi.ToString());
+            builder.Append(亿);
+        }
+
+        // 万
+        if (hasWan)
+        {
+            builder.Append(wan.ToString());
+            builder.Append(万);
+        }
+        else if (hasYi && hasGe) // 亿存在但万为 0 且个存在时补零
+            builder.Append(零);
+
+        // 个
+        if (hasGe)
+        {
+            // 当高位存在且个不足四位时补零 (1亿零1000)
+            var needsZero = (hasYi || hasWan) && ge < 1000;
+            if (needsZero) builder.Append(零);
+            builder.Append(ge.ToString());
+        }
+
+        // 合并多余零
+        var isPreviousZero = false;
+        var result         = builder.ToString();
+        var chars          = result.ToCharArray();
+        var filteredChars  = new List<char>();
+
+        for (var i = 0; i < chars.Length; i++)
+        {
+            var currentChar = chars[i];
+            if (i == chars.Length - 1 && currentChar.ToString() == 零)
+                continue;
+
+            if (isPreviousZero && currentChar.ToString() == 零)
+            {
+                isPreviousZero = false;
+                continue;
+            }
+
+            if (!isPreviousZero && currentChar.ToString() == 零)
+            {
+                isPreviousZero = true;
+                filteredChars.Add(currentChar);
+            }
+            else { filteredChars.Add(currentChar); }
+        }
+
+        return filteredChars.Count == 0 ? "0" : new string(filteredChars.ToArray());
+    }
+
+    public static string FormatNumberByTenThousandAsString(int number)
+    {
+        var numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+        numberFormat.NumberGroupSizes     = [4];
+        numberFormat.NumberGroupSeparator = ",";
+
+        return number.ToString("N0", numberFormat);
     }
 
     public static int ParseFormattedChineseNumber(string formatted)

@@ -96,4 +96,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* SalvageDialog               => GetAddonByName("SalvageDialog");
     public static AtkUnitBase* SalvageItemSelector         => GetAddonByName("SalvageItemSelector");
     public static AtkUnitBase* JournalResult               => GetAddonByName("JournalResult");
+    public static AtkUnitBase* ContentsFinderReady         => GetAddonByName("ContentsFinderReady");
 }
