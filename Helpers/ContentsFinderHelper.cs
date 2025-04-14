@@ -167,95 +167,95 @@ public class ContentsFinderHelper
 
         ExecuteCommand(ExecuteCommandFlag.SendDutySupport, (int)dawnContentID, (int)parameters.Param2, (int)parameters.Param3, 0);
     }
+}
 
-    [StructLayout(LayoutKind.Explicit, Size = 10)]
-    public struct ContentsFinderOption
+[StructLayout(LayoutKind.Explicit, Size = 10)]
+public struct ContentsFinderOption
+{
+    /// <summary>
+    /// 中途加入
+    /// </summary>
+    [FieldOffset(0)]
+    public bool Supply;
+
+    /// <summary>
+    /// 通常为 true
+    /// </summary>
+    /// <remarks>
+    /// 其代表的四个配置分别为:
+    /// <para><c>817</c>: HotbarDispSetNum</para>
+    /// <para><c>818</c>: HotbarDispSetChangeType</para>
+    /// <para><c>819</c>: HotbarDispSetDragType</para>
+    /// <para><c>820</c>: MainCommandType</para>
+    /// <para>这四个配置只要有一个为 true, 则该项为 true</para>
+    /// </remarks>
+    [FieldOffset(1)]
+    public bool Config817to820;
+
+    /// <summary>
+    /// 解除限制
+    /// </summary>
+    [FieldOffset(2)]
+    public bool UnrestrictedParty;
+
+    /// <summary>
+    /// 最低装等同步
+    /// </summary>
+    [FieldOffset(3)]
+    public bool MinimalIL;
+
+    /// <summary>
+    /// 等级同步
+    /// </summary>
+    [FieldOffset(4)]
+    public bool LevelSync;
+
+    /// <summary>
+    /// 禁用超越之力
+    /// </summary>
+    [FieldOffset(5)]
+    public bool SilenceEcho;
+
+    /// <summary>
+    /// 自由探索
+    /// </summary>
+    [FieldOffset(6)]
+    public bool ExplorerMode;
+
+    /// <summary>
+    /// 分配方式
+    /// </summary>
+    [FieldOffset(7)]
+    public ContentsFinder.LootRule LootRules;
+
+    /// <summary>
+    /// 限制“随机任务：练级”的随机目标
+    /// </summary>
+    [FieldOffset(8)]
+    public bool IsLimitedLevelingRoulette;
+
+    /// <summary>
+    /// 通常为 false
+    /// </summary>
+    /// <remarks>源数据来源: *(bool*)((nint)AgentContentsFinder.Instance() + 7346)</remarks>
+    [FieldOffset(9)]
+    public bool Unknown9;
+
+    public ContentsFinderOption Clone() => this;
+
+    public static unsafe ContentsFinderOption Get()
     {
-        /// <summary>
-        /// 中途加入
-        /// </summary>
-        [FieldOffset(0)]
-        public bool Supply;
-
-        /// <summary>
-        /// 通常为 true
-        /// </summary>
-        /// <remarks>
-        /// 其代表的四个配置分别为:
-        /// <para><c>817</c>: HotbarDispSetNum</para>
-        /// <para><c>818</c>: HotbarDispSetChangeType</para>
-        /// <para><c>819</c>: HotbarDispSetDragType</para>
-        /// <para><c>820</c>: MainCommandType</para>
-        /// <para>这四个配置只要有一个为 true, 则该项为 true</para>
-        /// </remarks>
-        [FieldOffset(1)]
-        public bool Config817to820;
-
-        /// <summary>
-        /// 解除限制
-        /// </summary>
-        [FieldOffset(2)]
-        public bool UnrestrictedParty;
-
-        /// <summary>
-        /// 最低装等同步
-        /// </summary>
-        [FieldOffset(3)]
-        public bool MinimalIL;
-
-        /// <summary>
-        /// 等级同步
-        /// </summary>
-        [FieldOffset(4)]
-        public bool LevelSync;
-
-        /// <summary>
-        /// 禁用超越之力
-        /// </summary>
-        [FieldOffset(5)]
-        public bool SilenceEcho;
-
-        /// <summary>
-        /// 自由探索
-        /// </summary>
-        [FieldOffset(6)]
-        public bool ExplorerMode;
-
-        /// <summary>
-        /// 分配方式
-        /// </summary>
-        [FieldOffset(7)]
-        public ContentsFinder.LootRule LootRules;
-
-        /// <summary>
-        /// 限制“随机任务：练级”的随机目标
-        /// </summary>
-        [FieldOffset(8)]
-        public bool IsLimitedLevelingRoulette;
-
-        /// <summary>
-        /// 通常为 false
-        /// </summary>
-        /// <remarks>源数据来源: *(bool*)((nint)AgentContentsFinder.Instance() + 7346)</remarks>
-        [FieldOffset(9)]
-        public bool Unknown9;
-        
-        public ContentsFinderOption Clone() => this;
-
-        public static unsafe ContentsFinderOption Get()
+        var finder = UIState.Instance()->ContentsFinder;
+        return new()
         {
-            var finder = UIState.Instance()->ContentsFinder;
-            return new()
-            {
-                Config817to820            = true,
-                ExplorerMode              = finder.IsExplorerMode,
-                IsLimitedLevelingRoulette = finder.IsLimitedLevelingRoulette,
-                LevelSync                 = finder.IsLevelSync,
-                LootRules                 = finder.LootRules,
-                MinimalIL                 = finder.IsMinimalIL,
-                SilenceEcho               = finder.IsSilenceEcho,
-                UnrestrictedParty         = finder.IsUnrestrictedParty,
-            };
-        }
+            Config817to820            = true,
+            ExplorerMode              = finder.IsExplorerMode,
+            IsLimitedLevelingRoulette = finder.IsLimitedLevelingRoulette,
+            LevelSync                 = finder.IsLevelSync,
+            LootRules                 = finder.LootRules,
+            MinimalIL                 = finder.IsMinimalIL,
+            SilenceEcho               = finder.IsSilenceEcho,
+            UnrestrictedParty         = finder.IsUnrestrictedParty,
+        };
     }
 }
