@@ -24,4 +24,7 @@ public static class LuminaWarpper
         LuminaGetter.TryGetRow<TerritoryType>(rowID, out var item) ? 
             item.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty : 
             string.Empty;
+
+    public static string GetContentName(uint rowID) =>
+        LuminaGetter.TryGetRow<ContentFinderCondition>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 }
