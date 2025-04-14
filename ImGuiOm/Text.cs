@@ -100,4 +100,26 @@ public static partial class ImGuiOm
             ImGui.TextColored(textColor, text);
         }
     }
+    
+    /// <summary>
+    /// 可选中的文本 (使用 <see cref="ImGui.InputText(string, ref string, uint, ImGuiInputTextFlags)"/> 伪装而成)
+    /// </summary>
+    /// <param name="text">要显示的文本</param>
+    /// <param name="colorBG">背景颜色, 如若不指定则为 <see cref="ImGuiCol.WindowBg"/> 的颜色, 可以使用 <see cref="ImGui.GetColorU32(ImGuiCol)"/> 来获取</param>
+    /// <param name="id">不指定则使用 <paramref name="text"/> 来作为输入框 ID</param>
+    public static void TextSelectable(string text, uint? colorBG = null, string? id = null)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+
+        var textTemp   = text;
+        var textLength = (uint)text.Length + 1;
+        using (ImRaii.PushColor(ImGuiCol.FrameBg, colorBG == null ? ImGui.GetColorU32(ImGuiCol.WindowBg) : colorBG.Value))
+            ImGui.InputText($"###{(string.IsNullOrWhiteSpace(id) ? text : id)}", ref textTemp, textLength, ImGuiInputTextFlags.ReadOnly);
+
+        // 不禁用会崩
+        if (ImGui.IsItemActivated())
+            DisableIME();
+        if (ImGui.IsItemDeactivated())
+            EnableIME();
+    }
 }
