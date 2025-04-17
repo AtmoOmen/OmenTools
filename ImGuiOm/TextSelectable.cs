@@ -79,10 +79,12 @@ public static partial class ImGuiOm
                         screenStartPos.X + endX,
                         linkStart.Y      + ImGui.GetTextLineHeightWithSpacing());
 
+                    var basicYOffset = (lineIndex + 1) * ImGui.GetStyle().ItemSpacing.Y;
+
                     // 下划线
                     drawList.AddLine(
-                        new Vector2(linkStart.X, linkStart.Y + ImGui.GetTextLineHeightWithSpacing() - 8),
-                        new Vector2(linkEnd.X,   linkEnd.Y                                          - 8),
+                        new(linkStart.X, linkStart.Y + ImGui.GetTextLineHeightWithSpacing() - basicYOffset),
+                        new(linkEnd.X,   linkEnd.Y                                          - basicYOffset),
                         linkType.UnderlineColor,
                         1.0f);
 
