@@ -1,6 +1,9 @@
 ﻿using System.Numerics;
+using System.Text;
+using System.Text.RegularExpressions;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
+using Dalamud.Utility;
 using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
@@ -52,10 +55,10 @@ public static partial class ImGuiOm
         if (useStaticFont) ImGui.PopFont();
 
         var windowDrawList = ImGui.GetWindowDrawList();
-        var cursorPos = ImGui.GetCursorScreenPos();
-        var padding = ImGui.GetStyle().FramePadding;
+        var cursorPos      = ImGui.GetCursorScreenPos();
+        var padding        = ImGui.GetStyle().FramePadding;
 
-        var textSize = ImGui.CalcTextSize(text);
+        var textSize     = ImGui.CalcTextSize(text);
         var buttonHeight = Math.Max(iconSize.Y, textSize.Y);
 
         ImGui.BeginDisabled();

@@ -16,6 +16,7 @@ using SeString = Lumina.Text.SeString;
 using Timer = System.Timers.Timer;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Reflection;
 using Dalamud.Game.ClientState.Party;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
@@ -29,10 +30,22 @@ public static unsafe partial class HelpersOm
     private static readonly CompareInfo    s_compareInfo    = CultureInfo.InvariantCulture.CompareInfo;
     private const           CompareOptions s_compareOptions = CompareOptions.IgnoreCase;
 
-    public const BindingFlags AllFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-    public const BindingFlags StaticFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+    public const BindingFlags AllFlags      = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+    public const BindingFlags StaticFlags   = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
     public const BindingFlags InstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
+    private static readonly ConcurrentDictionary<Enum, string> DescriptionAttributeCache = [];
+    
+    public static string GetDescription(this Enum value) =>
+        DescriptionAttributeCache.GetOrAdd(value, v =>
+        {
+            var field     = v.GetType().GetField(v.ToString());
+            if (field == null) return v.ToString();
+            
+            var attribute = (DescriptionAttribute?)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+            return attribute?.Description ?? v.ToString();
+        });
+    
     public static char ToSEChar(this uint integer) =>
         integer switch
         {

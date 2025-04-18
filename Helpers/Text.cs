@@ -4,11 +4,15 @@ using System.Text.RegularExpressions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using Lumina.Excel.Sheets;
 
 namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    /// <summary>
+    /// Markdown 格式文本转纯文本
+    /// </summary>
     public static string MarkdownToPlainText(string markdown)
     {
         markdown = Regex.Replace(markdown, @"^\#{1,6}\s*", "", RegexOptions.Multiline);
@@ -46,14 +50,31 @@ public static unsafe partial class HelpersOm
         return markdown.Trim();
     }
 
-    public static bool IsChineseString(string text) => text.All(IsChineseCharacter);
+    /// <summary>
+    /// 给定字符串是否均为汉字
+    /// </summary>
+    public static bool IsChineseString(string text) => 
+        text.All(IsChineseCharacter);
 
-    public static bool IsChineseCharacter(char c) => (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3400 && c <= 0x4DB5);
-    
-    public static Utf8String* FormatUtf8NumberByChineseNotation(int num, string lang = "ChineseSimplified", int minusColor = -1, int unitColor = -1)
+    /// <summary>
+    /// 给定字符是否为汉字
+    /// </summary>
+    public static bool IsChineseCharacter(char c) => 
+        (c >= 0x4E00 && c <= 0x9FA5) || (c >= 0x3400 && c <= 0x4DB5);
+
+    /// <summary>
+    /// 将给定数字格式化为带中文单位的 Utf8String 字符串指针, 最多支持至 兆
+    /// </summary>
+    /// <param name="num">数字</param>
+    /// <param name="lang">语言: ChineseSimplified, ChineseTraditional, Japanese</param>
+    /// <param name="minusColor"><see cref="UIColor"/> Row ID</param>
+    /// <param name="unitColor"><see cref="UIColor"/> Row ID</param>
+    public static Utf8String* FormatUtf8NumberByChineseNotation(long num, string lang = "ChineseSimplified", 
+                                                                int minusColor = -1, int unitColor = -1)
     {
         if (num == 0) return Utf8String.FromString("0");
 
+        var 兆 = "兆";
         var 亿 = "亿";
         var 万 = "万";
         var 零 = "零";
@@ -72,10 +93,12 @@ public static unsafe partial class HelpersOm
         var isNegative = num < 0;
         num = Math.Abs(num);
 
-        var yi               = num              / 100000000;
-        var remainingAfterYi = num              % 100000000;
-        var wan              = remainingAfterYi / 10000;
-        var ge               = remainingAfterYi % 10000;
+        var zhao               = num                / 1000000000000;
+        var remainingAfterZhao = num                % 1000000000000;
+        var yi                 = remainingAfterZhao / 100000000;
+        var remainingAfterYi   = remainingAfterZhao % 100000000;
+        var wan                = remainingAfterYi   / 10000;
+        var ge                 = remainingAfterYi   % 10000;
 
         var builder = new SeStringBuilder();
 
@@ -86,9 +109,19 @@ public static unsafe partial class HelpersOm
             if (minusColor != -1) builder.AddUiForegroundOff();
         }
 
-        var hasYi  = yi  > 0;
-        var hasWan = wan > 0;
-        var hasGe  = ge  > 0;
+        var hasZhao = zhao > 0;
+        var hasYi   = yi   > 0;
+        var hasWan  = wan  > 0;
+        var hasGe   = ge   > 0;
+
+        // 兆
+        if (hasZhao)
+        {
+            builder.Append(zhao.ToString());
+            if (unitColor != -1) builder.AddUiForeground((ushort)unitColor);
+            builder.AddText(兆);
+            if (unitColor != -1) builder.AddUiForegroundOff();
+        }
 
         // 亿
         if (hasYi)
@@ -98,6 +131,8 @@ public static unsafe partial class HelpersOm
             builder.AddText(亿);
             if (unitColor != -1) builder.AddUiForegroundOff();
         }
+        else if (hasZhao && (hasWan || hasGe)) // 兆存在但亿为0时补零
+            builder.Append(零);
 
         // 万
         if (hasWan)
@@ -107,14 +142,14 @@ public static unsafe partial class HelpersOm
             builder.AddText(万);
             if (unitColor != -1) builder.AddUiForegroundOff();
         }
-        else if (hasYi && hasGe) // 亿存在但万为 0 且个存在时补零
+        else if ((hasZhao || hasYi) && hasGe) // 兆或亿存在但万为0时补零
             builder.Append(零);
 
         // 个
         if (hasGe)
         {
-            // 当高位存在且个不足四位时补零 (1亿零1000)
-            var needsZero = (hasYi || hasWan) && ge < 1000;
+            // 当高位存在且个不足四位时补零 (1兆零1000)
+            var needsZero = (hasZhao || hasYi || hasWan) && ge < 1000;
             if (needsZero) builder.Append(零);
             builder.Append(ge.ToString());
         }
@@ -143,30 +178,29 @@ public static unsafe partial class HelpersOm
                    ? Utf8String.FromString("0")
                    : Utf8String.FromSequence(new SeString().Append(payloads).Encode());
     }
-    
-    public static Utf8String* FormatUtf8NumberByTenThousand(int number)
-    {
-        var numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
-        numberFormat.NumberGroupSizes     = [4];
-        numberFormat.NumberGroupSeparator = ",";
-        
-        return Utf8String.FromString(number.ToString("N0", numberFormat));
-    }
 
-    public static string FormatNumberByChineseNotation(int num, string lang = "ChineseSimplified")
+    /// <summary>
+    /// 将给定数字格式化为带中文单位的字符串, 最多支持至 兆
+    /// </summary>
+    /// <param name="num">数字</param>
+    /// <param name="lang">语言: ChineseSimplified, ChineseTraditional, Japanese</param>
+    public static string FormatNumberByChineseNotation(long num, string lang = "ChineseSimplified")
     {
         if (num == 0) return "0";
 
+        var 兆 = "兆";
         var 亿 = "亿";
         var 万 = "万";
         var 零 = "零";
         switch (lang)
         {
             case "ChineseTraditional":
+                兆 = "兆";
                 亿 = "億";
                 万 = "萬";
                 break;
             case "Japanese":
+                兆 = "兆";
                 亿 = "億";
                 零 = "0";
                 break;
@@ -175,18 +209,29 @@ public static unsafe partial class HelpersOm
         var isNegative = num < 0;
         num = Math.Abs(num);
 
-        var yi               = num              / 100000000;
-        var remainingAfterYi = num              % 100000000;
-        var wan              = remainingAfterYi / 10000;
-        var ge               = remainingAfterYi % 10000;
+        // 新增兆级单位（1兆 = 1万亿）
+        var zhao               = num                / 1000000000000;
+        var remainingAfterZhao = num                % 1000000000000;
+        var yi                 = remainingAfterZhao / 100000000;
+        var remainingAfterYi   = remainingAfterZhao % 100000000;
+        var wan                = remainingAfterYi   / 10000;
+        var ge                 = remainingAfterYi   % 10000;
 
         var builder = new StringBuilder();
 
-        if (isNegative) { builder.Append("-"); }
+        if (isNegative) builder.Append("-");
 
-        var hasYi  = yi  > 0;
-        var hasWan = wan > 0;
-        var hasGe  = ge  > 0;
+        var hasZhao = zhao > 0;
+        var hasYi   = yi   > 0;
+        var hasWan  = wan  > 0;
+        var hasGe   = ge   > 0;
+
+        // 兆
+        if (hasZhao)
+        {
+            builder.Append(zhao.ToString());
+            builder.Append(兆);
+        }
 
         // 亿
         if (hasYi)
@@ -194,6 +239,8 @@ public static unsafe partial class HelpersOm
             builder.Append(yi.ToString());
             builder.Append(亿);
         }
+        else if (hasZhao && (hasWan || hasGe)) // 兆存在但亿为0时补零
+            builder.Append(零);
 
         // 万
         if (hasWan)
@@ -201,14 +248,13 @@ public static unsafe partial class HelpersOm
             builder.Append(wan.ToString());
             builder.Append(万);
         }
-        else if (hasYi && hasGe) // 亿存在但万为 0 且个存在时补零
+        else if ((hasZhao || hasYi) && hasGe) // 兆或亿存在但万为0时补零
             builder.Append(零);
 
         // 个
         if (hasGe)
         {
-            // 当高位存在且个不足四位时补零 (1亿零1000)
-            var needsZero = (hasYi || hasWan) && ge < 1000;
+            var needsZero = (hasZhao || hasYi || hasWan) && ge < 1000;
             if (needsZero) builder.Append(零);
             builder.Append(ge.ToString());
         }
@@ -241,8 +287,23 @@ public static unsafe partial class HelpersOm
 
         return filteredChars.Count == 0 ? "0" : new string(filteredChars.ToArray());
     }
-
-    public static string FormatNumberByTenThousandAsString(int number)
+    
+    /// <summary>
+    /// 将给定数字格式化为万分位分隔的 Utf8String 字符串指针
+    /// </summary>
+    public static Utf8String* FormatUtf8NumberByTenThousand(long number)
+    {
+        var numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
+        numberFormat.NumberGroupSizes     = [4];
+        numberFormat.NumberGroupSeparator = ",";
+        
+        return Utf8String.FromString(number.ToString("N0", numberFormat));
+    }
+    
+    /// <summary>
+    /// 将给定数字格式化为万分位分隔的字符串
+    /// </summary>
+    public static string FormatNumberByTenThousandAsString(long number)
     {
         var numberFormat = (NumberFormatInfo)CultureInfo.CurrentCulture.NumberFormat.Clone();
         numberFormat.NumberGroupSizes     = [4];
@@ -251,7 +312,10 @@ public static unsafe partial class HelpersOm
         return number.ToString("N0", numberFormat);
     }
 
-    public static int ParseFormattedChineseNumber(string formatted)
+    /// <summary>
+    /// 将 <see cref="FormatUtf8NumberByChineseNotation"/> 或 <see cref="FormatNumberByChineseNotation"/> 格式化成的数字字符串解析回数字
+    /// </summary>
+    public static long ParseFormattedChineseNumber(string formatted)
     {
         if (formatted == "0") return 0;
 
@@ -265,14 +329,29 @@ public static unsafe partial class HelpersOm
             index = 1;
         }
 
-        long yi = 0, wan = 0, ge = 0;
+        long zhao = 0, yi = 0, wan = 0, ge = 0;
+
+        // 兆位
+        var zhaoIndex = -1;
+        foreach (var c in new[] { '兆' })
+        {
+            var pos = formatted.IndexOf('兆', index);
+            if (pos != -1 && (zhaoIndex == -1 || pos < zhaoIndex))
+                zhaoIndex = pos;
+        }
+
+        if (zhaoIndex != -1)
+        {
+            zhao  = long.Parse(formatted.Substring(index, zhaoIndex - index));
+            index = zhaoIndex + 1;
+        }
 
         // 亿位
         var yiIndex = -1;
         foreach (var c in new[] { '亿', '億' })
         {
             var pos = formatted.IndexOf(c, index);
-            if (pos != -1 && (yiIndex == -1 || pos < yiIndex)) 
+            if (pos != -1 && (yiIndex == -1 || pos < yiIndex))
                 yiIndex = pos;
         }
 
@@ -287,7 +366,7 @@ public static unsafe partial class HelpersOm
         foreach (var c in new[] { '万', '萬' })
         {
             var pos = formatted.IndexOf(c, index);
-            if (pos != -1 && (wanIndex == -1 || pos < wanIndex)) 
+            if (pos != -1 && (wanIndex == -1 || pos < wanIndex))
                 wanIndex = pos;
         }
 
@@ -310,17 +389,13 @@ public static unsafe partial class HelpersOm
                     geStr = geStr[1..];
             }
 
-            geStr = geStr.Replace(",", ""); // 移除逗号分隔符
+            geStr = geStr.Replace(",", "");
 
             if (geStr.Length > 0) { ge = long.Parse(geStr); }
         }
 
-        var result = (yi * 100000000L) + (wan * 10000L) + ge;
-        result *= sign;
-
-        checked
-        {
-            return (int)result;
-        }
+        // 计算最终值（兆 * 1万亿 + 亿 * 1亿 + 万 * 1万 + 个）
+        var result = (zhao * 1000000000000L) + (yi * 100000000L) + (wan * 10000L) + ge;
+        return result * sign;
     }
 }

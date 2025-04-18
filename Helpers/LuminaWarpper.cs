@@ -20,4 +20,12 @@ public static class LuminaWarpper
     
     public static string GetStatusName(uint rowID) =>
         LuminaGetter.TryGetRow<Status>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+
+    public static string GetZonePlaceName(uint rowID) =>
+        LuminaGetter.TryGetRow<TerritoryType>(rowID, out var item) ? 
+            item.PlaceName.ValueNullable?.Name.ExtractText() ?? string.Empty : 
+            string.Empty;
+
+    public static string GetContentName(uint rowID) =>
+        LuminaGetter.TryGetRow<ContentFinderCondition>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 }

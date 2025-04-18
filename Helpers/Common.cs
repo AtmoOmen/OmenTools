@@ -1,7 +1,11 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 using Lumina.Excel;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Newtonsoft.Json;
+using Task = System.Threading.Tasks.Task;
 
 namespace OmenTools.Helpers;
 
@@ -9,6 +13,12 @@ public static partial class HelpersOm
 {
     public static RowRef<T> LuminaCreateRef<T>(uint rowId) where T : struct, IExcelRow<T> => new(DService.Data.Excel, rowId);
     
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    
+    public static unsafe void MinimizeWindow() => 
+        ShowWindow(Framework.Instance()->GameWindow->WindowHandle, 6);
+
     public static void ExportToClipboard<T>(T config) where T : class
     {
         var json   = JsonConvert.SerializeObject(config, JsonSettings);
