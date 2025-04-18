@@ -28,7 +28,7 @@ public class ContentsFinderHelper
     private delegate void CancelContentsFinderDelegate(byte a1);
     private static readonly CancelContentsFinderDelegate CancelContentsFinder;
     
-    public static readonly  CompSig                ExecuteCommandSig = new("E8 ?? ?? ?? ?? 48 8B 06 48 8B CE FF 50 ?? E9 ?? ?? ?? ?? 49 8B CC");
+    private static readonly CompSig                ExecuteCommandSig = new("E8 ?? ?? ?? ?? 48 8B 06 48 8B CE FF 50 ?? E9 ?? ?? ?? ?? 49 8B CC");
     private delegate        nint                   ExecuteCommandDelegate(ExecuteCommandFlag command, int param1, int param2, int param3, int param4);
     private static readonly ExecuteCommandDelegate ExecuteCommand;
 
