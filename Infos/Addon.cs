@@ -4,6 +4,7 @@ namespace OmenTools.Infos;
 
 public static unsafe partial class InfosOm
 {
+    public static AtkUnitBase* TelepotTown                 => GetAddonByName("TelepotTown");
     public static AtkUnitBase* GuildLeve                   => GetAddonByName("GuildLeve");
     public static AtkUnitBase* BannerPreview               => GetAddonByName("BannerPreview");
     public static AtkUnitBase* EnemyList                   => GetAddonByName("_EnemyList");
