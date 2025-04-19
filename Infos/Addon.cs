@@ -99,4 +99,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* JournalResult               => GetAddonByName("JournalResult");
     public static AtkUnitBase* ContentsFinderReady         => GetAddonByName("ContentsFinderReady");
     public static AtkUnitBase* BannerEditor                => GetAddonByName("BannerEditor");
+    public static AtkUnitBase* Teleport                    => GetAddonByName("Teleport");
 }
