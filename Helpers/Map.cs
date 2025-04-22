@@ -43,8 +43,8 @@ public static partial class HelpersOm
             MapToWorldY(mapCoordinates.Y, territoryTransient.OffsetZ, correctZOffset));
 
     public static Vector2 WorldToTexture(Vector3 position, Map map) =>
-        new Vector2(position.X, position.Z) * (map.SizeFactor / 100.0f) +
-        new Vector2(map.OffsetX, map.OffsetY) * (map.SizeFactor / 100.0f) +
+        (new Vector2(position.X,  position.Z)  * (map.SizeFactor / 100.0f)) +
+        (new Vector2(map.OffsetX, map.OffsetY) * (map.SizeFactor / 100.0f)) +
         new Vector2(1024.0f, 1024.0f);
 
     public static Vector2 TextureToWorld(Vector2 coordinates, Map map)
