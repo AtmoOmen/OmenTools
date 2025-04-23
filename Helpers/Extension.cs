@@ -1,4 +1,6 @@
 using System.Buffers;
+using Dalamud.Game.ClientState.Objects.Types;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net;
@@ -11,10 +13,13 @@ using Dalamud.Hooking;
 using Dalamud.Memory;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using ImGuiNET;
 using SeString = Lumina.Text.SeString;
 using Timer = System.Timers.Timer;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using OmenTools.Infos;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
@@ -22,6 +27,9 @@ using Dalamud.Game.ClientState.Party;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using Lumina.Excel.Sheets;
 using Aetheryte = Lumina.Excel.Sheets.Aetheryte;
+using BattleChara = FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara;
+using Character = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
+using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace OmenTools.Helpers;
 
@@ -428,12 +436,12 @@ public static unsafe partial class HelpersOm
     public static Vector2 GetPosition(this MapMarker marker) => new(marker.X, marker.Y);
 
     public static Vector3 ToVector3(this Vector2 vector2) 
-        => vector2.ToVector3(DService.ObjectTable.LocalPlayer?.Position.Y ?? 0);
+        => vector2.ToVector3(DService.ClientState.LocalPlayer?.Position.Y ?? 0);
     
     public static bool TargetInteract(this IGameObject? gameObject)
     {
         if (gameObject == null) return false;
-        TargetSystem.Instance()->Target = gameObject.ToStruct();
+        DService.Targets.Target = gameObject;
         return TargetSystem.Instance()->InteractWithObject(gameObject.ToStruct()) != 0;
     }
     
@@ -601,6 +609,14 @@ public static unsafe partial class HelpersOm
                 ArrayPool<char>.Shared.Return(rentedArray);
         }
     }
+    
+    public static Character* ToStruct(this ICharacter chara) => (Character*)chara.Address;
+
+    public static BattleChara* ToBCStruct(this ICharacter chara) => (BattleChara*)chara.Address;
+
+    public static GameObject* ToStruct(this IGameObject obj) => (GameObject*)obj.Address;
+    
+    public static BattleChara* ToBCStruct(this IGameObject obj) => (BattleChara*)obj.Address;
 
     public static BitmapFontIcon ToBitmapFontIcon(this ClassJob? job)
     {
