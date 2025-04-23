@@ -4,7 +4,7 @@ using Status = Lumina.Excel.Sheets.Status;
 
 namespace OmenTools.Helpers;
 
-public static class LuminaWarpper
+public static class LuminaWrapper
 {
     public static string GetAddonText(uint rowID) => 
         LuminaGetter.TryGetRow<Addon>(rowID, out var item) ? item.Text.ExtractText() : string.Empty;
@@ -28,4 +28,7 @@ public static class LuminaWarpper
 
     public static string GetContentName(uint rowID) =>
         LuminaGetter.TryGetRow<ContentFinderCondition>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static string GetPlaceName(uint rowID) =>
+        LuminaGetter.TryGetRow<PlaceName>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 }

@@ -35,6 +35,13 @@ public static unsafe partial class HelpersOm
     public const BindingFlags InstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
     private static readonly ConcurrentDictionary<Enum, string> DescriptionAttributeCache = [];
+
+    public static string GetTexturePath(this Map map) 
+    {
+        var mapKey = map.Id.ExtractText();
+        var rawKey = mapKey.Replace("/", "");
+        return $"ui/map/{mapKey}/{rawKey}_m.tex";
+    }
     
     public static string GetDescription(this Enum value) =>
         DescriptionAttributeCache.GetOrAdd(value, v =>
