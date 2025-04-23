@@ -8,8 +8,6 @@ internal sealed unsafe partial class AetheryteList : IAetheryteList
 {
     private readonly Telepo* telepoInstance = Telepo.Instance();
 
-    private AetheryteList() { }
-
     public int Length
     {
         get

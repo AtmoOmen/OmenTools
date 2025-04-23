@@ -18,10 +18,11 @@ public class DService
     {
         pluginInterface.Create<DService>();
         
-        PI          = pluginInterface;
-        UiBuilder   = pluginInterface.UiBuilder;
-        ObjectTable = new ObjectTable();
-        Targets     = new TargetManager();
+        PI            = pluginInterface;
+        UiBuilder     = pluginInterface.UiBuilder;
+        ObjectTable   = new ObjectTable();
+        Targets       = new TargetManager();
+        AetheryteList = new AetheryteList();
     }
 
     public static void Uninit()
@@ -38,7 +39,6 @@ public class DService
     
     [PluginService] public static IAddonLifecycle      AddonLifecycle  { get; private set; } = null!;
     [PluginService] public static IAddonEventManager   AddonEvent      { get; private set; } = null!;
-    [PluginService] public static IAetheryteList       AetheryteList   { get; private set; } = null!;
     [PluginService] public static IBuddyList           BuddyList       { get; private set; } = null!;
     [PluginService] public static IChatGui             Chat            { get; private set; } = null!;
     [PluginService] public static IClientState         ClientState     { get; private set; } = null!;
@@ -70,9 +70,10 @@ public class DService
     [PluginService] public static ITitleScreenMenu     TitleScreenMenu { get; private set; } = null!;
     [PluginService] public static IToastGui            Toast           { get; private set; } = null!;
 
-    public static IDalamudPluginInterface PI          { get; private set; } = null!;
-    public static IUiBuilder              UiBuilder   { get; private set; } = null!;
-    public static IObjectTable            ObjectTable { get; private set; } = null!;
-    public static ITargetManager          Targets     { get; private set; } = null!;
-    public static SigScanner              SigScanner { get; private set; } = new();
+    public static IDalamudPluginInterface PI            { get; private set; } = null!;
+    public static IUiBuilder              UiBuilder     { get; private set; } = null!;
+    public static IAetheryteList          AetheryteList { get; private set; } = null!;
+    public static IObjectTable            ObjectTable   { get; private set; } = null!;
+    public static ITargetManager          Targets       { get; private set; } = null!;
+    public static SigScanner              SigScanner    { get; private set; } = new();
 }
