@@ -1,8 +1,8 @@
 namespace OmenTools.Helpers;
 
-public class TaskHelperQueue(uint weight) : IEquatable<TaskHelperQueue>, IComparable<TaskHelperQueue>
+public class TaskHelperQueue(int weight) : IEquatable<TaskHelperQueue>, IComparable<TaskHelperQueue>
 {
-    public uint                 Weight { get; } = weight;
+    public int                  Weight { get; } = weight;
     public List<TaskHelperTask> Tasks  { get; } = [];
 
     public bool Equals(TaskHelperQueue? other) => 
