@@ -436,7 +436,7 @@ public static unsafe partial class HelpersOm
     public static Vector2 GetPosition(this MapMarker marker) => new(marker.X, marker.Y);
 
     public static Vector3 ToVector3(this Vector2 vector2) 
-        => vector2.ToVector3(DService.ClientState.LocalPlayer?.Position.Y ?? 0);
+        => vector2.ToVector3(DService.ObjectTable.LocalPlayer?.Position.Y ?? 0);
     
     public static bool TargetInteract(this IGameObject? gameObject)
     {
