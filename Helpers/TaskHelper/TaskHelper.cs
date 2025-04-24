@@ -127,23 +127,23 @@ public partial class TaskHelper : IDisposable
 
     public void Step() => Tick(null);
 
-    public bool AddQueue(uint weight)
+    public bool AddQueue(int weight)
     {
         if (Queues.Any(q => q.Weight == weight)) return false;
-        Queues.Add(new TaskHelperQueue(weight));
+        Queues.Add(new(weight));
         return true;
     }
 
-    public bool RemoveQueue(uint weight) => 
+    public bool RemoveQueue(int weight) => 
         Queues.RemoveWhere(q => q.Weight == weight) > 0;
 
-    public void RemoveAllTasks(uint weight) =>
+    public void RemoveAllTasks(int weight) =>
         Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks.Clear();
 
-    public bool RemoveFirstTask(uint weight) =>
+    public bool RemoveFirstTask(int weight) =>
         Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks.TryDequeue(out _) ?? false;
 
-    public bool RemoveLastTask(uint weight)
+    public bool RemoveLastTask(int weight)
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
         if (!(queue?.Tasks.Count > 0)) return false;
@@ -152,7 +152,7 @@ public partial class TaskHelper : IDisposable
         return true;
     }
 
-    public bool RemoveFirstNTasks(uint weight, int count)
+    public bool RemoveFirstNTasks(int weight, int count)
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
         if (queue?.Tasks.Count > 0)

@@ -98,3 +98,15 @@ public readonly struct CompanyManufactory(ExcelPage page, uint offset, uint row)
     static CompanyManufactory IExcelRow<CompanyManufactory>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
 }
+
+[Sheet("custom/007/CtsHwdTranspoint_00701")]
+public readonly struct HwdTranspoint(ExcelPage page, uint offset, uint row) : IExcelRow<HwdTranspoint>
+{
+    public uint RowId => row;
+
+    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
+
+    static HwdTranspoint IExcelRow<HwdTranspoint>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
+}
