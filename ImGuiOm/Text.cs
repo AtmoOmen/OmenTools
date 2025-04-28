@@ -103,4 +103,50 @@ public static partial class ImGuiOm
             ImGui.TextColored(textColor, text);
         }
     }
+
+    public static bool TextLink(string url, string? displayText = null, bool showUnderline = true)
+    {
+        using var id    = ImRaii.PushId($"{url}_{displayText}_{showUnderline}");
+        using var group = ImRaii.Group();
+        
+        var text = string.IsNullOrEmpty(displayText) ? url : displayText;
+
+        var textSize  = ImGui.CalcTextSize(text);
+        var cursorPos = ImGui.GetCursorScreenPos();
+
+        var color      = ImGui.GetColorU32(ImGuiCol.Text);
+        var hoverColor = ImGui.GetColorU32(ImGuiCol.ButtonHovered);
+
+        ImGui.TextColored(ImGui.ColorConvertU32ToFloat4(color), text);
+        
+        var clicked = false;
+        if (ImGui.IsItemHovered())
+            ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+        
+        TooltipHover(url, 40f);
+
+        if (ImGui.IsItemClicked())
+        {
+            Util.OpenLink(url);
+            clicked = true;
+        }
+
+        if (showUnderline)
+        {
+            const float underlineThickness = 1.0f;
+            var         underlineStart     = cursorPos with { Y = cursorPos.Y + textSize.Y };
+            var         underlineEnd       = new Vector2(cursorPos.X              + textSize.X, cursorPos.Y + textSize.Y);
+
+            var isHovered      = ImGui.IsItemHovered();
+            var underlineColor = isHovered ? hoverColor : color;
+
+            ImGui.GetWindowDrawList().AddLine(
+                underlineStart,
+                underlineEnd,
+                underlineColor,
+                underlineThickness);
+        }
+
+        return clicked;
+    }
 }
