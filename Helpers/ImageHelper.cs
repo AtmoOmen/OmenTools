@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
 
@@ -6,61 +7,52 @@ namespace OmenTools.Helpers;
 
 public static class ImageHelper
 {
-    private record ImageLoadingResult
-    {
-        public ISharedImmediateTexture? ImmediateTexture { get; set; }
-        public IDalamudTextureWrap?     TextureWrap      { get; set; }
-        public bool                     IsCompleted      { get; set; }
-
-        public IDalamudTextureWrap? Texture =>
-            DService.Framework.RunOnFrameworkThread(() => ImmediateTexture?.GetWrapOrEmpty() ?? TextureWrap).Result;
-    }
-
     private static readonly ConcurrentDictionary<string, ImageLoadingResult>             CachedTextures      = new();
     private static readonly ConcurrentDictionary<(uint ID, bool HQ), ImageLoadingResult> CachedIcons         = new();
     private static readonly List<Func<byte[], byte[]>>                                   ConversionsToBitmap = [b => b];
 
-    private static readonly HttpClient               HttpClient       = new() { Timeout = TimeSpan.FromSeconds(10) };
-    private static readonly SemaphoreSlim            LoadingSemaphore = new(1, 1);
+    private static readonly HttpClient               HttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
     private static          CancellationTokenSource? CancelSource;
 
-    public static IDalamudTextureWrap? GetIcon(uint iconID, bool isHQ = false)
-        => TryGetIconTextureWrap(iconID, isHQ, out var texture) ? texture : null;
+    public static IDalamudTextureWrap? GetGameIcon(uint iconID, bool isHQ = false)
+        => TryGetGameIcon(iconID, isHQ, out var texture) ? texture : null;
 
     public static IDalamudTextureWrap? GetImage(string urlOrPath)
-        => TryGetTextureWrap(urlOrPath, out var texture) ? texture : null;
+        => TryGetImage(urlOrPath, out var texture) ? texture : null;
 
-    public static bool TryGetIconTextureWrap(uint icon, bool hq, out IDalamudTextureWrap? textureWrap)
+    public static bool TryGetGameIcon(uint icon, bool isHQ, [NotNullWhen(true)] out IDalamudTextureWrap? texture)
     {
-        var result = CachedIcons.GetOrAdd((icon, hq), _ => new ImageLoadingResult
+        var result = CachedIcons.GetOrAdd((icon, isHQ), _ => new ImageLoadingResult
         {
-            ImmediateTexture = DService.Texture.GetFromGameIcon(new(icon, hq)),
-            IsCompleted = true,
+            ImmediateTexture = DService.Texture.GetFromGameIcon(new(icon, isHQ)),
+            IsCompleted      = true
         });
 
-        textureWrap = result.Texture;
-        return textureWrap != null;
+        texture = result.Texture;
+        return texture != null;
     }
 
-    public static bool TryGetTextureWrap(string url, out IDalamudTextureWrap? textureWrap)
+    public static bool TryGetImage(string url, [NotNullWhen(true)] out IDalamudTextureWrap? texture)
     {
-        CancelSource?.Cancel();
-        CancelSource = new();
-        
+        texture = null;
+        if (string.IsNullOrWhiteSpace(url)) return false;
+
         var result = CachedTextures.GetOrAdd(url, _ =>
         {
+            CancelSource ??= new();
+            
             Task.Run(LoadPendingTexturesAsync, CancelSource.Token);
             return new ImageLoadingResult();
         });
 
-        textureWrap = result.Texture;
-        return textureWrap != null;
+        texture = result.Texture;
+        return texture != null;
     }
 
-    public static async Task<IDalamudTextureWrap?> GetImageAsync(string urlOrPath)
+    public static async Task<IDalamudTextureWrap> GetImageAsync(string urlOrPath)
     {
         IDalamudTextureWrap? texture;
-        while (!TryGetTextureWrap(urlOrPath, out texture))
+        while (!TryGetImage(urlOrPath, out texture))
             await Task.Delay(100);
 
         return texture;
@@ -68,21 +60,14 @@ public static class ImageHelper
 
     private static async Task LoadPendingTexturesAsync()
     {
-        await LoadingSemaphore.WaitAsync();
-        try
-        {
-            while (await LoadNextPendingTextureAsync()) { }
-        } finally
-        {
-            LoadingSemaphore.Release();
-        }
+        while (await LoadNextPendingTextureAsync()) { };
     }
 
     private static async Task<bool> LoadNextPendingTextureAsync()
     {
         if (!CachedTextures.TryGetFirst(x => !x.Value.IsCompleted, out var kvp)) return false;
 
-        var (key, value) = kvp;
+        var (key, value)  = kvp;
         value.IsCompleted = true;
 
         try
@@ -91,6 +76,7 @@ public static class ImageHelper
             {
                 var content = await HttpClient.GetByteArrayAsync(uri);
                 foreach (var conversion in ConversionsToBitmap)
+                {
                     try
                     {
                         value.TextureWrap = await DService.Texture.CreateFromImageAsync(conversion(content));
@@ -98,47 +84,50 @@ public static class ImageHelper
                     }
                     catch (Exception ex)
                     {
-                        DService.Log.Error(ex, "尝试转换图片资源时失败");
+                        Error("尝试转换图片资源时失败", ex);
                     }
+                }
             }
             else
             {
-                value.ImmediateTexture = File.Exists(key)
-                                             ? DService.Texture.GetFromFile(key)
-                                             : DService.Texture.GetFromGame(key);
+                value.ImmediateTexture = File.Exists(key) ? DService.Texture.GetFromFile(key) : DService.Texture.GetFromGame(key);
             }
         }
         catch (Exception ex)
         {
-            DService.Log.Error(ex, "尝试加载图片资源时失败");
+            Error("尝试加载图片资源时失败", ex);
         }
 
         return true;
     }
-    
+
     public static void ClearAll()
     {
         foreach (var (_, value) in CachedTextures)
+        {
             try
             {
                 value.TextureWrap?.Dispose();
             }
             catch (Exception ex)
             {
-                DService.Log.Error(ex, "尝试回收图片资源时失败");
+                Error("尝试回收图片资源时失败", ex);
             }
+        }
 
         CachedTextures.Clear();
 
         foreach (var (_, value) in CachedIcons)
+        {
             try
             {
                 value.TextureWrap?.Dispose();
             }
             catch (Exception ex)
             {
-                DService.Log.Error(ex, "尝试回收图标资源时失败");
+                Error("尝试回收图标资源时失败", ex);
             }
+        }
 
         CachedIcons.Clear();
     }
@@ -146,9 +135,19 @@ public static class ImageHelper
     public static void Uninit()
     {
         ClearAll();
-        
+
         CancelSource?.Cancel();
         CancelSource?.Dispose();
         CancelSource = null;
+    }
+    
+    private record ImageLoadingResult
+    {
+        public ISharedImmediateTexture? ImmediateTexture { get; set; }
+        public IDalamudTextureWrap?     TextureWrap      { get; set; }
+        public bool                     IsCompleted      { get; set; }
+
+        public IDalamudTextureWrap? Texture =>
+            DService.Framework.RunOnFrameworkThread(() => ImmediateTexture?.GetWrapOrEmpty() ?? TextureWrap).Result;
     }
 }
