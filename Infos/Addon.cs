@@ -103,4 +103,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* PurifyItemSelector          => GetAddonByName("PurifyItemSelector");
     public static AtkUnitBase* PurifyResult                => GetAddonByName("PurifyResult");
     public static AtkUnitBase* SatisfactionSupplyResult    => GetAddonByName("SatisfactionSupplyResult");
+    public static AtkUnitBase* SystemMenu                  => GetAddonByName("SystemMenu");
 }
