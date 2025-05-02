@@ -105,4 +105,6 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* SatisfactionSupplyResult    => GetAddonByName("SatisfactionSupplyResult");
     public static AtkUnitBase* SystemMenu                  => GetAddonByName("SystemMenu");
     public static AtkUnitBase* Gathering                   => GetAddonByName("Gathering");
+    public static AtkUnitBase* HWDAetherGauge              => GetAddonByName("HWDAetherGauge");
+    public static AtkUnitBase* HWDGathereInspect           => GetAddonByName("HWDGathereInspect");
 }
