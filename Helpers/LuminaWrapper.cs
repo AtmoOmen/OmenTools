@@ -33,4 +33,10 @@ public static class LuminaWrapper
     
     public static string GetPlaceName(uint rowID) =>
         LuminaGetter.TryGetRow<PlaceName>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static string GetGatheringPointName(uint rowID) =>
+        LuminaGetter.TryGetRow<GatheringPointName>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;
+    
+    public static string GetBNpcName(uint rowID) =>
+        LuminaGetter.TryGetRow<BNpcName>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;
 }
