@@ -30,8 +30,8 @@ public class DService
         TrayNotify.Uninit();
     }
 
-    public static void InitTrayNotify(Icon icon, string multiMessagesReceived = "收到了 {0} 条新消息") 
-        => TrayNotify.Init(icon, multiMessagesReceived);
+    public static void InitTrayNotify(Icon icon, string multiMessagesReceived = "收到了 {0} 条新消息", bool onlyBackground = false) 
+        => TrayNotify.Init(icon, multiMessagesReceived, onlyBackground);
     
     [PluginService] public static IAddonLifecycle      AddonLifecycle  { get; private set; } = null!;
     [PluginService] public static IAddonEventManager   AddonEvent      { get; private set; } = null!;

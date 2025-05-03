@@ -1,45 +1,49 @@
-﻿using Timer = System.Timers.Timer;
+﻿using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using Timer = System.Timers.Timer;
 
 namespace OmenTools.Helpers;
 
 public static class TrayNotify
 {
-    private static NotifyIcon? Tray { get; set; }
-    private static Icon?       Icon { get; set; }
-
+    private static NotifyIcon? Tray                  { get; set; }
+    private static Icon?       Icon                  { get; set; }
     private static string      MultiMessagesReceived { get; set; } = string.Empty;
+    private static bool        OnlyBackground        { get; set; }
     
     private static readonly Queue<BalloonTipMessage> MessageQueue = [];
-    private static readonly object                   QueueLock    = new();
-    private static          Timer?                   displayTimer;
-    private static          Timer?                   delayTimer;
-    private static          bool                     isDisposed;
 
-    internal static void Init(Icon icon, string multiMessagesReceived)
+    private static readonly object QueueLock = new();
+    
+    private static Timer? DisplayTimer;
+    private static Timer? DelayTimer;
+    private static bool   IsDisposed;
+
+    internal static void Init(Icon icon, string multiMessagesReceived, bool onlyBackground = false)
     {
         MultiMessagesReceived = multiMessagesReceived;
+        OnlyBackground = onlyBackground;
 
         Icon ??= icon;
     }
 
     public static void ShowBalloonTip(string title, string message, ToolTipIcon icon = ToolTipIcon.Info)
     {
-        if (isDisposed || Icon == null) return;
+        if (IsDisposed || Icon == null) return;
 
         lock (QueueLock)
         {
             MessageQueue.Enqueue(new BalloonTipMessage(title, message, icon));
 
             // 首次启动延迟
-            if (delayTimer == null)
+            if (DelayTimer == null)
             {
-                delayTimer = new Timer(500) { AutoReset = false };
-                delayTimer.Elapsed += (_, _) => StartProcessing();
+                DelayTimer = new Timer(500) { AutoReset = false };
+                DelayTimer.Elapsed += (_, _) => StartProcessing();
             }
 
             // 重置
-            delayTimer.Stop();
-            delayTimer.Start();
+            DelayTimer.Stop();
+            DelayTimer.Start();
         }
     }
 
@@ -51,8 +55,8 @@ public static class TrayNotify
             {
                 Tray = new NotifyIcon { Icon = Icon };
                 
-                displayTimer = new Timer(5000) { AutoReset = false };
-                displayTimer.Elapsed += (_, _) => ProcessNextMessage();
+                DisplayTimer = new Timer(7000) { AutoReset = false };
+                DisplayTimer.Elapsed += (_, _) => ProcessNextMessage();
             }
 
             Tray.Visible = true;
@@ -64,10 +68,24 @@ public static class TrayNotify
     {
         lock (QueueLock)
         {
-            if (isDisposed || MessageQueue.Count == 0)
+            if (IsDisposed || MessageQueue.Count == 0)
             {
                 CleanupTray();
                 return;
+            }
+
+            // 检查是否只在后台显示通知且当前窗口不在后台
+            if (OnlyBackground)
+            {
+                unsafe
+                {
+                    if (!Framework.Instance()->WindowInactive)
+                    {
+                        MessageQueue.Clear();
+                        CleanupTray();
+                        return;
+                    }
+                }
             }
 
             // 剩余消息 >= 2 时显示汇总
@@ -88,7 +106,7 @@ public static class TrayNotify
             }
 
             // 下条消息计时
-            displayTimer!.Start();
+            DisplayTimer!.Start();
         }
     }
 
@@ -100,16 +118,16 @@ public static class TrayNotify
         Tray.Dispose();
         Tray = null;
         
-        displayTimer?.Dispose();
-        displayTimer = null;
+        DisplayTimer?.Dispose();
+        DisplayTimer = null;
         
-        delayTimer?.Dispose();
-        delayTimer = null;
+        DelayTimer?.Dispose();
+        DelayTimer = null;
     }
 
     internal static void Uninit()
     {
-        isDisposed = true;
+        IsDisposed = true;
         MessageQueue.Clear();
         
         Icon = null;
