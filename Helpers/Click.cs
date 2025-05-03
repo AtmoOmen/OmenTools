@@ -27,7 +27,7 @@ public static unsafe partial class HelpersOm
     }
     
     public static bool ClickSelectYesnoConfirm(IReadOnlyList<string> text) => 
-        text.Select(x => ClickSelectYesnoConfirm(x)).Any(x => x);
+        text.Select(ClickSelectYesnoConfirm).Any(x => x);
     
     public static bool ClickSelectYesnoConfirm(string? textToContain = null)
     {
@@ -46,7 +46,7 @@ public static unsafe partial class HelpersOm
     }
     
     public static bool ClickSelectYesnoNo(IReadOnlyList<string> text) => 
-        text.Select(x => ClickSelectYesnoNo(x)).Any(x => x);
+        text.Select(ClickSelectYesnoNo).Any(x => x);
     
     public static bool ClickSelectYesnoNo(string? textToContain = null)
     {
@@ -64,7 +64,7 @@ public static unsafe partial class HelpersOm
     }
     
     public static bool ClickSelectYesnoYes(IReadOnlyList<string> text) => 
-        text.Select(x => ClickSelectYesnoYes(x)).Any(x => x);
+        text.Select(ClickSelectYesnoYes).Any(x => x);
 
     public static bool ClickSelectYesnoYes(string? textToContain = null)
     {
