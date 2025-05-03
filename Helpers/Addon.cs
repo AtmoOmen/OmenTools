@@ -18,15 +18,6 @@ public static unsafe partial class HelpersOm
 {
     public record PartInfo(ushort U, ushort V, ushort Width, ushort Height);
 
-    private delegate byte FireCallbackDelegate(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState);
-    private static readonly FireCallbackDelegate? FireCallback;
-
-    public delegate IntPtr ReceiveEventDelegate(
-        AtkEventListener* eventListener, EventType evt, uint which, void* eventData, void* inputData);
-
-    internal delegate nint            InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
-    internal static   InvokeListener? Listener;
-
     public static bool TryGetInventoryItems(IEnumerable<InventoryType> targetTypes,
         Func<InventoryItem, bool> predicateFunc, out List<InventoryItem> itemResult)
     {
@@ -186,20 +177,7 @@ public static unsafe partial class HelpersOm
         if (unitBase == null) return;
 
         using var atkValues = new AtkValueArray(args);
-        FireCallback!(unitBase, atkValues.Length, atkValues.Pointer, (byte)(updateState ? 1 : 0));
-    }
-
-    public static ReceiveEventDelegate GetReceiveEvent(AtkEventListener* listener)
-    {
-        var receiveEventAddress = new IntPtr(listener->VirtualTable->ReceiveEvent);
-        return Marshal.GetDelegateForFunctionPointer<ReceiveEventDelegate>(receiveEventAddress);
-    }
-
-    public static void InvokeReceiveEvent(
-        AtkEventListener* eventListener, EventType type, uint which, EventData eventData, InputData inputData)
-    {
-        var receiveEvent = GetReceiveEvent(eventListener);
-        receiveEvent(eventListener, type, which, eventData.Data, inputData.Data);
+        FireCallback(unitBase, (uint)atkValues.Length, atkValues.Pointer, (byte)(updateState ? 1 : 0));
     }
 
     public static bool IsScreenReady()

@@ -7,6 +7,15 @@ namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    private delegate        byte                 FireCallbackDelegate(AtkUnitBase* addon, uint valueCount, AtkValue* values, byte updateState);
+    private static readonly FireCallbackDelegate FireCallback = new CompSig("E8 ?? ?? ?? ?? 0F B6 F0 48 8D 5C 24").GetDelegate<FireCallbackDelegate>();
+
+    public delegate nint ReceiveEventDelegate(AtkEventListener* eventListener, EventType eventType, uint which, void* eventData, void* inputData);
+
+    internal delegate nint InvokeListenerDelegate(AtkUnitBase* addon, AtkEventType eventType, uint param, AtkEvent* atkEvent);
+    internal static readonly InvokeListenerDelegate InvokeListener =
+        new CompSig("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 30 0F B7 FA").GetDelegate<InvokeListenerDelegate>();
+    
     public static bool ClickTalk()
     {
         if (Talk == null) return false;
@@ -156,8 +165,8 @@ public static unsafe partial class HelpersOm
         return true;
     }
 
-    public static void ClickAddonComponent(
-        AtkUnitBase* addon, AtkComponentNode* target, uint which, EventType type, EventData? eventData = null, InputData? inputData = null)
+    public static void ClickAddonComponent(AtkUnitBase* addon, AtkComponentNode* target, uint which, 
+                                           EventType type, EventData? eventData = null, InputData? inputData = null)
     {
         eventData ??= EventData.ForNormalTarget(target, addon);
         inputData ??= InputData.Empty();
@@ -165,23 +174,13 @@ public static unsafe partial class HelpersOm
         InvokeReceiveEvent(&addon->AtkEventListener, type, which, eventData, inputData);
     }
 
-    public static void ClickAddonComponent(
-        AtkComponentBase* unitbase, AtkComponentNode* target, uint which, EventType type, EventData? eventData = null,
-        InputData? inputData = null)
+    public static void ClickAddonComponent(AtkComponentBase* component, AtkComponentNode* target, uint which, 
+                                           EventType type, EventData? eventData = null, InputData? inputData = null)
     {
-        EventData? newEventData = null;
-        InputData? newInputData = null;
-        if (eventData == null)
-            newEventData = EventData.ForNormalTarget(target, unitbase);
+        eventData ??= EventData.ForNormalTarget(target, component);
+        inputData ??= InputData.Empty();
 
-        if (inputData == null)
-            newInputData = InputData.Empty();
-
-        InvokeReceiveEvent(&unitbase->AtkEventListener, type, which, eventData ?? newEventData!,
-            inputData ?? newInputData!);
-
-        newEventData?.Dispose();
-        newInputData?.Dispose();
+        InvokeReceiveEvent(&component->AtkEventListener, type, which, eventData, inputData);
     }
     
     public static void ClickAddonStage(AtkUnitBase* addon, uint which, EventType type = EventType.MOUSE_CLICK)
@@ -194,9 +193,15 @@ public static unsafe partial class HelpersOm
         InvokeReceiveEvent(&addon->AtkEventListener, type, which, eventData, inputData);
     }
     
-    public static void ClickAddonButtonIndex(AtkUnitBase* addon, int nodeIndex)
-    {
-        var node = (AtkComponentButton*)addon->UldManager.NodeList[nodeIndex];
-        node->ClickAddonButton(addon);
-    }
+    public static void ClickAddonButtonIndex(AtkUnitBase* addon, int nodeIndex) => 
+        ((AtkComponentButton*)addon->UldManager.NodeList[nodeIndex])->ClickAddonButton(addon);
+
+    public static void ClickAddonButton(AtkUnitBase* addon, uint nodeID) =>
+        ((AtkComponentButton*)addon->UldManager.SearchNodeById(nodeID))->ClickAddonButton(addon);
+
+    public static ReceiveEventDelegate GetReceiveEvent(AtkEventListener* listener) => 
+        Marshal.GetDelegateForFunctionPointer<ReceiveEventDelegate>(new nint(listener->VirtualTable->ReceiveEvent));
+
+    public static void InvokeReceiveEvent(AtkEventListener* eventListener, EventType type, uint which, EventData eventData, InputData inputData) => 
+        GetReceiveEvent(eventListener)(eventListener, type, which, eventData.Data, inputData.Data);
 }

@@ -380,10 +380,10 @@ public static unsafe partial class HelpersOm
         => ClickAddonComponent(addon, (&target)->AtkComponentBase.OwnerNode, which, type);
 
     public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon, AtkEvent* eventData)
-        => Listener!.Invoke((nint)addon, eventData->State.EventType, eventData->Param, eventData);
+        => InvokeListener(addon, eventData->State.EventType, eventData->Param, eventData);
 
     public static void ClickAddonButton(this AtkCollisionNode target, AtkUnitBase* addon, AtkEvent* eventData)
-        => Listener!.Invoke((nint)addon, eventData->State.EventType, eventData->Param, eventData);
+        => InvokeListener(addon, eventData->State.EventType, eventData->Param, eventData);
 
     public static void ClickAddonButton(this AtkComponentButton target, AtkUnitBase* addon)
     {
