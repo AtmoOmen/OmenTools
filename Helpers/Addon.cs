@@ -56,16 +56,16 @@ public static unsafe partial class HelpersOm
         itemResult = null;
 
         var manager = InventoryManager.Instance();
-        if(manager == null) return false;
+        if (manager == null) return false;
 
         foreach (var type in targetTypes)
         {
             var container = manager->GetInventoryContainer(type);
-            if(container == null || !container->IsLoaded) return false;
+            if (container == null || !container->IsLoaded) return false;
             for (var i = 0; i < container->Size; i++)
             {
                 var slot = container->GetInventorySlot(i);
-                if(slot == null || !predicateFunc(*slot)) continue;
+                if (slot == null || !predicateFunc(*slot)) continue;
                 if (!predicateFunc(*slot)) continue;
 
                 itemResult = slot;
