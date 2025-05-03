@@ -107,4 +107,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* Gathering                   => GetAddonByName("Gathering");
     public static AtkUnitBase* HWDAetherGauge              => GetAddonByName("HWDAetherGauge");
     public static AtkUnitBase* HWDGathereInspect           => GetAddonByName("HWDGathereInspect");
+    public static AtkUnitBase* ShopExchangeCurrency        => GetAddonByName("ShopExchangeCurrency");
 }
