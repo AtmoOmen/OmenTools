@@ -15,12 +15,12 @@ public static class ImageHelper
     private static          CancellationTokenSource? CancelSource;
 
     public static IDalamudTextureWrap? GetGameIcon(uint iconID, bool isHQ = false)
-        => TryGetGameIcon(iconID, isHQ, out var texture) ? texture : null;
+        => TryGetGameIcon(iconID, out var texture, isHQ) ? texture : null;
 
     public static IDalamudTextureWrap? GetImage(string urlOrPath)
         => TryGetImage(urlOrPath, out var texture) ? texture : null;
 
-    public static bool TryGetGameIcon(uint icon, bool isHQ, [NotNullWhen(true)] out IDalamudTextureWrap? texture)
+    public static bool TryGetGameIcon(uint icon, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
     {
         var result = CachedIcons.GetOrAdd((icon, isHQ), _ => new ImageLoadingResult
         {
