@@ -2130,19 +2130,9 @@ public static partial class InfosOm
     public static Vector4 SlateGray1 => new(0.78f, 0.89f, 1.00f, 1f);
 
     /// <summary>
-    /// grey11
-    /// </summary>
-    public static Vector4 grey11 => new(0.11f, 0.11f, 0.11f, 1f);
-
-    /// <summary>
     /// SlateGray2
     /// </summary>
     public static Vector4 SlateGray2 => new(0.73f, 0.83f, 0.93f, 1f);
-
-    /// <summary>
-    /// grey21
-    /// </summary>
-    public static Vector4 grey21 => new(0.21f, 0.21f, 0.21f, 1f);
 
     /// <summary>
     /// SlateGray3
@@ -2150,19 +2140,9 @@ public static partial class InfosOm
     public static Vector4 SlateGray3 => new(0.62f, 0.71f, 0.80f, 1f);
 
     /// <summary>
-    /// grey31
-    /// </summary>
-    public static Vector4 grey31 => new(0.31f, 0.31f, 0.31f, 1f);
-
-    /// <summary>
     /// SlateGray4
     /// </summary>
     public static Vector4 SlateGray4 => new(0.42f, 0.48f, 0.55f, 1f);
-
-    /// <summary>
-    /// grey41
-    /// </summary>
-    public static Vector4 grey41 => new(0.41f, 0.41f, 0.41f, 1f);
 
     /// <summary>
     /// LightSteelBlue1
@@ -2170,19 +2150,9 @@ public static partial class InfosOm
     public static Vector4 LightSteelBlue1 => new(0.79f, 0.88f, 1.00f, 1f);
 
     /// <summary>
-    /// grey51
-    /// </summary>
-    public static Vector4 grey51 => new(0.51f, 0.51f, 0.51f, 1f);
-
-    /// <summary>
     /// LightSteelBlue2
     /// </summary>
     public static Vector4 LightSteelBlue2 => new(0.74f, 0.82f, 0.93f, 1f);
-
-    /// <summary>
-    /// grey61
-    /// </summary>
-    public static Vector4 grey61 => new(0.61f, 0.61f, 0.61f, 1f);
 
     /// <summary>
     /// LightSteelBlue3
@@ -2190,29 +2160,14 @@ public static partial class InfosOm
     public static Vector4 LightSteelBlue3 => new(0.64f, 0.71f, 0.80f, 1f);
 
     /// <summary>
-    /// grey71
-    /// </summary>
-    public static Vector4 grey71 => new(0.71f, 0.71f, 0.71f, 1f);
-
-    /// <summary>
     /// LightSteelBlue4
     /// </summary>
     public static Vector4 LightSteelBlue4 => new(0.43f, 0.48f, 0.55f, 1f);
 
     /// <summary>
-    /// gray81
-    /// </summary>
-    public static Vector4 gray81 => new(0.81f, 0.81f, 0.81f, 1f);
-
-    /// <summary>
     /// LightBlue1
     /// </summary>
     public static Vector4 LightBlue1 => new(0.75f, 0.94f, 1.00f, 1f);
-
-    /// <summary>
-    /// gray91
-    /// </summary>
-    public static Vector4 gray91 => new(0.91f, 0.91f, 0.91f, 1f);
 
     /// <summary>
     /// LightBlue2

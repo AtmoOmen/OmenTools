@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using Lumina.Excel;
 
 namespace OmenTools.Helpers;
@@ -43,9 +44,11 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
     private readonly List<List<string>> preprocessedData;
     private readonly ConcurrentDictionary<string, List<int>> cache = [];
 
-    public void Search(string keyword, bool isIgnoreCase = true)
+    public void Search(string keyword, bool isIgnoreCase = true, bool isRegex = true)
     {
-        if (cache.TryGetValue(keyword, out var cachedIndexes))
+        string cacheKey = $"{keyword}_{isIgnoreCase}_{isRegex}";
+        
+        if (cache.TryGetValue(cacheKey, out var cachedIndexes))
         {
             SearchResult = cachedIndexes.Take(resultLimit).Select(index => Data[index]).ToList();
             return;
@@ -53,39 +56,63 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
 
         if (!SearchThrottler.Throttle(Guid, throttleInterval))
         {
-            RetrySearch(keyword, isIgnoreCase, 0);
+            RetrySearch(keyword, isIgnoreCase, isRegex, 0);
             return;
         }
 
-        ExecuteSearch(keyword, isIgnoreCase);
+        ExecuteSearch(keyword, isIgnoreCase, isRegex);
     }
 
-    private void RetrySearch(string keyword, bool isIgnoreCase, int attempt)
+    private void RetrySearch(string keyword, bool isIgnoreCase, bool isRegex, int attempt)
     {
         if (attempt >= maxRetries) return;
 
         Task.Delay(retryInterval).ContinueWith(_ =>
         {
             if (!SearchThrottler.Throttle(Guid, throttleInterval))
-                RetrySearch(keyword, isIgnoreCase, attempt + 1);
+                RetrySearch(keyword, isIgnoreCase, isRegex, attempt + 1);
             else
-                ExecuteSearch(keyword, isIgnoreCase);
+                ExecuteSearch(keyword, isIgnoreCase, isRegex);
         });
     }
 
-    private void ExecuteSearch(string keyword, bool isIgnoreCase)
+    private void ExecuteSearch(string keyword, bool isIgnoreCase, bool isRegex)
     {
         var comparison = isIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         var partitioner = Partitioner.Create(0, preprocessedData.Count);
         var indexes = new ConcurrentBag<int>();
+        
+        RegexOptions regexOptions = isIgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
+        Regex? regex = null;
+        
+        if (isRegex)
+        {
+            try
+            {
+                regex = new Regex(keyword, regexOptions);
+            }
+            catch
+            {
+                // 正则表达式无效，回退到普通搜索
+                isRegex = false;
+            }
+        }
 
         Parallel.ForEach(partitioner, range =>
         {
             for (var i = range.Item1; i < range.Item2; i++)
             {
                 var itemStrings = preprocessedData[i];
-                if (itemStrings.Any(str => str.Contains(keyword, comparison)))
-                    indexes.Add(i);
+                if (isRegex && regex != null)
+                {
+                    if (itemStrings.Any(str => regex.IsMatch(str)))
+                        indexes.Add(i);
+                }
+                else
+                {
+                    if (itemStrings.Any(str => str.Contains(keyword, comparison)))
+                        indexes.Add(i);
+                }
             }
         });
 
@@ -95,7 +122,7 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
             .ToList();
 
         SearchResult = resultIndexes.Select(index => Data[index]).ToList();
-        cache[keyword] = resultIndexes;
+        cache[$"{keyword}_{isIgnoreCase}_{isRegex}"] = resultIndexes;
     }
 }
 
@@ -139,9 +166,11 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
     private readonly List<List<string>> preprocessedData;
     private readonly ConcurrentDictionary<string, List<int>> cache = [];
 
-    public void Search(string keyword, bool isIgnoreCase = true)
+    public void Search(string keyword, bool isIgnoreCase = true, bool isRegex = true)
     {
-        if (cache.TryGetValue(keyword, out var cachedIndexes))
+        string cacheKey = $"{keyword}_{isIgnoreCase}_{isRegex}";
+        
+        if (cache.TryGetValue(cacheKey, out var cachedIndexes))
         {
             SearchResult = cachedIndexes.Take(resultLimit).Select(index => Data[index]).ToList();
             return;
@@ -149,39 +178,63 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
 
         if (!SearchThrottler.Throttle(Guid, throttleInterval))
         {
-            RetrySearch(keyword, isIgnoreCase, 0);
+            RetrySearch(keyword, isIgnoreCase, isRegex, 0);
             return;
         }
 
-        ExecuteSearch(keyword, isIgnoreCase);
+        ExecuteSearch(keyword, isIgnoreCase, isRegex);
     }
 
-    private void RetrySearch(string keyword, bool isIgnoreCase, int attempt)
+    private void RetrySearch(string keyword, bool isIgnoreCase, bool isRegex, int attempt)
     {
         if (attempt >= maxRetries) return;
 
         Task.Delay(retryInterval).ContinueWith(_ =>
         {
             if (!SearchThrottler.Throttle(Guid, throttleInterval))
-                RetrySearch(keyword, isIgnoreCase, attempt + 1);
+                RetrySearch(keyword, isIgnoreCase, isRegex, attempt + 1);
             else
-                ExecuteSearch(keyword, isIgnoreCase);
+                ExecuteSearch(keyword, isIgnoreCase, isRegex);
         });
     }
 
-    private void ExecuteSearch(string keyword, bool isIgnoreCase)
+    private void ExecuteSearch(string keyword, bool isIgnoreCase, bool isRegex)
     {
         var comparison = isIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         var partitioner = Partitioner.Create(0, preprocessedData.Count);
         var indexes = new ConcurrentBag<int>();
+        
+        RegexOptions regexOptions = isIgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
+        Regex? regex = null;
+        
+        if (isRegex)
+        {
+            try
+            {
+                regex = new Regex(keyword, regexOptions);
+            }
+            catch
+            {
+                // 正则表达式无效，回退到普通搜索
+                isRegex = false;
+            }
+        }
 
         Parallel.ForEach(partitioner, range =>
         {
             for (var i = range.Item1; i < range.Item2; i++)
             {
                 var itemStrings = preprocessedData[i];
-                if (itemStrings.Any(str => str.Contains(keyword, comparison)))
-                    indexes.Add(i);
+                if (isRegex && regex != null)
+                {
+                    if (itemStrings.Any(str => regex.IsMatch(str)))
+                        indexes.Add(i);
+                }
+                else
+                {
+                    if (itemStrings.Any(str => str.Contains(keyword, comparison)))
+                        indexes.Add(i);
+                }
             }
         });
 
@@ -191,6 +244,6 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
             .ToList();
 
         SearchResult = resultIndexes.Select(index => Data[index]).ToList();
-        cache[keyword] = resultIndexes;
+        cache[$"{keyword}_{isIgnoreCase}_{isRegex}"] = resultIndexes;
     }
 }

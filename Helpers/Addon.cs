@@ -18,15 +18,6 @@ public static unsafe partial class HelpersOm
 {
     public record PartInfo(ushort U, ushort V, ushort Width, ushort Height);
 
-    private delegate byte FireCallbackDelegate(AtkUnitBase* Base, int valueCount, AtkValue* values, byte updateState);
-    private static readonly FireCallbackDelegate? FireCallback;
-
-    public delegate nint ReceiveEventDelegate(
-        AtkEventListener* eventListener, EventType evt, uint which, void* eventData, void* inputData);
-
-    public delegate nint InvokeListener(nint a1, AtkEventType a2, uint a3, AtkEvent* a4);
-    public static InvokeListener? Listener;
-
     public static bool TryGetInventoryItems(IEnumerable<InventoryType> targetTypes,
         Func<InventoryItem, bool> predicateFunc, out List<InventoryItem> itemResult)
     {
@@ -56,16 +47,16 @@ public static unsafe partial class HelpersOm
         itemResult = null;
 
         var manager = InventoryManager.Instance();
-        if(manager == null) return false;
+        if (manager == null) return false;
 
         foreach (var type in targetTypes)
         {
             var container = manager->GetInventoryContainer(type);
-            if(container == null || !container->IsLoaded) return false;
+            if (container == null || !container->IsLoaded) return false;
             for (var i = 0; i < container->Size; i++)
             {
                 var slot = container->GetInventorySlot(i);
-                if(slot == null || !predicateFunc(*slot)) continue;
+                if (slot == null || !predicateFunc(*slot)) continue;
                 if (!predicateFunc(*slot)) continue;
 
                 itemResult = slot;
@@ -186,20 +177,7 @@ public static unsafe partial class HelpersOm
         if (unitBase == null) return;
 
         using var atkValues = new AtkValueArray(args);
-        FireCallback!(unitBase, atkValues.Length, atkValues.Pointer, (byte)(updateState ? 1 : 0));
-    }
-
-    public static ReceiveEventDelegate GetReceiveEvent(AtkEventListener* listener)
-    {
-        var receiveEventAddress = new nint(listener->VirtualTable->ReceiveEvent);
-        return Marshal.GetDelegateForFunctionPointer<ReceiveEventDelegate>(receiveEventAddress);
-    }
-
-    public static void InvokeReceiveEvent(
-        AtkEventListener* eventListener, EventType type, uint which, EventData eventData, InputData inputData)
-    {
-        var receiveEvent = GetReceiveEvent(eventListener);
-        receiveEvent(eventListener, type, which, eventData.Data, inputData.Data);
+        FireCallback(unitBase, (uint)atkValues.Length, atkValues.Pointer, (byte)(updateState ? 1 : 0));
     }
 
     public static bool IsScreenReady()
@@ -526,7 +504,7 @@ public static unsafe partial class HelpersOm
         return newNode;
     }
 
-    public static AtkTextNode* MakeTextNode(uint id) { return !TryMakeTextNode(id, out var textNode) ? null : textNode; }
+    public static AtkTextNode* MakeTextNode(uint id) => !TryMakeTextNode(id, out var textNode) ? null : textNode;
 
     public static AtkImageNode* MakeImageNode(uint id, PartInfo partInfo)
     {
@@ -632,15 +610,9 @@ public static unsafe partial class HelpersOm
         return true;
     }
 
-    public static void AddPartsList(AtkImageNode* imageNode, AtkUldPartsList* partsList)
-    {
-        imageNode->PartsList = partsList;
-    }
+    public static void AddPartsList(AtkImageNode* imageNode, AtkUldPartsList* partsList) => imageNode->PartsList = partsList;
 
-    public static void AddPartsList(AtkCounterNode* counterNode, AtkUldPartsList* partsList)
-    {
-        counterNode->PartsList = partsList;
-    }
+    public static void AddPartsList(AtkCounterNode* counterNode, AtkUldPartsList* partsList) => counterNode->PartsList = partsList;
 
     public static void AddPart(AtkUldPartsList* partsList, AtkUldPart* part)
     {
@@ -662,7 +634,7 @@ public static unsafe partial class HelpersOm
         partsList->PartCount = newSize;
     }
 
-    public static void AddAsset(AtkUldPart* part, AtkUldAsset* asset) { part->UldAsset = asset; }
+    public static void AddAsset(AtkUldPart* part, AtkUldAsset* asset) => part->UldAsset = asset;
 
     public static void FreeImageNode(AtkImageNode* node)
     {
@@ -689,9 +661,9 @@ public static unsafe partial class HelpersOm
         IMemorySpace.Free(partsList, (ulong)sizeof(AtkUldPartsList));
     }
 
-    public static void FreePart(AtkUldPart* part) { IMemorySpace.Free(part, (ulong)sizeof(AtkUldPart)); }
+    public static void FreePart(AtkUldPart* part) => IMemorySpace.Free(part, (ulong)sizeof(AtkUldPart));
 
-    public static void FreeAsset(AtkUldAsset* asset) { IMemorySpace.Free(asset, (ulong)sizeof(AtkUldAsset)); }
+    public static void FreeAsset(AtkUldAsset* asset) => IMemorySpace.Free(asset, (ulong)sizeof(AtkUldAsset));
 
     public static void LinkNodeAtEnd(AtkResNode* imageNode, AtkUnitBase* parent)
     {
