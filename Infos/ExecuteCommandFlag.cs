@@ -485,6 +485,14 @@ public enum ExecuteCommandFlag
     /// 刷新理符任务状态
     /// </summary>
     RefreshLeveQuest = 801,
+    
+    /// <summary>
+    /// 放弃理符任务
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 理符任务 ID</para>
+    /// </remarks>
+    AbandonLeveQuest = 802,
 
     /// <summary>
     /// 开始理符任务
