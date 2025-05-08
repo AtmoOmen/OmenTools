@@ -865,9 +865,9 @@ public enum ExecuteCommandFlag
     RequestContentsNote = 1301,
     
     /// <summary>
-    /// 查看物品持有情况
+    /// 请求雇员探险时间信息
     /// </summary>
-    ItemSearch = 1400,
+    RequestRetainerVentureTime = 1400,
 
     /// <summary>
     /// 在 NPC 处维修装备
@@ -1068,6 +1068,15 @@ public enum ExecuteCommandFlag
     /// <para><c>param4</c>: 物品 ID</para>
     /// </remarks>
     Desynthesize = 2800,
+    
+    /// <summary>
+    /// 博兹雅分配失传技能库到技能槽
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 失传技能库索引</para>
+    /// <para><c>param2</c>: 要分配的槽位</para>
+    /// </remarks>
+    BozjaUseFromHolster = 2950,
     
     /// <summary>
     /// 请求肖像列表数据
