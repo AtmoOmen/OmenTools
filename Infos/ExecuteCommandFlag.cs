@@ -277,6 +277,15 @@ public enum ExecuteCommandFlag
     /// <para><c>param1</c>: 木人的 Object ID</para>
     /// </remarks>
     ResetStrikingDummy = 319,
+    
+    /// <summary>
+    /// 设置当前雇员市场出售物品价格
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 物品 Slot</para>
+    /// <para><c>param2</c>: 物品价格</para>
+    /// </remarks>
+    SetRetainerMarketPrice = 400,
 
     /// <summary>
     /// 请求指定物品栏数据
@@ -856,9 +865,9 @@ public enum ExecuteCommandFlag
     RequestContentsNote = 1301,
     
     /// <summary>
-    /// 查看物品持有情况
+    /// 请求雇员探险时间信息
     /// </summary>
-    ItemSearch = 1400,
+    RequestRetainerVentureTime = 1400,
 
     /// <summary>
     /// 在 NPC 处维修装备
@@ -1061,6 +1070,15 @@ public enum ExecuteCommandFlag
     Desynthesize = 2800,
     
     /// <summary>
+    /// 博兹雅分配失传技能库到技能槽
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 失传技能库索引</para>
+    /// <para><c>param2</c>: 要分配的槽位</para>
+    /// </remarks>
+    BozjaUseFromHolster = 2950,
+    
+    /// <summary>
     /// 请求肖像列表数据
     /// </summary>
     RequestPortraits = 3200,
@@ -1080,6 +1098,14 @@ public enum ExecuteCommandFlag
     /// <para><c>param1</c>: 参数</para>
     /// </remarks>
     MJISetModeParam = 3251,
+    
+    /// <summary>
+    /// 无人岛设置面板开关
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 状态 (1 - 开启; 0 - 关闭)</para>
+    /// </remarks>
+    MJISettingPanelToggle = 3252,
 
     /// <summary>
     /// 请求无人岛工房排班数据
@@ -1105,12 +1131,40 @@ public enum ExecuteCommandFlag
     MJIWorkshopAssign = 3259,
 
     /// <summary>
+    /// 取消无人岛工坊排班
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 物品和排班时间段: (8 * (startingHour | (32 * craftObjectId)))</para>
+    /// <para><c>param2</c>: 具体天数 (0 - 本周期第一天, 7 - 下周期第一天)</para>
+    /// </remarks>
+    MJIWorkshopCancel = 3260,
+    
+    /// <summary>
+    /// 设置无人岛休息周期
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 设置的休息日</para>
+    /// <para><c>param2</c>: 休息日状态</para>
+    /// <para><c>param3</c>: 额外参数1</para>
+    /// <para><c>param4</c>: 额外参数2</para>
+    /// </remarks>
+    MJISetRestCycles = 3261,
+
+    /// <summary>
     /// 收取无人岛屯货仓库探索结果
     /// </summary>
     /// <remarks>
     /// <para><c>param1</c>: 仓库索引</para>
     /// </remarks>
     MJIGranaryCollect = 3262,
+
+    /// <summary>
+    /// 查看无人岛屯货仓库探索目的地
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 仓库索引</para>
+    /// </remarks>
+    MJIGranaryViewDestinations = 3263,
 
     /// <summary>
     /// 无人岛屯货仓库派遣探险
@@ -1121,15 +1175,57 @@ public enum ExecuteCommandFlag
     /// <para><c>param3</c>: 探索天数</para>
     /// </remarks>
     MJIGranaryAssign = 3264,
-
+    
     /// <summary>
-    /// 领取无人岛牧场托管结果
+    /// 在无人岛放养宠物
     /// </summary>
     /// <remarks>
-    /// <para><c>param1</c>: MJIManager.Instance()->PastureHandler->AvailableMammetLeavings</para>
-    /// 需要依次遍历该 Map 并用每个键值对的值来执行指令
+    /// <para><c>param1</c>: 宠物 ID</para>
+    /// <para><c>param2</c>: 放生区域索引</para>
     /// </remarks>
-    MJIPastureCollect = 3271,
+    MJIReleaseMinion = 3265,
+    
+    /// <summary>
+    /// 放生无人岛牧场动物
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 动物索引</para>
+    /// </remarks>
+    MJIReleaseAnimal = 3268,
+    
+    /// <summary>
+    /// 收集无人岛牧场动物产物
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 动物索引</para>
+    /// <para><c>param2</c>: 收集标志</para>
+    /// </remarks>
+    MJICollectAnimalLeavings = 3269,
+    
+    /// <summary>
+    /// 收取无人岛牧场全部动物产物
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 预期收集的产物数量 (MJIManager.Instance()->PastureHandler->AvailableMammetLeavings)</para>
+    /// </remarks>
+    MJICollectAllAnimalLeavings = 3271,
+    
+    /// <summary>
+    /// 托管无人岛牧场动物
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 动物索引</para>
+    /// <para><c>param2</c>: 喂食物品 ID</para>
+    /// </remarks>
+    MJIEntrustAnimal = 3272,
+    
+    /// <summary>
+    /// 召回无人岛放生的宠物
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 宠物索引</para>
+    /// </remarks>
+    MJIRecallMinion = 3277,
 
     /// <summary>
     /// 托管单块无人岛耕地
@@ -1169,6 +1265,24 @@ public enum ExecuteCommandFlag
     /// 请求无人岛工房需求数据
     /// </summary>
     MJIFavorStateRequest = 3292,
+    
+    /// <summary>
+    /// 变更宇宙探索模式
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 模式索引</para>
+    /// </remarks>
+    WKSChangeMode = 3400,
+    
+    /// <summary>
+    /// 宇宙探索结束交互1
+    /// </summary>
+    WKSEndInteraction1 = 3401,
+    
+    /// <summary>
+    /// 宇宙探索结束交互2
+    /// </summary>
+    WKSEndInteraction2 = 3402,
 
     /// <summary>
     /// 掷骰子
