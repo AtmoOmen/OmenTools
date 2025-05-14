@@ -3,8 +3,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using Lumina.Excel.Sheets;
+using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Helpers;
 
@@ -397,5 +399,31 @@ public static unsafe partial class HelpersOm
         // 计算最终值（兆 * 1万亿 + 亿 * 1亿 + 万 * 1万 + 个）
         var result = (zhao * 1000000000000L) + (yi * 100000000L) + (wan * 10000L) + ge;
         return result * sign;
+    }
+    
+    /// <summary>
+    /// 将指定的 <see cref="ReadOnlySeString"/> 首字母转为大写, 并格式化为 <see cref="string"/>
+    /// </summary>
+    public static string ToTitleCaseExtended(ReadOnlySeString s, sbyte article = 0)
+    {
+        if (article == 1)
+            return s.ToDalamudString().ToString();
+
+        var sb        = new StringBuilder(s.ToDalamudString().ToString());
+        var lastSpace = true;
+        for (var i = 0; i < sb.Length; ++i)
+        {
+            if (sb[i] == ' ')
+            {
+                lastSpace = true;
+            }
+            else if (lastSpace)
+            {
+                lastSpace = false;
+                sb[i]     = char.ToUpperInvariant(sb[i]);
+            }
+        }
+
+        return sb.ToString();
     }
 }
