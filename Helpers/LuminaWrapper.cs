@@ -40,4 +40,10 @@ public static class LuminaWrapper
     
     public static string GetBNpcName(uint rowID) =>
         LuminaGetter.TryGetRow<BNpcName>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;
+    
+    public static string GetJobName(uint rowID) =>
+        LuminaGetter.TryGetRow<ClassJob>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static string GetAchievementKindName(uint rowID) =>
+        LuminaGetter.TryGetRow<AchievementKind>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 }

@@ -649,6 +649,9 @@ public static unsafe partial class HelpersOm
 
     public static Vector2 ToVector2(this Vector3 vector3)
         => new(vector3.X, vector3.Z);
+    
+    public static Vector2 ToVector2(this FFXIVClientStructs.FFXIV.Common.Math.Vector3 vector3)
+        => new(vector3.X, vector3.Z);
 
     public static Vector3 ToVector3(this Vector2 vector2, float Y)
         => new(vector2.X, Y, vector2.Y);
