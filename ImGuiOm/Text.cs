@@ -104,6 +104,28 @@ public static partial class ImGuiOm
         }
     }
 
+    public static void TextOutlined(
+        Vector2        position,
+        uint           textColor,
+        string         text,
+        uint           outlineColor     = 0xFF000000,
+        float          outlineThickness = 1.5f,
+        ImDrawListPtr? drawList         = null)
+    {
+        drawList ??= ImGui.GetBackgroundDrawList();
+
+        for (var x = -outlineThickness; x <= outlineThickness; x += 0.5f)
+        {
+            for (var y = -outlineThickness; y <= outlineThickness; y += 0.5f)
+            {
+                if (x == 0 && y == 0) continue;
+                drawList?.AddText(position + new Vector2(x, y), outlineColor, text);
+            }
+        }
+
+        drawList?.AddText(position, textColor, text);
+    }
+
     public static bool TextLink(string url, string? displayText = null, bool showUnderline = true)
     {
         using var id    = ImRaii.PushId($"{url}_{displayText}_{showUnderline}");
