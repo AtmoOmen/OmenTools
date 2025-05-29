@@ -18,7 +18,7 @@ public static class PresetSheet
     public static Dictionary<uint, Action> PlayerActions { get; } =
         LuminaGetter.Get<Action>()
                     .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
-                    .Where(x => !string.IsNullOrWhiteSpace(x.ClassJob.ValueNullable?.Name.ExtractText() ?? string.Empty))
+                    .Where(x => !string.IsNullOrWhiteSpace(x.ClassJobCategory.ValueNullable?.Name.ExtractText() ?? string.Empty))
                     .Where(x => x is
                     {
                         IsPlayerAction: false,
