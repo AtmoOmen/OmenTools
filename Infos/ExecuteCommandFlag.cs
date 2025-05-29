@@ -1143,10 +1143,10 @@ public enum ExecuteCommandFlag
     /// 设置无人岛休息周期
     /// </summary>
     /// <remarks>
-    /// <para><c>param1</c>: 设置的休息日</para>
-    /// <para><c>param2</c>: 休息日状态</para>
-    /// <para><c>param3</c>: 额外参数1</para>
-    /// <para><c>param4</c>: 额外参数2</para>
+    /// <para><c>param1</c>: 休息日 1</para>
+    /// <para><c>param2</c>: 休息日 2</para>
+    /// <para><c>param3</c>: 休息日 3</para>
+    /// <para><c>param4</c>: 休息日 4</para>
     /// </remarks>
     MJISetRestCycles = 3261,
 
