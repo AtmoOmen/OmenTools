@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Newtonsoft.Json;
 using Task = System.Threading.Tasks.Task;
 
@@ -10,6 +11,9 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
+    public static bool IsInAnyParty() => 
+        InfoProxyCrossRealm.IsCrossRealmParty() || DService.PartyList.Length >= 2;
+    
     [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     
