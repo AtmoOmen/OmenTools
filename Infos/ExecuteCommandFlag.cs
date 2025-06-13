@@ -857,6 +857,9 @@ public enum ExecuteCommandFlag
     /// <summary>
     /// 领取战利水晶
     /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 赛季 (0 - 本赛季; 1 - 上赛季)</para>
+    /// </remarks>
     CollectTrophyCrystal = 1200,
 
     /// <summary>
