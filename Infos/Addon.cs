@@ -46,6 +46,8 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* InventoryLarge              => GetAddonByName("InventoryLarge");
     public static AtkUnitBase* InputNumeric                => GetAddonByName("InputNumeric");
     public static AtkUnitBase* InventoryExpansion          => GetAddonByName("InventoryExpansion");
+    public static AtkUnitBase* InventoryRetainer           => GetAddonByName("InventoryRetainer");
+    public static AtkUnitBase* InventoryRetainerLarge      => GetAddonByName("InventoryRetainerLarge");
     public static AtkUnitBase* Logo                        => GetAddonByName("Logo");
     public static AtkUnitBase* ListIcon                    => GetAddonByName("ListIcon");
     public static AtkUnitBase* LobbyDKT                    => GetAddonByName("LobbyDKT");

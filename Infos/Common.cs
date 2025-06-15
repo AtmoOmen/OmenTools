@@ -32,4 +32,28 @@ public static partial class InfosOm
         InventoryType.Inventory3,
         InventoryType.Inventory4
     ];
+    
+    public static readonly List<InventoryType> RetainerInventories =
+    [
+        InventoryType.RetainerPage1, 
+        InventoryType.RetainerPage2, 
+        InventoryType.RetainerPage3, 
+        InventoryType.RetainerPage4, 
+        InventoryType.RetainerPage5,
+    ];
+    
+    public static readonly List<InventoryType> RetainerAllInventories =
+    [
+        InventoryType.RetainerPage1, 
+        InventoryType.RetainerPage2, 
+        InventoryType.RetainerPage3, 
+        InventoryType.RetainerPage4, 
+        InventoryType.RetainerPage5,
+        InventoryType.RetainerPage6,
+        InventoryType.RetainerPage7,
+        InventoryType.RetainerEquippedItems,
+        InventoryType.RetainerGil,
+        InventoryType.RetainerCrystals,
+        InventoryType.RetainerMarket
+    ];
 }
