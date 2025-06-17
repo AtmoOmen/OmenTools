@@ -17,7 +17,7 @@ public static class MultiLineCommandHelper
 
             try
             {
-                if (command.Trim().StartsWith("/pdrwait ") &&
+                if (command.Trim().StartsWith("/wait ") &&
                     float.TryParse(command.Trim().Split(' ')[1], out var waitTime))
                 {
                     await Task.Delay((int) waitTime * 1000);
