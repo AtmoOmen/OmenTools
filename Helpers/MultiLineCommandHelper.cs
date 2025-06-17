@@ -25,7 +25,7 @@ public static class MultiLineCommandHelper
                 }
 
                 ChatHelper.SendMessage(command);
-                await Task.Delay(200);  //每条命令之间有足够间隔，以确保顺序执行
+                await Task.Delay(50);  //每条命令之间有足够间隔，以确保顺序执行
             }
             catch (Exception ex)
             {
