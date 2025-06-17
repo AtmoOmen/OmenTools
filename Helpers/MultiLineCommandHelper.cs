@@ -1,3 +1,5 @@
+using Dalamud.Utility;
+
 namespace OmenTools.Helpers;
 
 public static class MultiLineCommandHelper
@@ -12,7 +14,7 @@ public static class MultiLineCommandHelper
 
         var commands = message.Split('\n')
                               .Select(c => c.Trim())
-                              .Where(c => !string.IsNullOrWhiteSpace(c));
+                              .Where(c => !c.IsNullOrWhitespace());
 
         foreach (var command in commands)
         {
