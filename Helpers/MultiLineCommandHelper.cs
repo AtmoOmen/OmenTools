@@ -2,7 +2,7 @@ namespace OmenTools.Helpers;
 
 public static class MultiLineCommandHelper
 {
-    public static async Task SendMultiLineCommandAsync(string message)
+    public static async Task SendMultiLineCommand(string message)
     {
         if (string.IsNullOrEmpty(message))
         {
@@ -10,27 +10,41 @@ public static class MultiLineCommandHelper
             return;
         }
 
-        foreach (var command in message.Split('\n'))
-        {
-            if (string.IsNullOrWhiteSpace(command))
-                continue;
+        var commands = message.Split('\n')
+                              .Select(c => c.Trim())
+                              .Where(c => !string.IsNullOrWhiteSpace(c));
 
+        foreach (var command in commands)
+        {
             try
             {
-                if (command.Trim().StartsWith("/wait ") &&
-                    float.TryParse(command.Trim().Split(' ')[1], out var waitTime))
+                if (TryParseWaitCommand(command, out var delayMs))
                 {
-                    await Task.Delay((int) waitTime * 1000);
+                    await Task.Delay(delayMs);
                     continue;
                 }
 
                 ChatHelper.SendMessage(command);
-                await Task.Delay(50);  //每条命令之间有足够间隔，以确保顺序执行
+                await Task.Delay(50);
             }
             catch (Exception ex)
             {
                 DService.Log.Error($"执行命令时出错: {command}\n错误: {ex.Message}");
             }
         }
+    }
+    
+    private static bool TryParseWaitCommand(string command, out int delayMs)
+    {
+        delayMs = 0;
+        if (!command.StartsWith("/wait ", StringComparison.OrdinalIgnoreCase)) return false;
+
+        var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length > 1 && float.TryParse(parts[1], out var waitTime))
+        {
+            delayMs = (int)(waitTime * 1000);
+            return true;
+        }
+        return false;
     }
 }
