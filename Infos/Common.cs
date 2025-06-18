@@ -40,6 +40,8 @@ public static partial class InfosOm
         InventoryType.RetainerPage3, 
         InventoryType.RetainerPage4, 
         InventoryType.RetainerPage5,
+        InventoryType.RetainerPage6,
+        InventoryType.RetainerPage7,
     ];
     
     public static readonly List<InventoryType> RetainerAllInventories =
