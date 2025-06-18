@@ -75,7 +75,7 @@ public unsafe class Status(nint address)
     public RowRef<LuminaStatus> GameData      => LuminaCreateRef<LuminaStatus>(this.Struct->StatusId);
     public ushort               Param         => this.Struct->Param;
     public float                RemainingTime => this.Struct->RemainingTime;
-    public uint                 SourceId      => this.Struct->SourceId;
+    public ulong                SourceId      => this.Struct->SourceObject;
     public IGameObject?         SourceObject  => DService.ObjectTable.SearchById(this.SourceId);
 
     private CSStatus* Struct => (CSStatus*)this.Address;
