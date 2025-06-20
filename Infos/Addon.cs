@@ -92,6 +92,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* WeeklyPuzzle                => GetAddonByName("WeeklyPuzzle");
     public static AtkUnitBase* ShopExchangeCurrencyDialog  => GetAddonByName("ShopExchangeCurrencyDialog");
     public static AtkUnitBase* AOZNotebookPresetList       => GetAddonByName("AOZNotebookPresetList");
+    public static AtkUnitBase* AOZNotebook                 => GetAddonByName("AOZNotebook");
     public static AtkUnitBase* ContentsReplayPlayer        => GetAddonByName("ContentsReplayPlayer");
     public static AtkUnitBase* ContentsReplaySetting       => GetAddonByName("ContentsReplaySetting");
     public static AtkUnitBase* Talk                        => GetAddonByName("Talk");
