@@ -8,6 +8,9 @@ public static class LuminaWrapper
 {
     public static string GetAddonText(uint rowID) => 
         LuminaGetter.TryGetRow<Addon>(rowID, out var item) ? item.Text.ExtractText() : string.Empty;
+
+    public static string GetLogMessageText(uint rowID) =>
+        LuminaGetter.TryGetRow<LogMessage>(rowID, out var item) ? item.Text.ExtractText() : string.Empty;
     
     public static string GetLobbyText(uint rowID) => 
         LuminaGetter.TryGetRow<Lobby>(rowID, out var item) ? item.Text.ExtractText() : string.Empty;
