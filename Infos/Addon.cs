@@ -510,7 +510,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* MansionSelectRoom               => GetAddonByName("MansionSelectRoom");
     public static AtkUnitBase* OrchestrionPlayList             => GetAddonByName("OrchestrionPlayList");
     public static AtkUnitBase* CountDownSettingDialog          => GetAddonByName("CountDownSettingDialog");
-    public static AtkUnitBase* ScreenInfoCountDown            => GetAddonByName("ScreenInfo_CountDown");
+    public static AtkUnitBase* ScreenInfoCountDown             => GetAddonByName("ScreenInfo_CountDown");
     public static AtkUnitBase* WeeklyBingo                     => GetAddonByName("WeeklyBingo");
     public static AtkUnitBase* WeeklyBingoBonusInfo            => GetAddonByName("WeeklyBingoBonusInfo");
     public static AtkUnitBase* WeeklyBingoResult               => GetAddonByName("WeeklyBingoResult");
@@ -935,4 +935,8 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* MKDSettings                     => GetAddonByName("MKDSettings");
     public static AtkUnitBase* MKDTowerEntry                   => GetAddonByName("MKDTowerEntry");
     public static AtkUnitBase* MKDLoreBook                     => GetAddonByName("MKDLoreBook");
+    public static AtkUnitBase* Dialogue                        => GetAddonByName("Dialogue");
+    public static AtkUnitBase* NowLoading                      => GetAddonByName("NowLoading");
+    public static AtkUnitBase* FadeMiddle                      => GetAddonByName("FadeMiddle");
+    public static AtkUnitBase* FadeBack                        => GetAddonByName("FadeBack");
 }
