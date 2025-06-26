@@ -25,7 +25,7 @@ public enum ExecuteCommandFlag
     /// 选中目标
     /// </summary>
     /// <remarks>
-    /// <para><c>param1</c>: 目标 Object ID (无目标为: -536870912, 即 int.MinValue / 4)</para>
+    /// <para><c>param1</c>: 目标 Entity ID (无目标为: 0xE0000000)</para>
     /// </remarks>
     Target = 3,
     
@@ -579,7 +579,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     /// <para><c>param1</c>: 难度 (0 - 通常, 1 - 简单, 2 - 非常简单)</para>
     /// </remarks>
-    SendSoloQuestBattle = 823,
+    StartSoloQuestBattle = 823,
 
     /// <summary>
     /// 昔日重现模式
