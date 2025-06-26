@@ -1286,6 +1286,11 @@ public enum ExecuteCommandFlag
     /// 宇宙探索结束交互2
     /// </summary>
     WKSEndInteraction2 = 3402,
+    
+    /// <summary>
+    /// 宇宙好运道抽奖
+    /// </summary>
+    WKSStartLottery = 3450,
 
     /// <summary>
     /// 掷骰子
