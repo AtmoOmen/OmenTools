@@ -1288,9 +1288,22 @@ public enum ExecuteCommandFlag
     WKSEndInteraction2 = 3402,
     
     /// <summary>
-    /// 宇宙好运道抽奖
+    /// 宇宙好运道开始抽奖
     /// </summary>
     WKSStartLottery = 3450,
+    
+    /// <summary>
+    /// 宇宙好运道选择转盘
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 转盘类型 (左边 - 0, 右边 - 1)</para>
+    /// </remarks>
+    WKSChooseLottery = 3451,
+    
+    /// <summary>
+    /// 宇宙好运道结束抽奖
+    /// </summary>
+    WKSEndLottery = 3452,
 
     /// <summary>
     /// 掷骰子
