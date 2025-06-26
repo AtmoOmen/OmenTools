@@ -15,9 +15,14 @@ public static class LuminaWrapper
     public static string GetLobbyText(uint rowID) => 
         LuminaGetter.TryGetRow<Lobby>(rowID, out var item) ? item.Text.ExtractText() : string.Empty;
     
-    public static string GetActionName(uint rowID) =>
-        LuminaGetter.TryGetRow<Action>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
-    
+    public static string GetActionName(uint rowID)
+    {
+        if (rowID > 10_0000)
+            return LuminaGetter.TryGetRow<CraftAction>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+        else
+            return LuminaGetter.TryGetRow<Action>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    }
+
     public static string GetWorldName(uint rowID) =>
         LuminaGetter.TryGetRow<World>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 
