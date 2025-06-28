@@ -18,6 +18,8 @@ public class DService
     {
         pluginInterface.Create<DService>();
         
+        GameState.Init();
+        
         PI            = pluginInterface;
         UiBuilder     = pluginInterface.UiBuilder;
         ObjectTable   = new ObjectTable();
@@ -27,6 +29,7 @@ public class DService
 
     public static void Uninit()
     {
+        GameState.Uninit();
         TaskHelper.DisposeAll();
         MemoryPatch.DisposeAll();
         ThrottlerHelper.Uninit();
