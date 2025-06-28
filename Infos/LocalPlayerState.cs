@@ -10,6 +10,10 @@ public unsafe class LocalPlayerState
     private delegate ushort GetClassJobLevelDelegate(PlayerState* instance, uint classJobID, bool checkParentJob);
     private static readonly GetClassJobLevelDelegate GetClassJobLevelInternal =
         new CompSig("E8 ?? ?? ?? ?? 0F B6 0D ?? ?? ?? ?? 4C 8D 3D").GetDelegate<GetClassJobLevelDelegate>();
+
+    private delegate nint GetAccountInfoInstanceDelegate();
+    private static readonly GetAccountInfoInstanceDelegate GetAccountInfoInstance = 
+        new CompSig("48 8B 05 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC CC 83 39").GetDelegate<GetAccountInfoInstanceDelegate>();
     
     /// <summary>
     /// 当前玩家是否正在移动
@@ -22,6 +26,12 @@ public unsafe class LocalPlayerState
     /// </summary>
     public static uint EntityID => 
         PlayerState.Instance()->EntityId;
+
+    /// <summary>
+    /// 当前玩家的 AccountID
+    /// </summary>
+    public static ulong AccountID =>
+        *(ulong*)(GetAccountInfoInstance() + 8);
     
     /// <summary>
     /// 当前 ClassJob 表数据
