@@ -241,4 +241,16 @@ public static unsafe class GameState
     /// </summary>
     public static ContentFinderCondition ContentFinderConditionData =>
         LuminaGetter.GetRow<ContentFinderCondition>(ContentFinderCondition).GetValueOrDefault();
+
+    /// <summary>
+    /// 当前 Weather 表数据
+    /// </summary>
+    public static Weather WeatherData =>
+        LuminaGetter.GetRow<Weather>(Weather).GetValueOrDefault();
+    
+    /// <summary>
+    /// 当前天气 ID
+    /// </summary>
+    public static uint Weather =>
+        WeatherManager.Instance()->GetCurrentWeather();
 }
