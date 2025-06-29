@@ -1288,6 +1288,14 @@ public enum ExecuteCommandFlag
     WKSEndInteraction2 = 3402,
     
     /// <summary>
+    /// 宇宙探索接取任务
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: Mission Unit ID</para>
+    /// </remarks>
+    WKSStartMission = 3440,
+    
+    /// <summary>
     /// 宇宙好运道开始抽奖
     /// </summary>
     WKSStartLottery = 3450,
