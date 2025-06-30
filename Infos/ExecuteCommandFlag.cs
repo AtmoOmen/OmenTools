@@ -1296,6 +1296,16 @@ public enum ExecuteCommandFlag
     WKSStartMission = 3440,
     
     /// <summary>
+    /// 宇宙探索完成任务
+    /// </summary>
+    WKSCompleteMission = 3441,
+    
+    /// <summary>
+    /// 宇宙探索放弃任务
+    /// </summary>
+    WKSAbandonMission = 3442,
+    
+    /// <summary>
     /// 宇宙好运道开始抽奖
     /// </summary>
     WKSStartLottery = 3450,
@@ -1312,6 +1322,14 @@ public enum ExecuteCommandFlag
     /// 宇宙好运道结束抽奖
     /// </summary>
     WKSEndLottery = 3452,
+    
+    /// <summary>
+    /// 宇宙探索请求机甲数据
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: WKSMechaEventData Row ID (0 - 当前未开始)</para>
+    /// </remarks>
+    WKSRequestMecha = 3478,
 
     /// <summary>
     /// 掷骰子
