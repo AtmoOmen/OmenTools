@@ -7,36 +7,30 @@ namespace OmenTools.Infos;
 /// <summary>
 /// Composite Signatures 复合签名
 /// </summary>
-public record CompSig(string Signature, string? SignatureCN = null)
+public record CompSig
 {
-    public static bool IsClientCN => DService.ClientState.ClientLanguage == (ClientLanguage)4;
+    public string Signature { get; init; }
 
-    public string? Get() => TryGet(out var sig) ? sig : null;
+    public CompSig(string signature) => 
+        Signature = signature.Trim() ?? throw new ArgumentNullException(nameof(signature));
 
-    public bool TryGet(out string? signature)
-    {
-        signature = IsClientCN && !string.IsNullOrWhiteSpace(SignatureCN) ? SignatureCN : Signature;
-        return !string.IsNullOrWhiteSpace(signature);
-    }
+    public string Get() => Signature;
+    
+    public nint ScanText() => 
+        DService.SigScanner.ScanText(Signature);
 
-    private bool TryGetValidSignature(out string sig)
-        => TryGet(out sig!) && !string.IsNullOrWhiteSpace(sig);
+    public unsafe T* ScanText<T>() where T : unmanaged => 
+        (T*)DService.SigScanner.ScanText(Signature);
 
-    public nint ScanText()
-        => TryGetValidSignature(out var sig) ? DService.SigScanner.ScanText(sig) : nint.Zero;
+    public nint GetStatic(int offset = 0) => 
+        DService.SigScanner.GetStaticAddressFromSig(Signature, offset);
 
-    public unsafe T* ScanText<T>() where T : unmanaged
-        => TryGetValidSignature(out var sig) ? (T*)DService.SigScanner.ScanText(sig) : null;
+    public unsafe T* GetStatic<T>(int offset = 0) where T : unmanaged => 
+        (T*)DService.SigScanner.GetStaticAddressFromSig(Signature, offset);
 
-    public nint GetStatic(int offset = 0)
-        => TryGetValidSignature(out var sig) ? DService.SigScanner.GetStaticAddressFromSig(sig, offset) : nint.Zero;
+    public T GetDelegate<T>() where T : Delegate => 
+        Marshal.GetDelegateForFunctionPointer<T>(ScanText());
 
-    public unsafe T* GetStatic<T>(int offset = 0) where T : unmanaged
-        => TryGetValidSignature(out var sig) ? (T*)DService.SigScanner.GetStaticAddressFromSig(sig, offset) : null;
-
-    public T GetDelegate<T>() where T : Delegate
-        => Marshal.GetDelegateForFunctionPointer<T>(ScanText());
-
-    public Hook<T> GetHook<T>(T detour) where T : Delegate
-        => DService.Hook.HookFromSignature(Get() ?? string.Empty, detour);
+    public Hook<T> GetHook<T>(T detour) where T : Delegate => 
+        DService.Hook.HookFromSignature(Signature, detour);
 }
