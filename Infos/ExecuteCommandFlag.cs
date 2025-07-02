@@ -861,6 +861,14 @@ public enum ExecuteCommandFlag
     /// <para><c>param1</c>: 赛季 (0 - 本赛季; 1 - 上赛季)</para>
     /// </remarks>
     CollectTrophyCrystal = 1200,
+    
+    /// <summary>
+    /// 选择 PVP 职能技能
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 职能技能索引</para>
+    /// </remarks>
+    SelectPVPRoleAction = 1201,
 
     /// <summary>
     /// 请求挑战笔记数据
@@ -1322,6 +1330,11 @@ public enum ExecuteCommandFlag
     /// 宇宙好运道结束抽奖
     /// </summary>
     WKSEndLottery = 3452,
+    
+    /// <summary>
+    /// 宇宙探索请求探索成果数据
+    /// </summary>
+    WKSRequestSuccesses = 3460,
     
     /// <summary>
     /// 宇宙探索请求机甲数据
