@@ -1,16 +1,14 @@
-﻿using ImGuiNET;
-
-namespace OmenTools.ImGuiOm;
+﻿namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
     #region UInt
 
     public static bool InputUInt(string label, ref uint value) 
-        => InputScalarInternal(label, ImGuiDataType.U32, ref value);
+        => InputScalarInternal(label, ImGuiDataType.U32, ref value, 0U, 0U, flags: ImGuiInputTextFlags.None);
 
     public static bool InputUInt(string label, ref uint value, uint step) 
-        => InputScalarInternal(label, ImGuiDataType.U32, ref value, step);
+        => InputScalarInternal(label, ImGuiDataType.U32, ref value, step, 0U);
 
     public static bool InputUInt(string label, ref uint value, uint step, uint step_fast) 
         => InputScalarInternal(label, ImGuiDataType.U32, ref value, step, step_fast);
