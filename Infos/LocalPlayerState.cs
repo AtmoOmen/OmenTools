@@ -1,4 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game.UI;
+﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
@@ -132,5 +133,20 @@ public unsafe class LocalPlayerState
         
         ChatHelper.SendMessage($"/gearset change {gearsetID + 1}");
         return true;
+    }
+
+    public static bool HasStatus(uint statusID, out int index, uint sourceID = 0xE0000000)
+    {
+        index = -1;
+        if (Object == null) return false;
+
+        index = Object.ToStruct()->StatusManager.GetStatusIndex(statusID, sourceID);
+        return index != -1;
+    }
+
+    public static uint GetItemCount(uint itemID)
+    {
+        var instance = InventoryManager.Instance();
+        return (uint)(instance->GetInventoryItemCount(itemID) + instance->GetInventoryItemCount(itemID, true));
     }
 }
