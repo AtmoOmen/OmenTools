@@ -16,14 +16,36 @@ public record CompSig
 
     public string Get() => Signature;
     
-    public nint ScanText() => 
-        DService.SigScanner.TryScanText(Signature, out var ptr) ? ptr : nint.Zero;
+    public nint ScanText()
+    {
+        try
+        {
+            return DService.SigScanner.ScanText(Signature);
+        }
+        catch(Exception ex)
+        {
+            Error($"尝试 ScanText 时失败, 签名: {Signature}", ex);
+        }
+        
+        return nint.Zero;
+    }
 
     public unsafe T* ScanText<T>() where T : unmanaged => 
         (T*)ScanText();
 
-    public nint GetStatic(int offset = 0) => 
-        DService.SigScanner.TryGetStaticAddressFromSig(Signature, out var ptr, offset) ? ptr : nint.Zero;
+    public nint GetStatic(int offset = 0)
+    {
+        try
+        {
+            return DService.SigScanner.GetStaticAddressFromSig(Signature, offset);
+        }
+        catch(Exception ex)
+        {
+            Error($"尝试 GetStaticAddress 时失败, 签名: {Signature}", ex);
+        }
+        
+        return nint.Zero;
+    }
 
     public unsafe T* GetStatic<T>(int offset = 0) where T : unmanaged => 
         (T*)GetStatic(offset);
