@@ -17,16 +17,16 @@ public record CompSig
     public string Get() => Signature;
     
     public nint ScanText() => 
-        DService.SigScanner.ScanText(Signature);
+        DService.SigScanner.TryScanText(Signature, out var ptr) ? ptr : nint.Zero;
 
     public unsafe T* ScanText<T>() where T : unmanaged => 
-        (T*)DService.SigScanner.ScanText(Signature);
+        (T*)ScanText();
 
     public nint GetStatic(int offset = 0) => 
-        DService.SigScanner.GetStaticAddressFromSig(Signature, offset);
+        DService.SigScanner.TryGetStaticAddressFromSig(Signature, out var ptr, offset) ? ptr : nint.Zero;
 
     public unsafe T* GetStatic<T>(int offset = 0) where T : unmanaged => 
-        (T*)DService.SigScanner.GetStaticAddressFromSig(Signature, offset);
+        (T*)GetStatic(offset);
 
     public T GetDelegate<T>() where T : Delegate => 
         Marshal.GetDelegateForFunctionPointer<T>(ScanText());
