@@ -1,4 +1,5 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game;
+﻿using System.Numerics;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -148,5 +149,17 @@ public unsafe class LocalPlayerState
     {
         var instance = InventoryManager.Instance();
         return (uint)(instance->GetInventoryItemCount(itemID) + instance->GetInventoryItemCount(itemID, true));
+    }
+
+    public static float DistanceTo3D(Vector3 distance)
+    {
+        if (Object == null) return float.MaxValue;
+        return Vector3.Distance(Object.Position, distance);
+    }
+    
+    public static float DistanceTo2D(Vector2 distance)
+    {
+        if (Object == null) return float.MaxValue;
+        return Vector2.Distance(Object.Position.ToVector2(), distance);
     }
 }
