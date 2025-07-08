@@ -11,7 +11,7 @@ public static partial class ImGuiOm
         if (string.IsNullOrWhiteSpace(text)) return;
         using var id = ImRaii.PushId($"TooltipHover_{text}_{warpPos}");
         
-        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
+        if (ImGui.IsItemHovered())
         {
             ImGui.BeginTooltip();
             ImGui.PushTextWrapPos(ImGui.GetFontSize() * warpPos);
