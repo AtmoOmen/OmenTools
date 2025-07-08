@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using Lumina.Excel;
+using TinyPinyin;
 
 namespace OmenTools.Helpers;
 
@@ -9,45 +10,46 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
     private readonly Throttler<Guid> SearchThrottler = new();
 
     public LuminaSearcher(
-        IEnumerable<T> data,
+        IEnumerable<T>    data,
         Func<T, string>[] searchFuncs,
-        Func<T, string> orderFunc,
-        int resultLimit = 100,
-        int throttleInterval = 100,
-        int retryInterval = 50,
-        int maxRetries = 3)
+        Func<T, string>   orderFunc,
+        int               resultLimit      = 100,
+        int               throttleInterval = 100,
+        int               retryInterval    = 50,
+        int               maxRetries       = 3)
     {
         Guid = Guid.NewGuid();
         Data = data
-            .OrderBy(item => orderFunc(item).Length)
-            .ThenBy(x => x.RowId)
-            .ToList();
+               .OrderBy(item => orderFunc(item).Length)
+               .ThenBy(x => x.RowId)
+               .ToList();
 
-        SearchResult = Data.Take(resultLimit).ToList();
-        this.resultLimit = resultLimit;
+        SearchResult          = Data.Take(resultLimit).ToList();
+        this.resultLimit      = resultLimit;
         this.throttleInterval = throttleInterval;
-        this.retryInterval = retryInterval;
-        this.maxRetries = maxRetries;
+        this.retryInterval    = retryInterval;
+        this.maxRetries       = maxRetries;
+        
         preprocessedData = Data
-            .Select(item => searchFuncs.Select(func => func(item)).ToList())
-            .ToList();
+                           .Select(item => searchFuncs.Select(func => $"{func(item)}_{PinyinHelper.GetPinyin(func(item), string.Empty)}").ToList())
+                           .ToList();
     }
 
-    public Guid Guid { get; init; }
-    public IReadOnlyList<T> Data { get; init; }
-    public List<T> SearchResult { get; private set; }
+    public Guid             Guid         { get; init; }
+    public IReadOnlyList<T> Data         { get; init; }
+    public List<T>          SearchResult { get; private set; }
 
-    private readonly int resultLimit;
-    private readonly int throttleInterval;
-    private readonly int retryInterval;
-    private readonly int maxRetries;
-    private readonly List<List<string>> preprocessedData;
+    private readonly int                                     resultLimit;
+    private readonly int                                     throttleInterval;
+    private readonly int                                     retryInterval;
+    private readonly int                                     maxRetries;
+    private readonly List<List<string>>                      preprocessedData;
     private readonly ConcurrentDictionary<string, List<int>> cache = [];
 
     public void Search(string keyword, bool isIgnoreCase = true, bool isRegex = true)
     {
-        string cacheKey = $"{keyword}_{isIgnoreCase}_{isRegex}";
-        
+        var cacheKey = $"{keyword}_{isIgnoreCase}_{isRegex}";
+
         if (cache.TryGetValue(cacheKey, out var cachedIndexes))
         {
             SearchResult = cachedIndexes.Take(resultLimit).Select(index => Data[index]).ToList();
@@ -78,19 +80,16 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
 
     private void ExecuteSearch(string keyword, bool isIgnoreCase, bool isRegex)
     {
-        var comparison = isIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison  = isIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         var partitioner = Partitioner.Create(0, preprocessedData.Count);
-        var indexes = new ConcurrentBag<int>();
-        
-        RegexOptions regexOptions = isIgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
-        Regex? regex = null;
-        
+        var indexes     = new ConcurrentBag<int>();
+
+        var    regexOptions = isIgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
+        Regex? regex        = null;
+
         if (isRegex)
         {
-            try
-            {
-                regex = new Regex(keyword, regexOptions);
-            }
+            try { regex = new Regex(keyword, regexOptions); }
             catch
             {
                 // 正则表达式无效，回退到普通搜索
@@ -117,11 +116,11 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
         });
 
         var resultIndexes = indexes
-            .OrderBy(i => i)
-            .Take(resultLimit)
-            .ToList();
+                            .OrderBy(i => i)
+                            .Take(resultLimit)
+                            .ToList();
 
-        SearchResult = resultIndexes.Select(index => Data[index]).ToList();
+        SearchResult                                 = resultIndexes.Select(index => Data[index]).ToList();
         cache[$"{keyword}_{isIgnoreCase}_{isRegex}"] = resultIndexes;
     }
 }
@@ -131,45 +130,46 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
     private readonly Throttler<Guid> SearchThrottler = new();
 
     public LuminaSearcherSubRow(
-        IEnumerable<T> data,
+        IEnumerable<T>    data,
         Func<T, string>[] searchFuncs,
-        Func<T, string> orderFunc,
-        int resultLimit = 100,
-        int throttleInterval = 100,
-        int retryInterval = 50,
-        int maxRetries = 3)
+        Func<T, string>   orderFunc,
+        int               resultLimit      = 100,
+        int               throttleInterval = 100,
+        int               retryInterval    = 50,
+        int               maxRetries       = 3)
     {
         Guid = Guid.NewGuid();
         Data = data
-            .OrderBy(item => orderFunc(item).Length)
-            .ThenBy(x => x.RowId)
-            .ToList();
+               .OrderBy(item => orderFunc(item).Length)
+               .ThenBy(x => x.RowId)
+               .ToList();
 
-        SearchResult = Data.Take(resultLimit).ToList();
-        this.resultLimit = resultLimit;
+        SearchResult          = Data.Take(resultLimit).ToList();
+        this.resultLimit      = resultLimit;
         this.throttleInterval = throttleInterval;
-        this.retryInterval = retryInterval;
-        this.maxRetries = maxRetries;
+        this.retryInterval    = retryInterval;
+        this.maxRetries       = maxRetries;
+        
         preprocessedData = Data
-            .Select(item => searchFuncs.Select(func => func(item)).ToList())
-            .ToList();
+                           .Select(item => searchFuncs.Select(func => $"{func(item)}_{PinyinHelper.GetPinyin(func(item), string.Empty)}").ToList())
+                           .ToList();
     }
 
-    public Guid Guid { get; init; }
-    public IReadOnlyList<T> Data { get; init; }
-    public List<T> SearchResult { get; private set; }
+    public Guid             Guid         { get; init; }
+    public IReadOnlyList<T> Data         { get; init; }
+    public List<T>          SearchResult { get; private set; }
 
-    private readonly int resultLimit;
-    private readonly int throttleInterval;
-    private readonly int retryInterval;
-    private readonly int maxRetries;
-    private readonly List<List<string>> preprocessedData;
+    private readonly int                                     resultLimit;
+    private readonly int                                     throttleInterval;
+    private readonly int                                     retryInterval;
+    private readonly int                                     maxRetries;
+    private readonly List<List<string>>                      preprocessedData;
     private readonly ConcurrentDictionary<string, List<int>> cache = [];
 
     public void Search(string keyword, bool isIgnoreCase = true, bool isRegex = true)
     {
-        string cacheKey = $"{keyword}_{isIgnoreCase}_{isRegex}";
-        
+        var cacheKey = $"{keyword}_{isIgnoreCase}_{isRegex}";
+
         if (cache.TryGetValue(cacheKey, out var cachedIndexes))
         {
             SearchResult = cachedIndexes.Take(resultLimit).Select(index => Data[index]).ToList();
@@ -200,19 +200,16 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
 
     private void ExecuteSearch(string keyword, bool isIgnoreCase, bool isRegex)
     {
-        var comparison = isIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison  = isIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         var partitioner = Partitioner.Create(0, preprocessedData.Count);
-        var indexes = new ConcurrentBag<int>();
-        
-        RegexOptions regexOptions = isIgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
-        Regex? regex = null;
-        
+        var indexes     = new ConcurrentBag<int>();
+
+        var    regexOptions = isIgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
+        Regex? regex        = null;
+
         if (isRegex)
         {
-            try
-            {
-                regex = new Regex(keyword, regexOptions);
-            }
+            try { regex = new Regex(keyword, regexOptions); }
             catch
             {
                 // 正则表达式无效，回退到普通搜索
@@ -239,11 +236,11 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
         });
 
         var resultIndexes = indexes
-            .OrderBy(i => i)
-            .Take(resultLimit)
-            .ToList();
+                            .OrderBy(i => i)
+                            .Take(resultLimit)
+                            .ToList();
 
-        SearchResult = resultIndexes.Select(index => Data[index]).ToList();
+        SearchResult                                 = resultIndexes.Select(index => Data[index]).ToList();
         cache[$"{keyword}_{isIgnoreCase}_{isRegex}"] = resultIndexes;
     }
 }

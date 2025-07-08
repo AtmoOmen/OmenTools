@@ -85,4 +85,8 @@
             <Private>False</Private>
         </Reference>
     </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="TinyPinyin" Version="1.1.0" />
+    </ItemGroup>
 </Project>

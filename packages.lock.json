@@ -1,6 +1,13 @@
 {
   "version": 1,
   "dependencies": {
-    "net9.0-windows7.0": {}
+    "net9.0-windows7.0": {
+      "TinyPinyin": {
+        "type": "Direct",
+        "requested": "[1.1.0, )",
+        "resolved": "1.1.0",
+        "contentHash": "pwe99NXsWkSeJdOwzcweorlyoB2frOlTU37QwzmnnxfRT5vRENXm4UOl5g4Nxq5V9lYOBWK1mZIozFfIlDVjYA=="
+      }
+    }
   }
 }
