@@ -22,6 +22,12 @@ public unsafe class LocalPlayerState
     /// </summary>
     public static bool IsMoving => 
         AgentMap.Instance()->IsPlayerMoving;
+
+    /// <summary>
+    /// 当前玩家的用户名
+    /// </summary>
+    public static string Name =>
+        PlayerState.Instance()->CharacterNameString;
     
     /// <summary>
     /// 当前玩家的 EntityID

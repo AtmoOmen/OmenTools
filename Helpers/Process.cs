@@ -118,11 +118,11 @@ public static partial class HelpersOm
         }
     }
 
-    public static void SendKeydown(Keys key) => SendKeydown((int)key);
+    public static void SendKeyDown(Keys key) => SendKeyDown((int)key);
 
-    public static void SendKeyup(Keys key) => SendKeyup((int)key);
+    public static void SendKeyUp(Keys key) => SendKeyUp((int)key);
 
-    public static void SendKeydown(int key)
+    public static void SendKeyDown(int key)
     {
         if (!TryFindGameWindow(out var h))
         {
@@ -133,7 +133,7 @@ public static partial class HelpersOm
         SendMessage(h, WindowMessage.WM_KEYDOWN, key, 0);
     }
 
-    public static void SendKeyup(int key)
+    public static void SendKeyUp(int key)
     {
         if (!TryFindGameWindow(out var h))
         {
