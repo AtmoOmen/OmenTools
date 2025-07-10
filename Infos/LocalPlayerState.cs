@@ -17,6 +17,14 @@ public unsafe class LocalPlayerState
     private static readonly GetAccountInfoInstanceDelegate GetAccountInfoInstance = 
         new CompSig("48 8B 05 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC CC 83 39").GetDelegate<GetAccountInfoInstanceDelegate>();
     
+    private delegate bool IsLocalPlayerInPartyDelegate();
+    private static readonly IsLocalPlayerInPartyDelegate IsLocalPlayerInParty =
+        new CompSig("48 83 EC ?? 33 D2 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 80 B8").GetDelegate<IsLocalPlayerInPartyDelegate>();
+    
+    private delegate bool IsLocalPlayerPartyLeaderDelegate();
+    private static readonly IsLocalPlayerPartyLeaderDelegate IsLocalPlayerPartyLeader =
+        new CompSig("48 83 EC ?? E8 ?? ?? ?? ?? 84 C0 74 ?? 48 83 C4").GetDelegate<IsLocalPlayerPartyLeaderDelegate>();
+    
     /// <summary>
     /// 当前玩家是否正在移动
     /// </summary>
@@ -82,6 +90,18 @@ public unsafe class LocalPlayerState
     /// </summary>
     public static bool IsLevelSynced =>
         PlayerState.Instance()->IsLevelSynced != 0;
+
+    /// <summary>
+    /// 当前是否在任一队伍中
+    /// </summary>
+    public static bool IsInParty =>
+        IsLocalPlayerInParty();
+
+    /// <summary>
+    /// 当前是否为队长
+    /// </summary>
+    public static bool IsPartyLeader =>
+        IsLocalPlayerPartyLeader();
 
     /// <summary>
     /// 当前玩家对象
