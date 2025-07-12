@@ -72,7 +72,8 @@ public partial class TaskHelper : IDisposable
             {
                 if (!RunningAsyncTasks.TryGetValue(CurrentTask, out var task))
                 {
-                    var asyncTask = CurrentTask.AsyncAction!(CurrentTask.CancellationTokenSource!.Token);
+                    var asyncTask = DService.Framework.Run(async () => await CurrentTask.AsyncAction!(CurrentTask.CancellationTokenSource!.Token),
+                                                           CurrentTask.CancellationTokenSource!.Token);
                     RunningAsyncTasks[CurrentTask] = asyncTask;
                     
                     if (ShowDebug)
@@ -99,6 +100,7 @@ public partial class TaskHelper : IDisposable
                 {
                     if (ShowDebug)
                         Debug($"异步任务已取消: {CurrentTask.Name}");
+                    
                     CurrentTask = null;
                     return;
                 }
