@@ -8,6 +8,18 @@ public partial class TaskHelper
     public void Insert(Action task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
         Insert(() => { task(); return true; }, name, timeLimitMs, abortOnTimeout, weight);
 
+    public void InsertAsync(Func<CancellationToken, Task<bool?>> asyncTask, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
+        InsertQueueTask(new TaskHelperTask(asyncTask, timeLimitMs ?? TimeLimitMS, abortOnTimeout ?? AbortOnTimeout, name), weight);
+
+    public void InsertAsync(Func<CancellationToken, Task> asyncTask, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
+        InsertAsync(async ct => { await asyncTask(ct); return true; }, name, timeLimitMs, abortOnTimeout, weight);
+
+    public void InsertAsync(Func<Task<bool?>> asyncTask, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
+        InsertAsync(ct => asyncTask(), name, timeLimitMs, abortOnTimeout, weight);
+
+    public void InsertAsync(Func<Task> asyncTask, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
+        InsertAsync(async ct => { await asyncTask(); return true; }, name, timeLimitMs, abortOnTimeout, weight);
+
     private void InsertQueueTask(TaskHelperTask task, int weight)
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight) ?? AddQueueAndGet(weight);

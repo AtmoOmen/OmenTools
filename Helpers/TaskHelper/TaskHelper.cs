@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace OmenTools.Helpers;
 
 public partial class TaskHelper : IDisposable
@@ -18,12 +20,14 @@ public partial class TaskHelper : IDisposable
     private SortedSet<TaskHelperQueue> Queues          { get; } = [new(1), new(0)];
     public  List<string>               TaskStack       => Queues.SelectMany(q => q.Tasks.Select(t => t.Name)).ToList();
     public  int                        NumQueuedTasks  => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
-    public  bool                       IsBusy          => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0);
+    public  bool                       IsBusy          => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0) || !RunningAsyncTasks.IsEmpty;
     private bool                       HasPendingTask  { get; set; }
     public  bool                       AbortOnTimeout  { get; set; } = true;
     public  long                       AbortAt         { get; private set; }
     public  bool                       ShowDebug       { get; set; }
     public  int                        TimeLimitMS     { get; set; } = 10000;
+    
+    private readonly ConcurrentDictionary<TaskHelperTask, Task<bool?>> RunningAsyncTasks = new();
     
     private readonly FrameThrottler<string> FrameThrottler;
     private readonly Throttler<string>      Throttler;
@@ -61,8 +65,51 @@ public partial class TaskHelper : IDisposable
         try
         {
             if (CurrentTask == null) return;
+
+            bool? result;
             
-            var result = CurrentTask.Action();
+            if (CurrentTask.IsAsync)
+            {
+                if (!RunningAsyncTasks.TryGetValue(CurrentTask, out var task))
+                {
+                    var asyncTask = CurrentTask.AsyncAction!(CurrentTask.CancellationTokenSource!.Token);
+                    RunningAsyncTasks[CurrentTask] = asyncTask;
+                    
+                    if (ShowDebug)
+                        Debug($"启动异步任务: {CurrentTask.Name}");
+                    
+                    return;
+                }
+                
+                if (!task.IsCompleted)
+                {
+                    CheckForTimeout();
+                    return;
+                }
+                
+                RunningAsyncTasks.TryRemove(CurrentTask, out _);
+                
+                if (task.IsFaulted)
+                {
+                    HandleError(CurrentTask.Name, task.Exception?.GetBaseException() ?? new Exception("异步任务失败"));
+                    return;
+                }
+                
+                if (task.IsCanceled)
+                {
+                    if (ShowDebug)
+                        Debug($"异步任务已取消: {CurrentTask.Name}");
+                    CurrentTask = null;
+                    return;
+                }
+                
+                result = task.Result;
+            }
+            else
+            {
+                result = CurrentTask.Action!();
+            }
+            
             switch (result)
             {
                 case true:
@@ -95,6 +142,13 @@ public partial class TaskHelper : IDisposable
         if (Environment.TickCount64 <= AbortAt) return;
 
         var reason = $"任务 {CurrentTask?.Name ?? "(无名称)"} 执行时间过长";
+        
+        if (CurrentTask is { IsAsync: true, CancellationTokenSource: not null })
+        {
+            CurrentTask.CancellationTokenSource.Cancel();
+            RunningAsyncTasks.TryRemove(CurrentTask, out _);
+        }
+        
         if (CurrentTask?.AbortOnTimeout ?? true)
             AbortAllTasks(reason);
         else
@@ -170,12 +224,35 @@ public partial class TaskHelper : IDisposable
         foreach (var queue in Queues)
             queue.Tasks.Clear();
         
+        foreach (var kvp in RunningAsyncTasks)
+            kvp.Key.CancellationTokenSource?.Cancel();
+        
+        RunningAsyncTasks.Clear();
+        
         CurrentTask = null;
     }
 
     public void Dispose()
     {
         DService.Framework.Update -= Tick;
+        
+        foreach (var kvp in RunningAsyncTasks)
+        {
+            kvp.Key.CancellationTokenSource?.Cancel();
+            kvp.Key.CancellationTokenSource?.Dispose();
+        }
+        
+        RunningAsyncTasks.Clear();
+        
+        foreach (var queue in Queues)
+        {
+            foreach (var task in queue.Tasks.Where(t => t.IsAsync))
+            {
+                task.CancellationTokenSource?.Cancel();
+                task.CancellationTokenSource?.Dispose();
+            }
+        }
+        
         Instances.Remove(this);
     }
 

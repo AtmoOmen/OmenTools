@@ -25,6 +25,12 @@ public static class LuminaWrapper
 
     public static string GetWorldName(uint rowID) =>
         LuminaGetter.TryGetRow<World>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static string GetWorldDCName(uint rowID) =>
+        LuminaGetter.TryGetRow<World>(rowID, out var item) ? item.DataCenter.Value.Name.ExtractText() : string.Empty;
+    
+    public static string GetDataCenterName(uint rowID) =>
+        LuminaGetter.TryGetRow<WorldDCGroupType>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 
     public static string GetItemName(uint rowID) =>
         LuminaGetter.TryGetRow<Item>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
