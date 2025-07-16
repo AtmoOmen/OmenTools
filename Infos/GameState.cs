@@ -1,4 +1,6 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game;
+﻿using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -12,12 +14,19 @@ public static unsafe class GameState
 {
     private static TaskHelper TaskHelper = null!;
     
+    private static readonly CompSig                          FateDirectorSetupSig = new("E8 ?? ?? ?? ?? 48 39 37");
+    private delegate        nint                             FateDirectorSetupDelegate(uint rowID, nint a2, nint a3);
+    private static          Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
+    
     internal static void Init()
     {
         TaskHelper ??= new() { TimeLimitMS = int.MaxValue };
         
         DService.ClientState.Login  += OnDalamudLogin;
         DService.ClientState.Logout += OnDalamudLogout;
+
+        FateDirectorSetupHook ??= FateDirectorSetupSig.GetHook<FateDirectorSetupDelegate>(FateDirectorSetupDetour);
+        FateDirectorSetupHook.Enable();
     }
 
     internal static void Uninit()
@@ -41,15 +50,21 @@ public static unsafe class GameState
         
         TaskHelper.Enqueue(() =>
         {
-            Debug("已登录");
             Login?.Invoke();
         });
     }
     
-    private static void OnDalamudLogout(int type, int code)
-    {
-        Debug("已登出");
+    private static void OnDalamudLogout(int type, int code) => 
         Logout?.Invoke();
+
+    private static nint FateDirectorSetupDetour(uint rowID, nint a2, nint a3)
+    {
+        var original = FateDirectorSetupHook.Original(rowID, a2, a3);
+        
+        if (rowID == 102401 && FateManager.Instance()->CurrentFate != null)
+            EnterFate?.Invoke(FateManager.Instance()->CurrentFate->FateId);
+
+        return original;
     }
 
     /// <summary>
@@ -57,6 +72,11 @@ public static unsafe class GameState
     /// </summary>
     public static bool IsCN => 
         (int)DService.ClientState.ClientLanguage == 4;
+
+    /// <summary>
+    /// 进入临危受命范围时
+    /// </summary>
+    public static event Action<uint>? EnterFate;
     
     /// <summary>
     /// 登录且玩家可用时
