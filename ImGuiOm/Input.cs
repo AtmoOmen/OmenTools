@@ -34,6 +34,38 @@ public static partial class ImGuiOm
 
     #endregion
 
+    #region Short
+
+    public static bool InputShort(string label, ref short value)
+        => InputScalarInternal(label, ImGuiDataType.S16, ref value);
+
+    public static bool InputShort(string label, ref short value, short step)
+        => InputScalarInternal(label, ImGuiDataType.S16, ref value, step);
+
+    public static bool InputShort(string label, ref short value, short step, short step_fast)
+        => InputScalarInternal(label, ImGuiDataType.S16, ref value, step, step_fast);
+
+    public static bool InputShort(string label, ref short value, short step, short step_fast, ImGuiInputTextFlags flags)
+        => InputScalarInternal(label, ImGuiDataType.S16, ref value, step, step_fast, flags: flags);
+
+    #endregion
+
+    #region UShort
+
+    public static bool InputUShort(string label, ref ushort value)
+        => InputScalarInternal(label, ImGuiDataType.U16, ref value);
+
+    public static bool InputUShort(string label, ref ushort value, ushort step)
+        => InputScalarInternal(label, ImGuiDataType.U16, ref value, step);
+
+    public static bool InputUShort(string label, ref ushort value, ushort step, ushort step_fast)
+        => InputScalarInternal(label, ImGuiDataType.U16, ref value, step, step_fast);
+
+    public static bool InputUShort(string label, ref ushort value, ushort step, ushort step_fast, ImGuiInputTextFlags flags)
+        => InputScalarInternal(label, ImGuiDataType.U16, ref value, step, step_fast, flags: flags);
+
+    #endregion
+
     private static unsafe bool InputScalarInternal<T>(
         string label, ImGuiDataType dataType, ref T value, T? step = null, T? step_fast = null, string? format = null,
         ImGuiInputTextFlags flags = ImGuiInputTextFlags.None) where T : unmanaged
