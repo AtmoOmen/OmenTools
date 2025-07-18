@@ -940,5 +940,5 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* FadeMiddle                      => GetAddonByName("FadeMiddle");
     public static AtkUnitBase* FadeBack                        => GetAddonByName("FadeBack");
     public static AtkUnitBase* ToDoList                        => GetAddonByName("_ToDoList");
-
+    public static AtkUnitBase* DTR                             => GetAddonByName("_DTR");
 }
