@@ -67,11 +67,14 @@ public static unsafe class GameState
         return original;
     }
 
+    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
+    private static readonly Lazy<bool> isCNLazy = 
+        new(() => Framework.Instance()->ClientLanguage is 4 or 7);
+
     /// <summary>
     /// 是否为国服客户端
     /// </summary>
-    public static bool IsCN => 
-        (int)DService.ClientState.ClientLanguage == 4;
+    public static bool IsCN => isCNLazy.Value;
 
     /// <summary>
     /// 进入临危受命范围时
