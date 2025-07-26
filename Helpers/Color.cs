@@ -17,6 +17,16 @@ public static partial class HelpersOm
         return new ByteColor { R = r, G = g, B = b, A = a };
     }
     
+    public static Vector4 ConvertByteColorToVector4(ByteColor color)
+    {
+        var r = color.R / 255f;
+        var g = color.G / 255f;
+        var b = color.B / 255f;
+        var a = color.A / 255f;
+
+        return new Vector4(r, g, b, a);
+    }
+    
     public static Vector4 UIColorToVector4Color(uint uiColorRowColor)
         => ImGui.ColorConvertU32ToFloat4(UIColorToU32Color(uiColorRowColor));
     
