@@ -221,6 +221,9 @@ public partial class TaskHelper : IDisposable
         return false;
     }
 
+    public int GetTasksCount(int weight) => 
+        Queues.Count(x => x.Weight == weight);
+
     public void Abort()
     {
         foreach (var queue in Queues)
