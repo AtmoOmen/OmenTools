@@ -139,6 +139,31 @@ public unsafe class LocalPlayerState
             
         return false;
     }
+    
+    /// <summary>
+    /// 获取当前玩家第一个可用的职业套装
+    /// </summary>
+    public static bool TryFindClassJobGearsetData(uint classJobID, out RaptureGearsetModule.GearsetEntry gearsetData)
+    {
+        gearsetData = default;
+        
+        var gearsetModule = RaptureGearsetModule.Instance();
+        for (var i = 0; i < 100; i++)
+        {
+            var gearset = gearsetModule->GetGearset(i);
+            if (gearset == null                                                          ||
+                !gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.Exists)         ||
+                gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.MainHandMissing) ||
+                gearset->Id       != i                                                   ||
+                gearset->ClassJob != classJobID)
+                continue;
+
+            gearsetData = *gearset;
+            return true;
+        }
+            
+        return false;
+    }
 
     public static bool SwitchGearset(uint classJob)
     {
