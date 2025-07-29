@@ -60,4 +60,7 @@ public static class LuminaWrapper
     
     public static string GetAchievementKindName(uint rowID) =>
         LuminaGetter.TryGetRow<AchievementKind>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static string GetFCChestName(uint rowID) => 
+        LuminaGetter.TryGetRow<FCChestName>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 }
