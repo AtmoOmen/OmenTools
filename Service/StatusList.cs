@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Excel;
 using LuminaStatus = Lumina.Excel.Sheets.Status;
@@ -10,7 +11,15 @@ namespace OmenTools.Service;
 public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status>, ICollection
 {
     public StatusList(void* pointer) : this((nint)pointer) { }
-    
+
+    public nint Address { get; } = address;
+
+    public int Length => Struct->NumValidStatuses;
+
+    private static int StatusSize { get; } = Marshal.SizeOf<CSStatus>();
+
+    private StatusManager* Struct => (StatusManager*)this.Address;
+
     public Status? this[int index]
     {
         get
@@ -18,12 +27,36 @@ public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status
             if (index < 0 || index > this.Length)
                 return null;
 
-            return new Status(Address);
+            var addr = this.GetStatusAddress(index);
+            return CreateStatusReference(addr);
         }
     }
 
-    public nint Address { get; } = address;
-    public int  Length  => Struct->NumValidStatuses;
+    public static StatusList? CreateStatusListReference(nint address)
+    {
+        var clientState = DService.ClientState;
+
+        if (clientState.LocalContentId == 0)
+            return null;
+
+        if (address == nint.Zero)
+            return null;
+
+        return new StatusList(address);
+    }
+
+    public static Status? CreateStatusReference(nint address)
+    {
+        var clientState = DService.ClientState;
+
+        if (clientState.LocalContentId == 0)
+            return null;
+
+        if (address == nint.Zero)
+            return null;
+
+        return new Status(address);
+    }
 
     public nint GetStatusAddress(int index)
     {
@@ -32,7 +65,7 @@ public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status
 
         return (nint)Unsafe.AsPointer(ref this.Struct->Status[index]);
     }
-    
+
     int IReadOnlyCollection<Status>.Count => this.Length;
 
     int ICollection.Count => this.Length;
@@ -64,8 +97,6 @@ public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status
             index++;
         }
     }
-    
-    private StatusManager* Struct => (StatusManager*)this.Address;
 }
 
 public unsafe class Status(nint address)
