@@ -12,10 +12,13 @@ public static partial class ImGuiOm
         ImGui.Text(text);
     }
 
-    public static void TextImage(string text, nint imageHandle, Vector2 imageSize)
+    public static void TextImage(string text, nint imageHandle, Vector2 imageSize) =>
+        TextImage(text, new ImTextureID(imageHandle), imageSize);
+    
+    public static void TextImage(string text, ImTextureID imageHandle, Vector2 imageSize)
     {
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
-        ImGui.Image(new(imageHandle), imageSize);
+        ImGui.Image(imageHandle, imageSize);
 
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetStyle().FramePadding.Y);

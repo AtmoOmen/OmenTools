@@ -77,22 +77,34 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static bool SelectableImageWithText(nint imageHandle, Vector2 imageSize, string text, bool selected,
+    public static bool SelectableImageWithText(
+        nint                 imageHandle,
+        Vector2              imageSize,
+        string               text,
+        bool                 selected,
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None) =>
+        SelectableImageWithText(new ImTextureID(imageHandle), imageSize, text, selected, flags);
+
+    public static bool SelectableImageWithText(
+        ImTextureID          imageHandle,
+        Vector2              imageSize,
+        string               text,
+        bool                 selected,
         ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{imageHandle}_{text}_{imageSize}");
 
         var windowDrawList = ImGui.GetWindowDrawList();
-        var cursorPos = ImGui.GetCursorScreenPos();
-        var textSize = ImGui.CalcTextSize(text);
-        var totalHeight = Math.Max(imageSize.Y, textSize.Y);
+        var cursorPos      = ImGui.GetCursorScreenPos();
+        var textSize       = ImGui.CalcTextSize(text);
+        var totalHeight    = Math.Max(imageSize.Y, textSize.Y);
         var selectableSize = new Vector2(ImGui.GetContentRegionAvail().X, totalHeight);
 
         var result = ImGui.Selectable(string.Empty, selected, flags, selectableSize);
 
         var imagePos = cursorPos with { Y = cursorPos.Y + ((totalHeight - imageSize.Y) / 2) + 2.5f };
-        
-        windowDrawList.AddImage(new(imageHandle), imagePos, new(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
+
+        windowDrawList.AddImage(imageHandle, imagePos, new(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
 
         var textPos = new Vector2(cursorPos.X + imageSize.X                      + ImGui.GetStyle().ItemSpacing.X,
                                   cursorPos.Y + ((totalHeight - textSize.Y) / 2) + 2.5f);
@@ -105,7 +117,7 @@ public static partial class ImGuiOm
     }
 
     public static bool SelectableImageWithText(nint imageHandle, Vector2 imageSize, string text, ref bool selected,
-        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
+                                               ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
         ImGui.PushID($"{imageHandle}_{text}_{imageSize}");
 
