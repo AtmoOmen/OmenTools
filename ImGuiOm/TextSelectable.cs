@@ -1,9 +1,6 @@
 ﻿using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
-using Dalamud.Interface.Utility.Raii;
-using Dalamud.Utility;
-using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
 
@@ -35,12 +32,12 @@ public static partial class ImGuiOm
         var finalSize  = new Vector2(lineLength + (2 * ImGui.GetStyle().FramePadding.X), lines.Length * lineHeight);
 
         var textTemp   = wrappedText;
-        var textLength = (uint)(wrappedText.Length + 1);
+        var textLength = wrappedText.Length + 1;
 
         var startPos       = ImGui.GetCursorPos();
         var screenStartPos = ImGui.GetCursorScreenPos();
 
-        using (ImRaii.PushColor(ImGuiCol.FrameBg, colorBG == null ? ImGui.GetColorU32(ImGuiCol.WindowBg) : colorBG.Value))
+        using (ImRaii.PushColor(ImGuiCol.FrameBg, colorBG ?? ImGui.GetColorU32(ImGuiCol.WindowBg)))
         {
             ImGui.SetCursorPos(startPos - ImGui.GetStyle().FramePadding);
             ImGui.InputTextMultiline(uniqueId, ref textTemp, textLength, finalSize,

@@ -1,13 +1,17 @@
 ﻿using System.Numerics;
-using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
     public static void CircleOutlined(
-        Vector2 center, float radius, Vector4 fillColor, Vector4 outlineColor = default, float outlineThickness = 1.5f,
-        float opacity = 1f, ImDrawListPtr? drawList = null)
+        Vector2        center,
+        float          radius,
+        Vector4        fillColor,
+        Vector4        outlineColor     = default,
+        float          outlineThickness = 1.5f,
+        float          opacity          = 1f,
+        ImDrawListPtr? drawList         = null)
     {
         drawList ??= ImGui.GetBackgroundDrawList();
 
@@ -15,7 +19,7 @@ public static partial class ImGuiOm
             outlineColor = new Vector4(0, 0, 0, 1);
 
         // 不透明度
-        var fillColorWithOpacity = new Vector4(fillColor.X, fillColor.Y, fillColor.Z, fillColor.W * opacity);
+        var fillColorWithOpacity    = fillColor with { W = fillColor.W * opacity };
         var outlineColorWithOpacity = new Vector4(outlineColor.X, outlineColor.Y, outlineColor.Z, outlineColor.W * opacity);
 
         // 描边

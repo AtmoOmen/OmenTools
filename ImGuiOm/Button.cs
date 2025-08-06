@@ -3,7 +3,6 @@ using Dalamud.Interface;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;
 using Dalamud.Utility;
-using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
 
@@ -204,7 +203,7 @@ public static partial class ImGuiOm
 
     public static bool ButtonImageWithTextVertical(IDalamudTextureWrap icon, string text)
     {
-        ImGui.PushID($"{text}_{icon.ImGuiHandle}");
+        ImGui.PushID($"{text}_{icon.Handle}");
 
         var iconSize = icon.Size;
         var textSize = ImGui.CalcTextSize(text);
@@ -231,7 +230,7 @@ public static partial class ImGuiOm
             iconStartPos.Y + iconSize.Y + spacing);
 
         var windowDrawList = ImGui.GetWindowDrawList();
-        windowDrawList.AddImage(icon.ImGuiHandle, iconStartPos, iconEndPos);
+        windowDrawList.AddImage(icon.Handle, iconStartPos, iconEndPos);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         ImGui.PopID();
@@ -241,7 +240,7 @@ public static partial class ImGuiOm
 
     public static bool ButtonImageWithTextVertical(IDalamudTextureWrap icon, string text, Vector2 buttonSize)
     {
-        ImGui.PushID($"{text}_{icon.ImGuiHandle}");
+        ImGui.PushID($"{text}_{icon.Handle}");
 
         var iconSize = icon.Size;
         var textSize = ImGui.CalcTextSize(text);
@@ -260,7 +259,7 @@ public static partial class ImGuiOm
             cursorScreenPos.X + ((buttonSize.X - textSize.X) / 2),
             iconPos.Y + iconSize.Y);
 
-        windowDrawList.AddImage(icon.ImGuiHandle, iconPos, iconEndPos);
+        windowDrawList.AddImage(icon.Handle, iconPos, iconEndPos);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         ImGui.PopID();

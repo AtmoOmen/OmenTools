@@ -84,7 +84,7 @@ internal sealed class AetheryteEntry : IAetheryteEntry
 
     public uint GilCost => this.data.GilCost;
 
-    public bool IsFavourite => this.data.IsFavourite != 0;
+    public bool IsFavourite => this.data.IsFavourite;
     
     public bool IsSharedHouse => this.data.IsSharedHouse;
 

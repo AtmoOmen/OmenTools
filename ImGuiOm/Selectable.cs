@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using Dalamud.Interface;
-using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
 
@@ -89,13 +88,14 @@ public static partial class ImGuiOm
         var totalHeight = Math.Max(imageSize.Y, textSize.Y);
         var selectableSize = new Vector2(ImGui.GetContentRegionAvail().X, totalHeight);
 
-        var result = ImGui.Selectable("", selected, flags, selectableSize);
+        var result = ImGui.Selectable(string.Empty, selected, flags, selectableSize);
 
-        var imagePos = new Vector2(cursorPos.X, cursorPos.Y + (totalHeight - imageSize.Y) / 2 + 2.5f);
-        windowDrawList.AddImage(imageHandle, imagePos, new Vector2(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
+        var imagePos = cursorPos with { Y = cursorPos.Y + ((totalHeight - imageSize.Y) / 2) + 2.5f };
+        
+        windowDrawList.AddImage(new(imageHandle), imagePos, new(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
 
-        var textPos = new Vector2(cursorPos.X + imageSize.X + ImGui.GetStyle().ItemSpacing.X,
-            cursorPos.Y + (totalHeight - textSize.Y) / 2 + 2.5f);
+        var textPos = new Vector2(cursorPos.X + imageSize.X                      + ImGui.GetStyle().ItemSpacing.X,
+                                  cursorPos.Y + ((totalHeight - textSize.Y) / 2) + 2.5f);
 
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
@@ -117,8 +117,8 @@ public static partial class ImGuiOm
 
         var result = ImGui.Selectable("", ref selected, flags, selectableSize);
 
-        var imagePos = new Vector2(cursorPos.X, cursorPos.Y + (totalHeight - imageSize.Y) / 2 + 2.5f);
-        windowDrawList.AddImage(imageHandle, imagePos, new Vector2(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
+        var imagePos = cursorPos with { Y = cursorPos.Y + (totalHeight - imageSize.Y) / 2 + 2.5f };
+        windowDrawList.AddImage(new(imageHandle), imagePos, new Vector2(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y));
 
         var textPos = new Vector2(cursorPos.X + imageSize.X + ImGui.GetStyle().ItemSpacing.X,
             cursorPos.Y + (totalHeight - textSize.Y) / 2 + 2.5f);

@@ -1,10 +1,6 @@
 ﻿using System.Numerics;
-using System.Text;
-using System.Text.RegularExpressions;
 using Dalamud.Interface;
-using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
-using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
 
@@ -19,7 +15,7 @@ public static partial class ImGuiOm
     public static void TextImage(string text, nint imageHandle, Vector2 imageSize)
     {
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
-        ImGui.Image(imageHandle, imageSize);
+        ImGui.Image(new(imageHandle), imageSize);
 
         ImGui.SameLine();
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetStyle().FramePadding.Y);

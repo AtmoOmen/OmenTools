@@ -1,6 +1,4 @@
 using System.Buffers;
-using Dalamud.Game.ClientState.Objects.Types;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Net;
@@ -11,19 +9,16 @@ using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Hooking;
 using Dalamud.Memory;
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using FFXIVClientStructs.FFXIV.Client.System.String;
-using ImGuiNET;
-using SeString = Lumina.Text.SeString;
+using SeString = Lumina.Text.ReadOnly.ReadOnlySeString;
 using Timer = System.Timers.Timer;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using OmenTools.Infos;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using Dalamud.Game.ClientState.Party;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using Lumina.Excel.Sheets;
 using Aetheryte = Lumina.Excel.Sheets.Aetheryte;
@@ -658,7 +653,8 @@ public static unsafe partial class HelpersOm
 
     public static Vector3 ToPosition(this Level level) => new(level.X, level.Y, level.Z);
 
-    public static string ExtractText(this SeString s, bool onlyFirst = false) => s.ToDalamudString().ExtractText(onlyFirst);
+    public static string ExtractText(this SeString s, bool onlyFirst = false) => 
+        s.ToDalamudString().ExtractText(onlyFirst);
 
     public static string ExtractText(this Utf8String s)
     {

@@ -89,7 +89,7 @@ public unsafe class LocalPlayerState
     /// 当前是否为等级同步状态
     /// </summary>
     public static bool IsLevelSynced =>
-        PlayerState.Instance()->IsLevelSynced != 0;
+        PlayerState.Instance()->IsLevelSynced;
 
     /// <summary>
     /// 当前是否在任一队伍中

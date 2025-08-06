@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using Dalamud.Interface.Style;
-using ImGuiNET;
 
 namespace OmenTools.Infos;
 
@@ -12,10 +11,11 @@ public static partial class InfosOm
     public static Vector4 ColorGradient()
     {
         const float period = 1f;
-        var t = (float)ImGui.GetTime() % period / period;
-        var red = (MathF.Sin(2 * MathF.PI * t) + 1) / 2;
-        var green = (MathF.Sin(2 * MathF.PI * (t + 1f / 3f)) + 1) / 2;
-        var blue = (MathF.Sin(2 * MathF.PI * (t + 2f / 3f)) + 1) / 2;
+        
+        var t     = (float)ImGui.GetTime() % period                 / period;
+        var red   = (MathF.Sin(2 * MathF.PI * t)               + 1) / 2;
+        var green = (MathF.Sin(2 * MathF.PI * (t + (1f / 3f))) + 1) / 2;
+        var blue  = (MathF.Sin(2 * MathF.PI * (t + (2f / 3f))) + 1) / 2;
 
         return new Vector4(red, green, blue, 1f);
     }

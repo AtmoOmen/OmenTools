@@ -1,6 +1,5 @@
 ﻿using System.Numerics;
 using Dalamud.Interface.Colors;
-using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
 

@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
 
@@ -15,7 +14,7 @@ public static partial class ImGuiOm
         
         ImGui.SameLine();
         ImGui.SetCursorPosX(startCursorPos.X + ImGui.GetTreeNodeToLabelSpacing());
-        ImGui.Image(image, imageSize);
+        ImGui.Image(new(image), imageSize);
         
         return isOpen;
     }

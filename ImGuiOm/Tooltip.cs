@@ -1,6 +1,4 @@
 ﻿using Dalamud.Interface.Colors;
-using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
 
 namespace OmenTools.ImGuiOm;
 

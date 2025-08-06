@@ -5,61 +5,67 @@ namespace OmenTools.Infos;
 public static partial class InfosOm
 {
     public static bool OccupiedInEvent =>
-        DService.Condition[ConditionFlag.Occupied]
-        || DService.Condition[ConditionFlag.Occupied30]
-        || DService.Condition[ConditionFlag.Occupied33]
-        || DService.Condition[ConditionFlag.Occupied38]
-        || DService.Condition[ConditionFlag.Occupied39]
-        || DService.Condition[ConditionFlag.OccupiedInCutSceneEvent]
-        || DService.Condition[ConditionFlag.OccupiedInEvent]
-        || DService.Condition[ConditionFlag.OccupiedInQuestEvent]
-        || DService.Condition[ConditionFlag.OccupiedSummoningBell]
-        || DService.Condition[ConditionFlag.WatchingCutscene]
-        || DService.Condition[ConditionFlag.WatchingCutscene78]
-        || DService.Condition[ConditionFlag.BetweenAreas]
-        || DService.Condition[ConditionFlag.BetweenAreas51]
-        || DService.Condition[ConditionFlag.InThatPosition]
-        || DService.Condition[ConditionFlag.TradeOpen]
-        || DService.Condition[ConditionFlag.Crafting]
-        || DService.Condition[ConditionFlag.InThatPosition]
-        || DService.Condition[ConditionFlag.Unconscious]
-        || DService.Condition[ConditionFlag.MeldingMateria]
-        || DService.Condition[ConditionFlag.Gathering]
-        || DService.Condition[ConditionFlag.OperatingSiegeMachine]
-        || DService.Condition[ConditionFlag.CarryingItem]
-        || DService.Condition[ConditionFlag.CarryingObject]
-        || DService.Condition[ConditionFlag.BeingMoved]
-        || DService.Condition[ConditionFlag.Emoting]
-        || DService.Condition[ConditionFlag.Mounted2]
-        || DService.Condition[ConditionFlag.Mounting]
-        || DService.Condition[ConditionFlag.Mounting71]
-        || DService.Condition[ConditionFlag.ParticipatingInCustomMatch]
-        || DService.Condition[ConditionFlag.PlayingLordOfVerminion]
-        || DService.Condition[ConditionFlag.ChocoboRacing]
-        || DService.Condition[ConditionFlag.PlayingMiniGame]
-        || DService.Condition[ConditionFlag.Performing]
-        || DService.Condition[ConditionFlag.PreparingToCraft]
-        || DService.Condition[ConditionFlag.Fishing]
-        || DService.Condition[ConditionFlag.Transformed]
-        || DService.Condition[ConditionFlag.UsingHousingFunctions]
-        || DService.ObjectTable.LocalPlayer?.IsTargetable != true;
+        DService.Condition.Any(
+            ConditionFlag.Occupied,
+            ConditionFlag.Occupied30,
+            ConditionFlag.Occupied33,
+            ConditionFlag.Occupied38,
+            ConditionFlag.Occupied39,
+            ConditionFlag.OccupiedInCutSceneEvent,
+            ConditionFlag.OccupiedInEvent,
+            ConditionFlag.OccupiedInQuestEvent,
+            ConditionFlag.OccupiedSummoningBell,
+            ConditionFlag.WatchingCutscene,
+            ConditionFlag.WatchingCutscene78,
+            ConditionFlag.BetweenAreas,
+            ConditionFlag.BetweenAreas51,
+            ConditionFlag.InThatPosition,
+            ConditionFlag.TradeOpen,
+            ConditionFlag.Crafting,
+            ConditionFlag.Unconscious,
+            ConditionFlag.MeldingMateria,
+            ConditionFlag.Gathering,
+            ConditionFlag.OperatingSiegeMachine,
+            ConditionFlag.CarryingItem,
+            ConditionFlag.CarryingObject,
+            ConditionFlag.BeingMoved,
+            ConditionFlag.Emoting,
+            ConditionFlag.RidingPillion,
+            ConditionFlag.Mounting,
+            ConditionFlag.Mounting71,
+            ConditionFlag.ParticipatingInCustomMatch,
+            ConditionFlag.PlayingLordOfVerminion,
+            ConditionFlag.ChocoboRacing,
+            ConditionFlag.PlayingMiniGame,
+            ConditionFlag.Performing,
+            ConditionFlag.PreparingToCraft,
+            ConditionFlag.Fishing,
+            ConditionFlag.Transformed,
+            ConditionFlag.UsingHousingFunctions) || 
+        DService.ObjectTable.LocalPlayer?.IsTargetable != true;
 
-    public static bool BetweenAreas => DService.Condition[ConditionFlag.BetweenAreas] || DService.Condition[ConditionFlag.BetweenAreas51];
+    public static bool BetweenAreas => 
+        DService.Condition.Any(ConditionFlag.BetweenAreas, ConditionFlag.BetweenAreas51);
 
-    public static bool BoundByDuty => DService.Condition[ConditionFlag.BoundByDuty] ||
-                                        DService.Condition[ConditionFlag.BoundByDuty56] ||
-                                        DService.Condition[ConditionFlag.BoundByDuty95] ||
-                                        DService.Condition[ConditionFlag.InDutyQueue];
+    public static bool BoundByDuty =>
+        DService.Condition.Any(
+            ConditionFlag.BoundByDuty,
+            ConditionFlag.BoundByDuty56,
+            ConditionFlag.BoundByDuty95,
+            ConditionFlag.InDutyQueue);
 
-    public static bool WatchingCutscene => DService.Condition[ConditionFlag.WatchingCutscene] ||
-                                           DService.Condition[ConditionFlag.WatchingCutscene78];
+    public static bool WatchingCutscene =>
+        DService.Condition.Any(ConditionFlag.WatchingCutscene, ConditionFlag.WatchingCutscene78);
 
-    public static bool IsCasting => DService.Condition[ConditionFlag.Casting] || DService.Condition[ConditionFlag.Casting87];
+    public static bool IsCasting => 
+        DService.Condition.Any(ConditionFlag.Casting, ConditionFlag.Casting87);
 
-    public static bool IsOnMount => DService.Condition[ConditionFlag.Mounted] || DService.Condition[ConditionFlag.Mounted2];
+    public static bool IsOnMount => 
+        DService.Condition.Any(ConditionFlag.Mounted, ConditionFlag.RidingPillion);
 
-    public static bool CanMount => !DService.Condition[ConditionFlag.Mounted] && !DService.Condition[ConditionFlag.Mounting] && !DService.Condition[ConditionFlag.InCombat] && !DService.Condition[ConditionFlag.Casting];
+    public static bool CanMount =>
+        !DService.Condition.Any(ConditionFlag.Mounted, ConditionFlag.Mounting, ConditionFlag.InCombat, ConditionFlag.Casting);
 
-    public static bool IsOnWorldTravel => DService.Condition[ConditionFlag.WaitingToVisitOtherWorld] ||
-                                          DService.Condition[ConditionFlag.ReadyingVisitOtherWorld];
+    public static bool IsOnWorldTravel => 
+        DService.Condition.Any(ConditionFlag.WaitingToVisitOtherWorld, ConditionFlag.ReadyingVisitOtherWorld);
 }

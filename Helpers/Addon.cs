@@ -6,8 +6,6 @@ using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiNET;
-using OmenTools.Infos;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -75,7 +73,7 @@ public static unsafe partial class HelpersOm
         var agent = AgentInventoryContext.Instance();
         if (agent == null) return false;
 
-        agent->OpenForItemSlot(type, slot, GetActiveInventoryAddonID());
+        agent->OpenForItemSlot(type, slot, 0, GetActiveInventoryAddonID());
         return true;
     }
 
@@ -191,39 +189,40 @@ public static unsafe partial class HelpersOm
 
     public static bool TryGetAddonByName(string addonName, out AtkUnitBase* addonPtr)
     {
-        var a = DService.Gui.GetAddonByName(addonName);
-        if (a == nint.Zero)
+        var addon = DService.Gui.GetAddonByName(addonName).Address;
+        if (addon == nint.Zero)
         {
             addonPtr = null;
             return false;
         }
 
-        addonPtr = (AtkUnitBase*)a;
+        addonPtr = (AtkUnitBase*)addon;
         return true;
     }
     
     public static bool TryGetAddonByName<T>(string addonName, out T* addonPtr) where T : unmanaged
     {
-        var a = DService.Gui.GetAddonByName(addonName);
-        if (a == nint.Zero)
+        var addon = DService.Gui.GetAddonByName(addonName).Address;
+        if (addon == nint.Zero)
         {
             addonPtr = null;
             return false;
         }
 
-        addonPtr = (T*)a;
+        addonPtr = (T*)addon;
         return true;
     }
 
     public static T* GetAddonByName<T>(string addonName) where T : unmanaged
     {
-        var a = DService.Gui.GetAddonByName(addonName);
+        var a = DService.Gui.GetAddonByName(addonName).Address;
         if (a == nint.Zero) return null;
 
         return (T*)a;
     }
 
-    public static AtkUnitBase* GetAddonByName(string name) => GetAddonByName<AtkUnitBase>(name);
+    public static AtkUnitBase* GetAddonByName(string name) => 
+        GetAddonByName<AtkUnitBase>(name);
 
     public static bool IsAddonAndNodesReady(AtkUnitBase* UI) =>
         UI != null && UI->IsVisible && UI->UldManager.LoadedState == AtkLoadState.Loaded && UI->RootNode != null &&

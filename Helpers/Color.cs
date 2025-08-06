@@ -1,7 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
-using ImGuiNET;
 
 namespace OmenTools.Helpers;
 

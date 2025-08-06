@@ -155,7 +155,7 @@ public static unsafe class GameState
     /// 诛灭战限时奖励提升中 (必须在副本外)
     /// </summary>
     public static bool IsChaoticRaidBonusActive =>
-        !IsInInstanceArea && UIState.Instance()->InstanceContent.IsLimitedTimeBonusActive == 1;
+        !IsInInstanceArea && UIState.Instance()->InstanceContent.IsLimitedTimeBonusActive;
     
     /// <summary>
     /// 当前帧率

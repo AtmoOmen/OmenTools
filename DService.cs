@@ -1,14 +1,9 @@
 ﻿global using static OmenTools.Helpers.HelpersOm;
 global using static OmenTools.Infos.InfosOm;
-
-using Dalamud.Game;
-using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using OmenTools.Helpers;
-using OmenTools.Service;
 
 namespace OmenTools;
 
@@ -59,7 +54,6 @@ public class DService
     [PluginService] public static IGameInteropProvider Hook            { get; private set; } = null!;
     [PluginService] public static IGameInventory       Inventory       { get; private set; } = null!;
     [PluginService] public static IGameLifecycle       Lifecycle       { get; private set; } = null!;
-    [PluginService] public static IGameNetwork         Network         { get; private set; } = null!;
     [PluginService] public static IGamepadState        Gamepad         { get; private set; } = null!;
     [PluginService] public static IJobGauges           JobGauges       { get; private set; } = null!;
     [PluginService] public static IKeyState            KeyState        { get; private set; } = null!;

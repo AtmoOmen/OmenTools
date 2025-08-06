@@ -178,8 +178,8 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
 internal unsafe class BattleChara(nint address) : Character(address), IBattleChara
 {
     public StatusList   StatusList          => new(this.Struct->GetStatusManager());
-    public bool         IsCasting           => CastInfo.IsCasting     > 0;
-    public bool         IsCastInterruptible => CastInfo.Interruptible > 0;
+    public bool         IsCasting           => CastInfo.IsCasting;
+    public bool         IsCastInterruptible => CastInfo.Interruptible;
     public ActionType   CastActionType      => CastInfo.ActionType;
     public uint         CastActionId        => CastInfo.ActionId;
     public ulong        CastTargetObjectId  => CastInfo.TargetId;
