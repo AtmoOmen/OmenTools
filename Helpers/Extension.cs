@@ -18,6 +18,7 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reflection;
 using Dalamud.Game.ClientState.Party;
+using Dalamud.Game.NativeWrapper;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using Lumina.Excel.Sheets;
@@ -366,7 +367,11 @@ public static unsafe partial class HelpersOm
         return nint.Zero;
     }
 
-    public static AtkUnitBase* ToAtkUnitBase(this nint ptr) => (AtkUnitBase*)ptr;
+    public static AtkUnitBase* ToAtkUnitBase(this nint ptr) => 
+        (AtkUnitBase*)ptr;
+    
+    public static AtkUnitBase* ToAtkUnitBase(this AtkUnitBasePtr wrapper) => 
+        (AtkUnitBase*)wrapper.Address;
 
     public static void ClickAddonRadioButton(this AtkComponentRadioButton target, AtkUnitBase* addon, uint which, EventType type = EventType.CHANGE)
         => ClickAddonComponent(addon, (&target)->OwnerNode, which, type);

@@ -1,7 +1,7 @@
 ﻿using Lumina.Text.Expressions;
 using Lumina.Text.ReadOnly;
 using DSeString = Dalamud.Game.Text.SeStringHandling.SeString;
-using LSeString = Lumina.Text.SeString;
+using LSeString = Lumina.Text.ReadOnly.ReadOnlySeString;
 
 namespace OmenTools.Infos;
 
@@ -32,12 +32,10 @@ public readonly struct SeStringParameter
 
     public static implicit operator SeStringParameter(uint value) => new(value);
 
-    public static implicit operator SeStringParameter(ReadOnlySeString value) => new(value);
+    public static implicit operator SeStringParameter(LSeString value) => new(value);
 
     public static implicit operator SeStringParameter(ReadOnlySeStringSpan value) => new(new ReadOnlySeString(value));
-
-    public static implicit operator SeStringParameter(LSeString value) => new(new ReadOnlySeString(value.RawData));
-
+    
     public static implicit operator SeStringParameter(DSeString value) => new(new ReadOnlySeString(value.Encode()));
 
     public static implicit operator SeStringParameter(string value) => new(value);
