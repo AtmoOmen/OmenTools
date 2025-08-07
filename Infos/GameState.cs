@@ -36,6 +36,9 @@ public static unsafe class GameState
         
         TaskHelper.Abort();
         TaskHelper = null;
+        
+        FateDirectorSetupHook?.Dispose();
+        FateDirectorSetupHook = null;
     }
     
     private static void OnDalamudLogin()
