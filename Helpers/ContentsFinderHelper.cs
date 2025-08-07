@@ -13,9 +13,8 @@ namespace OmenTools.Helpers;
 
 public class ContentsFinderHelper
 {
-    private static readonly CompSig RequestContentsFinderSig =
-        new("E8 ?? ?? ?? ?? 4C 8B B4 24 ?? ?? ?? ?? 4C 8B AC 24 ?? ?? ?? ?? 48 8B B4 24 ?? ?? ?? ?? 4C 8B BC 24");
-    private delegate bool RequestContentsFinderDelegate(uint[] contentsID, uint contentsCount, uint a3, ref ContentsFinderOption option);
+    private static readonly CompSig RequestContentsFinderSig = new("E8 ?? ?? ?? ?? 33 C0 E9 ?? ?? ?? ?? FE C8");
+    private delegate        bool RequestContentsFinderDelegate(uint[] contentsID, uint contentsCount, uint a3, ref ContentsFinderOption option);
     private static readonly RequestContentsFinderDelegate RequestContentsFinder;
 
     private static readonly CompSig RequestContentsFinderRouletteSig =
