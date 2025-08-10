@@ -20,6 +20,8 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* BattleTalk             => GetAddonByName("_BattleTalk");
     public static AtkUnitBase* MainCross              => GetAddonByName("_MainCross");
     public static AtkUnitBase* Exp                    => GetAddonByName("_Exp");
+    public static AtkUnitBase* NaviMap                => GetAddonByName("_NaviMap");
+    public static AtkUnitBase* CharaSelectRemain      => GetAddonByName("_CharaSelectRemain");
 
     #endregion
     
