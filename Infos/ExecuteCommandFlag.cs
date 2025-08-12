@@ -380,6 +380,16 @@ public enum ExecuteCommandFlag
     RequestSaddleBag = 444,
     
     /// <summary>
+    /// 请求支援物资退还箱物资数据
+    /// </summary>
+    RequestReconstrcutionBuyBack445 = 445,
+    
+    /// <summary>
+    /// 请求支援物资退还箱物资数据
+    /// </summary>
+    RequestReconstrcutionBuyBack446 = 446,
+    
+    /// <summary>
     /// 发送修理委托
     /// </summary>
     /// /// <remarks>
@@ -1038,6 +1048,14 @@ public enum ExecuteCommandFlag
     /// 获取时尚品鉴每周额外奖励
     /// </summary>
     FashionCheckBonusReward = 2451,
+    
+    /// <summary>
+    /// 买回支援物资
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 物品索引</para>
+    /// </remarks>
+    BuybackReconstrcutionItem = 2501,
 
     /// <summary>
     /// 请求金碟游乐场面板 多玛方城战 信息

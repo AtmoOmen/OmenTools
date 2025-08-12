@@ -15,6 +15,8 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* TitleLogo              => GetAddonByName("_TitleLogo");
     public static AtkUnitBase* TargetInfo             => GetAddonByName("_TargetInfo");
     public static AtkUnitBase* TargetInfoMainTarget   => GetAddonByName("_TargetInfoMainTarget");
+    public static AtkUnitBase* TargetInfoCastBar      => GetAddonByName("_TargetInfoCastBar");
+    public static AtkUnitBase* TargetInfoBuffDebuff   => GetAddonByName("_TargetInfoBuffDebuff");
     public static AtkUnitBase* CastBar                => GetAddonByName("_CastBar");
     public static AtkUnitBase* MainCommand            => GetAddonByName("_MainCommand");
     public static AtkUnitBase* BattleTalk             => GetAddonByName("_BattleTalk");
