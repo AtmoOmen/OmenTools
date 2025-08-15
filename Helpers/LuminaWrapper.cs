@@ -55,6 +55,9 @@ public static class LuminaWrapper
     public static string GetBNpcName(uint rowID) =>
         LuminaGetter.TryGetRow<BNpcName>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;
     
+    public static string GetEObjName(uint rowID) =>
+        LuminaGetter.TryGetRow<EObjName>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;
+    
     public static string GetJobName(uint rowID) =>
         LuminaGetter.TryGetRow<ClassJob>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
     
@@ -63,4 +66,7 @@ public static class LuminaWrapper
     
     public static string GetFCChestName(uint rowID) => 
         LuminaGetter.TryGetRow<FCChestName>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static string GetMKDSupportJobName(uint rowID) => 
+        LuminaGetter.TryGetRow<MKDSupportJob>(rowID, out var item) ? item.Unknown0.ExtractText() : string.Empty;
 }
