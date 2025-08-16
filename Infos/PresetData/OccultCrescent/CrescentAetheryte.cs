@@ -119,7 +119,7 @@ public class CrescentAetheryte(uint dataID, Vector3 position, CrescentAetheryteP
     }
     
     public bool Equals(CrescentAetheryte? other) => 
-        DataID == other.DataID;
+        DataID == other?.DataID;
 
     public override bool Equals(object? obj) => 
         obj is CrescentAetheryte other && Equals(other);

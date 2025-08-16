@@ -266,7 +266,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
         LuminaGetter.GetRow<MKDSupportJob>(DataID).GetValueOrDefault();
 
     public bool Equals(CrescentSupportJob? other) => 
-        DataID == other.DataID;
+        DataID == other?.DataID;
 
     public override bool Equals(object? obj) => 
         obj is CrescentSupportJob other && Equals(other);
