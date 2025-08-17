@@ -9,6 +9,9 @@ public static class LuminaWrapper
     public static string GetAddonText(uint rowID) => 
         LuminaGetter.TryGetRow<Addon>(rowID, out var item) ? item.Text.ExtractText() : string.Empty;
     
+    public static string GetDynamicEventName(uint rowID) => 
+        LuminaGetter.TryGetRow<DynamicEvent>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
     public static string GetDescriptionString(uint rowID) => 
         LuminaGetter.TryGetRow<DescriptionString>(rowID, out var item) ? item.Text.ExtractText() : string.Empty;
 
@@ -60,6 +63,9 @@ public static class LuminaWrapper
     
     public static string GetENpcName(uint rowID) =>
         LuminaGetter.TryGetRow<ENpcResident>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;
+    
+    public static string GetENpcTitle(uint rowID) =>
+        LuminaGetter.TryGetRow<ENpcResident>(rowID, out var item) ? item.Title.ExtractText() : string.Empty;
     
     public static string GetEObjName(uint rowID) =>
         LuminaGetter.TryGetRow<EObjName>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;

@@ -19,62 +19,62 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// <summary>
     ///     辅助骑士
     /// </summary>
-    public static CrescentSupportJob Knight { get; } = new(1, CrescentSupportJobType.Knight, 41589, 4233);
+    public static CrescentSupportJob Knight { get; } = new(1, CrescentSupportJobType.Knight, CrescentSupportJobUnlockType.None, 0, 41589, 4233);
 
     /// <summary>
     ///     辅助狂战士
     /// </summary>
-    public static CrescentSupportJob Berserker { get; } = new(2, CrescentSupportJobType.Berserker);
+    public static CrescentSupportJob Berserker { get; } = new(2, CrescentSupportJobType.Berserker, CrescentSupportJobUnlockType.CriticalEncounter, 35);
 
     /// <summary>
     ///     辅助武僧
     /// </summary>
-    public static CrescentSupportJob Monk { get; } = new(3, CrescentSupportJobType.Monk, 41597, 4239);
+    public static CrescentSupportJob Monk { get; } = new(3, CrescentSupportJobType.Monk, CrescentSupportJobUnlockType.None, 0, 41597, 4239);
 
     /// <summary>
     ///     辅助猎人
     /// </summary>
-    public static CrescentSupportJob Ranger { get; } = new(4, CrescentSupportJobType.Ranger);
+    public static CrescentSupportJob Ranger { get; } = new(4, CrescentSupportJobType.Ranger, CrescentSupportJobUnlockType.CriticalEncounter, 34);
 
     /// <summary>
     ///     辅助武士
     /// </summary>
-    public static CrescentSupportJob Samurai { get; } = new(5, CrescentSupportJobType.Samurai);
+    public static CrescentSupportJob Samurai { get; } = new(5, CrescentSupportJobType.Samurai, CrescentSupportJobUnlockType.GoldPiece, 45044);
 
     /// <summary>
     ///     辅助吟游诗人
     /// </summary>
-    public static CrescentSupportJob Bard { get; } = new(6, CrescentSupportJobType.Bard, 41609, 4244);
+    public static CrescentSupportJob Bard { get; } = new(6, CrescentSupportJobType.Bard, CrescentSupportJobUnlockType.None, 0, 41609, 4244);
 
     /// <summary>
     ///     辅助风水师
     /// </summary>
-    public static CrescentSupportJob Geomancer { get; } = new(7, CrescentSupportJobType.Geomancer);
+    public static CrescentSupportJob Geomancer { get; } = new(7, CrescentSupportJobType.Geomancer, CrescentSupportJobUnlockType.GoldPiece, 45044);
 
     /// <summary>
     ///     辅助时魔法师
     /// </summary>
-    public static CrescentSupportJob TimeMage { get; } = new(8, CrescentSupportJobType.TimeMage);
+    public static CrescentSupportJob TimeMage { get; } = new(8, CrescentSupportJobType.TimeMage, CrescentSupportJobUnlockType.SilverPiece, 45043);
 
     /// <summary>
     ///     辅助炮击士
     /// </summary>
-    public static CrescentSupportJob Cannoneer { get; } = new(9, CrescentSupportJobType.Cannoneer);
+    public static CrescentSupportJob Cannoneer { get; } = new(9, CrescentSupportJobType.Cannoneer, CrescentSupportJobUnlockType.SilverPiece, 45043);
 
     /// <summary>
     ///     辅助药剂师
     /// </summary>
-    public static CrescentSupportJob Chemist { get; } = new(10, CrescentSupportJobType.Chemist);
+    public static CrescentSupportJob Chemist { get; } = new(10, CrescentSupportJobType.Chemist, CrescentSupportJobUnlockType.SilverPiece, 45043);
 
     /// <summary>
     ///     辅助预言师
     /// </summary>
-    public static CrescentSupportJob Oracle { get; } = new(11, CrescentSupportJobType.Oracle);
+    public static CrescentSupportJob Oracle { get; } = new(11, CrescentSupportJobType.Oracle, CrescentSupportJobUnlockType.CriticalEncounter, 42);
 
     /// <summary>
     ///     辅助盗贼
     /// </summary>
-    public static CrescentSupportJob Thief { get; } = new(12, CrescentSupportJobType.Thief);
+    public static CrescentSupportJob Thief { get; } = new(12, CrescentSupportJobType.Thief, CrescentSupportJobUnlockType.GoldPiece, 45044);
 
     /// <summary>
     /// 全部辅助职业
@@ -126,26 +126,34 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// <summary>
     /// 新月岛中的 辅助职业 数据类
     /// </summary>
-    public CrescentSupportJob(byte dataID, CrescentSupportJobType jobType, uint longTimeStatusActionID = 0, uint longTimeStatusID = 0)
+    public CrescentSupportJob(
+        byte                         dataID,
+        CrescentSupportJobType       jobType,
+        CrescentSupportJobUnlockType unlockType = CrescentSupportJobUnlockType.None,
+        uint                         unlockLink = 0,
+        uint                         longTimeStatusActionID = 0,
+        uint                         longTimeStatusID       = 0)
     {
         DataID                 = dataID;
         JobType                = jobType;
+        UnlockType             = unlockType;
+        UnlockLink             = unlockLink;
         LongTimeStatusActionID = longTimeStatusActionID;
         LongTimeStatusID       = longTimeStatusID;
-        
+
         var        data    = GetData();
         List<uint> actions = [data.Unknown5, data.Unknown6, data.Unknown7, data.Unknown8, data.Unknown9];
         List<byte> levels  = [data.Unknown12, data.Unknown13, data.Unknown14, data.Unknown15, data.Unknown16];
         for (var i = 0; i < actions.Count; i++)
         {
             var action = actions[i];
-            var level = levels[i];
+            var level  = levels[i];
             if (action == 0 || level == 0) continue;
-            
+
             Actions[action] = level;
         }
     }
-    
+
     /// <summary>
     /// MKDSupportJob ID
     /// </summary>
@@ -155,6 +163,16 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// 类型
     /// </summary>
     public CrescentSupportJobType JobType { get; }
+    
+    /// <summary>
+    /// 解锁类型
+    /// </summary>
+    public CrescentSupportJobUnlockType UnlockType { get; }
+    
+    /// <summary>
+    /// 解锁用物品/紧急遭遇战 ID
+    /// </summary>
+    public uint UnlockLink { get; }
     
     /// <summary>
     /// 长效增益状态效果技能 ID (仅 辅助骑士 / 辅助武僧 / 辅助吟游诗人)
@@ -177,6 +195,24 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// </summary>
     public string Name =>
         GetData().Unknown0.ExtractText();
+
+    public string UnlockTypeName =>
+        UnlockType switch
+        {
+            CrescentSupportJobUnlockType.CriticalEncounter => LuminaWrapper.GetAddonText(13988),
+            CrescentSupportJobUnlockType.SilverPiece       => $"{LuminaWrapper.GetENpcName(1053614)} ({LuminaWrapper.GetENpcTitle(1053614)})",
+            CrescentSupportJobUnlockType.GoldPiece         => $"{LuminaWrapper.GetENpcName(1053614)} ({LuminaWrapper.GetENpcTitle(1053614)})",
+            _                                              => string.Empty
+        };
+
+    public string UnlockLinkName =>
+        UnlockType switch
+        {
+            CrescentSupportJobUnlockType.CriticalEncounter => LuminaWrapper.GetDynamicEventName(UnlockLink),
+            CrescentSupportJobUnlockType.SilverPiece       => $"{LuminaWrapper.GetItemName(UnlockLink)} x1000",
+            CrescentSupportJobUnlockType.GoldPiece         => $"{LuminaWrapper.GetItemName(UnlockLink)} x1600",
+            _                                              => string.Empty
+        };
     
     /// <summary>
     /// 辅助职业最大能达到的等级
@@ -347,4 +383,27 @@ public enum CrescentSupportJobType : byte
     /// 辅助盗贼
     /// </summary>
     Thief = 12
+}
+
+public enum CrescentSupportJobUnlockType
+{
+    /// <summary>
+    /// 无需解锁
+    /// </summary>
+    None,
+    
+    /// <summary>
+    /// 十二城邦银币 (固定为 1000)
+    /// </summary>
+    SilverPiece,
+    
+    /// <summary>
+    /// 十二城邦金币 (固定为 1600)
+    /// </summary>
+    GoldPiece,
+    
+    /// <summary>
+    /// 紧急遭遇战
+    /// </summary>
+    CriticalEncounter
 }
