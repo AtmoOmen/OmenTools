@@ -35,6 +35,16 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         return isObtained;
     }
 
+    public static string GetEventTypeName(CrescentEventType type) =>
+        type switch
+        {
+            CrescentEventType.FATE      => LuminaWrapper.GetAddonText(2275),
+            CrescentEventType.CE        => LuminaWrapper.GetAddonText(13988),
+            CrescentEventType.ForkTower => LuminaWrapper.GetDescriptionString(1205),
+            CrescentEventType.MagicPot  => LuminaWrapper.GetENpcName(1005475),
+            _                           => string.Empty
+        };
+
     /// <summary>
     /// 数据 ID
     /// </summary>
