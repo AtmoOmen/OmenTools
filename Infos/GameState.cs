@@ -236,7 +236,7 @@ public static unsafe class GameState
     /// 当前 TerritoryType ID
     /// </summary>
     public static uint TerritoryType => 
-        GameMain.Instance()->CurrentTerritoryTypeId;
+        AgentMap.Instance()->CurrentTerritoryId;
     
     /// <summary>
     /// 当前 TerritoryType 表数据
