@@ -53,6 +53,12 @@ public static unsafe partial class HelpersOm
     }
 
     /// <summary>
+    /// 将普通数字转换为 SE 数字字符
+    /// </summary>
+    public static string ToSENumberSmall(ulong number) => 
+        string.Concat(number.ToString().Select(digit => (char)(0xE060 + (digit - '0'))));
+
+    /// <summary>
     /// 给定字符串是否均为汉字
     /// </summary>
     public static bool IsChineseString(string text) => 
