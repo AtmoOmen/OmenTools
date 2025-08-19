@@ -152,6 +152,19 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
 
             Actions[action] = level;
         }
+
+        foreach (var trait in LuminaGetter.Get<MKDTrait>())
+        {
+            if (trait.Unknown2 == -1) continue;
+            
+            var supportJob  = trait.Unknown3;
+            if (supportJob != DataID) continue;
+            
+            var unlockLevel = trait.Unknown4;
+            Traits[trait.RowId] = unlockLevel;
+        }
+
+        Traits = Traits.OrderBy(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
     }
 
     /// <summary>
@@ -189,6 +202,12 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// 键: Action ID; 值: 解锁等级
     /// </summary>
     public Dictionary<uint, byte> Actions { get; init; } = [];
+    
+    /// <summary>
+    /// 辅助技能一览
+    /// 键: MKDTrait ID; 值: 解锁等级
+    /// </summary>
+    public Dictionary<uint, byte> Traits { get; init; } = [];
 
     /// <summary>
     /// 辅助职业名称
