@@ -81,4 +81,10 @@ public static class LuminaWrapper
     
     public static string GetMKDSupportJobName(uint rowID) => 
         LuminaGetter.TryGetRow<MKDSupportJob>(rowID, out var item) ? item.Unknown0.ExtractText() : string.Empty;
+    
+    public static string GetMKDSupportJobDescription(uint rowID) => 
+        LuminaGetter.TryGetRow<MKDSupportJob>(rowID, out var item) ? item.Unknown3.ExtractText() : string.Empty;
+    
+    public static string GetMKDTraitName(uint rowID) => 
+        LuminaGetter.TryGetRow<MKDTrait>(rowID, out var item) ? item.Unknown0.ExtractText() : string.Empty;
 }

@@ -24,6 +24,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* Exp                    => GetAddonByName("_Exp");
     public static AtkUnitBase* NaviMap                => GetAddonByName("_NaviMap");
     public static AtkUnitBase* CharaSelectRemain      => GetAddonByName("_CharaSelectRemain");
+    public static AtkUnitBase* ActionContents         => GetAddonByName("_ActionContents");
 
     #endregion
     
