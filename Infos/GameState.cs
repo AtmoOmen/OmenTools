@@ -107,6 +107,12 @@ public static unsafe class GameState
     }
 
     /// <summary>
+    /// 当前游戏 Delta Time
+    /// </summary>
+    public static float DeltaTime => 
+        Framework.Instance()->FrameDeltaTime;
+
+    /// <summary>
     /// 当前 Data Center
     /// </summary>
     public static uint CurrentDataCenter =>
