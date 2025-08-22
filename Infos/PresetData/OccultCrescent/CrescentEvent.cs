@@ -116,6 +116,13 @@ public class CrescentEvent : IEquatable<CrescentEvent>
     public long CELeftTimeSecond { get; set; }
     
     /// <summary>
+    /// 当前 CE 开始时间 (Unix 秒级时间戳)
+    /// 适用于 CE 类型
+    /// (临时数据)
+    /// </summary>
+    public long CEStartTime { get; set; }
+    
+    /// <summary>
     /// 新月岛中的野外事件 (CE / FATE / 魔法罐任务) 数据类
     /// </summary>
     public CrescentEvent(uint dataID)
@@ -182,13 +189,14 @@ public class CrescentEvent : IEquatable<CrescentEvent>
     /// <summary>
     /// 更新 FATE 相关临时数据
     /// </summary>
-    public void UpdateTempDataCE(string nameDisplay, DynamicEventState ceState, long leftTimeSecond = 0)
+    public void UpdateTempDataCE(string nameDisplay, DynamicEventState ceState, long startTime, long leftTimeSecond)
     {
         if (Type is not (CrescentEventType.CE or CrescentEventType.ForkTower)) return;
         
         NameDisplay      = nameDisplay;
         CEState          = ceState;
         CELeftTimeSecond = leftTimeSecond;
+        CEStartTime      = startTime;
     }
 
     /// <summary>
