@@ -95,6 +95,12 @@ public class CrescentEvent : IEquatable<CrescentEvent>
     public string NameDisplay { get; set; } = string.Empty;
 
     /// <summary>
+    /// 当前进度
+    /// (临时数据)
+    /// </summary>
+    public byte Progress { get; set; }
+    
+    /// <summary>
     /// 当前 FATE 状态
     /// 适用于 FATE 和 魔法罐任务 类型
     /// (临时数据)
@@ -114,6 +120,13 @@ public class CrescentEvent : IEquatable<CrescentEvent>
     /// (临时数据)
     /// </summary>
     public long CELeftTimeSecond { get; set; }
+    
+    /// <summary>
+    /// 当前 CE 开始时间 (Unix 秒级时间戳)
+    /// 适用于 CE 类型
+    /// (临时数据)
+    /// </summary>
+    public long CEStartTime { get; set; }
     
     /// <summary>
     /// 新月岛中的野外事件 (CE / FATE / 魔法罐任务) 数据类
@@ -171,10 +184,11 @@ public class CrescentEvent : IEquatable<CrescentEvent>
     /// <summary>
     /// 更新 FATE 相关临时数据
     /// </summary>
-    public void UpdateTempDataFATE(string nameDisplay, FateState fateState)
+    public void UpdateTempDataFATE(string nameDisplay, byte progress, FateState fateState)
     {
         if (Type is not (CrescentEventType.FATE or CrescentEventType.MagicPot)) return;
-        
+
+        Progress    = progress;
         NameDisplay = nameDisplay;
         FateState   = fateState;
     }
@@ -182,13 +196,15 @@ public class CrescentEvent : IEquatable<CrescentEvent>
     /// <summary>
     /// 更新 FATE 相关临时数据
     /// </summary>
-    public void UpdateTempDataCE(string nameDisplay, DynamicEventState ceState, long leftTimeSecond = 0)
+    public void UpdateTempDataCE(string nameDisplay, byte progress, DynamicEventState ceState, long startTime, long leftTimeSecond)
     {
         if (Type is not (CrescentEventType.CE or CrescentEventType.ForkTower)) return;
-        
+
+        Progress         = progress;
         NameDisplay      = nameDisplay;
         CEState          = ceState;
         CELeftTimeSecond = leftTimeSecond;
+        CEStartTime      = startTime;
     }
 
     /// <summary>
