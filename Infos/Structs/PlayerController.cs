@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
@@ -12,7 +12,7 @@ public unsafe struct PlayerController
 
     [FieldOffset(336)]
     public PlayerMoveControllerFly MoveControllerFly;
-    
+
     /// <summary>
     /// 在新跟随开始时, 这里会被设置
     /// </summary>
@@ -20,10 +20,10 @@ public unsafe struct PlayerController
     public GameObjectId FollowTargetIDStart;
 
     /// <summary>
-    /// 在新跟随开始时这里会被设为 4
+    /// 开始跟随的时候这里必定为4
     /// </summary>
-    [FieldOffset(1080)]
-    public byte FollowStateStart;
+    [FieldOffset(1409)]
+    public byte FollowState;
 
     [FieldOffset(1072)]
     public GameObjectId UnknownObjectID1072;
@@ -153,52 +153,55 @@ public unsafe struct PlayerMoveControllerWalk
 [StructLayout(LayoutKind.Explicit, Size = 0xB0)]
 public struct PlayerMoveControllerFly
 {
-    /// <summary>
-    /// 这里是本地玩家的坐骑坐标, 当玩家处于飞行状态或者潜水时候, 修改这个坐标会修改本地玩家的位置
-    /// </summary>
-    [FieldOffset(16)]
-    public Vector3 MountPosition;
+    [FieldOffset(0x10)]
+    public float unk10; // x coord?
 
-    [FieldOffset(64)]
+    [FieldOffset(0x14)]
+    public float unk14; // y coord?
+
+    [FieldOffset(0x18)]
+    public float unk18; // z coord?
+
+    [FieldOffset(0x40)]
     public float unk40;
 
-    [FieldOffset(68)]
+    [FieldOffset(0x44)]
     public float unk44;
 
-    [FieldOffset(72)]
+    [FieldOffset(0x48)]
     public uint unk48;
 
     [FieldOffset(76)]
     public uint unk4C;
 
-    [FieldOffset(80)]
+    [FieldOffset(0x50)]
     public uint unk50;
 
     [FieldOffset(88)]
     public float unk58;
 
-    [FieldOffset(92)]
+    [FieldOffset(0x5C)]
     public float unk5C;
 
     [FieldOffset(102)]
     public byte IsFlying;
 
-    [FieldOffset(136)]
+    [FieldOffset(0x88)]
     public uint unk88;
 
     [FieldOffset(140)]
     public uint unk8C;
 
-    [FieldOffset(144)]
+    [FieldOffset(0x90)]
     public uint unk90;
 
     [FieldOffset(148)]
     public float unk94; // speed?
 
-    [FieldOffset(152)]
+    [FieldOffset(0x98)]
     public float unk98;
 
-    [FieldOffset(156)]
+    [FieldOffset(0x9C)]
     public float AngularAscent;
 }
 
