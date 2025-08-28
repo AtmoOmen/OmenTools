@@ -14,12 +14,6 @@ public unsafe struct PlayerController
     public PlayerMoveControllerFly MoveControllerFly;
     
     /// <summary>
-    /// 这里是本地玩家的坐骑坐标,当玩家处于飞行状态或者潜水时候，修改这个坐标会修改本地玩家的位置
-    /// </summary>
-    [FieldOffset(352)]
-    public Vector3 MountPosition;
-    
-    /// <summary>
     /// 在新跟随开始时, 这里会被设置
     /// </summary>
     [FieldOffset(1072)]
@@ -159,55 +153,52 @@ public unsafe struct PlayerMoveControllerWalk
 [StructLayout(LayoutKind.Explicit, Size = 0xB0)]
 public struct PlayerMoveControllerFly
 {
-    [FieldOffset(0x10)]
-    public float unk10; // x coord?
+    /// <summary>
+    /// 这里是本地玩家的坐骑坐标, 当玩家处于飞行状态或者潜水时候, 修改这个坐标会修改本地玩家的位置
+    /// </summary>
+    [FieldOffset(16)]
+    public Vector3 MountPosition;
 
-    [FieldOffset(0x14)]
-    public float unk14; // y coord?
-
-    [FieldOffset(0x18)]
-    public float unk18; // z coord?
-
-    [FieldOffset(0x40)]
+    [FieldOffset(64)]
     public float unk40;
 
-    [FieldOffset(0x44)]
+    [FieldOffset(68)]
     public float unk44;
 
-    [FieldOffset(0x48)]
+    [FieldOffset(72)]
     public uint unk48;
 
     [FieldOffset(76)]
     public uint unk4C;
 
-    [FieldOffset(0x50)]
+    [FieldOffset(80)]
     public uint unk50;
 
     [FieldOffset(88)]
     public float unk58;
 
-    [FieldOffset(0x5C)]
+    [FieldOffset(92)]
     public float unk5C;
 
     [FieldOffset(102)]
     public byte IsFlying;
 
-    [FieldOffset(0x88)]
+    [FieldOffset(136)]
     public uint unk88;
 
     [FieldOffset(140)]
     public uint unk8C;
 
-    [FieldOffset(0x90)]
+    [FieldOffset(144)]
     public uint unk90;
 
     [FieldOffset(148)]
     public float unk94; // speed?
 
-    [FieldOffset(0x98)]
+    [FieldOffset(152)]
     public float unk98;
 
-    [FieldOffset(0x9C)]
+    [FieldOffset(156)]
     public float AngularAscent;
 }
 
