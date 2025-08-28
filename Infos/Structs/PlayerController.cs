@@ -12,7 +12,13 @@ public unsafe struct PlayerController
 
     [FieldOffset(336)]
     public PlayerMoveControllerFly MoveControllerFly;
-
+    
+    /// <summary>
+    /// 这里是本地玩家的坐骑坐标,当玩家处于飞行状态或者潜水时候，修改这个坐标会修改本地玩家的位置
+    /// </summary>
+    [FieldOffset(352)]
+    public Vector3 MountPosition;
+    
     /// <summary>
     /// 在新跟随开始时, 这里会被设置
     /// </summary>
