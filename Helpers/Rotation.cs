@@ -11,7 +11,26 @@ public static partial class HelpersOm
         => MathF.IEEERemainder(rotation + MathF.PI, 2 * MathF.PI);
     
     public static float CameraDirHToCharaRotation(float cameraDirH)
-        => (cameraDirH - MathF.PI) % (2 * MathF.PI);
+    {
+        const double twoPi = 2 * Math.PI;
+    
+        var result = cameraDirH + Math.PI;
+    
+        result %= twoPi;
+        if (result < 0)
+            result += twoPi;
+    
+        return (float)result;
+    }
+    
+    public static bool IsRotationChanged(float targetRotation, float currentRotation, float tolerance = 0.1f)
+    {
+        const float twoPi = 2 * MathF.PI;
+        var         diff  = MathF.Abs(currentRotation - targetRotation);
+        diff = MathF.Min(diff, twoPi - diff);
+    
+        return diff > tolerance;
+    }
 
     public static ushort CharaRotationToPacketRotation(float rotation)
     {
