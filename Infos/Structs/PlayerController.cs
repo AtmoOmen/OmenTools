@@ -20,10 +20,10 @@ public unsafe struct PlayerController
     public GameObjectId FollowTargetIDStart;
 
     /// <summary>
-    /// 在新跟随开始时这里会被设为 4
+    /// 跟随的时候这里必定为4
     /// </summary>
-    [FieldOffset(1080)]
-    public byte FollowStateStart;
+    [FieldOffset(1409)]
+    public byte FollowState;
 
     [FieldOffset(1072)]
     public GameObjectId UnknownObjectID1072;
