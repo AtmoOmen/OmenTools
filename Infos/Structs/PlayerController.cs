@@ -19,15 +19,6 @@ public unsafe struct PlayerController
     [FieldOffset(1072)]
     public GameObjectId FollowTargetIDStart;
 
-    /// <summary>
-    /// 跟随的时候这里必定为4
-    /// </summary>
-    [FieldOffset(1409)]
-    public byte FollowState;
-
-    [FieldOffset(1072)]
-    public GameObjectId UnknownObjectID1072;
-
     [FieldOffset(1168)]
     public GameObjectId FollowTargetID;
 
@@ -42,18 +33,6 @@ public unsafe struct PlayerController
 
     [FieldOffset(1377)]
     public byte ControlMode;
-
-    private static readonly CompSig InstanceSig =
-        new("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? 32 C0");
-    private static PlayerController* instance;
-    
-    public static PlayerController* Instance()
-    {
-        if (instance == null) 
-            instance = InstanceSig.GetStatic<PlayerController>();
-        
-        return instance;
-    }
     
     [FieldOffset(1408)]
     private ushort moveState;
@@ -67,6 +46,34 @@ public unsafe struct PlayerController
     {
         get => (byte)(moveState >> 8);
         set => moveState = (ushort)((moveState & 0x00FF) | (value << 8));
+    }
+    
+    /// <summary>
+    /// 跟随的时候这里必定为 4
+    /// </summary>
+    [FieldOffset(1409)]
+    public byte FollowState;
+
+    private static readonly CompSig InstanceSig =
+        new("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? 32 C0");
+    private static PlayerController* instance;
+    
+    public static PlayerController* Instance()
+    {
+        if (instance == null) 
+            instance = InstanceSig.GetStatic<PlayerController>();
+        
+        return instance;
+    }
+    
+    private static readonly CompSig                 InterruptFollowSig = new("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 48 8B D9 48 8B FA 0F B6 89");
+    private delegate        void                    InterruptFollowDelegate(PlayerController* playerController, nint a2);
+    private static readonly InterruptFollowDelegate InterruptFollowPtr = InterruptFollowSig.GetDelegate<InterruptFollowDelegate>();
+
+    public void InterruptFollow()
+    {
+        fixed (PlayerController* controller = &this)
+            InterruptFollowPtr(controller, (nint)controller + 1104);
     }
 }
 
@@ -150,7 +157,7 @@ public unsafe struct PlayerMoveControllerWalk
     }
 }
 
-[StructLayout(LayoutKind.Explicit, Size = 0xB0)]
+[StructLayout(LayoutKind.Explicit, Size = 176)]
 public struct PlayerMoveControllerFly
 {
     /// <summary>
