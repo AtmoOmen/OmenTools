@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Lumina.Excel;
@@ -12,7 +13,27 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    public static RowRef<T> LuminaCreateRef<T>(uint rowId) where T : struct, IExcelRow<T> => new(DService.Data.Excel, rowId);
+    public static RowRef<T> LuminaCreateRef<T>(uint rowId) where T : struct, IExcelRow<T> => 
+        new(DService.Data.Excel, rowId);
+    
+    /// <summary>
+    /// 直接调用过不了混淆, 所以反射
+    /// </summary>
+    public static unsafe nint GetVFuncByName<T>(T* vtablePtr, string fieldName) where T : unmanaged
+    {
+        var vtType = typeof(T);
+        var fi     = vtType.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
+        if (fi == null) 
+            throw new MissingFieldException(vtType.FullName, fieldName);
+
+        var offAttr = fi.GetCustomAttribute<FieldOffsetAttribute>();
+        if (offAttr == null) 
+            throw new InvalidOperationException($"Field {fieldName} has no FieldOffset");
+
+        var offset = offAttr.Value;
+
+        return *(nint*)((byte*)vtablePtr + offset);
+    }
     
     public static bool IsInAnyParty() => 
         InfoProxyCrossRealm.IsCrossRealmParty() || DService.PartyList.Length >= 2;
