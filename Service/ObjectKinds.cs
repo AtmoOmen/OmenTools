@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
+using BattleNpcSubKind = Dalamud.Game.ClientState.Objects.Enums.BattleNpcSubKind;
 using Companion = Lumina.Excel.Sheets.Companion;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
