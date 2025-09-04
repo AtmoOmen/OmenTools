@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
-using OmenTools;
-using OmenTools.Helpers;
-using OmenTools.Infos;
 using ContentsFinder = FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder;
 
 namespace OmenTools.Helpers;
@@ -76,14 +70,15 @@ public class ContentsFinderHelper
         var localRole = localPlayer.ClassJob.Value.Role;
 
         if (!LuminaGetter.TryGetRow<DawnContent>(dawnContentID, out var content)) return;
-        var contentType = content.Content.Value.ContentMemberType.Value;
+        if (!LuminaGetter.TryGetRow<ContentMemberTypeTemp>(content.Content.Value.ContentMemberType.RowId, out var memberType)) return;
+        
         var partyComposition = new
         {
-            Tanks   = contentType.TanksPerParty,
-            Healers = contentType.HealersPerParty,
-            DPS     = contentType.MeleesPerParty + contentType.RangedPerParty,
-            Total   = contentType.TanksPerParty  + contentType.HealersPerParty +
-                      contentType.MeleesPerParty + contentType.RangedPerParty
+            Tanks   = memberType.TanksPerParty,
+            Healers = memberType.HealersPerParty,
+            DPS     = memberType.MeleesPerParty + memberType.RangedPerParty,
+            Total   = memberType.TanksPerParty  + memberType.HealersPerParty +
+                      memberType.MeleesPerParty + memberType.RangedPerParty
         };
 
         var currentCount = new
