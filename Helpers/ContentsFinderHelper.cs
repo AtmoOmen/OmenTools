@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
-using OmenTools;
-using OmenTools.Helpers;
-using OmenTools.Infos;
 using ContentsFinder = FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder;
 
 namespace OmenTools.Helpers;
@@ -47,6 +41,7 @@ public class ContentsFinderHelper
     public static bool RequestDutyNormal(uint rowID, ContentsFinderOption option)
     {
         var optionFinal = option.Clone();
+        Debug($"[ContentsFinderHelper] 一般副本 ({LuminaWrapper.GetContentName(rowID)})\n{optionFinal}");
         return RequestContentsFinder([rowID], 1, 0, ref optionFinal);
     }
 
@@ -56,17 +51,19 @@ public class ContentsFinderHelper
     public static bool RequestDutyNormal(uint[] rowIDs, ContentsFinderOption option)
     {
         var optionFinal = option.Clone();
+        Debug($"[ContentsFinderHelper] 一般副本 ({string.Join(", ", rowIDs.Select(LuminaWrapper.GetContentName))})\n{optionFinal}");
         return RequestContentsFinder(rowIDs, (uint)rowIDs.Length, 0, ref optionFinal);
     }
 
     public static void RequestDutyRoulette(ushort rowID, ContentsFinderOption option)
     {
         var optionFinal = option.Clone();
+        Debug($"[ContentsFinderHelper] 一般副本 ({LuminaWrapper.GetContentRouletteName(rowID)})\n{optionFinal}");
         RequestContentsFinderRoulette(rowID, ref optionFinal);
     }
 
-    public static void CancelDutyApply()
-        => CancelContentsFinder(0);
+    public static void CancelDutyApply() => 
+        CancelContentsFinder(0);
 
     public static void RequestDutySupport(uint dawnContentID)
     {
@@ -75,14 +72,15 @@ public class ContentsFinderHelper
         var localRole = localPlayer.ClassJob.Value.Role;
 
         if (!LuminaGetter.TryGetRow<DawnContent>(dawnContentID, out var content)) return;
-        var contentType = content.Content.Value.ContentMemberType.Value;
+        if (!LuminaGetter.TryGetRow<ContentMemberTypeTemp>(content.Content.Value.ContentMemberType.RowId, out var memberType)) return;
+
         var partyComposition = new
         {
-            Tanks   = contentType.TanksPerParty,
-            Healers = contentType.HealersPerParty,
-            DPS     = contentType.MeleesPerParty + contentType.RangedPerParty,
-            Total   = contentType.TanksPerParty  + contentType.HealersPerParty +
-                      contentType.MeleesPerParty + contentType.RangedPerParty
+            Tanks   = memberType.TanksPerParty,
+            Healers = memberType.HealersPerParty,
+            DPS     = memberType.MeleesPerParty + memberType.RangedPerParty,
+            Total = memberType.TanksPerParty  + memberType.HealersPerParty +
+                    memberType.MeleesPerParty + memberType.RangedPerParty
         };
 
         var currentCount = new
@@ -93,38 +91,39 @@ public class ContentsFinderHelper
         };
 
         var members = LuminaGetter.GetSub<DawnContentParticipable>()
-                                 .SelectMany(x => x)
-                                 .Where(x => x.RowId == dawnContentID)
-                                 .Select(x => new
-                                 {
-                                     QuestMember = LuminaGetter.GetRow<DawnQuestMember>(x.Unknown0),
-                                     JobInfo = LuminaGetter.GetRow<DawnMember>(
-                                         LuminaGetter.GetRow<DawnQuestMember>(x.Unknown0).GetValueOrDefault().Unknown0)
-                                 })
-                                 .Where(x => x.QuestMember != null && x.JobInfo != null)
-                                 .Select(x => new
-                                 {
-                                     QuestMember = x.QuestMember.GetValueOrDefault(),
-                                     JobInfo = x.JobInfo.GetValueOrDefault(),
-                                 })
-                                 .Select(x => new
-                                 {
-                                     // Class 实际为 DawnMemberUIParam, Unknown0 为 UI 显示的人物名称
-                                     Name     = x.QuestMember.Class.Value.Unknown0,
-                                     ID       = x.QuestMember.RowId,
-                                     ClassJob = LuminaGetter.GetRow<ClassJob>(x.JobInfo.Unknown0)
-                                 })
-                                 .GroupBy(x => x.Name)
-                                 .Select(x => new
-                                 {
-                                     Name = x.Key,
-                                     Data = x.Select(d => (d.ID, d.ClassJob)).ToList()
-                                 })
-                                 .OrderBy(x => x.Data.Count)
-                                 .ToList();
+                                  .SelectMany(x => x)
+                                  .Where(x => x.RowId == dawnContentID)
+                                  .Select(x => new
+                                  {
+                                      QuestMember = LuminaGetter.GetRow<DawnQuestMember>(x.Unknown0),
+                                      JobInfo = LuminaGetter.GetRow<DawnMember>(
+                                          LuminaGetter.GetRow<DawnQuestMember>(x.Unknown0).GetValueOrDefault().Unknown0)
+                                  })
+                                  .Where(x => x.QuestMember != null && x.JobInfo != null)
+                                  .Select(x => new
+                                  {
+                                      QuestMember = x.QuestMember.GetValueOrDefault(),
+                                      JobInfo     = x.JobInfo.GetValueOrDefault(),
+                                  })
+                                  .Select(x => new
+                                  {
+                                      // Class 实际为 DawnMemberUIParam, Unknown0 为 UI 显示的人物名称
+                                      Name     = x.QuestMember.Class.Value.Unknown0,
+                                      ID       = x.QuestMember.RowId,
+                                      ClassJob = LuminaGetter.GetRow<ClassJob>(x.JobInfo.Unknown0)
+                                  })
+                                  .GroupBy(x => x.Name)
+                                  .Select(x => new
+                                  {
+                                      Name = x.Key,
+                                      Data = x.Select(d => (d.ID, d.ClassJob)).ToList()
+                                  })
+                                  .OrderBy(x => x.Data.Count)
+                                  .ToList();
 
-        var finalTeam = new List<uint>();
-        var roleCount = currentCount;
+        var finalTeam             = new List<uint>();
+        var roleCount             = currentCount;
+        var selectedMembersForLog = new List<string>();
 
         foreach (var member in members)
         {
@@ -150,8 +149,24 @@ public class ContentsFinderHelper
             });
 
             if (data.ClassJob == null) continue;
+
             finalTeam.Add(data.ID);
+
+            var jobName = string.Empty;
+            try
+            {
+                jobName = data.ClassJob.Value.Name.ExtractText() ?? string.Empty;
+            }
+            catch
+            {
+                jobName = string.Empty;
+            }
+
+            selectedMembersForLog.Add($"{member.Name} ({(string.IsNullOrWhiteSpace(jobName) ? "未知职业" : jobName)})");
         }
+
+        Debug($"[ContentsFinderHelper] 剧情辅助器（{content.Content.Value.Name.ExtractText()}）\n" +
+              $"成员: {string.Join(", ", selectedMembersForLog)}");
 
         var parameters = finalTeam
                          .Select((id, index) => new
@@ -169,7 +184,7 @@ public class ContentsFinderHelper
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 10)]
-public struct ContentsFinderOption
+public struct ContentsFinderOption : IEquatable<ContentsFinderOption>
 {
     /// <summary>
     /// 中途加入
@@ -242,6 +257,19 @@ public struct ContentsFinderOption
 
     public ContentsFinderOption Clone() => this;
 
+    public override string ToString() =>
+        "ContentsFinderOption 配置:\n"                     +
+        $"  中途加入: {Supply}\n"                            +
+        $"  Config817to820: {Config817to820}\n"          +
+        $"  解除限制: {UnrestrictedParty}\n"                 +
+        $"  最低装等同步: {MinimalIL}\n"                       +
+        $"  等级同步: {LevelSync}\n"                         +
+        $"  禁用超越之力: {SilenceEcho}\n"                     +
+        $"  自由探索: {ExplorerMode}\n"                      +
+        $"  分配方式: {LootRules}\n"                         +
+        $"  限制随机任务：练级的目标: {IsLimitedLevelingRoulette}\n" +
+        $"  Unknown9: {Unknown9}";
+
     public static unsafe ContentsFinderOption Get()
     {
         var finder = UIState.Instance()->ContentsFinder;
@@ -257,4 +285,42 @@ public struct ContentsFinderOption
             UnrestrictedParty         = finder.IsUnrestrictedParty,
         };
     }
+
+    public bool Equals(ContentsFinderOption other) =>
+        Supply                    == other.Supply                    &&
+        Config817to820            == other.Config817to820            &&
+        UnrestrictedParty         == other.UnrestrictedParty         &&
+        MinimalIL                 == other.MinimalIL                 &&
+        LevelSync                 == other.LevelSync                 &&
+        SilenceEcho               == other.SilenceEcho               &&
+        ExplorerMode              == other.ExplorerMode              &&
+        LootRules                 == other.LootRules                 &&
+        IsLimitedLevelingRoulette == other.IsLimitedLevelingRoulette &&
+        Unknown9                  == other.Unknown9;
+
+    public override bool Equals(object? obj) => 
+        obj is ContentsFinderOption other && Equals(other);
+
+    public override int GetHashCode()
+    {
+        var hashCode = new HashCode();
+        hashCode.Add(Supply);
+        hashCode.Add(Config817to820);
+        hashCode.Add(UnrestrictedParty);
+        hashCode.Add(MinimalIL);
+        hashCode.Add(LevelSync);
+        hashCode.Add(SilenceEcho);
+        hashCode.Add(ExplorerMode);
+        hashCode.Add((int)LootRules);
+        hashCode.Add(IsLimitedLevelingRoulette);
+        hashCode.Add(Unknown9);
+        
+        return hashCode.ToHashCode();
+    }
+
+    public static bool operator ==(ContentsFinderOption left, ContentsFinderOption right) => 
+        left.Equals(right);
+
+    public static bool operator !=(ContentsFinderOption left, ContentsFinderOption right) => 
+        !left.Equals(right);
 }

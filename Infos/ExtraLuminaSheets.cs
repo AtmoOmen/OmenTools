@@ -3,6 +3,23 @@ using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Infos;
 
+[Sheet("ContentMemberType")]
+public readonly struct ContentMemberTypeTemp(ExcelPage page, uint offset, uint row) : IExcelRow<ContentMemberTypeTemp>
+{
+    public uint RowId => row;
+
+    public byte TanksPerParty => page.ReadUInt8(offset + 8U);
+
+    public byte HealersPerParty => page.ReadUInt8(offset + 9U);
+
+    public byte MeleesPerParty => page.ReadUInt8(offset + 10U);
+
+    public byte RangedPerParty => page.ReadUInt8(offset + 11U);
+
+    static ContentMemberTypeTemp IExcelRow<ContentMemberTypeTemp>.Create(ExcelPage page, uint offset, uint row) =>
+        new(page, offset, row);
+}
+
 [Sheet("leve/CraftLeveClient")]
 public readonly struct CraftLeveClient(ExcelPage page, uint offset, uint row) : IExcelRow<CraftLeveClient>
 {

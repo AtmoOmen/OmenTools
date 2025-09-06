@@ -37,15 +37,14 @@ public unsafe struct PopRangeManager
         return PopRangeManagerPtr;
     }
 
-    public void PopRange(ILayoutInstance* exit)
+    public void PopRange(ILayoutInstance* exit, Vector3? recoveredPosition = null)
     {
         ExitLayoutInstance = (ExitRangeLayoutInstance*)exit;
         var pop = ExitLayoutInstance->PopRangeLayoutInstance;
         
         Position = *pop->Base.GetTranslationImpl();
-        var recovered = Position + *pop->AddPos;
         
-        RecoveredPosition = recovered;
+        RecoveredPosition = recoveredPosition ?? Position + *pop->AddPos;
         State             = 2;
     }
 }

@@ -29,6 +29,14 @@ public static class LuminaWrapper
             return LuminaGetter.TryGetRow<Action>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
     }
     
+    public static uint GetActionIconID(uint rowID)
+    {
+        if (rowID > 10_0000)
+            return LuminaGetter.TryGetRow<CraftAction>(rowID, out var item) ? item.Icon : 0U;
+        else
+            return LuminaGetter.TryGetRow<Action>(rowID, out var item) ? item.Icon : 0U;
+    }
+    
     public static string GetGeneralActionName(uint rowID) => 
         LuminaGetter.TryGetRow<GeneralAction>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 
@@ -54,6 +62,9 @@ public static class LuminaWrapper
 
     public static string GetContentName(uint rowID) =>
         LuminaGetter.TryGetRow<ContentFinderCondition>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static string GetContentRouletteName(uint rowID) =>
+        LuminaGetter.TryGetRow<ContentRoulette>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
     
     public static string GetPlaceName(uint rowID) =>
         LuminaGetter.TryGetRow<PlaceName>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
