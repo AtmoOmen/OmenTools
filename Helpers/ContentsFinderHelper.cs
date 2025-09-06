@@ -185,7 +185,7 @@ public class ContentsFinderHelper
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 10)]
-public struct ContentsFinderOption
+public struct ContentsFinderOption : IEquatable<ContentsFinderOption>
 {
     /// <summary>
     /// 中途加入
@@ -286,4 +286,42 @@ public struct ContentsFinderOption
             UnrestrictedParty         = finder.IsUnrestrictedParty,
         };
     }
+
+    public bool Equals(ContentsFinderOption other) =>
+        Supply                    == other.Supply                    &&
+        Config817to820            == other.Config817to820            &&
+        UnrestrictedParty         == other.UnrestrictedParty         &&
+        MinimalIL                 == other.MinimalIL                 &&
+        LevelSync                 == other.LevelSync                 &&
+        SilenceEcho               == other.SilenceEcho               &&
+        ExplorerMode              == other.ExplorerMode              &&
+        LootRules                 == other.LootRules                 &&
+        IsLimitedLevelingRoulette == other.IsLimitedLevelingRoulette &&
+        Unknown9                  == other.Unknown9;
+
+    public override bool Equals(object? obj) => 
+        obj is ContentsFinderOption other && Equals(other);
+
+    public override int GetHashCode()
+    {
+        var hashCode = new HashCode();
+        hashCode.Add(Supply);
+        hashCode.Add(Config817to820);
+        hashCode.Add(UnrestrictedParty);
+        hashCode.Add(MinimalIL);
+        hashCode.Add(LevelSync);
+        hashCode.Add(SilenceEcho);
+        hashCode.Add(ExplorerMode);
+        hashCode.Add((int)LootRules);
+        hashCode.Add(IsLimitedLevelingRoulette);
+        hashCode.Add(Unknown9);
+        
+        return hashCode.ToHashCode();
+    }
+
+    public static bool operator ==(ContentsFinderOption left, ContentsFinderOption right) => 
+        left.Equals(right);
+
+    public static bool operator !=(ContentsFinderOption left, ContentsFinderOption right) => 
+        !left.Equals(right);
 }
