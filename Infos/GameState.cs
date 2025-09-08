@@ -1,4 +1,5 @@
-﻿using Dalamud.Hooking;
+﻿using System.Numerics;
+using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -105,6 +106,24 @@ public static unsafe class GameState
             return agentLobby != null && agentLobby->IsLoggedIn && DService.ObjectTable.LocalPlayer != null && IsScreenReady();
         }
     }
+
+    /// <summary>
+    /// 地图标点是否已经设置
+    /// </summary>
+    public static bool IsFlagMarkerSet =>
+        AgentMap.Instance()->IsFlagMarkerSet;
+
+    /// <summary>
+    /// 地图标点位置, 若未设置则返回 default(Vector2)
+    /// </summary>
+    public static Vector2 FlagMarkerPosition =>
+        IsFlagMarkerSet ? new(AgentMap.Instance()->FlagMapMarker.XFloat, AgentMap.Instance()->FlagMapMarker.YFloat) : default;
+    
+    /// <summary>
+    /// 地图标点, 若未设置则返回 default(FlagMapMarker)
+    /// </summary>
+    public static FlagMapMarker FlagMarker =>
+        IsFlagMarkerSet ? AgentMap.Instance()->FlagMapMarker : default;
 
     /// <summary>
     /// 当前游戏 Delta Time
