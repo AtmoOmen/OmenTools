@@ -391,16 +391,30 @@ public static unsafe partial class HelpersOm
 
     public static void SetPosition(AtkResNode* node, float? x, float? y)
     {
-        if (x != null) node->X = x.Value;
-        if (y != null) node->Y = y.Value;
+        if (x != null) 
+            node->X = x.Value;
+        if (y != null) 
+            node->Y = y.Value;
+        
         node->DrawFlags |= 0x1;
     }
+    
+    public static void SetPosition(AtkResNode* node, Vector2 position) =>
+        SetPosition(node, position.X, position.Y);
 
-    public static void SetPosition(AtkUnitBase* atkUnitBase, float? x, float? y)
+    public static void SetPosition(AtkUnitBase* addon, float? x, float? y)
     {
-        if (x is >= short.MinValue and <= short.MaxValue) atkUnitBase->X = (short)x.Value;
-        if (y >= short.MinValue && x <= short.MaxValue) atkUnitBase->Y = (short)y.Value;
+        if (x is >= short.MinValue and <= short.MaxValue)
+            addon->X = (short)x.Value;
+        if (y is >= short.MinValue and <= short.MaxValue)
+            addon->Y = (short)y.Value;
     }
+
+    public static void SetPosition(AtkUnitBase* addon, Vector2 position) =>
+        SetPosition(addon, position.X, position.Y);
+    
+    public static void SetPosition<T>(T* node, float? x, float? y) where T : unmanaged =>
+        SetPosition((AtkResNode*)node, x, y);
 
     public static void SetWindowSize(AtkComponentNode* windowNode, ushort? width, ushort? height)
     {
@@ -443,9 +457,6 @@ public static unsafe partial class HelpersOm
     }
 
     public static void SetSize<T>(T* node, int? w, int? h) where T : unmanaged => SetSize((AtkResNode*)node, w, h);
-
-    public static void SetPosition<T>(T* node, float? x, float? y) where T : unmanaged =>
-        SetPosition((AtkResNode*)node, x, y);
 
     public static T* CloneNode<T>(T* original) where T : unmanaged => (T*)CloneNode((AtkResNode*)original);
 
