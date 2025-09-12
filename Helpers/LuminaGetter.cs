@@ -28,10 +28,22 @@ public static class LuminaGetter
         return sheet?.GetRowOrDefault(rowID);
     }
 
-    public static T? GetSubRow<T>(uint rowID) where T : struct, IExcelSubrow<T>
+    public static T? GetSubRow<T>(uint rowID, int index = 0) where T : struct, IExcelSubrow<T>
     {
         var sheet = TryGetSub<T>(out var excelSheet) ? excelSheet : null;
-        return sheet?.GetRowOrDefault(rowID)?.FirstOrDefault();
+        return sheet?.GetRowOrDefault(rowID)?[index];
+    }
+    
+    public static T GetRowOrDefault<T>(uint rowID) where T : struct, IExcelRow<T>
+    {
+        var sheet = TryGet<T>(out var excelSheet) ? excelSheet : null;
+        return sheet!.GetRowOrDefault(rowID).GetValueOrDefault();
+    }
+
+    public static T GetSubRowOrDefault<T>(uint rowID, int index = 0) where T : struct, IExcelSubrow<T>
+    {
+        var sheet = TryGetSub<T>(out var excelSheet) ? excelSheet : null;
+        return sheet!.GetRowOrDefault(rowID).GetValueOrDefault()[index];
     }
 
     public static bool TryGetRow<T>(uint rowID, out T item) where T : struct, IExcelRow<T>
@@ -41,9 +53,9 @@ public static class LuminaGetter
         return row != null;
     }
 
-    public static bool TryGetSubRow<T>(uint rowID, out T item) where T : struct, IExcelSubrow<T>
+    public static bool TryGetSubRow<T>(uint rowID, out T item, int index = 0) where T : struct, IExcelSubrow<T>
     {
-        var row = GetSubRow<T>(rowID);
+        var row = GetSubRow<T>(rowID, index);
         item = row.GetValueOrDefault();
         return row != null;
     }
