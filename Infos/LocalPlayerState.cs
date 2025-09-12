@@ -4,6 +4,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
+using GrandCompany = FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany;
 
 namespace OmenTools.Infos;
 
@@ -24,6 +25,12 @@ public unsafe class LocalPlayerState
     private delegate bool IsLocalPlayerPartyLeaderDelegate();
     private static readonly IsLocalPlayerPartyLeaderDelegate IsLocalPlayerPartyLeader =
         new CompSig("48 83 EC ?? E8 ?? ?? ?? ?? 84 C0 74 ?? 48 83 C4").GetDelegate<IsLocalPlayerPartyLeaderDelegate>();
+
+    /// <summary>
+    /// 当前玩家所属的大国防联军
+    /// </summary>
+    public static GrandCompany GrandCompany =>
+        (GrandCompany)PlayerState.Instance()->GrandCompany;
     
     /// <summary>
     /// 当前玩家是否正在移动
