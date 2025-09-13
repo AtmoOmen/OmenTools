@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Data.Files;
 using Lumina.Data.Parsing.Layer;
@@ -10,38 +11,65 @@ namespace OmenTools.Infos;
 public class ItemShopInfo
 {
     private static bool IsDataInitialized { get; set; }
-    
-    private static readonly Dictionary<uint, ItemShopInfo> ItemToItemShopInfos = [];
-    private static readonly Dictionary<uint, ShopNPCLocation>  NPCIDToLocations    = [];
+    private static bool IsDataLoaded      { get; set; }
+
+    private static readonly Dictionary<uint, ItemShopInfo>    ItemToItemShopInfos = [];
+    private static readonly Dictionary<uint, ShopNPCLocation> NPCIDToLocations    = [];
     
     private static readonly EventHandlerType[] EventHandlerTypes = Enum.GetValues<EventHandlerType>();
     
-    public uint               ID                     { get; init; }
+    public uint               ItemID                 { get; init; }
     public string             Name                   { get; init; }
-    public List<ShopNPCInfos> NPCInfos               { get; private set; }
+    public List<ShopNPCInfos> NPCInfos               { get; private set; } = [];
     public ItemShopType       ShopType               { get; private set; }
     public string             AchievementDescription { get; private set; }
 
     static ItemShopInfo()
     {
-        if (IsDataInitialized) return;
+        if (IsDataInitialized || IsDataLoaded) return;
+        
         IsDataInitialized = true;
+        IsDataLoaded      = false;
 
         Task.Run(() =>
         {
-            BuildNPCLocations();
-            CorrectNPCLocations();
+            var timer = new Stopwatch();
+            timer.Start();
+            Debug("[ItemShopInfo] 开始构建数据");
             
-            LuminaGetter.Get<ENpcBase>().ForEach(BuildNPCInfo);
-            
-            AddAchievementItem();
-            
-            ItemToItemShopInfos.ForEach(x => x.Value.ApplyFilters());
+            try
+            {
+                BuildNPCLocations();
+                CorrectNPCLocations();
+
+                foreach (var npcBase in LuminaGetter.Get<ENpcBase>())
+                    BuildNPCInfo(npcBase);
+                
+                AddAchievementItem();
+
+                foreach (var info in ItemToItemShopInfos)
+                {
+                    if (info.Value.NPCInfos is not { Count: > 0 })
+                    {
+                        ItemToItemShopInfos.Remove(info);
+                        continue;
+                    }
+                    
+                    // info.Value.ApplyFilters();
+                }
+            } 
+            finally
+            {
+                timer.Stop();
+                Debug($"[ItemShopInfo] 构建完毕, 构建时间: {timer.Elapsed}");
+                
+                IsDataLoaded = true;
+            }
         });
     }
     
     public static ItemShopInfo? GetItemInfo(uint itemID) => 
-        ItemToItemShopInfos.GetValueOrDefault(itemID);
+        !IsDataLoaded ? null : ItemToItemShopInfos.GetValueOrDefault(itemID);
 
     private static void BuildNPCLocations()
     {
@@ -797,7 +825,7 @@ public class ItemShopInfo
         {
             ItemToItemShopInfos.Add(itemID, new()
             {
-                ID                     = itemID,
+                ItemID                     = itemID,
                 Name                   = itemName,
                 NPCInfos               = [new() { ID = npcID, Location = npcLocation, CostInfos = cost, Name = npcName, ShopName = shopName }],
                 ShopType               = shopType,
@@ -809,7 +837,7 @@ public class ItemShopInfo
         if (!ItemToItemShopInfos.TryGetValue(itemID, out var itemInfo))
             ItemToItemShopInfos.TryAdd(itemID, itemInfo = new()
             {
-                ID                     = itemID,
+                ItemID                     = itemID,
                 Name                   = itemName,
                 NPCInfos               = [new() { ID = npcID, Location = npcLocation, CostInfos = cost, Name = npcName, ShopName = shopName }],
                 ShopType               = shopType,
@@ -915,6 +943,9 @@ public class ItemShopInfo
                            .Select(i => i.First())
                            .ToList();
 
+    public Item GetItem() => 
+        LuminaGetter.GetRowOrDefault<Item>(ItemID);
+
     private enum EventHandlerType : uint
     {
         GilShop          = 0x0004,
@@ -1006,7 +1037,7 @@ public class ShopNPCLocation
         TexturePosition = new Vector2(x, y);
         TerritoryID     = territoryID;
         MapID           = map ?? GetTerritory().Map.RowId;
-        MapPosition     = TextureToMap((int)x, (int)y, GetTerritory().Map.Value.SizeFactor);
+        MapPosition     = ToMapPos(TexturePosition, GetMap().SizeFactor, new(GetMap().OffsetX, GetMap().OffsetY));
     }
 
     public Vector2 TexturePosition { get; }
@@ -1017,11 +1048,27 @@ public class ShopNPCLocation
     public float X => TexturePosition.X;
     public float Y => TexturePosition.Y;
 
-    private TerritoryType GetTerritory() => 
+    public TerritoryType GetTerritory() => 
         LuminaGetter.GetRowOrDefault<TerritoryType>(TerritoryID);
         
-    private Map GetMap() => 
+    public Map GetMap() => 
         LuminaGetter.GetRowOrDefault<Map>(MapID);
+
+    private static Vector2 ToMapPos(Vector2 pos, float scale, Vector2 offset)
+    {
+        var x = ToMapPos(pos.X, scale, (short)offset.X);
+        var y = ToMapPos(pos.Y, scale, (short)offset.Y);
+        return new(x, y);
+    }
+    
+    private static float ToMapPos(float val, float scale, short offset)
+    {
+        var c = scale / 100.0f;
+
+        val = (val + offset) * c;
+
+        return (41.0f / c * ((val + 1024.0f) / 2048.0f)) + 1;
+    }
 }
 
 public record ShopItemCostInfo(uint Cost, uint ItemID, uint? Collectablity = null)
