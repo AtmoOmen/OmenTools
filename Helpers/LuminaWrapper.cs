@@ -1,4 +1,6 @@
-﻿using Lumina.Excel.Sheets;
+﻿using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Utility;
+using Lumina.Excel.Sheets;
 using Action = Lumina.Excel.Sheets.Action;
 using Status = Lumina.Excel.Sheets.Status;
 
@@ -8,6 +10,9 @@ public static class LuminaWrapper
 {
     public static string GetAddonText(uint rowID) => 
         LuminaGetter.TryGetRow<Addon>(rowID, out var item) ? item.Text.ExtractText() : string.Empty;
+    
+    public static SeString GetAddonTextSeString(uint rowID) => 
+        LuminaGetter.TryGetRow<Addon>(rowID, out var item) ? item.Text.ToDalamudString() : SeString.Empty;
     
     public static string GetDynamicEventName(uint rowID) => 
         LuminaGetter.TryGetRow<DynamicEvent>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
@@ -51,6 +56,9 @@ public static class LuminaWrapper
 
     public static string GetItemName(uint rowID) =>
         LuminaGetter.TryGetRow<Item>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+    
+    public static uint GetItemIconID(uint rowID) =>
+        LuminaGetter.TryGetRow<Item>(rowID, out var item) ? item.Icon : 0U;
     
     public static string GetStatusName(uint rowID) =>
         LuminaGetter.TryGetRow<Status>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;

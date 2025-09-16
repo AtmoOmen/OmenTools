@@ -66,6 +66,43 @@ public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status
         return (nint)Unsafe.AsPointer(ref this.Struct->Status[index]);
     }
 
+    public bool HasStatus(uint statusID)
+    {
+        for (var i = 0; i < this.Length; i++)
+        {
+            var addr = GetStatusAddress(i);
+            if (addr == nint.Zero) continue;
+            
+            var status = (CSStatus*)addr;
+            if (status->StatusId == statusID)
+                return true;
+        }
+        
+        return false;
+    }
+
+    public bool TryGetStatus(uint statusID, out Status? status, out int index)
+    {
+        status = null;
+        index = -1;
+
+        for (var i = 0; i < this.Length; i++)
+        {
+            var addr = GetStatusAddress(i);
+            if (addr == nint.Zero) continue;
+            
+            var currentStatus = (CSStatus*)addr;
+            if (currentStatus->StatusId != statusID)
+                continue;
+
+            status = CreateStatusReference(addr);
+            index = i;
+            return true;
+        }
+
+        return false;
+    }
+
     int IReadOnlyCollection<Status>.Count => this.Length;
 
     int ICollection.Count => this.Length;
