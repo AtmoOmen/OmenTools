@@ -1091,7 +1091,7 @@ public enum ExecuteCommandFlag
     /// 分解指定的物品 / 回收指定物品的魔晶石 / 精选指定物品
     /// </summary>
     /// <remarks>
-    /// <para><c>param1</c>: 分解: 3735552; 回收魔晶石: 3735553; 精选: 3735554</para>
+    /// <para><c>param1</c>: 分解: 3735552; 回收魔晶石: 3735553; 精选: 3735554; 修理: 3735555</para>
     /// <para><c>param2</c>: Inventory Type</para>
     /// <para><c>param3</c>: Inventory Slot</para>
     /// <para><c>param4</c>: 物品 ID</para>
