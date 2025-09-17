@@ -34,7 +34,14 @@ public static partial class HelpersOm
 
         return *(nint*)((byte*)vtablePtr + offset);
     }
-    
+
+    /// <summary>
+    /// 直接调用过不了混淆, 所以反射
+    /// </summary>
+    public static nint GetMemberFuncByName(Type staticType, string propertyName) =>
+        (nint)(staticType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Static)?.GetValue(null)
+               ?? throw new MissingMemberException(staticType.FullName, propertyName));
+
     public static bool IsInAnyParty() => 
         InfoProxyCrossRealm.IsCrossRealmParty() || DService.PartyList.Length >= 2;
     
