@@ -1334,19 +1334,26 @@ public enum ExecuteCommandFlag
     /// <summary>
     /// 宇宙好运道开始抽奖
     /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点</para>
+    /// </remarks>
     WKSStartLottery = 3450,
     
     /// <summary>
     /// 宇宙好运道选择转盘
     /// </summary>
     /// <remarks>
-    /// <para><c>param1</c>: 转盘类型 (左边 - 0, 右边 - 1)</para>
+    /// <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点</para>
+    /// <para><c>param2</c>: 转盘类型 (左边 - 0, 右边 - 1)</para>
     /// </remarks>
     WKSChooseLottery = 3451,
     
     /// <summary>
     /// 宇宙好运道结束抽奖
     /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点</para>
+    /// </remarks>
     WKSEndLottery = 3452,
     
     /// <summary>
