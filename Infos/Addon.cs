@@ -27,7 +27,9 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* ActionContents         => GetAddonByName("_ActionContents");
 
     #endregion
-    
+
+    #region Main Addons
+
     public static AtkUnitBase* CursorAddon                     => GetAddonByName("CursorAddon");
     public static AtkUnitBase* Logo                            => GetAddonByName("Logo");
     public static AtkUnitBase* Title                           => GetAddonByName("Title");
@@ -947,4 +949,18 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* FadeBack                        => GetAddonByName("FadeBack");
     public static AtkUnitBase* ToDoList                        => GetAddonByName("_ToDoList");
     public static AtkUnitBase* DTR                             => GetAddonByName("_DTR");
+    public static AtkUnitBase* HalloweenNpcSelect              => GetAddonByName("HalloweenNpcSelect");
+    public static AtkUnitBase* WKSPlanetSelect                 => GetAddonByName("WKSPlanetSelect");
+    public static AtkUnitBase* WKSSetting                      => GetAddonByName("WKSSetting");
+    public static AtkUnitBase* WKSEnterInfo                    => GetAddonByName("WKSEnterInfo");
+    public static AtkUnitBase* MKDRelicGrowth                  => GetAddonByName("MKDRelicGrowth");
+    public static AtkUnitBase* QuickPanel                      => GetAddonByName("QuickPanel");
+    public static AtkUnitBase* QuickPanelSetting               => GetAddonByName("QuickPanelSetting");
+    public static AtkUnitBase* EventTutorial                   => GetAddonByName("EventTutorial");
+    public static AtkUnitBase* ConfigCharacterChatLogMiniTalk  => GetAddonByName("ConfigCharacterChatLogMiniTalk");
+    public static AtkUnitBase* ToggleContextMenu               => GetAddonByName("ToggleContextMenu");
+    public static AtkUnitBase* MiniTalkPlayer                  => GetAddonByName("MiniTalkPlayer");
+    public static AtkUnitBase* CastBarEnemy                    => GetAddonByName("CastBarEnemy");
+
+    #endregion
 }
