@@ -1382,4 +1382,12 @@ public enum ExecuteCommandFlag
     /// 雇员
     /// </summary>
     Retainer = 9003,
+    
+    /// <summary>
+    /// 设置角色显示范围
+    /// </summary>
+    /// /// <remarks>
+    /// <para><c>param1</c>: 类型 (0 - 标准; 1 - 较大; 2 - 最大)</para>
+    /// </remarks>
+    AroundRangeSetMode = 9005,
 }
