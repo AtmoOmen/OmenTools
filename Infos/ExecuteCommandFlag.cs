@@ -817,6 +817,11 @@ public enum ExecuteCommandFlag
     /// 刷新部队合建物品交纳信息
     /// </summary>
     RefreshFCMaterialDelivery = 1143,
+
+    /// <summary>
+    /// 刷新潜水艇完成情况信息
+    /// </summary>
+    RefreshSubmarineInfo =1144,
     
     /// <summary>
     /// 设置房屋背景音乐
