@@ -821,7 +821,7 @@ public enum ExecuteCommandFlag
     /// <summary>
     /// 刷新潜水艇完成情况信息
     /// </summary>
-    RefreshSubmarineInfo =1144,
+    RefreshSubmarineInfo = 1144,
     
     /// <summary>
     /// 设置房屋背景音乐
