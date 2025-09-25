@@ -8,21 +8,36 @@ namespace OmenTools.Helpers;
 public static class ImageHelper
 {
     private static readonly ConcurrentDictionary<string, ImageLoadingResult>             CachedTextures      = new();
-    private static readonly ConcurrentDictionary<(uint ID, bool HQ), ImageLoadingResult> CachedIcons         = new();
+    private static readonly ConcurrentDictionary<(uint ID, bool HQ, ClientLanguage Language), ImageLoadingResult> CachedIcons         = new();
     private static readonly List<Func<byte[], byte[]>>                                   ConversionsToBitmap = [b => b];
 
     private static readonly HttpClient               HttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
     private static          CancellationTokenSource? CancelSource;
 
-    public static IDalamudTextureWrap? GetGameIcon(uint iconID, bool isHQ = false)
-        => TryGetGameIcon(iconID, out var texture, isHQ) ? texture : null;
+    public static IDalamudTextureWrap? GetGameLangIcon(uint iconID, ClientLanguage language, bool isHQ = false) =>
+        TryGetGameLangIcon(iconID, language, out var texture, isHQ) ? texture : null;
+    
+    public static IDalamudTextureWrap? GetGameIcon(uint iconID, bool isHQ = false) => 
+        TryGetGameIcon(iconID, out var texture, isHQ) ? texture : null;
 
-    public static IDalamudTextureWrap? GetImage(string urlOrPath)
-        => TryGetImage(urlOrPath, out var texture) ? texture : null;
+    public static IDalamudTextureWrap? GetImage(string urlOrPath) => 
+        TryGetImage(urlOrPath, out var texture) ? texture : null;
+    
+    public static bool TryGetGameLangIcon(uint icon, ClientLanguage language, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
+    {
+        var result = CachedIcons.GetOrAdd((icon, isHQ, language), _ => new ImageLoadingResult
+        {
+            ImmediateTexture = DService.Texture.GetFromGame(GetIconTexturePath(icon, language)),
+            IsCompleted      = true
+        });
 
+        texture = result.Texture;
+        return texture != null;
+    }
+    
     public static bool TryGetGameIcon(uint icon, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
     {
-        var result = CachedIcons.GetOrAdd((icon, isHQ), _ => new ImageLoadingResult
+        var result = CachedIcons.GetOrAdd((icon, isHQ, DService.ClientState.ClientLanguage), _ => new ImageLoadingResult
         {
             ImmediateTexture = DService.Texture.GetFromGameIcon(new(icon, isHQ)),
             IsCompleted      = true
@@ -60,7 +75,7 @@ public static class ImageHelper
 
     private static async Task LoadPendingTexturesAsync()
     {
-        while (await LoadNextPendingTextureAsync()) { };
+        while (await LoadNextPendingTextureAsync()) { }
     }
 
     private static async Task<bool> LoadNextPendingTextureAsync()
@@ -99,6 +114,25 @@ public static class ImageHelper
         }
 
         return true;
+    }
+
+    private static string GetIconTexturePath(uint iconID, ClientLanguage language)
+    {
+        var varient = language switch
+        {
+            ClientLanguage.Japanese => "ja",
+            ClientLanguage.English  => "en",
+            ClientLanguage.German   => "de",
+            ClientLanguage.French   => "fr",
+            (ClientLanguage)4       => "chs",
+            (ClientLanguage)5       => "kr",
+            _                       => string.Empty
+        };
+        
+        if (string.IsNullOrEmpty(varient))
+            return string.Empty;
+
+        return $"ui/icon/{iconID / 1000 * 1000:D6}/chs/{iconID:D6}_hr1.tex";
     }
 
     public static void ClearAll()
