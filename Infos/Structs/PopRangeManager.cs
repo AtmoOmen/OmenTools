@@ -62,7 +62,7 @@ public unsafe struct ExitRangeLayoutInstance
     public uint PopRangeLayoutInstanceId;
 
     public PopRangeLayoutInstance* PopRangeLayoutInstance => 
-        (PopRangeLayoutInstance*)LayoutWorld.GetLayoutInstance(InstanceType.PopRange, PopRangeLayoutInstanceId);
+        (PopRangeLayoutInstance*)LayoutWorld.GetLayoutInstanceStatic(InstanceType.PopRange, PopRangeLayoutInstanceId);
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 160)]
