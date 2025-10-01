@@ -5,9 +5,19 @@ namespace OmenTools.Helpers;
 
 public static class ColorExtension
 {
+    private static readonly Dictionary<ImGuiCol, Vector4>   ImGuiColToVector4   = [];
+    private static readonly Dictionary<ImGuiCol, uint>      ImGuiColToUInt      = [];
     private static readonly Dictionary<KnownColor, Vector4> KnownColorToVector4 = [];
     private static readonly Dictionary<uint, Vector4>       UIntToVector4       = [];
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector4 ToVector4(this ImGuiCol imguiCol) =>
+        ImGuiColToVector4.GetOrAdd(imguiCol, _ => ImGui.GetColorU32(imguiCol).ToVector4());
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint ToUInt(this ImGuiCol imguiCol) =>
+        ImGuiColToUInt.GetOrAdd(imguiCol, _ => ImGui.GetColorU32(imguiCol));
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4 ToVector4(this KnownColor knownColor) =>
         KnownColorToVector4.GetOrAdd(knownColor, _ =>
@@ -28,6 +38,7 @@ public static class ColorExtension
     public static Vector3 ToVector3(this Vector4 color) => 
         new(color.X, color.Y, color.Z);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4 Invert(this Vector4 v) => 
         v with { X = 1f - v.X, Y = 1f - v.Y, Z = 1f - v.Z };
 }
