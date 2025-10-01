@@ -13,8 +13,8 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    public static RowRef<T> LuminaCreateRef<T>(uint rowId) where T : struct, IExcelRow<T> => 
-        new(DService.Data.Excel, rowId);
+    public static RowRef<T> LuminaCreateRef<T>(uint rowID) where T : struct, IExcelRow<T> => 
+        new(DService.Data.Excel, rowID);
     
     /// <summary>
     /// 直接调用过不了混淆, 所以反射

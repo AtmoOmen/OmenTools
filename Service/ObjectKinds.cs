@@ -49,8 +49,9 @@ internal unsafe class GameObject(nint address) : IGameObject
     public virtual ulong        TargetObjectId => 0;
     public virtual IGameObject? TargetObject   => DService.ObjectTable.SearchById(TargetObjectId);
     
-    public bool          IsValid()  => IsValid(this);
-    public CSGameObject* ToStruct() => Struct;
+    public bool           IsValid()    => IsValid(this);
+    public CSGameObject*  ToStruct()   => Struct;
+    public CSBattleChara* ToBCStruct() => (CSBattleChara*)Struct;
     
     public nint Address { get; internal set; } = address;
     
@@ -247,6 +248,8 @@ public interface IGameObject : IEquatable<IGameObject>
     public bool IsValid();
 
     public unsafe CSGameObject* ToStruct();
+    
+    public unsafe CSBattleChara* ToBCStruct();
     
     public static IGameObject Create(nint address) => new GameObject(address);
 }

@@ -51,7 +51,7 @@ public class ItemShopInfo
                 {
                     if (info.Value.NPCInfos is not { Count: > 0 })
                     {
-                        ItemToItemShopInfos.Remove(info);
+                        ItemToItemShopInfos.RemoveRange(info);
                         continue;
                     }
                     

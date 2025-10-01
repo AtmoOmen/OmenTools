@@ -11,10 +11,6 @@ public static unsafe partial class HelpersOm
     private static readonly FireCallbackDelegate FireCallback = new CompSig("E8 ?? ?? ?? ?? 0F B6 F0 48 8D 5C 24").GetDelegate<FireCallbackDelegate>();
 
     public delegate nint ReceiveEventDelegate(AtkEventListener* eventListener, EventType eventType, uint which, void* eventData, void* inputData);
-
-    internal delegate nint InvokeListenerDelegate(AtkUnitBase* addon, AtkEventType eventType, uint param, AtkEvent* atkEvent);
-    internal static readonly InvokeListenerDelegate InvokeListener =
-        new CompSig("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 30 0F B7 FA").GetDelegate<InvokeListenerDelegate>();
     
     public static bool ClickTalk()
     {
