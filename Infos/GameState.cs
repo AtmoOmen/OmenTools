@@ -248,9 +248,18 @@ public static unsafe class GameState
     /// <summary>
     /// 当前 Map ID
     /// </summary>
-    public static uint Map => 
-        GameMain.Instance()->CurrentMapId;
-    
+    public static uint Map
+    {
+        get
+        {
+            var mapID = AgentMap.Instance()->CurrentMapId;
+            if (mapID == 0)
+                mapID = GameMain.Instance()->CurrentMapId;
+            
+            return mapID;
+        }
+    }
+
     /// <summary>
     /// 当前 Map 表数据
     /// </summary>
