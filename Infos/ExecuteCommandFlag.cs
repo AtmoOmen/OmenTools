@@ -950,6 +950,11 @@ public enum ExecuteCommandFlag
     /// 请求金碟游乐场面板 整体 信息
     /// </summary>
     RequestGSGeneral = 1850,
+
+    /// <summary>
+    /// 请求金碟游乐场面板 陆行鸟 信息
+    /// </summary>
+    RequestGSChocobo = 1900
     
     /// <summary>
     /// 开始任务回顾
