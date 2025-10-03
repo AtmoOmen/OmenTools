@@ -45,6 +45,9 @@ public static class LuminaWrapper
     public static string GetGeneralActionName(uint rowID) => 
         LuminaGetter.TryGetRow<GeneralAction>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 
+    public static string GetChocoboRaceAbilityName(uint rowID) => 
+        LuminaGetter.TryGetRow<ChocoboRaceAbility>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
+
     public static string GetWorldName(uint rowID) =>
         LuminaGetter.TryGetRow<World>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
     
