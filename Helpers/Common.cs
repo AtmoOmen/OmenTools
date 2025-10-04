@@ -16,6 +16,75 @@ public static partial class HelpersOm
     public static RowRef<T> LuminaCreateRef<T>(uint rowID) where T : struct, IExcelRow<T> => 
         new(DService.Data.Excel, rowID);
     
+    public static nint GetLuaFunctionByName(nint setupFunctionStartAddress, string apiName, int scanSize = 8192)
+    {
+        if (setupFunctionStartAddress == nint.Zero || string.IsNullOrEmpty(apiName))
+            return nint.Zero;
+
+        var functionBytes = new byte[scanSize];
+        try
+        {
+            Marshal.Copy(setupFunctionStartAddress, functionBytes, 0, scanSize);
+        }
+        catch
+        {
+            return nint.Zero;
+        }
+
+        // lea r8, [rip + displacement]
+        // 4C 8D 05 xx xx xx xx
+        byte[] leaStringPattern = [0x4C, 0x8D, 0x05];
+
+        // lea r9, [rip + displacement]
+        // 4C 8D 0D xx xx xx xx
+        byte[] leaFunctionPattern = [0x4C, 0x8D, 0x0D];
+
+        var stringLeaIndex = -1;
+
+        for (var i = 0; i <= functionBytes.Length - 7; i++)
+        {
+            if (functionBytes[i]     == leaStringPattern[0] &&
+                functionBytes[i + 1] == leaStringPattern[1] &&
+                functionBytes[i + 2] == leaStringPattern[2])
+            {
+                var displacement              = BitConverter.ToInt32(functionBytes, i + 3);
+                var currentInstructionAddress = (long)setupFunctionStartAddress + i;
+                var nextInstructionAddress    = currentInstructionAddress  + 7;
+                var stringAddress             = nextInstructionAddress     + displacement;
+
+                var referencedString = Marshal.PtrToStringAnsi((nint)stringAddress);
+                if (referencedString == apiName)
+                {
+                    stringLeaIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (stringLeaIndex == -1)
+            return nint.Zero;
+        
+        var searchLimit = Math.Max(0, stringLeaIndex - 100);
+        for (var i = stringLeaIndex - 1; i >= searchLimit; i--)
+        // lea r9, [rip + ...]
+        {
+            if (i + 7                < functionBytes.Length   &&
+                functionBytes[i]     == leaFunctionPattern[0] &&
+                functionBytes[i + 1] == leaFunctionPattern[1] &&
+                functionBytes[i + 2] == leaFunctionPattern[2])
+            {
+                var displacement              = BitConverter.ToInt32(functionBytes, i + 3);
+                var currentInstructionAddress = (long)setupFunctionStartAddress + i;
+                var nextInstructionAddress    = currentInstructionAddress  + 7;
+                var targetFunctionAddress     = nextInstructionAddress     + displacement;
+
+                return (nint)targetFunctionAddress;
+            }
+        }
+
+        return nint.Zero;
+    }
+    
     /// <summary>
     /// 直接调用过不了混淆, 所以反射
     /// </summary>
