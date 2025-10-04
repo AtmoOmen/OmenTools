@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -25,6 +26,37 @@ public unsafe class LocalPlayerState
     private delegate bool IsLocalPlayerPartyLeaderDelegate();
     private static readonly IsLocalPlayerPartyLeaderDelegate IsLocalPlayerPartyLeader =
         new CompSig("48 83 EC ?? E8 ?? ?? ?? ?? 84 C0 74 ?? 48 83 C4").GetDelegate<IsLocalPlayerPartyLeaderDelegate>();
+    
+    private static Hook<AgentUpdateDelegate>? AgentMapUpdateHook;
+    
+    internal static void Init()
+    {
+        AgentMapUpdateHook ??= DService.Hook.HookFromAddress<AgentUpdateDelegate>(GetVFuncByName(AgentMap.Instance()->VirtualTable, "Update"), AgentMapUpdateDetour);
+        AgentMapUpdateHook.Enable();
+    }
+
+    internal static void Uninit()
+    {
+        AgentMapUpdateHook?.Dispose();
+        AgentMapUpdateHook = null;
+    }
+    
+    private static void AgentMapUpdateDetour(AgentInterface* agent, uint frameCount)
+    {
+        AgentMapUpdateHook.Original(agent, frameCount);
+
+        var isMovingNow = ((AgentMap*)agent)->IsPlayerMoving;
+        if (IsPlayerMoving != isMovingNow)
+            PlayerMoveStateChanged?.Invoke(isMovingNow);
+        IsPlayerMoving = isMovingNow;
+    }
+
+    private static bool IsPlayerMoving;
+
+    /// <summary>
+    /// 玩家移动状态变更时
+    /// </summary>
+    public static event Action<bool>? PlayerMoveStateChanged;
 
     /// <summary>
     /// 当前玩家所属的大国防联军
@@ -36,7 +68,7 @@ public unsafe class LocalPlayerState
     /// 当前玩家是否正在移动
     /// </summary>
     public static bool IsMoving => 
-        AgentMap.Instance()->IsPlayerMoving;
+        IsPlayerMoving;
 
     /// <summary>
     /// 当前玩家的用户名

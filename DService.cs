@@ -14,6 +14,7 @@ public class DService
         pluginInterface.Create<DService>();
         
         GameState.Init();
+        LocalPlayerState.Init();
         
         PI            = pluginInterface;
         UiBuilder     = pluginInterface.UiBuilder;
@@ -25,6 +26,8 @@ public class DService
     public static void Uninit()
     {
         GameState.Uninit();
+        LocalPlayerState.Uninit();
+        
         TaskHelper.DisposeAll();
         MemoryPatch.DisposeAll();
         ThrottlerHelper.Uninit();
