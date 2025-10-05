@@ -241,15 +241,53 @@ public unsafe class LocalPlayerState
         return (uint)(instance->GetInventoryItemCount(itemID) + instance->GetInventoryItemCount(itemID, true));
     }
 
-    public static float DistanceTo3D(Vector3 distance)
+    public static float DistanceTo3D(Vector3 target)
     {
-        if (Object == null) return float.MaxValue;
-        return Vector3.Distance(Object.Position, distance);
+        if (Object == null)
+            return float.MaxValue;
+        
+        return Vector3.Distance(Object.Position, target);
     }
     
-    public static float DistanceTo2D(Vector2 distance)
+    public static float DistanceTo2D(Vector2 target)
     {
-        if (Object == null) return float.MaxValue;
-        return Vector2.Distance(Object.Position.ToVector2(), distance);
+        if (Object == null)
+            return float.MaxValue;
+        
+        return Vector2.Distance(Object.Position.ToVector2(), target);
+    }
+    
+    public static float DistanceToObject2D(IGameObject? target, bool ignoreRadius = true)
+    {
+        if (target == null || Object == null)
+            return float.MaxValue;
+        
+        // 考虑在里面
+        if (!ignoreRadius)
+        {
+            if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
+                return 0f;
+        }
+
+        return DistanceTo2D(ignoreRadius
+                                ? target.Position.ToVector2()
+                                : (target.Position + (Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius)).ToVector2());
+    }
+    
+    public static float DistanceToObject3D(IGameObject? target, bool ignoreRadius = true)
+    {
+        if (target == null || Object == null)
+            return float.MaxValue;
+        
+        // 考虑在里面
+        if (!ignoreRadius)
+        {
+            if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
+                return 0f;
+        }
+
+        return DistanceTo3D(ignoreRadius
+                                ? target.Position
+                                : target.Position + (Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius));
     }
 }
