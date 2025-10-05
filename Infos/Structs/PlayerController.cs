@@ -86,11 +86,11 @@ public unsafe struct PlayerMoveControllerWalk
     [FieldOffset(60)]
     public bool IsMoving;
     
-    [FieldOffset(68)]
-    public float CurrentSpeed;
-    
     [FieldOffset(64)]
     public bool IsJumping;
+    
+    [FieldOffset(68)]
+    public float CurrentSpeed;
 
     [FieldOffset(88)]
     public float BaseMovementSpeed;
