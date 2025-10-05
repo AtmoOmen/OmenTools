@@ -267,11 +267,14 @@ public unsafe class LocalPlayerState
         {
             if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
                 return 0f;
+            
+            if (!(GetNearestPointToObject(target) is var nearestPoint) || nearestPoint == Vector3.Zero)
+                return 0f;
+            
+            return DistanceTo2D(nearestPoint.ToVector2());
         }
 
-        return DistanceTo2D(ignoreRadius
-                                ? target.Position.ToVector2()
-                                : (target.Position + (Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius)).ToVector2());
+        return DistanceTo2D(target.Position.ToVector2());
     }
     
     public static float DistanceToObject3D(IGameObject? target, bool ignoreRadius = true)
@@ -284,10 +287,25 @@ public unsafe class LocalPlayerState
         {
             if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
                 return 0f;
+            
+            if (!(GetNearestPointToObject(target) is var nearestPoint) || nearestPoint == Vector3.Zero)
+                return 0f;
+
+            return DistanceTo3D(nearestPoint);
         }
 
-        return DistanceTo3D(ignoreRadius
-                                ? target.Position
-                                : target.Position + (Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius));
+        return DistanceTo3D(target.Position);
+    }
+
+    public static Vector3 GetNearestPointToObject(IGameObject? target)
+    {
+        if (target == null || Object == null)
+            return Vector3.One;
+        
+        // 现在就在里面
+        if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
+            return Object.Position;
+
+        return target.Position + (Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius);
     }
 }
