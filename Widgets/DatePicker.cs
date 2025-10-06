@@ -6,7 +6,7 @@ namespace OmenTools.Widgets;
 
 public class DatePicker
 {
-    private float _datePickerPagingWidth = 200f;
+    private float datePickerPagingWidth = 200f;
 
     private DateTime viewDate = DateTime.Now;
 
@@ -45,7 +45,7 @@ public class DatePicker
 
     public void DrawHeader()
     {
-        CenterAlignFor(_datePickerPagingWidth);
+        CenterAlignFor(datePickerPagingWidth);
 
         ImGui.BeginGroup();
 
@@ -65,7 +65,7 @@ public class DatePicker
 
         ImGui.EndGroup();
 
-        _datePickerPagingWidth = Math.Max(ImGui.GetItemRectSize().X, Size.X);
+        datePickerPagingWidth = Math.Max(ImGui.GetItemRectSize().X, Size.X);
     }
 
     private void DrawWeekDays()

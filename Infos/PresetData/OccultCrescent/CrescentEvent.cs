@@ -44,7 +44,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
             CrescentEventType.FATE      => LuminaWrapper.GetAddonText(2275),
             CrescentEventType.CE        => LuminaWrapper.GetAddonText(13988),
             CrescentEventType.ForkTower => LuminaWrapper.GetDescriptionString(1205),
-            CrescentEventType.MagicPot  => LuminaWrapper.GetENpcName(1005475),
+            CrescentEventType.MagicPot  => LuminaWrapper.GetENPCName(1005475),
             _                           => string.Empty
         };
 

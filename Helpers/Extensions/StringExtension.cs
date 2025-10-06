@@ -197,8 +197,10 @@ public static class StringExtension
         this string source, IEnumerable<string> compareTo, StringComparison stringComparison = StringComparison.Ordinal)
     {
         foreach (var x in compareTo)
+        {
             if (source.StartsWith(x, stringComparison))
                 return true;
+        }
 
         return false;
     }

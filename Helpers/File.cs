@@ -52,9 +52,7 @@ public static partial class HelpersOm
                 arguments = path;
             }
             else
-            {
                 return;
-            }
 
             using var process = new Process();
             process.StartInfo = new ProcessStartInfo
@@ -82,12 +80,15 @@ public static partial class HelpersOm
         {
             try
             {
-                if (File.Exists(filePath)) File.Delete(filePath);
+                if (File.Exists(filePath)) 
+                    File.Delete(filePath);
                 return;
             }
             catch (IOException)
             {
-                if (i == maxRetries - 1) throw;
+                if (i == maxRetries - 1) 
+                    throw;
+                
                 await Task.Delay(delayMilliseconds);
             }
         }
@@ -134,9 +135,7 @@ public static partial class HelpersOm
         await using var sourceStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
         using var reader = new StreamReader(sourceStream);
         while (await reader.ReadLineAsync() is { } line)
-        {
             lines.Add(line);
-        }
         return lines;
     }
 

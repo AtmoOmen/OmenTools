@@ -19,10 +19,10 @@ namespace OmenTools.Service;
 internal unsafe class GameObject(nint address) : IGameObject
 {
     public SeString              Name             => SeString.Parse(Struct->Name);
-    public ulong                 GameObjectId     => Struct->GetGameObjectId();
-    public uint                  EntityId         => Struct->EntityId;
-    public uint                  DataId           => Struct->BaseId;
-    public uint                  OwnerId          => Struct->OwnerId;
+    public ulong                 GameObjectID     => Struct->GetGameObjectId();
+    public uint                  EntityID         => Struct->EntityId;
+    public uint                  DataID           => Struct->BaseId;
+    public uint                  OwnerID          => Struct->OwnerId;
     public ushort                ObjectIndex      => Struct->ObjectIndex;
     public ObjectKind            ObjectKind       => (ObjectKind)Struct->ObjectKind;
     public byte                  SubKind          => Struct->SubKind;
@@ -31,8 +31,8 @@ internal unsafe class GameObject(nint address) : IGameObject
     public Vector3               Position         => new(Struct->Position.X, Struct->Position.Y, Struct->Position.Z);
     public float                 Rotation         => Struct->Rotation;
     public float                 HitboxRadius     => Struct->HitboxRadius;
-    public uint                  NamePlateIconId  => Struct->NamePlateIconId;
-    public ushort                FateId           => Struct->FateId;
+    public uint                  NamePlateIconID  => Struct->NamePlateIconId;
+    public ushort                FateID           => Struct->FateId;
     public float                 Scale            => Struct->Scale;
     public float                 VfxScale         => Struct->VfxScale;
     public ObjectTargetableFlags TargetableStatus => Struct->TargetableStatus;
@@ -46,8 +46,8 @@ internal unsafe class GameObject(nint address) : IGameObject
     public bool                  IsDead           => Struct->IsDead();
     public bool                  IsTargetable     => Struct->GetIsTargetable();
     
-    public virtual ulong        TargetObjectId => 0;
-    public virtual IGameObject? TargetObject   => DService.ObjectTable.SearchById(TargetObjectId);
+    public virtual ulong        TargetObjectID => 0;
+    public virtual IGameObject? TargetObject   => DService.ObjectTable.SearchByID(TargetObjectID);
     
     public bool           IsValid()    => IsValid(this);
     public CSGameObject*  ToStruct()   => Struct;
@@ -70,23 +70,23 @@ internal unsafe class GameObject(nint address) : IGameObject
     public static bool IsValid(IGameObject? actor) =>
         actor is not null && DService.ClientState.LocalContentId != 0;
     
-    bool IEquatable<IGameObject>.Equals(IGameObject? other) => GameObjectId == other?.GameObjectId;
+    bool IEquatable<IGameObject>.Equals(IGameObject? other) => GameObjectID == other?.GameObjectID;
 
     public override bool Equals(object? obj) => ((IEquatable<IGameObject>)this).Equals(obj as IGameObject);
 
-    public override int GetHashCode() => GameObjectId.GetHashCode();
+    public override int GetHashCode() => GameObjectID.GetHashCode();
     
-    public override string ToString() => $"{GameObjectId:X}({Name.TextValue} - {ObjectKind}) Address: {Address:X}";
+    public override string ToString() => $"{GameObjectID:X}({Name.TextValue} - {ObjectKind}) Address: {Address:X}";
     
     protected internal CSGameObject* Struct => (CSGameObject*)Address;
 }
 
 internal unsafe class Character(nint address) : GameObject(address), ICharacter
 {
-    public short                TransformationId    => Struct->TransformationId;
+    public short                TransformationID    => Struct->TransformationId;
     public float                ModelScale          => Struct->CharacterData.ModelScale;
-    public int                  ModelCharaId        => Struct->ModelContainer.ModelCharaId;
-    public int                  ModelSkeletonId     => Struct->ModelContainer.ModelSkeletonId;
+    public int                  ModelCharaID        => Struct->ModelContainer.ModelCharaId;
+    public int                  ModelSkeletonID     => Struct->ModelContainer.ModelSkeletonId;
     public uint                 CurrentHp           => Struct->CharacterData.Health;
     public uint                 MaxHp               => Struct->CharacterData.MaxHealth;
     public uint                 CurrentMp           => Struct->CharacterData.Mana;
@@ -95,9 +95,9 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
     public uint                 MaxGp               => Struct->CharacterData.MaxGatheringPoints;
     public uint                 CurrentCp           => Struct->CharacterData.CraftingPoints;
     public uint                 MaxCp               => Struct->CharacterData.MaxCraftingPoints;
-    public ushort               TitleId             => Struct->CharacterData.TitleId;
+    public ushort               TitleID             => Struct->CharacterData.TitleId;
     public byte                 Icon                => Struct->CharacterData.Icon;
-    public byte                 ENpcMap             => Struct->CharacterData.Map;
+    public byte                 ENPCMap             => Struct->CharacterData.Map;
     public BattalionFlags       Battalion           => (BattalionFlags)Struct->CharacterData.Battalion;
     public byte                 ShieldPercentage    => Struct->CharacterData.ShieldValue;
     public RowRef<ClassJob>     ClassJob            => LuminaCreateRef<ClassJob>(Struct->CharacterData.ClassJob);
@@ -105,21 +105,21 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
     public byte[]               Customize           => Struct->DrawData.CustomizeData.Data.ToArray();
     public SeString             CompanyTag          => SeString.Parse(Struct->FreeCompanyTag);
     public float                Alpha               => Struct->Alpha;
-    public uint                 NameId              => Struct->NameId;
-    public ulong                AccountId           => Struct->AccountId;
-    public ulong                ContentId           => Struct->ContentId;
+    public uint                 NameID              => Struct->NameId;
+    public ulong                AccountID           => Struct->AccountId;
+    public ulong                ContentID           => Struct->ContentId;
     public CharacterModes       Mode                => Struct->Mode;
     public byte                 ModeParam           => Struct->ModeParam;
     public RowRef<OnlineStatus> OnlineStatus        => LuminaCreateRef<OnlineStatus>(Struct->CharacterData.OnlineStatus);
-    public ulong                EmoteTargetObjectId => Struct->EmoteController.Target;
-    public IGameObject?         EmoteTargetObject   => DService.ObjectTable.SearchById(EmoteTargetObjectId);
+    public ulong                EmoteTargetObjectID => Struct->EmoteController.Target;
+    public IGameObject?         EmoteTargetObject   => DService.ObjectTable.SearchByID(EmoteTargetObjectID);
     public bool                 IsWanderer          => Struct->IsWanderer();
     public bool                 IsTraveler          => Struct->IsTraveler();
     public bool                 IsVoyager           => Struct->IsVoyager();
     public RowRef<World>        CurrentWorld        => LuminaCreateRef<World>(Struct->CurrentWorld);
     public RowRef<World>        HomeWorld           => LuminaCreateRef<World>(Struct->HomeWorld);
 
-    public override ulong TargetObjectId => Struct->TargetId;
+    public override ulong TargetObjectID => Struct->TargetId;
 
     public StatusFlags StatusFlags =>
         (Struct->IsHostile ? StatusFlags.Hostile : StatusFlags.None)               |
@@ -146,8 +146,8 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
         {
             if (Struct->IsNotMounted()) return null;
 
-            var mountId = Struct->Mount.MountId;
-            return mountId == 0 ? null : LuminaCreateRef<Mount>(mountId);
+            var mountID = Struct->Mount.MountId;
+            return mountID == 0 ? null : LuminaCreateRef<Mount>(mountID);
         }
     }
 
@@ -155,8 +155,8 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
     {
         get
         {
-            var ornamentId = Struct->OrnamentData.OrnamentId;
-            return ornamentId == 0 ? null : LuminaCreateRef<Ornament>(ornamentId);
+            var ornamentID = Struct->OrnamentData.OrnamentId;
+            return ornamentID == 0 ? null : LuminaCreateRef<Ornament>(ornamentID);
         }
     }
 
@@ -167,8 +167,8 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
             if (Struct->CompanionObject != null)
                 return LuminaCreateRef<Companion>(Struct->CompanionObject->BaseId);
 
-            var hiddenCompanionId = Struct->CompanionData.CompanionId;
-            return hiddenCompanionId == 0 ? null : LuminaCreateRef<Companion>(hiddenCompanionId);
+            var hiddenCompanionID = Struct->CompanionData.CompanionId;
+            return hiddenCompanionID == 0 ? null : LuminaCreateRef<Companion>(hiddenCompanionID);
         }
     }
 
@@ -183,9 +183,9 @@ internal unsafe class BattleChara(nint address) : Character(address), IBattleCha
     public bool         IsCasting           => CastInfo.IsCasting;
     public bool         IsCastInterruptible => CastInfo.Interruptible;
     public ActionType   CastActionType      => CastInfo.ActionType;
-    public uint         CastActionId        => CastInfo.ActionId;
-    public ulong        CastTargetObjectId  => CastInfo.TargetId;
-    public IGameObject? CastTargetObject    => DService.ObjectTable.SearchById(CastTargetObjectId);
+    public uint         CastActionID        => CastInfo.ActionId;
+    public ulong        CastTargetObjectID  => CastInfo.TargetId;
+    public IGameObject? CastTargetObject    => DService.ObjectTable.SearchByID(CastTargetObjectID);
     public float        CurrentCastTime     => CastInfo.CurrentCastTime != 0 ? CastInfo.CurrentCastTime : -1;
     public float        BaseCastTime        => CastInfo.BaseCastTime    != 0 ? CastInfo.BaseCastTime : -1;
     public float        TotalCastTime       => CastInfo.TotalCastTime   != 0 ? CastInfo.TotalCastTime : -1;
@@ -198,27 +198,27 @@ internal unsafe class BattleChara(nint address) : Character(address), IBattleCha
 
 internal class EventObj(nint address) : GameObject(address), IEventObj;
 
-internal class Npc(nint address) : Character(address), INpc;
+internal class NPC(nint address) : Character(address), INPC;
 
-internal unsafe class BattleNpc(nint address) : BattleChara(address), IBattleNpc
+internal unsafe class BattleNPC(nint address) : BattleChara(address), IBattleNpc
 {
-    public BattleNpcSubKind BattleNpcKind => (BattleNpcSubKind)Struct->Character.GameObject.SubKind;
+    public BattleNpcSubKind BattleNPCKind => (BattleNpcSubKind)Struct->Character.GameObject.SubKind;
 
-    public override ulong TargetObjectId => Struct->Character.TargetId;
+    public override ulong TargetObjectID => Struct->Character.TargetId;
 }
 
 internal unsafe class PlayerCharacter(nint address) : BattleChara(address), IPlayerCharacter
 {
-    public override ulong TargetObjectId => Struct->LookAt.Controller.Params[0].TargetParam.TargetId;
+    public override ulong TargetObjectID => Struct->LookAt.Controller.Params[0].TargetParam.TargetId;
 }
 
 public interface IGameObject : IEquatable<IGameObject>
 {
     public SeString              Name             { get; }
-    public ulong                 GameObjectId     { get; }
-    public uint                  EntityId         { get; }
-    public uint                  DataId           { get; }
-    public uint                  OwnerId          { get; }
+    public ulong                 GameObjectID     { get; }
+    public uint                  EntityID         { get; }
+    public uint                  DataID           { get; }
+    public uint                  OwnerID          { get; }
     public ushort                ObjectIndex      { get; }
     public ObjectKind            ObjectKind       { get; }
     public byte                  SubKind          { get; }
@@ -229,10 +229,10 @@ public interface IGameObject : IEquatable<IGameObject>
     public Vector3               Position         { get; }
     public float                 Rotation         { get; }
     public float                 HitboxRadius     { get; }
-    public ulong                 TargetObjectId   { get; }
+    public ulong                 TargetObjectID   { get; }
     public IGameObject?          TargetObject     { get; }
-    public uint                  NamePlateIconId  { get; }
-    public ushort                FateId           { get; }
+    public uint                  NamePlateIconID  { get; }
+    public ushort                FateID           { get; }
     public float                 Scale            { get; }
     public float                 VfxScale         { get; }
     public ObjectTargetableFlags TargetableStatus { get; }
@@ -256,10 +256,10 @@ public interface IGameObject : IEquatable<IGameObject>
 
 public interface ICharacter : IGameObject
 {
-    public short                TransformationId    { get; }
+    public short                TransformationID    { get; }
     public float                ModelScale          { get; }
-    public int                  ModelCharaId        { get; }
-    public int                  ModelSkeletonId     { get; }
+    public int                  ModelCharaID        { get; }
+    public int                  ModelSkeletonID     { get; }
     public uint                 CurrentHp           { get; }
     public uint                 MaxHp               { get; }
     public uint                 CurrentMp           { get; }
@@ -268,9 +268,9 @@ public interface ICharacter : IGameObject
     public uint                 MaxGp               { get; }
     public uint                 CurrentCp           { get; }
     public uint                 MaxCp               { get; }
-    public ushort               TitleId             { get; }
+    public ushort               TitleID             { get; }
     public byte                 Icon                { get; }
-    public byte                 ENpcMap             { get; }
+    public byte                 ENPCMap             { get; }
     public BattalionFlags       Battalion           { get; }
     public byte                 ShieldPercentage    { get; }
     public RowRef<ClassJob>     ClassJob            { get; }
@@ -278,15 +278,15 @@ public interface ICharacter : IGameObject
     public byte[]               Customize           { get; }
     public SeString             CompanyTag          { get; }
     public float                Alpha               { get; }
-    public uint                 NameId              { get; }
-    public ulong                AccountId           { get; }
-    public ulong                ContentId           { get; }
+    public uint                 NameID              { get; }
+    public ulong                AccountID           { get; }
+    public ulong                ContentID           { get; }
     public CharacterModes       Mode                { get; }
     public byte                 ModeParam           { get; }
     public RowRef<OnlineStatus> OnlineStatus        { get; }
     public StatusFlags          StatusFlags         { get; }
     public RowRef<Emote>?       CurrentEmote        { get; }
-    public ulong                EmoteTargetObjectId { get; }
+    public ulong                EmoteTargetObjectID { get; }
     public IGameObject?         EmoteTargetObject   { get; }
     public bool                 IsWanderer          { get; }
     public bool                 IsTraveler          { get; }
@@ -308,8 +308,8 @@ public interface IBattleChara : ICharacter
     public bool         IsCasting           { get; }
     public bool         IsCastInterruptible { get; }
     public ActionType   CastActionType      { get; }
-    public uint         CastActionId        { get; }
-    public ulong        CastTargetObjectId  { get; }
+    public uint         CastActionID        { get; }
+    public ulong        CastTargetObjectID  { get; }
     public IGameObject? CastTargetObject    { get; }
     public float        CurrentCastTime     { get; }
     public float        BaseCastTime        { get; }
@@ -320,11 +320,11 @@ public interface IBattleChara : ICharacter
     public new static IBattleChara Create(nint address) => new BattleChara(address);
 }
 
-public interface IBattleNpc : IBattleChara
+public interface IBattleNPC : IBattleChara
 {
-    BattleNpcSubKind BattleNpcKind { get; }
+    BattleNpcSubKind BattleNPCKind { get; }
     
-    public new static IBattleNpc Create(nint address) => new BattleNpc(address);
+    public new static IBattleNpc Create(nint address) => new BattleNPC(address);
 }
 
 public interface IEventObj : IGameObject
@@ -332,9 +332,9 @@ public interface IEventObj : IGameObject
     public new static IEventObj Create(nint address) => new EventObj(address);
 }
 
-public interface INpc : ICharacter
+public interface INPC : ICharacter
 {
-    public new static INpc Create(nint address) => new Npc(address);
+    public new static INPC Create(nint address) => new NPC(address);
 }
 
 public interface IPlayerCharacter : IBattleChara

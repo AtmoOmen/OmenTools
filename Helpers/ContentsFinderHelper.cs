@@ -20,10 +20,6 @@ public class ContentsFinderHelper
         new("E8 ?? ?? ?? ?? C6 43 ?? ?? E8 ?? ?? ?? ?? 83 C0 ?? 89 43 ?? 48 83 C4 ?? 5B C3 C6 43");
     private delegate void CancelContentsFinderDelegate(byte a1);
     private static readonly CancelContentsFinderDelegate CancelContentsFinder;
-    
-    private static readonly CompSig                ExecuteCommandSig = new("E8 ?? ?? ?? ?? 48 8B 06 48 8B CE FF 50 ?? E9 ?? ?? ?? ?? 49 8B CC");
-    private delegate        nint                   ExecuteCommandDelegate(ExecuteCommandFlag command, int param1, int param2, int param3, int param4);
-    private static readonly ExecuteCommandDelegate ExecuteCommand;
 
     /// <summary>
     /// 默认任务搜索器设置, 仅 Config817to820 这一项被设置为 true
@@ -35,7 +31,6 @@ public class ContentsFinderHelper
         RequestContentsFinder         = RequestContentsFinderSig.GetDelegate<RequestContentsFinderDelegate>();
         RequestContentsFinderRoulette = RequestContentsFinderRouletteSig.GetDelegate<RequestContentsFinderRouletteDelegate>();
         CancelContentsFinder          = CancelContentsFinderSig.GetDelegate<CancelContentsFinderDelegate>();
-        ExecuteCommand                = ExecuteCommandSig.GetDelegate<ExecuteCommandDelegate>();
     }
 
     public static bool RequestDutyNormal(uint rowID, ContentsFinderOption option)
@@ -67,7 +62,7 @@ public class ContentsFinderHelper
 
     public static void RequestDutySupport(uint dawnContentID)
     {
-        ExecuteCommand(ExecuteCommandFlag.RequestDutySupport, 0, 0, 0, 0);
+        ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestDutySupport);
         if (DService.ObjectTable.LocalPlayer is not { } localPlayer) return;
         var localRole = localPlayer.ClassJob.Value.Role;
 
@@ -179,7 +174,7 @@ public class ContentsFinderHelper
                                                        ? acc with { Param2 = acc.Param2 + curr.Value }
                                                        : acc with { Param3 = acc.Param3 + curr.Value });
 
-        ExecuteCommand(ExecuteCommandFlag.SendDutySupport, (int)dawnContentID, (int)parameters.Param2, (int)parameters.Param3, 0);
+        ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.SendDutySupport, dawnContentID, (uint)parameters.Param2, (uint)parameters.Param3);
     }
 }
 

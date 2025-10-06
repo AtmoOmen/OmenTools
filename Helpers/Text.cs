@@ -112,9 +112,11 @@ public static unsafe partial class HelpersOm
 
         if (isNegative)
         {
-            if (minusColor != -1) builder.AddUiForeground((ushort)minusColor);
+            if (minusColor != -1) 
+                builder.AddUiForeground((ushort)minusColor);
             builder.AddText("-");
-            if (minusColor != -1) builder.AddUiForegroundOff();
+            if (minusColor != -1) 
+                builder.AddUiForegroundOff();
         }
 
         var hasZhao = zhao > 0;
@@ -126,18 +128,22 @@ public static unsafe partial class HelpersOm
         if (hasZhao)
         {
             builder.Append(zhao.ToString());
-            if (unitColor != -1) builder.AddUiForeground((ushort)unitColor);
+            if (unitColor != -1) 
+                builder.AddUiForeground((ushort)unitColor);
             builder.AddText(兆);
-            if (unitColor != -1) builder.AddUiForegroundOff();
+            if (unitColor != -1) 
+                builder.AddUiForegroundOff();
         }
 
         // 亿
         if (hasYi)
         {
             builder.Append(yi.ToString());
-            if (unitColor != -1) builder.AddUiForeground((ushort)unitColor);
+            if (unitColor != -1) 
+                builder.AddUiForeground((ushort)unitColor);
             builder.AddText(亿);
-            if (unitColor != -1) builder.AddUiForegroundOff();
+            if (unitColor != -1) 
+                builder.AddUiForegroundOff();
         }
         else if (hasZhao && (hasWan || hasGe)) // 兆存在但亿为0时补零
             builder.Append(零);
@@ -146,9 +152,11 @@ public static unsafe partial class HelpersOm
         if (hasWan)
         {
             builder.Append(wan.ToString());
-            if (unitColor != -1) builder.AddUiForeground((ushort)unitColor);
+            if (unitColor != -1) 
+                builder.AddUiForeground((ushort)unitColor);
             builder.AddText(万);
-            if (unitColor != -1) builder.AddUiForegroundOff();
+            if (unitColor != -1) 
+                builder.AddUiForegroundOff();
         }
         else if ((hasZhao || hasYi) && hasGe) // 兆或亿存在但万为0时补零
             builder.Append(零);
@@ -158,7 +166,8 @@ public static unsafe partial class HelpersOm
         {
             // 当高位存在且个不足四位时补零 (1兆零1000)
             var needsZero = (hasZhao || hasYi || hasWan) && ge < 1000;
-            if (needsZero) builder.Append(零);
+            if (needsZero) 
+                builder.Append(零);
             builder.Append(ge.ToString());
         }
 
@@ -227,7 +236,8 @@ public static unsafe partial class HelpersOm
 
         var builder = new StringBuilder();
 
-        if (isNegative) builder.Append("-");
+        if (isNegative) 
+            builder.Append("-");
 
         var hasZhao = zhao > 0;
         var hasYi   = yi   > 0;
@@ -263,8 +273,9 @@ public static unsafe partial class HelpersOm
         if (hasGe)
         {
             var needsZero = (hasZhao || hasYi || hasWan) && ge < 1000;
-            if (needsZero) builder.Append(零);
-            builder.Append(ge.ToString());
+            if (needsZero) 
+                builder.Append(零);
+            builder.Append(ge);
         }
 
         // 合并多余零
@@ -290,7 +301,8 @@ public static unsafe partial class HelpersOm
                 isPreviousZero = true;
                 filteredChars.Add(currentChar);
             }
-            else { filteredChars.Add(currentChar); }
+            else
+                filteredChars.Add(currentChar);
         }
 
         return filteredChars.Count == 0 ? "0" : new string(filteredChars.ToArray());
@@ -341,9 +353,9 @@ public static unsafe partial class HelpersOm
 
         // 兆位
         var zhaoIndex = -1;
-        foreach (var c in new[] { '兆' })
+        foreach (var unit in new[] { '兆' })
         {
-            var pos = formatted.IndexOf('兆', index);
+            var pos = formatted.IndexOf(unit, index);
             if (pos != -1 && (zhaoIndex == -1 || pos < zhaoIndex))
                 zhaoIndex = pos;
         }
@@ -399,7 +411,8 @@ public static unsafe partial class HelpersOm
 
             geStr = geStr.Replace(",", "");
 
-            if (geStr.Length > 0) { ge = long.Parse(geStr); }
+            if (geStr.Length > 0)
+                ge = long.Parse(geStr);
         }
 
         // 计算最终值（兆 * 1万亿 + 亿 * 1亿 + 万 * 1万 + 个）
@@ -420,9 +433,7 @@ public static unsafe partial class HelpersOm
         for (var i = 0; i < sb.Length; ++i)
         {
             if (sb[i] == ' ')
-            {
                 lastSpace = true;
-            }
             else if (lastSpace)
             {
                 lastSpace = false;

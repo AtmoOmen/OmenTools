@@ -28,7 +28,8 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (IsWindowBackground) TrayNotify.ShowBalloonTip(title ?? message, message);
+        if (IsWindowBackground) 
+            TrayNotify.ShowBalloonTip(title ?? message, message);
     }
 
     public static void NotificationWarning(string message, string? title = null)
@@ -43,7 +44,8 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (IsWindowBackground) TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Warning);
+        if (IsWindowBackground) 
+            TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Warning);
     }
 
     public static void NotificationError(string message, string? title = null)
@@ -58,7 +60,8 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (IsWindowBackground) TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Error);
+        if (IsWindowBackground) 
+            TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Error);
     }
 
     public static void NotificationInfo(string message, string? title = null)
@@ -73,13 +76,15 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (IsWindowBackground) TrayNotify.ShowBalloonTip(title ?? message, message);
+        if (IsWindowBackground) 
+            TrayNotify.ShowBalloonTip(title ?? message, message);
     }
 
     public static void ChatError(string message, SeString? prefix = null)
     {
         var builder = new SeStringBuilder();
-        if (prefix != null) builder.Append(prefix).Append(" ");
+        if (prefix != null) 
+            builder.Append(prefix).Append(" ");
         builder.AddUiForeground($"{message}", 518);
         DService.Chat.PrintError(builder.Build());
     }
@@ -87,7 +92,8 @@ public static partial class HelpersOm
     public static void ChatError(SeString message, SeString? prefix = null)
     {
         var builder = new SeStringBuilder();
-        if (prefix != null) builder.Append(prefix);
+        if (prefix != null) 
+            builder.Append(prefix);
 
         var isFirstPayload = prefix != null;
         foreach (var payload in message.Payloads)
@@ -100,7 +106,8 @@ public static partial class HelpersOm
             
             if (payload.Type == PayloadType.RawText)
                 builder.AddUiForeground($"{((TextPayload)payload).Text}", 518);
-            else builder.Add(payload);
+            else 
+                builder.Add(payload);
         }
         
         DService.Chat.PrintError(builder.Build());
@@ -109,7 +116,8 @@ public static partial class HelpersOm
     public static void Chat(string message, SeString? prefix = null)
     {
         var builder = new SeStringBuilder();
-        if (prefix != null) builder.Append(prefix).Append(" ");
+        if (prefix != null) 
+            builder.Append(prefix).Append(" ");
         builder.Append($"{message}");
         DService.Chat.Print(builder.Build());
     }
@@ -117,7 +125,8 @@ public static partial class HelpersOm
     public static void Chat(SeString message, SeString? prefix = null)
     {
         var builder = new SeStringBuilder();
-        if (prefix != null) builder.Append(prefix);
+        if (prefix != null) 
+            builder.Append(prefix);
 
         var isFirstPayload = prefix != null;
         foreach (var payload in message.Payloads)

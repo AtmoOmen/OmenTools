@@ -13,6 +13,9 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
+    public static bool IsPluginEnabled(string internalName) => 
+        DService.PI.InstalledPlugins.Any(x => x.InternalName == internalName && x.IsLoaded);
+    
     public static RowRef<T> LuminaCreateRef<T>(uint rowID) where T : struct, IExcelRow<T> => 
         new(DService.Data.Excel, rowID);
     
@@ -108,14 +111,14 @@ public static partial class HelpersOm
     /// 直接调用过不了混淆, 所以反射
     /// </summary>
     public static nint GetMemberFuncByName(Type staticType, string propertyName) =>
-        (nint)(staticType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Static)?.GetValue(null)
-               ?? throw new MissingMemberException(staticType.FullName, propertyName));
+        (nint)(staticType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ??
+               throw new MissingMemberException(staticType.FullName, propertyName));
 
     public static bool IsInAnyParty() => 
         InfoProxyCrossRealm.IsCrossRealmParty() || DService.PartyList.Length >= 2;
     
     [DllImport("user32.dll")]
-    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    private static extern bool ShowWindow(nint hWnd, int nCmdShow);
     
     public static unsafe void MinimizeWindow() => 
         ShowWindow(Framework.Instance()->GameWindow->WindowHandle, 6);
@@ -172,11 +175,13 @@ public static partial class HelpersOm
     {
         var sourceIndex = -1;
         for (var i = 0; i < list.Count; i++)
+        {
             if (sourceItemSelector(list[i]))
             {
                 sourceIndex = i;
                 break;
             }
+        }
 
         if (sourceIndex == targetedIndex) return;
         var item = list[sourceIndex];

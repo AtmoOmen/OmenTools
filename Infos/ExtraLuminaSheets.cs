@@ -3,6 +3,8 @@ using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Infos;
 
+#pragma warning disable DR0009
+
 [Sheet("ContentMemberType")]
 public readonly struct ContentMemberTypeTemp(ExcelPage page, uint offset, uint row) : IExcelRow<ContentMemberTypeTemp>
 {
@@ -127,3 +129,5 @@ public readonly struct HwdTranspoint(ExcelPage page, uint offset, uint row) : IE
     static HwdTranspoint IExcelRow<HwdTranspoint>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);
 }
+
+#pragma warning restore DR0009

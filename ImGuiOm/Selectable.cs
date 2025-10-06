@@ -186,9 +186,11 @@ public static partial class ImGuiOm
         ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, bool useStaticFont = false)
     {
         ImGui.PushID($"{icon}_{id}");
-        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) 
+            ImGui.PushFont(UiBuilder.IconFont);
         var textSize = ImGui.CalcTextSize(icon.ToIconString());
-        if (useStaticFont) ImGui.PopFont();
+        if (useStaticFont) 
+            ImGui.PopFont();
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding.X;
@@ -198,9 +200,11 @@ public static partial class ImGuiOm
         var result = ImGui.Selectable("", selected, flags, new Vector2(selectableWidth, selectableHeight));
 
         var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X + padding) / 2, cursorPos.Y + padding);
-        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) 
+            ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        if (useStaticFont) ImGui.PopFont();
+        if (useStaticFont) 
+            ImGui.PopFont();
         ImGui.PopID();
 
         return result;
@@ -210,9 +214,11 @@ public static partial class ImGuiOm
         ImGuiSelectableFlags flags = ImGuiSelectableFlags.None, bool useStaticFont = false)
     {
         ImGui.PushID($"{icon}_{id}");
-        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) 
+            ImGui.PushFont(UiBuilder.IconFont);
         var textSize = ImGui.CalcTextSize(icon.ToIconString());
-        if (useStaticFont) ImGui.PopFont();
+        if (useStaticFont) 
+            ImGui.PopFont();
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorPos = ImGui.GetCursorScreenPos();
         var padding = ImGui.GetStyle().FramePadding.X;
@@ -222,9 +228,11 @@ public static partial class ImGuiOm
         var result = ImGui.Selectable("", ref selected, flags, new Vector2(selectableWidth, selectableHeight));
 
         var textPos = new Vector2(cursorPos.X + (selectableWidth - textSize.X + padding) / 2, cursorPos.Y + padding);
-        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) 
+            ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        if (useStaticFont) ImGui.PopFont();
+        if (useStaticFont) 
+            ImGui.PopFont();
         ImGui.PopID();
 
         return result;

@@ -50,12 +50,7 @@ public class ItemShopInfo
                 foreach (var info in ItemToItemShopInfos)
                 {
                     if (info.Value.NPCInfos is not { Count: > 0 })
-                    {
                         ItemToItemShopInfos.RemoveRange(info);
-                        continue;
-                    }
-                    
-                    // info.Value.ApplyFilters();
                 }
             } 
             finally
@@ -553,11 +548,11 @@ public class ItemShopInfo
         }
     }
 
-    private static void AddGcShopItem(GCShop gcId, ENpcBase npcBase, ENpcResident resident)
+    private static void AddGcShopItem(GCShop gcID, ENpcBase npcBase, ENpcResident resident)
     {
-        var seal = GrandCompanySeals.Find(i => i.Description.ExtractText().Contains($"{gcId.GrandCompany.Value.Name.ExtractText()}"));
+        var seal = GrandCompanySeals.Find(i => i.Description.ExtractText().Contains($"{gcID.GrandCompany.Value.Name.ExtractText()}"));
 
-        foreach (var category in LuminaGetter.Get<GCScripShopCategory>().Where(i => i.GrandCompany.RowId == gcId.GrandCompany.RowId))
+        foreach (var category in LuminaGetter.Get<GCScripShopCategory>().Where(i => i.GrandCompany.RowId == gcID.GrandCompany.RowId))
         {
             for (ushort i = 0;; i++)
             {
@@ -789,15 +784,15 @@ public class ItemShopInfo
         }
     }
 
-    private static void AddItemCost(uint itemId, uint npcId, List<ShopItemCostInfo> cost)
+    private static void AddItemCost(uint itemID, uint npcID, List<ShopItemCostInfo> cost)
     {
-        if (itemId == 0)
+        if (itemID == 0)
             return;
 
-        if (!ItemToItemShopInfos.TryGetValue(itemId, out var itemInfo))
+        if (!ItemToItemShopInfos.TryGetValue(itemID, out var itemInfo))
             return;
 
-        var result = itemInfo.NPCInfos.Find(i => i.ID == npcId);
+        var result = itemInfo.NPCInfos.Find(i => i.ID == npcID);
         if (result == null)
             return;
 
@@ -867,27 +862,27 @@ public class ItemShopInfo
                 if (instanceObject.AssetType != LayerEntryType.EventNPC)
                     continue;
 
-                var eventNpc = (LayerCommon.ENPCInstanceObject)instanceObject.Object;
-                var npcRowId = eventNpc.ParentData.ParentData.BaseId;
-                if (npcRowId == 0) continue;
+                var eventNPC = (LayerCommon.ENPCInstanceObject)instanceObject.Object;
+                var npcRowID = eventNPC.ParentData.ParentData.BaseId;
+                if (npcRowID == 0) continue;
 
-                if (NPCIDToLocations.ContainsKey(npcRowId)) continue;
+                if (NPCIDToLocations.ContainsKey(npcRowID)) continue;
 
-                if (!LuminaGetter.TryGetRow(npcRowId, out ENpcBase npcBase)) continue;
-                if (!LuminaGetter.TryGetRow(npcRowId, out ENpcResident resident)) continue;
+                if (!LuminaGetter.TryGetRow(npcRowID, out ENpcBase npcBase)) continue;
+                if (!LuminaGetter.TryGetRow(npcRowID, out ENpcResident resident)) continue;
 
                 var match = npcBase.ENpcData.Any(data => EventHandlerTypes.Any(i => MatchEventHandlerType(data.RowId, i)));
                 if (!match) continue;
 
-                var mapId = resident.Map;
+                var mapID = resident.Map;
                 try
                 {
-                    var map = LuminaGetter.Get<Map>().First(i => i.TerritoryType.RowId == sTerritoryType.RowId && i.MapIndex == mapId);
-                    NPCIDToLocations.Add(npcRowId, new(instanceObject.Transform.Translation.X, instanceObject.Transform.Translation.Z, sTerritoryType.RowId, map.RowId));
+                    var map = LuminaGetter.Get<Map>().First(i => i.TerritoryType.RowId == sTerritoryType.RowId && i.MapIndex == mapID);
+                    NPCIDToLocations.Add(npcRowID, new(instanceObject.Transform.Translation.X, instanceObject.Transform.Translation.Z, sTerritoryType.RowId, map.RowId));
                 }
                 catch (InvalidOperationException)
                 {
-                    NPCIDToLocations.Add(npcRowId, new(instanceObject.Transform.Translation.X, instanceObject.Transform.Translation.Z, sTerritoryType.RowId));
+                    NPCIDToLocations.Add(npcRowID, new(instanceObject.Transform.Translation.X, instanceObject.Transform.Translation.Z, sTerritoryType.RowId));
                 }
             }
         }

@@ -11,13 +11,17 @@ public static class CommonExtensions
 
         if (isEnabled == null)
         {
-            if (hook.IsEnabled) hook.Disable();
-            else hook.Enable();
+            if (hook.IsEnabled) 
+                hook.Disable();
+            else 
+                hook.Enable();
         }
         else
         {
-            if (isEnabled.Value) hook.Enable();
-            else hook.Disable();
+            if (isEnabled.Value) 
+                hook.Enable();
+            else 
+                hook.Disable();
         }
     }
 
@@ -33,16 +37,20 @@ public static class CommonExtensions
 
     public static ref int ValidateRange(this ref int i, int min, int max)
     {
-        if (i > max) i = max;
-        if (i < min) i = min;
+        if (i > max) 
+            i = max;
+        if (i < min) 
+            i = min;
         
         return ref i;
     }
 
     public static ref float ValidateRange(this ref float i, float min, float max)
     {
-        if (i > max) i = max;
-        if (i < min) i = min;
+        if (i > max) 
+            i = max;
+        if (i < min) 
+            i = min;
         
         return ref i;
     }

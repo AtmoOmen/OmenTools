@@ -6,10 +6,10 @@ namespace OmenTools.Helpers;
 public static partial class HelpersOm
 {
     [DllImport("imm32.dll")]
-    private static extern IntPtr ImmGetContext(IntPtr hwnd);
+    private static extern nint ImmGetContext(nint hwnd);
 
     [DllImport("imm32.dll")]
-    private static extern bool ImmSetOpenStatus(IntPtr himc, bool b);
+    private static extern bool ImmSetOpenStatus(nint himc, bool b);
 
     private static unsafe nint GameWindowHandle => Framework.Instance()->GameWindow->WindowHandle;
     

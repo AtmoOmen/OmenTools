@@ -7,8 +7,8 @@ public static partial class HelpersOm
     [DllImport("user32.dll", SetLastError = true)]
     private static extern nint FindWindowEx(nint hwndParent, nint hwndChildAfter, string lpszClass, string lpszWindow);
 
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint GetWindowThreadProcessId(nint hWnd, out uint lpdwProcessId);
+    [DllImport("user32.dll", EntryPoint = "GetWindowThreadProcessId", SetLastError = true)]
+    private static extern uint GetWindowThreadProcessID(nint hWnd, out uint lpdwProcessID);
 
     [DllImport("user32.dll")]
     private static extern nint GetForegroundWindow();
@@ -23,13 +23,11 @@ public static partial class HelpersOm
 
     public static unsafe void WriteProtectedMemory<T>(nint targetAddress, T value) where T : unmanaged
     {
-        var size = (uint)Marshal.SizeOf(typeof(T));
+        var size = (uint)Marshal.SizeOf<T>();
 
         var success = VirtualProtect(targetAddress, size, PAGE_READWRITE, out var oldProtect);
         if (!success)
-        {
             throw new InvalidOperationException("Failed to change memory protection.");
-        }
 
         var ptr = targetAddress.ToPointer();
         *(T*)ptr = value;
@@ -39,13 +37,11 @@ public static partial class HelpersOm
     
     public static unsafe T ReadProtectedMemory<T>(nint sourceAddress) where T : unmanaged
     {
-        var size = (uint)Marshal.SizeOf(typeof(T));
+        var size = (uint)Marshal.SizeOf<T>();
 
         var success = VirtualProtect(sourceAddress, size, PAGE_READWRITE, out var oldProtect);
         if (!success)
-        {
             throw new InvalidOperationException("Failed to change memory protection.");
-        }
 
         var value = *(T*)sourceAddress.ToPointer();
 
@@ -61,7 +57,7 @@ public static partial class HelpersOm
         {
             hwnd = FindWindowEx(nint.Zero, hwnd, "FFXIVGAME", null);
             if (hwnd == nint.Zero) break;
-            _ = GetWindowThreadProcessId(hwnd, out var pid);
+            _ = GetWindowThreadProcessID(hwnd, out var pid);
             if (pid == Environment.ProcessId) break;
         }
 
@@ -74,10 +70,10 @@ public static partial class HelpersOm
         if (activatedHandle == nint.Zero)
             return false;
 
-        var procId = Environment.ProcessId;
-        _ = GetWindowThreadProcessId(activatedHandle, out var activeProcId);
+        var processID = Environment.ProcessId;
+        _ = GetWindowThreadProcessID(activatedHandle, out var activeProcId);
 
-        return activeProcId == procId;
+        return activeProcId == processID;
     }
 
     public static bool SendKeypress(Keys key) => SendKeypress((int)key);

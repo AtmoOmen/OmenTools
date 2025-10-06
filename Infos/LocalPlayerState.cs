@@ -5,11 +5,12 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
+using OmenTools.Abstracts;
 using GrandCompany = FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany;
 
 namespace OmenTools.Infos;
 
-public unsafe class LocalPlayerState
+public unsafe class LocalPlayerState : OmenServiceBase
 {
     private delegate ushort GetClassJobLevelDelegate(PlayerState* instance, uint classJobID, bool checkParentJob);
     private static readonly GetClassJobLevelDelegate GetClassJobLevelInternal =
@@ -29,13 +30,13 @@ public unsafe class LocalPlayerState
     
     private static Hook<AgentUpdateDelegate>? AgentMapUpdateHook;
     
-    internal static void Init()
+    internal override void Init()
     {
         AgentMapUpdateHook ??= DService.Hook.HookFromAddress<AgentUpdateDelegate>(GetVFuncByName(AgentMap.Instance()->VirtualTable, "Update"), AgentMapUpdateDetour);
         AgentMapUpdateHook.Enable();
     }
 
-    internal static void Uninit()
+    internal override void Uninit()
     {
         AgentMapUpdateHook?.Dispose();
         AgentMapUpdateHook = null;

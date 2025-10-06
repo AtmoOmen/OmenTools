@@ -8,7 +8,7 @@ public partial class TaskHelper : IDisposable
     
     public TaskHelper()
     {
-        FrameThrottler = new(() => (long)DService.UiBuilder.FrameCount);
+        FrameThrottler = new(() => (long)DService.UIBuilder.FrameCount);
         Throttler      = new();
         
         DService.Framework.Update += Tick;
@@ -108,9 +108,7 @@ public partial class TaskHelper : IDisposable
                 result = task.Result;
             }
             else
-            {
                 result = CurrentTask.Action!();
-            }
             
             switch (result)
             {
@@ -178,7 +176,8 @@ public partial class TaskHelper : IDisposable
     public void SetStepMode(bool enabled)
     {
         DService.Framework.Update -= Tick;
-        if (!enabled) DService.Framework.Update += Tick;
+        if (!enabled) 
+            DService.Framework.Update += Tick;
     }
 
     public void Step() => Tick(null);

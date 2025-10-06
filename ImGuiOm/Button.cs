@@ -259,7 +259,8 @@ public static partial class ImGuiOm
         using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
             result = ImGui.Button($"{iconText}##{iconText}-{id}", size);
 
-        if (!tooltip.IsNullOrEmpty()) TooltipHover(tooltip);
+        if (!tooltip.IsNullOrEmpty()) 
+            TooltipHover(tooltip);
 
         return result;
     }

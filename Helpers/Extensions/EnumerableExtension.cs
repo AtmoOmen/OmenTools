@@ -22,8 +22,10 @@ public static class EnumerableExtension
     public static void AddRange<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, IEnumerable<KeyValuePair<TKey, TValue>> items)
         where TKey : notnull
     {
-        if (dictionary == null) throw new ArgumentNullException(nameof(dictionary));
-        if (items      == null) throw new ArgumentNullException(nameof(items));
+        if (dictionary == null) 
+            throw new ArgumentNullException(nameof(dictionary));
+        if (items      == null) 
+            throw new ArgumentNullException(nameof(items));
 
         foreach (var item in items)
             dictionary.TryAdd(item.Key, item.Value);
@@ -31,8 +33,10 @@ public static class EnumerableExtension
     
     public static void AddRange<T>(this ConcurrentBag<T> bag, IEnumerable<T> items)
     {
-        if (bag   == null) throw new ArgumentNullException(nameof(bag));
-        if (items == null) throw new ArgumentNullException(nameof(items));
+        if (bag   == null) 
+            throw new ArgumentNullException(nameof(bag));
+        if (items == null) 
+            throw new ArgumentNullException(nameof(items));
 
         foreach (var item in items)
             bag.Add(item);
@@ -51,9 +55,12 @@ public static class EnumerableExtension
         Func<TSource, TKey>       keySelector,
         Func<TSource, TValue>     valueSelector) where TKey : notnull
     {
-        if (source        == null) throw new ArgumentNullException(nameof(source));
-        if (keySelector   == null) throw new ArgumentNullException(nameof(keySelector));
-        if (valueSelector == null) throw new ArgumentNullException(nameof(valueSelector));
+        if (source        == null) 
+            throw new ArgumentNullException(nameof(source));
+        if (keySelector   == null) 
+            throw new ArgumentNullException(nameof(keySelector));
+        if (valueSelector == null) 
+            throw new ArgumentNullException(nameof(valueSelector));
 
         return new ConcurrentDictionary<TKey, TValue>(
             source.ToDictionary(keySelector, valueSelector));
@@ -66,8 +73,10 @@ public static class EnumerableExtension
 
     public static void ForEach<T>(this ConcurrentBag<T> bag, Action<T> action)
     {
-        if (bag    == null) throw new ArgumentNullException(nameof(bag));
-        if (action == null) throw new ArgumentNullException(nameof(action));
+        if (bag    == null) 
+            throw new ArgumentNullException(nameof(bag));
+        if (action == null) 
+            throw new ArgumentNullException(nameof(action));
 
         foreach (var item in bag)
             action(item);
@@ -75,8 +84,10 @@ public static class EnumerableExtension
 
     public static void ForEach<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, Action<TKey, TValue> action) where TKey : notnull
     {
-        if (dictionary == null) throw new ArgumentNullException(nameof(dictionary));
-        if (action     == null) throw new ArgumentNullException(nameof(action));
+        if (dictionary == null) 
+            throw new ArgumentNullException(nameof(dictionary));
+        if (action     == null) 
+            throw new ArgumentNullException(nameof(action));
 
         foreach (var kvp in dictionary)
             action(kvp.Key, kvp.Value);
@@ -84,8 +95,10 @@ public static class EnumerableExtension
 
     public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
     {
-        if (source == null) throw new ArgumentNullException(nameof(source));
-        if (action == null) throw new ArgumentNullException(nameof(action));
+        if (source == null) 
+            throw new ArgumentNullException(nameof(source));
+        if (action == null) 
+            throw new ArgumentNullException(nameof(action));
 
         foreach (var item in source)
             action(item);
@@ -118,8 +131,10 @@ public static class EnumerableExtension
     {
         var enumerable = collection as T[] ?? collection.ToArray();
         foreach (var x in enumerable)
+        {
             if (predicate(x))
                 return x;
+        }
 
         return enumerable.First();
     }

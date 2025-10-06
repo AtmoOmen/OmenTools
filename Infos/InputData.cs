@@ -27,7 +27,7 @@ public sealed unsafe class InputData : IDisposable
 
     public void** Data { get; }
 
-    public static InputData Empty() { return new InputData(); }
+    public static InputData Empty() => new();
 
     public static InputData ForPopupMenu(PopupMenu* popupMenu, ushort index)
     {
@@ -40,13 +40,14 @@ public sealed unsafe class InputData : IDisposable
     private void Dispose(bool disposing)
     {
         if(disposedValue) return;
-        if (disposing) { }
+        if (disposing) 
+        { }
 
         Marshal.FreeHGlobal(Bytes);
         disposedValue = true;
     }
 
-    ~InputData() { Dispose(false); }
+    ~InputData() => Dispose(false);
 
     public void Dispose()
     {

@@ -26,9 +26,11 @@ public class Polygon
     {
         var result = false;
         for (int i = 0, j = vertices.Length - 1; i < vertices.Length; j = i++)
+        {
             if ((vertices[i].Y > point.Y) != (vertices[j].Y > point.Y) &&
                 point.X                    < ((vertices[j].X - vertices[i].X) * (point.Y - vertices[i].Y) / (vertices[j].Y - vertices[i].Y)) + vertices[i].X)
                 result = !result;
+        }
 
         return result;
     }
@@ -90,9 +92,11 @@ public class Polygon
     private bool IsPointOnBoundary(Vector2 point)
     {
         for (int i = 0, j = vertices.Length - 1; i < vertices.Length; j = i++)
+        {
             if (IsPointOnLineSegment(point, vertices[i], vertices[j]))
                 return true;
-        
+        }
+
         return false;
     }
 
@@ -166,11 +170,13 @@ public class Polygon
         {
             var isDuplicate = false;
             foreach (var existing in uniqueVertices)
+            {
                 if (Vector2.Distance(existing, point) < Epsilon * 10)
                 {
                     isDuplicate = true;
                     break;
                 }
+            }
 
             if (!isDuplicate)
                 uniqueVertices.Add(point);
@@ -273,9 +279,11 @@ public class Polygon
 
         var pivot = 0;
         for (var i = 1; i < n; i++)
+        {
             if (points[i].Y < points[pivot].Y ||
                 (Math.Abs(points[i].Y - points[pivot].Y) < Epsilon && points[i].X < points[pivot].X))
                 pivot = i;
+        }
 
         (points[0], points[pivot]) = (points[pivot], points[0]);
 
@@ -306,7 +314,8 @@ public class Polygon
 
         for (var i = 2; i <= m; i++)
         {
-            while (stack.Count > 1 && CrossProduct(stack[^2], stack[^1], points[i]) <= 0) stack.RemoveAt(stack.Count - 1);
+            while (stack.Count > 1 && CrossProduct(stack[^2], stack[^1], points[i]) <= 0) 
+                stack.RemoveAt(stack.Count - 1);
             stack.Add(points[i]);
         }
 

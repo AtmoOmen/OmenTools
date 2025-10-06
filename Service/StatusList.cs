@@ -117,7 +117,7 @@ public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status
         {
             var status = this[i];
 
-            if (status == null || status.StatusId == 0)
+            if (status == null || status.StatusID == 0)
                 continue;
 
             yield return status;
@@ -139,12 +139,12 @@ public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status
 public unsafe class Status(nint address)
 {
     public nint                 Address       { get; } = address;
-    public uint                 StatusId      => this.Struct->StatusId;
+    public uint                 StatusID      => this.Struct->StatusId;
     public RowRef<LuminaStatus> GameData      => LuminaCreateRef<LuminaStatus>(this.Struct->StatusId);
     public ushort               Param         => this.Struct->Param;
     public float                RemainingTime => this.Struct->RemainingTime;
-    public ulong                SourceId      => this.Struct->SourceObject;
-    public IGameObject?         SourceObject  => DService.ObjectTable.SearchById(this.SourceId);
+    public ulong                SourceID      => this.Struct->SourceObject;
+    public IGameObject?         SourceObject  => DService.ObjectTable.SearchByID(this.SourceID);
 
     private CSStatus* Struct => (CSStatus*)this.Address;
 }

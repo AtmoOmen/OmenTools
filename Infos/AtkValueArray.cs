@@ -26,9 +26,11 @@ public unsafe class AtkValueArray : IDisposable
     public void Dispose()
     {
         for (var i = 0; i < Length; i++)
+        {
             if (Pointer[i].Type == ValueType.String)
                 Marshal.FreeHGlobal((nint)Pointer[i].String.Value);
-        
+        }
+
         Marshal.FreeHGlobal(Address);
     }
 

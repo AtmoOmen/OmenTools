@@ -6,12 +6,13 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
+using OmenTools.Abstracts;
 using Action = System.Action;
 using Map = Lumina.Excel.Sheets.Map;
 
 namespace OmenTools.Infos;
 
-public static unsafe class GameState
+public unsafe class GameState : OmenServiceBase
 {
     private static TaskHelper TaskHelper = null!;
     
@@ -19,7 +20,7 @@ public static unsafe class GameState
     private delegate        nint                             FateDirectorSetupDelegate(uint rowID, nint a2, nint a3);
     private static          Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
     
-    internal static void Init()
+    internal override void Init()
     {
         TaskHelper ??= new() { TimeLimitMS = int.MaxValue };
         
@@ -30,7 +31,7 @@ public static unsafe class GameState
         FateDirectorSetupHook.Enable();
     }
 
-    internal static void Uninit()
+    internal override void Uninit()
     {
         DService.ClientState.Login  -= OnDalamudLogin;
         DService.ClientState.Logout -= OnDalamudLogout;

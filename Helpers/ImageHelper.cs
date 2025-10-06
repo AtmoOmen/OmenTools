@@ -2,14 +2,15 @@
 using System.Diagnostics.CodeAnalysis;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
+using OmenTools.Abstracts;
 
 namespace OmenTools.Helpers;
 
-public static class ImageHelper
+public class ImageHelper : OmenServiceBase
 {
-    private static readonly ConcurrentDictionary<string, ImageLoadingResult>             CachedTextures      = new();
+    private static readonly ConcurrentDictionary<string, ImageLoadingResult>                                      CachedTextures      = new();
     private static readonly ConcurrentDictionary<(uint ID, bool HQ, ClientLanguage Language), ImageLoadingResult> CachedIcons         = new();
-    private static readonly List<Func<byte[], byte[]>>                                   ConversionsToBitmap = [b => b];
+    private static readonly List<Func<byte[], byte[]>>                                                            ConversionsToBitmap = [b => b];
 
     private static readonly HttpClient               HttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
     private static          CancellationTokenSource? CancelSource;
@@ -37,14 +38,8 @@ public static class ImageHelper
     
     public static bool TryGetGameIcon(uint icon, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
     {
-        var result = CachedIcons.GetOrAdd((icon, isHQ, DService.ClientState.ClientLanguage), _ => new ImageLoadingResult
-        {
-            ImmediateTexture = DService.Texture.GetFromGameIcon(new(icon, isHQ)),
-            IsCompleted      = true
-        });
-
-        texture = result.Texture;
-        return texture != null;
+        texture = null;
+        return DService.Texture.TryGetFromGameIcon(new(icon, isHQ), out var immediateTexture) && immediateTexture.TryGetWrap(out texture, out _);
     }
 
     public static bool TryGetImage(string url, [NotNullWhen(true)] out IDalamudTextureWrap? texture)
@@ -75,7 +70,8 @@ public static class ImageHelper
 
     private static async Task LoadPendingTexturesAsync()
     {
-        while (await LoadNextPendingTextureAsync()) { }
+        while (await LoadNextPendingTextureAsync()) 
+        { }
     }
 
     private static async Task<bool> LoadNextPendingTextureAsync()
@@ -104,9 +100,7 @@ public static class ImageHelper
                 }
             }
             else
-            {
                 value.ImmediateTexture = File.Exists(key) ? DService.Texture.GetFromFile(key) : DService.Texture.GetFromGame(key);
-            }
         }
         catch (Exception ex)
         {
@@ -166,7 +160,7 @@ public static class ImageHelper
         CachedIcons.Clear();
     }
 
-    public static void Uninit()
+    internal override void Uninit()
     {
         ClearAll();
 

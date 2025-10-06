@@ -25,7 +25,8 @@ public sealed class MemoryPatch : IDisposable
         NewBytes = MergeBytes(trimmedBytes, OldBytes);
 
         memoryPatches.Add(this);
-        if (startEnabled) Enable();
+        if (startEnabled) 
+            Enable();
     }
 
     public MemoryPatch(nint address, string bytesString, bool startEnabled = false)

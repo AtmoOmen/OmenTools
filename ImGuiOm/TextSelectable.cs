@@ -25,7 +25,7 @@ public static partial class ImGuiOm
         if (string.IsNullOrWhiteSpace(text)) return;
 
         var wrappedText = WrapMixedText(text, lineLength).Trim();
-        var uniqueId    = $"###{(string.IsNullOrWhiteSpace(id) ? "TextSelectable" + text.GetHashCode() : id)}";
+        var uniqueID    = $"###{(string.IsNullOrWhiteSpace(id) ? "TextSelectable" + text.GetHashCode() : id)}";
 
         var lines      = wrappedText.Split('\n');
         var lineHeight = ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
@@ -40,7 +40,7 @@ public static partial class ImGuiOm
         using (ImRaii.PushColor(ImGuiCol.FrameBg, colorBG ?? ImGui.GetColorU32(ImGuiCol.WindowBg)))
         {
             ImGui.SetCursorPos(startPos - ImGui.GetStyle().FramePadding);
-            ImGui.InputTextMultiline(uniqueId, ref textTemp, textLength, finalSize,
+            ImGui.InputTextMultiline(uniqueID, ref textTemp, textLength, finalSize,
                                      ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.NoHorizontalScroll);
         }
 

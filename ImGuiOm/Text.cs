@@ -49,9 +49,11 @@ public static partial class ImGuiOm
 
     public static bool TextIcon(FontAwesomeIcon icon, string text, bool useStaticFont = false)
     {
-        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) 
+            ImGui.PushFont(UiBuilder.IconFont);
         var iconSize = ImGui.CalcTextSize(icon.ToIconString());
-        if (useStaticFont) ImGui.PopFont();
+        if (useStaticFont) 
+            ImGui.PopFont();
 
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorPos      = ImGui.GetCursorScreenPos();
@@ -67,9 +69,11 @@ public static partial class ImGuiOm
         ImGui.EndDisabled();
 
         var iconPos = new Vector2(cursorPos.X + padding.X, cursorPos.Y + padding.Y);
-        if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
+        if (useStaticFont) 
+            ImGui.PushFont(UiBuilder.IconFont);
         windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        if (useStaticFont) ImGui.PopFont();
+        if (useStaticFont) 
+            ImGui.PopFont();
 
         var textPos = new Vector2(iconPos.X + iconSize.X + 2 * padding.X, cursorPos.Y + padding.Y);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);

@@ -12,7 +12,7 @@ public static class TrayNotify
     
     private static readonly Queue<BalloonTipMessage> MessageQueue = [];
 
-    private static readonly object QueueLock = new();
+    private static readonly Lock QueueLock = new();
     
     private static Timer? DisplayTimer;
     private static Timer? DelayTimer;
@@ -21,7 +21,7 @@ public static class TrayNotify
     internal static void Init(Icon icon, string multiMessagesReceived, bool onlyBackground = false)
     {
         MultiMessagesReceived = multiMessagesReceived;
-        OnlyBackground = onlyBackground;
+        OnlyBackground        = onlyBackground;
 
         Icon ??= icon;
     }

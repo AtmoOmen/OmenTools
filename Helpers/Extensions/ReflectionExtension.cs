@@ -9,8 +9,8 @@ public static class ReflectionExtension
     private const BindingFlags InstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
     public static object? GetFoP(this object obj, string name) =>
-        obj.GetType().GetField(name, AllFlags)?.GetValue(obj)
-        ?? obj.GetType().GetProperty(name, AllFlags)?.GetValue(obj);
+        obj.GetType().GetField(name, AllFlags)?.GetValue(obj) ??
+        obj.GetType().GetProperty(name, AllFlags)?.GetValue(obj);
 
     public static T? GetFoP<T>(this object obj, string name) => 
         (T?)GetFoP(obj, name);
@@ -25,8 +25,8 @@ public static class ReflectionExtension
     }
 
     public static object? GetStaticFoP(this object obj, string type, string name) =>
-        obj.GetType().Assembly.GetType(type)?.GetField(name, StaticFlags)?.GetValue(null)
-        ?? obj.GetType().Assembly.GetType(type)?.GetProperty(name, StaticFlags)?.GetValue(null);
+        obj.GetType().Assembly.GetType(type)?.GetField(name, StaticFlags)?.GetValue(null) ??
+        obj.GetType().Assembly.GetType(type)?.GetProperty(name, StaticFlags)?.GetValue(null);
 
     public static T? GetStaticFoP<T>(this object obj, string type, string name) => 
         (T?)GetStaticFoP(obj, type, name);

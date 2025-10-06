@@ -1,42 +1,97 @@
 ﻿global using static OmenTools.Helpers.HelpersOm;
 global using static OmenTools.Infos.InfosOm;
+using System.Reflection;
 using Dalamud.Interface;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using OmenTools.Abstracts;
 
 namespace OmenTools;
 
 public class DService
 {
+    internal static Dictionary<Type, OmenServiceBase> OmenServices { get; private set; } = [];
+    
     public static void Init(IDalamudPluginInterface pluginInterface)
     {
         pluginInterface.Create<DService>();
         
-        GameState.Init();
-        LocalPlayerState.Init();
-        
         PI            = pluginInterface;
-        UiBuilder     = pluginInterface.UiBuilder;
+        UIBuilder     = pluginInterface.UiBuilder;
         ObjectTable   = new ObjectTable();
         Targets       = new TargetManager();
         AetheryteList = new AetheryteList();
+        
+        var services = Assembly.GetExecutingAssembly().GetTypes()
+                               .Where(t => typeof(OmenServiceBase).IsAssignableFrom(t) && !t.IsAbstract)
+                               .ToList();
+        foreach (var serviceType in services)
+        {
+            if (Activator.CreateInstance(serviceType) is not OmenServiceBase serviceInstance) continue;
+            OmenServices.TryAdd(serviceType, serviceInstance);
+        }
+        
+        var invalidServices = new List<OmenServiceBase>();
+        OmenServices.ForEach(x =>
+        {
+            if (x.Value.IsDisposed) return;
+
+            try
+            {
+                x.Value.Init();
+            }
+            catch (Exception ex)
+            {
+                Error($"在加载 OmenService {x.Value} 的过程中发生错误", ex);
+
+                invalidServices.Add(x.Value);
+            }
+        });
+
+        invalidServices.ForEach(x =>
+        {
+            if (x.IsDisposed) return;
+
+            try
+            {
+                x.Uninit();
+            }
+            catch
+            {
+                // ignored
+            }
+        });
     }
 
     public static void Uninit()
     {
-        GameState.Uninit();
-        LocalPlayerState.Uninit();
+        OmenServices.Reverse().ForEach(x =>
+        {
+            if (x.Value.IsDisposed) return;
+            
+            try
+            {
+                x.Value.Uninit();
+                x.Value.SetDisposed();
+            }
+            catch (Exception ex)
+            {
+                Error($"在卸载 OmenService {x.Value} 的过程中发生错误", ex);
+            }
+        });
         
         TaskHelper.DisposeAll();
         MemoryPatch.DisposeAll();
         ThrottlerHelper.Uninit();
-        ImageHelper.Uninit();
         TrayNotify.Uninit();
     }
 
-    public static void InitTrayNotify(Icon icon, string multiMessagesReceived = "收到了 {0} 条新消息", bool onlyBackground = false) 
-        => TrayNotify.Init(icon, multiMessagesReceived, onlyBackground);
+    public static T? GetOmenService<T>() where T : OmenServiceBase => 
+        (T?)OmenServices.GetValueOrDefault(typeof(T));
+
+    public static void InitTrayNotify(Icon icon, string multiMessagesReceived = "收到了 {0} 条新消息", bool onlyBackground = false) => 
+        TrayNotify.Init(icon, multiMessagesReceived, onlyBackground);
     
     [PluginService] public static IAddonLifecycle      AddonLifecycle  { get; private set; } = null!;
     [PluginService] public static IAddonEventManager   AddonEvent      { get; private set; } = null!;
@@ -71,7 +126,7 @@ public class DService
     [PluginService] public static IToastGui            Toast           { get; private set; } = null!;
 
     public static IDalamudPluginInterface PI            { get; private set; } = null!;
-    public static IUiBuilder              UiBuilder     { get; private set; } = null!;
+    public static IUiBuilder              UIBuilder     { get; private set; } = null!;
     public static IAetheryteList          AetheryteList { get; private set; } = null!;
     public static IObjectTable            ObjectTable   { get; private set; } = null!;
     public static ITargetManager          Targets       { get; private set; } = null!;

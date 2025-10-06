@@ -45,9 +45,9 @@ internal sealed unsafe partial class AetheryteList : IAetheryteList
 
 public interface IAetheryteEntry
 {
-    uint AetheryteId { get; }
+    uint AetheryteID { get; }
 
-    uint TerritoryId { get; }
+    uint TerritoryID { get; }
 
     byte SubIndex { get; }
 
@@ -72,9 +72,9 @@ internal sealed class AetheryteEntry : IAetheryteEntry
 
     internal AetheryteEntry(TeleportInfo data) => this.data = data;
 
-    public uint AetheryteId => this.data.AetheryteId;
+    public uint AetheryteID => this.data.AetheryteId;
 
-    public uint TerritoryId => this.data.TerritoryId;
+    public uint TerritoryID => this.data.TerritoryId;
 
     public byte SubIndex => this.data.SubIndex;
 
@@ -91,7 +91,7 @@ internal sealed class AetheryteEntry : IAetheryteEntry
     public bool IsApartment => this.data.IsApartment;
 
     public RowRef<Lumina.Excel.Sheets.Aetheryte> AetheryteData => 
-        LuminaCreateRef<Lumina.Excel.Sheets.Aetheryte>(this.AetheryteId);
+        LuminaCreateRef<Lumina.Excel.Sheets.Aetheryte>(this.AetheryteID);
 }
 
 internal sealed partial class AetheryteList

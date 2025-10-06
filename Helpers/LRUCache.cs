@@ -14,9 +14,9 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
     private readonly TimeSpan                                    cleanupInterval;
     private          bool                                        isDisposed;
 
-    private          long   totalRequests;
-    private          long   cacheHits;
-    private readonly object statsLock = new();
+    private          long totalRequests;
+    private          long cacheHits;
+    private readonly Lock statsLock = new();
 
     public LRUCache(int capacity, TimeSpan? defaultExpiration = null, TimeSpan? cleanupInterval = null)
     {
@@ -50,9 +50,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         get
         {
             lock (statsLock)
-            {
                 return totalRequests > 0 ? (double)cacheHits / totalRequests : 0;
-            }
         }
     }
 
@@ -61,9 +59,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         get
         {
             lock (statsLock)
-            {
                 return totalRequests;
-            }
         }
     }
 
@@ -72,9 +68,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         get
         {
             lock (statsLock)
-            {
                 return cacheHits;
-            }
         }
     }
 
@@ -280,12 +274,14 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
                 lruList.Clear();
             }
             else
-            {
                 Clear();
-            }
 
             ResetStats();
-        } finally { lockSlim.ExitWriteLock(); }
+        } 
+        finally
+        {
+            lockSlim.ExitWriteLock();
+        }
     }
 
     public void RemoveAll(IEnumerable<TKey> keys)
@@ -296,11 +292,13 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         try
         {
             foreach (var key in keys)
+            {
                 if (cache.TryGetValue(key, out var node))
                 {
                     lruList.Remove(node);
                     cache.Remove(key);
                 }
+            }
         } 
         finally
         {
@@ -378,10 +376,8 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
     {
         var current = lruList.Last;
         
-        while (current != null && current.Value.IsPermanent)
-        {
+        while (current is { Value.IsPermanent: true })
             current = current.Previous;
-        }
         
         if (current != null)
         {
@@ -433,12 +429,14 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
 
     private void IncrementTotalRequests()
     {
-        lock (statsLock) { totalRequests++; }
+        lock (statsLock)
+            totalRequests++;
     }
 
     private void IncrementCacheHits()
     {
-        lock (statsLock) { cacheHits++; }
+        lock (statsLock)
+            cacheHits++;
     }
 
     private void RegisterMemoryPressureNotification()
@@ -450,9 +448,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
                 try
                 {
                     if (GC.GetTotalMemory(false) > 1024 * 1024 * 100)
-                    {
                         TrimCache(0.5);
-                    }
 
                     await Task.Delay(TimeSpan.FromMinutes(1));
                 }
@@ -478,9 +474,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
             while (current != null)
             {
                 if (!current.Value.IsPermanent)
-                {
                     nonPermanentCount++;
-                }
                 current = current.Previous;
             }
             

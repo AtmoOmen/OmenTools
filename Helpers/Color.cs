@@ -34,7 +34,8 @@ public static partial class HelpersOm
     
     public static Vector4 HexToVector4(string hexColor, bool includeAlpha = true)
     {
-        if (!hexColor.StartsWith('#')) throw new ArgumentException("Invalid hex color format");
+        if (!hexColor.StartsWith('#')) 
+            throw new ArgumentException("Invalid hex color format");
 
         hexColor = hexColor[1..];
 

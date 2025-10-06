@@ -4,11 +4,11 @@ namespace OmenTools.Helpers;
 
 public static class LuminaGetter
 {
-    public static ExcelSheet<T> Get<T>() where T : struct, IExcelRow<T> 
-        => DService.Data.GetExcelSheet<T>();
+    public static ExcelSheet<T> Get<T>() where T : struct, IExcelRow<T> => 
+        DService.Data.GetExcelSheet<T>();
 
-    public static SubrowExcelSheet<T> GetSub<T>() where T : struct, IExcelSubrow<T> 
-        => DService.Data.GetSubrowExcelSheet<T>();
+    public static SubrowExcelSheet<T> GetSub<T>() where T : struct, IExcelSubrow<T> => 
+        DService.Data.GetSubrowExcelSheet<T>();
 
     public static bool TryGet<T>(out ExcelSheet<T> sheet) where T : struct, IExcelRow<T>
     {

@@ -59,10 +59,10 @@ public unsafe struct ExitRangeLayoutInstance
     public ushort TerritoryType;
 
     [FieldOffset(144)]
-    public uint PopRangeLayoutInstanceId;
+    public uint PopRangeLayoutInstanceID;
 
     public PopRangeLayoutInstance* PopRangeLayoutInstance => 
-        (PopRangeLayoutInstance*)LayoutWorld.GetLayoutInstanceStatic(InstanceType.PopRange, PopRangeLayoutInstanceId);
+        (PopRangeLayoutInstance*)LayoutWorld.GetLayoutInstanceStatic(InstanceType.PopRange, PopRangeLayoutInstanceID);
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 160)]

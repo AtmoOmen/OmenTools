@@ -478,7 +478,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* BeginnersMansionProblem         => GetAddonByName("BeginnersMansionProblem");
     public static AtkUnitBase* BeginnersMansionProblemCompList => GetAddonByName("BeginnersMansionProblemCompList");
     public static AtkUnitBase* BeginnersMansionTutorial        => GetAddonByName("BeginnersMansionTutorial");
-    public static AtkUnitBase* DpsChallengeList                => GetAddonByName("DpsChallengeList");
+    public static AtkUnitBase* DPSChallengeList                => GetAddonByName("DpsChallengeList");
     public static AtkUnitBase* PlayGuide                       => GetAddonByName("PlayGuide");
     public static AtkUnitBase* Orchestrion                     => GetAddonByName("Orchestrion");
     public static AtkUnitBase* BeginnerChatList                => GetAddonByName("BeginnerChatList");
@@ -686,8 +686,8 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* CrossWorldLinkshell             => GetAddonByName("CrossWorldLinkshell");
     public static AtkUnitBase* ReconstructionBox               => GetAddonByName("ReconstructionBox");
     public static AtkUnitBase* ReconstructionBuyback           => GetAddonByName("ReconstructionBuyback");
-    public static AtkUnitBase* MiragePrismENpcSatisfaction     => GetAddonByName("MiragePrismENpcSatisfaction");
-    public static AtkUnitBase* MiragePrismENpcSatisfactionSub  => GetAddonByName("MiragePrismENpcSatisfactionSub");
+    public static AtkUnitBase* MiragePrismENPCSatisfaction     => GetAddonByName("MiragePrismENpcSatisfaction");
+    public static AtkUnitBase* MiragePrismENPCSatisfactionSub  => GetAddonByName("MiragePrismENpcSatisfactionSub");
     public static AtkUnitBase* ItemFinder                      => GetAddonByName("ItemFinder");
     public static AtkUnitBase* Description                     => GetAddonByName("Description");
     public static AtkUnitBase* DescriptionYTC                  => GetAddonByName("DescriptionYTC");
@@ -950,7 +950,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* FadeBack                        => GetAddonByName("FadeBack");
     public static AtkUnitBase* ToDoList                        => GetAddonByName("_ToDoList");
     public static AtkUnitBase* DTR                             => GetAddonByName("_DTR");
-    public static AtkUnitBase* HalloweenNpcSelect              => GetAddonByName("HalloweenNpcSelect");
+    public static AtkUnitBase* HalloweenNPCSelect              => GetAddonByName("HalloweenNpcSelect");
     public static AtkUnitBase* WKSPlanetSelect                 => GetAddonByName("WKSPlanetSelect");
     public static AtkUnitBase* WKSSetting                      => GetAddonByName("WKSSetting");
     public static AtkUnitBase* WKSEnterInfo                    => GetAddonByName("WKSEnterInfo");

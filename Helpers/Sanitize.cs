@@ -33,6 +33,7 @@ public static unsafe partial class HelpersOm
 
         var sb = new StringBuilder(text.Length);
         foreach (var c in text)
+        {
             switch (c)
             {
                 case '\\':
@@ -63,6 +64,7 @@ public static unsafe partial class HelpersOm
                     sb.Append(c);
                     break;
             }
+        }
 
         return sb.ToString();
     }

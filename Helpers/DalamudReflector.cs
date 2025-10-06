@@ -100,10 +100,14 @@ public static partial class HelpersOm
         var repoList = (System.Collections.IEnumerable)conf.GetFoP("ThirdRepoList");
         
         if(repoList != null)
-            foreach(var r in repoList)
-                if((string)r.GetFoP("Url") == repoURL)
+        {
+            foreach (var r in repoList)
+            {
+                if ((string)r.GetFoP("Url") == repoURL)
                     return true;
-        
+            }
+        }
+
         return false;
     }
 
@@ -112,10 +116,14 @@ public static partial class HelpersOm
         var conf = GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
         var repoList = (System.Collections.IEnumerable)conf.GetFoP("ThirdRepoList");
         if(repoList != null)
-            foreach(var r in repoList)
-                if((string)r.GetFoP("Url") == repoURL)
+        {
+            foreach (var r in repoList)
+            {
+                if ((string)r.GetFoP("Url") == repoURL)
                     return;
-        
+            }
+        }
+
         var instance = Activator.CreateInstance(DService.PI.GetType().Assembly.GetType("Dalamud.Configuration.ThirdPartyRepoSettings")!);
         if (instance == null) return;
         
@@ -148,7 +156,8 @@ public static partial class HelpersOm
 
         try
         {
-            if (!HasRepo(masterURL)) AddRepo(masterURL, true);
+            if (!HasRepo(masterURL)) 
+                AddRepo(masterURL, true);
             ReloadPluginMasters();
 
             var installCall = pm.Call<Task>("InstallPluginAsync", [pluginManifest, false, PluginLoadReason.Installer, null]);

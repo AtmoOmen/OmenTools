@@ -7,10 +7,6 @@ namespace DailyRoutines.Helpers;
 
 public static class FieldMarkerHelper
 {
-    private delegate nint ExecuteCommandDelegate(ExecuteCommandFlag command, uint param1 = 0, uint param2 = 0, uint param3 = 0, uint param4 = 0);
-    private static readonly ExecuteCommandDelegate ExecuteCommand =
-        new CompSig("E8 ?? ?? ?? ?? 48 8B 06 48 8B CE FF 50 ?? E9 ?? ?? ?? ?? 49 8B CC").GetDelegate<ExecuteCommandDelegate>();
-
     /// <summary>
     /// 获取场地标点本地位置
     /// </summary>
@@ -27,13 +23,13 @@ public static class FieldMarkerHelper
     /// 放置指定的场地标点至指定地点 (在线)
     /// </summary>
     public static void PlaceOnline(FieldMarkerPoint point, Vector3 pos) => 
-        ExecuteCommand(ExecuteCommandFlag.PlaceFieldMarker, (uint)point, (uint)pos.X * 1000, (uint)pos.Y * 1000, (uint)pos.Z * 1000);
+        ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.PlaceFieldMarker, (uint)point, (uint)pos.X * 1000, (uint)pos.Y * 1000, (uint)pos.Z * 1000);
 
     /// <summary>
     /// 放置指定的场地标点至指定地点 (在线)
     /// </summary>
     public static void PlaceOnline(uint point, Vector3 pos) => 
-        ExecuteCommand(ExecuteCommandFlag.PlaceFieldMarker, point, (uint)pos.X * 1000, (uint)pos.Y * 1000, (uint)pos.Z * 1000);
+        ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.PlaceFieldMarker, point, (uint)pos.X * 1000, (uint)pos.Y * 1000, (uint)pos.Z * 1000);
 
     /// <summary>
     /// 放置指定的场地标点至指定地点 (本地)
@@ -87,13 +83,13 @@ public static class FieldMarkerHelper
     /// 移除指定的场地标点 (在线)
     /// </summary>
     public static void RemoveOnline(FieldMarkerPoint point) => 
-        ExecuteCommand(ExecuteCommandFlag.RemoveFieldMarker, (uint)point);
+        ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RemoveFieldMarker, (uint)point);
 
     /// <summary>
     /// 移除指定的场地标点 (在线)
     /// </summary>
     public static void RemoveOnline(uint point) => 
-        ExecuteCommand(ExecuteCommandFlag.RemoveFieldMarker, point);
+        ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RemoveFieldMarker, point);
 
     /// <summary>
     /// 移除指定的场地标点 (本地)

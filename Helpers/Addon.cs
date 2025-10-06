@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 
 namespace OmenTools.Helpers;
 
+// TODO: 删除制作 Node 方法
 public static unsafe partial class HelpersOm
 {
     public record PartInfo(ushort U, ushort V, ushort Width, ushort Height);
@@ -65,8 +66,8 @@ public static unsafe partial class HelpersOm
         return false;
     }
 
-    public static bool OpenInventoryItemContext(InventoryItem item)
-        => OpenInventoryItemContext(item.Container, (ushort)item.Slot);
+    public static bool OpenInventoryItemContext(InventoryItem item) => 
+        OpenInventoryItemContext(item.Container, (ushort)item.Slot);
 
     public static bool OpenInventoryItemContext(InventoryType type, ushort slot)
     {
@@ -377,14 +378,17 @@ public static unsafe partial class HelpersOm
 
     public static nint Alloc(int size)
     {
-        if (size <= 0) throw new ArgumentException("待分配内存的大小必须为正数");
+        if (size <= 0) 
+            throw new ArgumentException("待分配内存的大小必须为正数");
         return Alloc((ulong)size);
     }
 
     public static void SetSize(AtkResNode* node, int? width, int? height)
     {
-        if (width is >= ushort.MinValue and <= ushort.MaxValue) node->Width = (ushort)width.Value;
-        if (height is >= ushort.MinValue and <= ushort.MaxValue) node->Height = (ushort)height.Value;
+        if (width is >= ushort.MinValue and <= ushort.MaxValue) 
+            node->Width = (ushort)width.Value;
+        if (height is >= ushort.MinValue and <= ushort.MaxValue) 
+            node->Height = (ushort)height.Value;
         node->DrawFlags |= 0x1;
     }
 
@@ -423,8 +427,10 @@ public static unsafe partial class HelpersOm
         width ??= windowNode->AtkResNode.Width;
         height ??= windowNode->AtkResNode.Height;
 
-        if (width < 64) width = 64;
-        if (height < 16) height = 16;
+        if (width < 64) 
+            width = 64;
+        if (height < 16) 
+            height = 16;
 
         SetSize(windowNode, width, height);
         var n = windowNode->Component->UldManager.RootNode;
@@ -478,7 +484,8 @@ public static unsafe partial class HelpersOm
 
     private static AtkResNode** ExpandNodeList(AtkResNode** originalList, ushort originalSize, ushort newSize = 0)
     {
-        if (newSize <= originalSize) newSize = (ushort)(originalSize + 1);
+        if (newSize <= originalSize) 
+            newSize = (ushort)(originalSize + 1);
         var oldListPtr = new nint(originalList);
         var newListPtr = Alloc((ulong)((newSize + 1) * 8));
         var clone = new nint[originalSize];
@@ -678,7 +685,8 @@ public static unsafe partial class HelpersOm
     public static void LinkNodeAtEnd(AtkResNode* imageNode, AtkUnitBase* parent)
     {
         var node = parent->RootNode->ChildNode;
-        while (node->PrevSiblingNode != null) node = node->PrevSiblingNode;
+        while (node->PrevSiblingNode != null) 
+            node = node->PrevSiblingNode;
 
         node->PrevSiblingNode = imageNode;
         imageNode->NextSiblingNode = node;
@@ -687,10 +695,11 @@ public static unsafe partial class HelpersOm
         parent->UldManager.UpdateDrawNodeList();
     }
     
-    public static void LinkNodeAtEnd(AtkResNode* imageNode, AtkComponentBase* parent) 
+    public static void LinkNodeAtEnd(AtkResNode* imageNode, AtkComponentBase* parent)
     {
-        var node                                   = parent->UldManager.RootNode;
-        while (node->PrevSiblingNode != null) node = node->PrevSiblingNode;
+        var node = parent->UldManager.RootNode;
+        while (node->PrevSiblingNode != null) 
+            node = node->PrevSiblingNode;
 
         node->PrevSiblingNode      = imageNode;
         imageNode->NextSiblingNode = node;
@@ -704,7 +713,8 @@ public static unsafe partial class HelpersOm
         var node = (AtkResNode*)atkNode;
         if (node == null) return;
 
-        if (node->ParentNode->ChildNode == node) node->ParentNode->ChildNode = node->NextSiblingNode;
+        if (node->ParentNode->ChildNode == node) 
+            node->ParentNode->ChildNode = node->NextSiblingNode;
 
         if (node->NextSiblingNode != null && node->NextSiblingNode->PrevSiblingNode == node)
             node->NextSiblingNode->PrevSiblingNode = node->PrevSiblingNode;

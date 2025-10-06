@@ -38,6 +38,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="DailyRoutines.CodeAnalysis" Version="1.7.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
       <PackageReference Include="TinyPinyin" Version="1.1.0" />
     </ItemGroup>
 </Project>

@@ -8,22 +8,16 @@ public class Vector4Converter : JsonConverter<Vector4>
     public override Vector4 ReadJson(JsonReader reader, Type objectType, Vector4 existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         if (reader.TokenType != JsonToken.StartObject)
-        {
             throw new JsonException("Expected start of object");
-        }
 
         float x = 0, y = 0, z = 0, w = 0;
         while (reader.Read())
         {
             if (reader.TokenType == JsonToken.EndObject)
-            {
                 return new Vector4(x, y, z, w);
-            }
 
             if (reader.TokenType != JsonToken.PropertyName)
-            {
                 throw new JsonException("Expected property name");
-            }
 
             var propertyName = reader.Value?.ToString();
             reader.Read();

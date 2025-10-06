@@ -8,12 +8,12 @@ public static unsafe partial class HelpersOm
 {
     private static readonly Dictionary<AgentId, nint> CachedAgents = [];
 
-    public static AtkValue* SendEvent(AgentId agentId, ulong eventKind, params object[] eventparams)
+    public static AtkValue* SendEvent(AgentId agentID, ulong eventKind, params object[] eventparams)
     {
-        if (!CachedAgents.TryGetValue(agentId, out var agent))
+        if (!CachedAgents.TryGetValue(agentID, out var agent))
         {
-            var newAgent = (nint)AgentModule.Instance()->GetAgentByInternalId(agentId);
-            CachedAgents[agentId] = newAgent;
+            var newAgent = (nint)AgentModule.Instance()->GetAgentByInternalId(agentID);
+            CachedAgents[agentID] = newAgent;
             agent = newAgent;
         }
 

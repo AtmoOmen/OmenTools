@@ -32,7 +32,8 @@ public sealed unsafe class EventData : IDisposable
     private void Dispose(bool disposing)
     {
         if (disposedValue) return;
-        if (disposing) { }
+        if (disposing) 
+        { }
 
         Marshal.FreeHGlobal(Bytes);
         disposedValue = true;

@@ -83,13 +83,13 @@ public static class LuminaWrapper
     public static string GetGatheringPointName(uint rowID) =>
         LuminaGetter.TryGetRow<GatheringPointName>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;
     
-    public static string GetBNpcName(uint rowID) =>
+    public static string GetBNPCName(uint rowID) =>
         LuminaGetter.TryGetRow<BNpcName>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;
     
-    public static string GetENpcName(uint rowID) =>
+    public static string GetENPCName(uint rowID) =>
         LuminaGetter.TryGetRow<ENpcResident>(rowID, out var item) ? item.Singular.ExtractText() : string.Empty;
     
-    public static string GetENpcTitle(uint rowID) =>
+    public static string GetENPCTitle(uint rowID) =>
         LuminaGetter.TryGetRow<ENpcResident>(rowID, out var item) ? item.Title.ExtractText() : string.Empty;
     
     public static string GetEObjName(uint rowID) =>

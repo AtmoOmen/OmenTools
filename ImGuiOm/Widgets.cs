@@ -60,21 +60,21 @@ public static partial class ImGuiOm
 
         using (ImRaii.Group())
         {
-            if (useStaticFont) ImGui.PushFont(UiBuilder.IconFont);
+            if (useStaticFont) 
+                ImGui.PushFont(UiBuilder.IconFont);
 
             var origPosY = ImGui.GetCursorPosY();
             ImGui.SetCursorPosY(origPosY + (ImGui.GetStyle().FramePadding.Y * 0.5f));
             ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
             ImGui.SetCursorPosY(origPosY);
-            if (useStaticFont) ImGui.PopFont();
+            if (useStaticFont) 
+                ImGui.PopFont();
             if (ImGui.IsItemHovered())
             {
                 using (ImRaii.Tooltip())
                 {
                     using (ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos))
-                    {
                         ImGui.TextUnformatted(tooltip);
-                    }
                 }
             }
         }
@@ -88,9 +88,7 @@ public static partial class ImGuiOm
         using (ImRaii.Group())
         {
             using (ImRaii.Disabled(isNeedToDisable))
-            {
                 interfaceAction();
-            }
         }
 
         TooltipDisableHelp(conditions, header);

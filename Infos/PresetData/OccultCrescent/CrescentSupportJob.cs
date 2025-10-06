@@ -116,7 +116,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
         knowledgeCrystal = null;
         if (GameState.TerritoryIntendedUse != 61) return false;
         
-        knowledgeCrystal = DService.ObjectTable.FirstOrDefault(x => x is { ObjectKind: ObjectKind.EventObj, DataId: 2007457 } &&
+        knowledgeCrystal = DService.ObjectTable.FirstOrDefault(x => x is { ObjectKind: ObjectKind.EventObj, DataID: 2007457 } &&
                                                                     string.IsNullOrEmpty(x.Name.TextValue)                    &&
                                                                     LocalPlayerState.DistanceTo2D(x.Position.ToVector2()) <= 3);
         return knowledgeCrystal != null;
@@ -219,8 +219,8 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
         UnlockType switch
         {
             CrescentSupportJobUnlockType.CriticalEncounter => LuminaWrapper.GetAddonText(13988),
-            CrescentSupportJobUnlockType.SilverPiece       => $"{LuminaWrapper.GetENpcName(1053614)} ({LuminaWrapper.GetENpcTitle(1053614)})",
-            CrescentSupportJobUnlockType.GoldPiece         => $"{LuminaWrapper.GetENpcName(1053614)} ({LuminaWrapper.GetENpcTitle(1053614)})",
+            CrescentSupportJobUnlockType.SilverPiece       => $"{LuminaWrapper.GetENPCName(1053614)} ({LuminaWrapper.GetENPCTitle(1053614)})",
+            CrescentSupportJobUnlockType.GoldPiece         => $"{LuminaWrapper.GetENPCName(1053614)} ({LuminaWrapper.GetENPCTitle(1053614)})",
             _                                              => string.Empty
         };
 

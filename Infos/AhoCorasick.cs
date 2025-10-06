@@ -9,20 +9,22 @@ public class AhoCorasick
         public Node FailureLink { get; set; } = null!;
     }
 
-    private readonly Node _root = new();
+    private readonly Node root = new();
 
     public AhoCorasick(IEnumerable<string> patterns)
     {
-        foreach (var pattern in patterns) Insert(pattern);
+        foreach (var pattern in patterns) 
+            Insert(pattern);
         BuildFailureFunction();
     }
 
     private void Insert(string pattern)
     {
-        var current = _root;
+        var current = root;
         foreach (var c in pattern)
         {
-            if (!current.Children.ContainsKey(c)) current.Children[c] = new Node();
+            if (!current.Children.ContainsKey(c)) 
+                current.Children[c] = new();
             current = current.Children[c];
         }
 
@@ -32,9 +34,9 @@ public class AhoCorasick
     private void BuildFailureFunction()
     {
         var queue = new Queue<Node>();
-        foreach (var child in _root.Children.Values)
+        foreach (var child in root.Children.Values)
         {
-            child.FailureLink = _root;
+            child.FailureLink = root;
             queue.Enqueue(child);
         }
 
@@ -47,7 +49,7 @@ public class AhoCorasick
                 while (target != null && !target.Children.ContainsKey(pair.Key)) 
                     target = target.FailureLink;
                 
-                pair.Value.FailureLink = target != null ? target.Children[pair.Key] : _root;
+                pair.Value.FailureLink = target != null ? target.Children[pair.Key] : root;
 
                 pair.Value.Outputs.UnionWith(pair.Value.FailureLink.Outputs);
                 queue.Enqueue(pair.Value);
@@ -57,12 +59,12 @@ public class AhoCorasick
 
     public bool ContainsAny(string text)
     {
-        var currentState = _root;
+        var currentState = root;
         foreach (var c in text)
         {
             while (currentState != null && !currentState.Children.ContainsKey(c))
                 currentState = currentState.FailureLink;
-            currentState = currentState == null ? _root : currentState.Children[c];
+            currentState = currentState == null ? root : currentState.Children[c];
 
             if (currentState.Outputs.Count > 0) return true;
         }
@@ -72,18 +74,20 @@ public class AhoCorasick
 
     public IEnumerable<string> FindAllMatches(string text)
     {
-        var currentState  = _root;
+        var currentState  = root;
         var foundPatterns = new List<string>();
         foreach (var c in text)
         {
             while (currentState != null && !currentState.Children.ContainsKey(c))
                 currentState = currentState.FailureLink;
             
-            currentState = currentState == null ? _root : currentState.Children[c];
+            currentState = currentState == null ? root : currentState.Children[c];
 
             foreach (var output in currentState.Outputs)
+            {
                 if (!foundPatterns.Contains(output))
                     foundPatterns.Add(output);
+            }
         }
 
         return foundPatterns;
