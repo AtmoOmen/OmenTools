@@ -5,4 +5,4 @@ global using IObjectTable = OmenTools.Service.IObjectTable;
 global using IEventObj = OmenTools.Service.IEventObj;
 global using INPC = OmenTools.Service.INPC;
 global using IBattleChara = OmenTools.Service.IBattleChara;
-global using IBattleNpc = OmenTools.Service.IBattleNPC;
+global using IBattleNPC = OmenTools.Service.IBattleNPC;

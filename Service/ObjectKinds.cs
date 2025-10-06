@@ -200,7 +200,7 @@ internal class EventObj(nint address) : GameObject(address), IEventObj;
 
 internal class NPC(nint address) : Character(address), INPC;
 
-internal unsafe class BattleNPC(nint address) : BattleChara(address), IBattleNpc
+internal unsafe class BattleNPC(nint address) : BattleChara(address), IBattleNPC
 {
     public BattleNpcSubKind BattleNPCKind => (BattleNpcSubKind)Struct->Character.GameObject.SubKind;
 
@@ -324,7 +324,7 @@ public interface IBattleNPC : IBattleChara
 {
     BattleNpcSubKind BattleNPCKind { get; }
     
-    public new static IBattleNpc Create(nint address) => new BattleNPC(address);
+    public new static IBattleNPC Create(nint address) => new BattleNPC(address);
 }
 
 public interface IEventObj : IGameObject
