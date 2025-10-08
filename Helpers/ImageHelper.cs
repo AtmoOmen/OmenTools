@@ -36,10 +36,17 @@ public class ImageHelper : OmenServiceBase
         return texture != null;
     }
     
-    public static bool TryGetGameIcon(uint icon, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
+    public static bool TryGetGameIcon(uint icon, out IDalamudTextureWrap texture, bool isHQ = false)
     {
         texture = null;
-        return DService.Texture.TryGetFromGameIcon(new(icon, isHQ), out var immediateTexture) && immediateTexture.TryGetWrap(out texture, out _);
+        
+        if (DService.Texture.TryGetFromGameIcon(new(icon, isHQ), out var immediateTexture))
+        {
+            texture = immediateTexture.GetWrapOrEmpty();
+            return true;
+        }
+        
+        return false;
     }
 
     public static bool TryGetImage(string url, [NotNullWhen(true)] out IDalamudTextureWrap? texture)
