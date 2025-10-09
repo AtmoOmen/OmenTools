@@ -71,11 +71,17 @@ public unsafe class GameState : OmenServiceBase
 
         return original;
     }
+    
+    /// <summary>
+    /// 当前窗口是否位于前台
+    /// </summary>
+    public static bool IsForeground => 
+        !Framework.Instance()->WindowInactive;
 
     // 因为生命周期里不会变更, 因此只需要懒加载一次即可
     private static readonly Lazy<bool> isCNLazy = 
         new(() => Framework.Instance()->ClientLanguage is 4 or 7);
-
+    
     /// <summary>
     /// 是否为国服客户端
     /// </summary>
