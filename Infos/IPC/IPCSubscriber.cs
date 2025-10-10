@@ -9,6 +9,8 @@ namespace OmenTools.Infos;
 public abstract class IPCSubscriberBase<TSubscriber>(string ipcName) : IDisposable
     where TSubscriber : class
 {
+    protected static readonly HashSet<string> NotifiedErrorIPC = [];
+    
     protected readonly string ipcName  = ipcName ?? throw new ArgumentNullException(nameof(ipcName));
     protected readonly Lock   initLock = new();
     protected volatile bool   isInitialized;
@@ -122,10 +124,16 @@ public class IPCSubscriber<T> : IPCSubscriberBase<ICallGateSubscriber<T>>
 
             if (subscriber != null)
             {
-                try { return subscriber.InvokeFunc(); }
+                try
+                {
+                    var orig = subscriber.InvokeFunc();
+                    NotifiedErrorIPC.Remove(ipcName);
+                    return orig;
+                }
                 catch (Exception ex)
                 {
-                    Error($"调用IPC {ipcName} 时发生错误", ex);
+                    if (NotifiedErrorIPC.Add(ipcName))
+                        Error($"调用IPC {ipcName} 时发生错误", ex);
                     return DefaultValueFactory();
                 }
             }
@@ -143,7 +151,10 @@ public class IPCSubscriber<T> : IPCSubscriberBase<ICallGateSubscriber<T>>
 
         if (subscriber != null)
         {
-            try { return subscriber.InvokeFunc(); }
+            try
+            {
+                return subscriber.InvokeFunc();
+            }
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
@@ -167,6 +178,41 @@ public class IPCSubscriber<T> : IPCSubscriberBase<ICallGateSubscriber<T>>
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
+            }
+        }
+    }
+    
+    public T TryInvokeFunc()
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                var result = subscriber.InvokeFunc();
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+        return DefaultValueFactory();
+    }
+
+    public void TryInvokeAction()
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                subscriber.InvokeAction(); 
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
@@ -326,10 +372,16 @@ public class IPCSubscriber<T1, TResult>(string ipcName, Func<TResult>? defaultVa
         EnsureInitialized();
         if (subscriber != null)
         {
-            try { return subscriber.InvokeFunc(arg1); }
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
             catch (Exception ex)
             {
-                Error($"调用IPC {ipcName} 时发生错误", ex);
+                if (NotifiedErrorIPC.Add(ipcName))
+                    Error($"调用IPC {ipcName} 时发生错误", ex);
                 return defaultValueFactory();
             }
         }
@@ -345,6 +397,42 @@ public class IPCSubscriber<T1, TResult>(string ipcName, Func<TResult>? defaultVa
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
+            }
+        }
+    }
+
+    public TResult TryInvokeFunc(T1 arg1)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+        
+        return defaultValueFactory();
+    }
+
+    public void TryInvokeAction(T1 arg1)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                subscriber.InvokeAction(arg1); 
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
@@ -365,10 +453,16 @@ public class IPCSubscriber<T1, T2, TResult>(string ipcName, Func<TResult>? defau
         EnsureInitialized();
         if (subscriber != null)
         {
-            try { return subscriber.InvokeFunc(arg1, arg2); }
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
             catch (Exception ex)
             {
-                Error($"调用IPC {ipcName} 时发生错误", ex);
+                if (NotifiedErrorIPC.Add(ipcName))
+                    Error($"调用IPC {ipcName} 时发生错误", ex);
                 return defaultValueFactory();
             }
         }
@@ -384,6 +478,41 @@ public class IPCSubscriber<T1, T2, TResult>(string ipcName, Func<TResult>? defau
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
+            }
+        }
+    }
+
+    public TResult TryInvokeFunc(T1 arg1, T2 arg2)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+        return defaultValueFactory();
+    }
+
+    public void TryInvokeAction(T1 arg1, T2 arg2)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                subscriber.InvokeAction(arg1, arg2); 
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
@@ -404,10 +533,16 @@ public class IPCSubscriber<T1, T2, T3, TResult>(string ipcName, Func<TResult>? d
         EnsureInitialized();
         if (subscriber != null)
         {
-            try { return subscriber.InvokeFunc(arg1, arg2, arg3); }
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
             catch (Exception ex)
             {
-                Error($"调用IPC {ipcName} 时发生错误", ex);
+                if (NotifiedErrorIPC.Add(ipcName))
+                    Error($"调用IPC {ipcName} 时发生错误", ex);
                 return defaultValueFactory();
             }
         }
@@ -423,6 +558,41 @@ public class IPCSubscriber<T1, T2, T3, TResult>(string ipcName, Func<TResult>? d
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
+            }
+        }
+    }
+
+    public TResult TryInvokeFunc(T1 arg1, T2 arg2, T3 arg3)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+        return defaultValueFactory();
+    }
+
+    public void TryInvokeAction(T1 arg1, T2 arg2, T3 arg3)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                subscriber.InvokeAction(arg1, arg2, arg3); 
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
@@ -443,10 +613,16 @@ public class IPCSubscriber<T1, T2, T3, T4, TResult>(string ipcName, Func<TResult
         EnsureInitialized();
         if (subscriber != null)
         {
-            try { return subscriber.InvokeFunc(arg1, arg2, arg3, arg4); }
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
             catch (Exception ex)
             {
-                Error($"调用IPC {ipcName} 时发生错误", ex);
+                if (NotifiedErrorIPC.Add(ipcName))
+                    Error($"调用IPC {ipcName} 时发生错误", ex);
                 return defaultValueFactory();
             }
         }
@@ -462,6 +638,41 @@ public class IPCSubscriber<T1, T2, T3, T4, TResult>(string ipcName, Func<TResult
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
+            }
+        }
+    }
+
+    public TResult TryInvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+        return defaultValueFactory();
+    }
+
+    public void TryInvokeAction(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                subscriber.InvokeAction(arg1, arg2, arg3, arg4); 
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
@@ -482,10 +693,16 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, TResult>(string ipcName, Func<TRe
         EnsureInitialized();
         if (subscriber != null)
         {
-            try { return subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5); }
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
             catch (Exception ex)
             {
-                Error($"调用IPC {ipcName} 时发生错误", ex);
+                if (NotifiedErrorIPC.Add(ipcName))
+                    Error($"调用IPC {ipcName} 时发生错误", ex);
                 return defaultValueFactory();
             }
         }
@@ -501,6 +718,41 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, TResult>(string ipcName, Func<TRe
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
+            }
+        }
+    }
+
+    public TResult TryInvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+        return defaultValueFactory();
+    }
+
+    public void TryInvokeAction(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                subscriber.InvokeAction(arg1, arg2, arg3, arg4, arg5); 
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
@@ -521,10 +773,16 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, TResult>(string ipcName, Func
         EnsureInitialized();
         if (subscriber != null)
         {
-            try { return subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6); }
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
             catch (Exception ex)
             {
-                Error($"调用IPC {ipcName} 时发生错误", ex);
+                if (NotifiedErrorIPC.Add(ipcName))
+                    Error($"调用IPC {ipcName} 时发生错误", ex);
                 return defaultValueFactory();
             }
         }
@@ -540,6 +798,41 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, TResult>(string ipcName, Func
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
+            }
+        }
+    }
+
+    public TResult TryInvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+        return defaultValueFactory();
+    }
+
+    public void TryInvokeAction(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                subscriber.InvokeAction(arg1, arg2, arg3, arg4, arg5, arg6); 
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
@@ -560,10 +853,16 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult>(string ipcName, 
         EnsureInitialized();
         if (subscriber != null)
         {
-            try { return subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6, arg7); }
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
             catch (Exception ex)
             {
-                Error($"调用IPC {ipcName} 时发生错误", ex);
+                if (NotifiedErrorIPC.Add(ipcName))
+                    Error($"调用IPC {ipcName} 时发生错误", ex);
                 return defaultValueFactory();
             }
         }
@@ -579,6 +878,41 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult>(string ipcName, 
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
+            }
+        }
+    }
+
+    public TResult TryInvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+        return defaultValueFactory();
+    }
+
+    public void TryInvokeAction(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                subscriber.InvokeAction(arg1, arg2, arg3, arg4, arg5, arg6, arg7); 
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
@@ -599,10 +933,16 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(string ipcNa
         EnsureInitialized();
         if (subscriber != null)
         {
-            try { return subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); }
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
             catch (Exception ex)
             {
-                Error($"调用IPC {ipcName} 时发生错误", ex);
+                if (NotifiedErrorIPC.Add(ipcName))
+                    Error($"调用IPC {ipcName} 时发生错误", ex);
                 return defaultValueFactory();
             }
         }
@@ -618,6 +958,41 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(string ipcNa
             catch (Exception ex)
             {
                 Error($"调用IPC {ipcName} 时发生错误", ex);
+            }
+        }
+    }
+
+    public TResult TryInvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                var result = subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+                NotifiedErrorIPC.Remove(ipcName);
+                return result;
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+        return defaultValueFactory();
+    }
+
+    public void TryInvokeAction(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
+    {
+        EnsureInitialized();
+        if (subscriber != null)
+        {
+            try 
+            { 
+                subscriber.InvokeAction(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); 
+            }
+            catch
+            {
+                // ignored
             }
         }
     }
