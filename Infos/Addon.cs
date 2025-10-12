@@ -382,7 +382,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* PunchingMachine                 => GetAddonByName("PunchingMachine");
     public static AtkUnitBase* BasketBall                      => GetAddonByName("BasketBall");
     public static AtkUnitBase* Hummer                          => GetAddonByName("Hummer");
-    public static AtkUnitBase* UfoCatcher                      => GetAddonByName("UfoCatcher");
+    public static AtkUnitBase* UFOCatcher                      => GetAddonByName("UfoCatcher");
     public static AtkUnitBase* BalloonMessage                  => GetAddonByName("BalloonMessage");
     public static AtkUnitBase* TripleTriad                     => GetAddonByName("TripleTriad");
     public static AtkUnitBase* TripleTriadRequest              => GetAddonByName("TripleTriadRequest");
