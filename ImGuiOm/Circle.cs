@@ -19,8 +19,8 @@ public static partial class ImGuiOm
             outlineColor = new Vector4(0, 0, 0, 1);
 
         // 不透明度
-        var fillColorWithOpacity    = fillColor with { W = fillColor.W * opacity };
-        var outlineColorWithOpacity = new Vector4(outlineColor.X, outlineColor.Y, outlineColor.Z, outlineColor.W * opacity);
+        var fillColorWithOpacity    = fillColor with { W = fillColor.W       * opacity };
+        var outlineColorWithOpacity = outlineColor with { W = outlineColor.W * opacity };
 
         // 描边
         drawList?.AddCircleFilled(center, radius + outlineThickness, ImGui.ColorConvertFloat4ToU32(outlineColorWithOpacity));
