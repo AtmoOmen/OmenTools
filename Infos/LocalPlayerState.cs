@@ -14,10 +14,6 @@ namespace OmenTools.Infos;
 
 public class LocalPlayerState : OmenServiceBase
 {
-    private unsafe delegate ushort GetClassJobLevelDelegate(PlayerState* instance, uint classJobID, bool checkParentJob);
-    private static readonly GetClassJobLevelDelegate GetClassJobLevelInternal =
-        new CompSig("E8 ?? ?? ?? ?? 0F B6 0D ?? ?? ?? ?? 4C 8D 3D").GetDelegate<GetClassJobLevelDelegate>();
-
     private delegate nint GetAccountInfoInstanceDelegate();
     private static readonly GetAccountInfoInstanceDelegate GetAccountInfoInstance = 
         new CompSig("48 8B 05 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC CC 83 39").GetDelegate<GetAccountInfoInstanceDelegate>();
@@ -154,8 +150,8 @@ public class LocalPlayerState : OmenServiceBase
     /// <summary>
     /// 获取当前玩家指定职业的等级
     /// </summary>
-    public static unsafe ushort GetClassJobLevel(uint classJobID, bool checkParentJob = true) =>
-        ClassJob == classJobID ? CurrentLevel : GetClassJobLevelInternal(PlayerState.Instance(), classJobID, checkParentJob);
+    public static unsafe ushort GetClassJobLevel(uint classJobID, bool shouldGetSynced = true) =>
+        ClassJob == classJobID ? CurrentLevel : (ushort)PlayerState.Instance()->GetClassJobLevel(classJobID, shouldGetSynced);
 
     /// <summary>
     /// 获取当前玩家第一个可用的职业套装
@@ -224,7 +220,7 @@ public class LocalPlayerState : OmenServiceBase
                 PlayerArmoryInventories,
                 x => LuminaGetter.TryGetRow(x.GetBaseItemId(), out Item mainHandItemData) &&
                      mainHandItemData.ClassJobCategory.Value.IsClassJobIn(classJob)       &&
-                     mainHandItemData.LevelEquip <= CurrentLevel                          &&
+                     mainHandItemData.LevelEquip <= GetClassJobLevel(classJob)            &&
                      mainHandItemData.EquipSlotCategory is { IsValid: true, Value.MainHand: 1 },
                 out var mainHandItem))
         {
@@ -235,7 +231,7 @@ public class LocalPlayerState : OmenServiceBase
                     PlayerArmoryInventories,
                     x => LuminaGetter.TryGetRow(x.GetBaseItemId(), out Item offHandItemData) &&
                          offHandItemData.ClassJobCategory.Value.IsClassJobIn(classJob)       &&
-                         offHandItemData.LevelEquip <= CurrentLevel                          &&
+                         offHandItemData.LevelEquip <= GetClassJobLevel(classJob)            &&
                          offHandItemData.EquipSlotCategory is { IsValid: true, Value.OffHand: 1 },
                     out var offHandItem))
             {
