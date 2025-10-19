@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Lumina.Excel.Sheets;
 using Action = Lumina.Excel.Sheets.Action;
 using Status = Lumina.Excel.Sheets.Status;
@@ -8,6 +9,19 @@ namespace OmenTools.Helpers;
 
 public static class LuminaWrapper
 {
+    public static unsafe bool IsClassJobInClassJobCategory(uint classJobID, uint classJobCategoryID)
+    {
+        if (classJobCategoryID == 0) return false;
+        
+        var row = Framework.Instance()->ExcelModuleInterface->ExdModule->GetRowBySheetIndexAndRowIndex(60, classJobCategoryID);
+        if (row == null) return false;
+
+        return *((byte*)((nint)row->Data + 4) + classJobID) == 1;
+    }
+
+    public static bool IsClassJobIn(this ClassJobCategory category, uint classJobID) =>
+        IsClassJobInClassJobCategory(classJobID, category.RowId);
+    
     public static string GetAddonText(uint rowID) => 
         LuminaGetter.TryGetRow<Addon>(rowID, out var item) ? item.Text.ExtractText() : string.Empty;
     
