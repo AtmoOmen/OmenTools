@@ -2,17 +2,19 @@
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
 using OmenTools.Abstracts;
 using GrandCompany = FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany;
+using Task = System.Threading.Tasks.Task;
 
 namespace OmenTools.Infos;
 
-public unsafe class LocalPlayerState : OmenServiceBase
+public class LocalPlayerState : OmenServiceBase
 {
-    private delegate ushort GetClassJobLevelDelegate(PlayerState* instance, uint classJobID, bool checkParentJob);
+    private unsafe delegate ushort GetClassJobLevelDelegate(PlayerState* instance, uint classJobID, bool checkParentJob);
     private static readonly GetClassJobLevelDelegate GetClassJobLevelInternal =
         new CompSig("E8 ?? ?? ?? ?? 0F B6 0D ?? ?? ?? ?? 4C 8D 3D").GetDelegate<GetClassJobLevelDelegate>();
 
@@ -30,7 +32,7 @@ public unsafe class LocalPlayerState : OmenServiceBase
     
     private static Hook<AgentUpdateDelegate>? AgentMapUpdateHook;
     
-    internal override void Init()
+    internal override unsafe void Init()
     {
         AgentMapUpdateHook ??= DService.Hook.HookFromAddress<AgentUpdateDelegate>(GetVFuncByName(AgentMap.Instance()->VirtualTable, "Update"), AgentMapUpdateDetour);
         AgentMapUpdateHook.Enable();
@@ -42,7 +44,7 @@ public unsafe class LocalPlayerState : OmenServiceBase
         AgentMapUpdateHook = null;
     }
     
-    private static void AgentMapUpdateDetour(AgentInterface* agent, uint frameCount)
+    private static unsafe void AgentMapUpdateDetour(AgentInterface* agent, uint frameCount)
     {
         AgentMapUpdateHook.Original(agent, frameCount);
 
@@ -62,7 +64,7 @@ public unsafe class LocalPlayerState : OmenServiceBase
     /// <summary>
     /// 当前玩家所属的大国防联军
     /// </summary>
-    public static GrandCompany GrandCompany =>
+    public static unsafe GrandCompany GrandCompany =>
         (GrandCompany)PlayerState.Instance()->GrandCompany;
     
     /// <summary>
@@ -74,19 +76,19 @@ public unsafe class LocalPlayerState : OmenServiceBase
     /// <summary>
     /// 当前玩家的用户名
     /// </summary>
-    public static string Name =>
+    public static unsafe string Name =>
         PlayerState.Instance()->CharacterNameString;
     
     /// <summary>
     /// 当前玩家的 EntityID
     /// </summary>
-    public static uint EntityID => 
+    public static unsafe uint EntityID => 
         PlayerState.Instance()->EntityId;
 
     /// <summary>
     /// 当前玩家的 AccountID
     /// </summary>
-    public static ulong AccountID =>
+    public static unsafe ulong AccountID =>
         *(ulong*)(GetAccountInfoInstance() + 8);
     
     /// <summary>
@@ -98,37 +100,37 @@ public unsafe class LocalPlayerState : OmenServiceBase
     /// <summary>
     /// 当前职业
     /// </summary>
-    public static uint ClassJob => 
+    public static unsafe uint ClassJob => 
         AgentHUD.Instance()->CharacterClassJobId;
 
     /// <summary>
     /// 当前玩家的 ContentID
     /// </summary>
-    public static ulong ContentID => 
+    public static unsafe ulong ContentID => 
         PlayerState.Instance()->ContentId;
 
     /// <summary>
     /// 当前玩家的等级
     /// </summary>
-    public static ushort CurrentLevel =>
+    public static unsafe ushort CurrentLevel =>
         (ushort)PlayerState.Instance()->CurrentLevel;
 
     /// <summary>
     /// 当前玩家该职业下最高可以达到的等级
     /// </summary>
-    public static ushort MaxLevel =>
+    public static unsafe ushort MaxLevel =>
         PlayerState.Instance()->MaxLevel;
 
     /// <summary>
     /// 当前玩家获得的最优队员推荐次数
     /// </summary>
-    public static ushort Commendations =>
+    public static unsafe ushort Commendations =>
         (ushort)PlayerState.Instance()->PlayerCommendations;
 
     /// <summary>
     /// 当前是否为等级同步状态
     /// </summary>
-    public static bool IsLevelSynced =>
+    public static unsafe bool IsLevelSynced =>
         PlayerState.Instance()->IsLevelSynced;
 
     /// <summary>
@@ -152,13 +154,13 @@ public unsafe class LocalPlayerState : OmenServiceBase
     /// <summary>
     /// 获取当前玩家指定职业的等级
     /// </summary>
-    public static ushort GetClassJobLevel(uint classJobID, bool checkParentJob = true) =>
+    public static unsafe ushort GetClassJobLevel(uint classJobID, bool checkParentJob = true) =>
         ClassJob == classJobID ? CurrentLevel : GetClassJobLevelInternal(PlayerState.Instance(), classJobID, checkParentJob);
 
     /// <summary>
     /// 获取当前玩家第一个可用的职业套装
     /// </summary>
-    public static bool TryFindClassJobGearset(uint classJobID, out byte gearsetID)
+    public static unsafe bool TryFindClassJobGearset(uint classJobID, out byte gearsetID)
     {
         gearsetID = 0;
         
@@ -183,7 +185,7 @@ public unsafe class LocalPlayerState : OmenServiceBase
     /// <summary>
     /// 获取当前玩家第一个可用的职业套装
     /// </summary>
-    public static bool TryFindClassJobGearsetData(uint classJobID, out RaptureGearsetModule.GearsetEntry gearsetData)
+    public static unsafe bool TryFindClassJobGearsetData(uint classJobID, out RaptureGearsetModule.GearsetEntry gearsetData)
     {
         gearsetData = default;
         
@@ -205,15 +207,67 @@ public unsafe class LocalPlayerState : OmenServiceBase
         return false;
     }
 
-    public static bool SwitchGearset(uint classJob)
-    {
-        if (Object == null || !TryFindClassJobGearset(classJob, out var gearsetID)) return false;
-        
-        ChatHelper.SendMessage($"/gearset change {gearsetID + 1}");
-        return true;
-    }
+    private static bool IsOnClassJobChanging;
     
-    public static bool SwitchGearset(byte gearsetID)
+    public static unsafe bool SwitchGearset(uint classJob)
+    {
+        if (!LuminaGetter.TryGetRow<ClassJob>(classJob, out var jobData)) return false;
+        if (Object == null) return false;
+
+        if (TryFindClassJobGearset(classJob, out var gearsetID))
+        {
+            ChatHelper.SendMessage($"/gearset change {gearsetID + 1}");
+            return true;
+        }
+
+        if (TryGetFirstInventoryItem(
+                PlayerArmoryInventories,
+                x => LuminaGetter.TryGetRow(x.GetBaseItemId(), out Item mainHandItemData) &&
+                     mainHandItemData.ClassJobCategory.Value.IsClassJobIn(classJob)       &&
+                     mainHandItemData.LevelEquip <= CurrentLevel                          &&
+                     mainHandItemData.EquipSlotCategory is { IsValid: true, Value.MainHand: 1 },
+                out var mainHandItem))
+        {
+            InventoryManager.Instance()->MoveItemSlot(mainHandItem->GetInventoryType(), mainHandItem->GetSlot(), InventoryType.EquippedItems, 0, true);
+
+            if (jobData.DohDolJobIndex > -1 &&
+                TryGetFirstInventoryItem(
+                    PlayerArmoryInventories,
+                    x => LuminaGetter.TryGetRow(x.GetBaseItemId(), out Item offHandItemData) &&
+                         offHandItemData.ClassJobCategory.Value.IsClassJobIn(classJob)       &&
+                         offHandItemData.LevelEquip <= CurrentLevel                          &&
+                         offHandItemData.EquipSlotCategory is { IsValid: true, Value.OffHand: 1 },
+                    out var offHandItem))
+            {
+                Task.Run(() =>
+                {
+                    if (IsOnClassJobChanging) return;
+                    IsOnClassJobChanging = true;
+
+                    try
+                    {
+                        var timeout = Environment.TickCount64 + 2_000;
+                        
+                        while (ClassJob != classJob || Environment.TickCount64 > timeout)
+                            Thread.Sleep(100);
+                        
+                        if (offHandItem == null) return;
+                        InventoryManager.Instance()->MoveItemSlot(offHandItem->GetInventoryType(), offHandItem->GetSlot(), InventoryType.EquippedItems, 1);
+                    }
+                    finally
+                    {
+                        IsOnClassJobChanging = false;
+                    }
+                });
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public static unsafe bool SwitchGearset(byte gearsetID)
     {
         if (Object == null) return false;
         
@@ -227,7 +281,7 @@ public unsafe class LocalPlayerState : OmenServiceBase
         return true;
     }
 
-    public static bool HasStatus(uint statusID, out int index, uint sourceID = 0xE0000000)
+    public static unsafe bool HasStatus(uint statusID, out int index, uint sourceID = 0xE0000000)
     {
         index = -1;
         if (Object == null) return false;
@@ -236,7 +290,7 @@ public unsafe class LocalPlayerState : OmenServiceBase
         return index != -1;
     }
 
-    public static uint GetItemCount(uint itemID)
+    public static unsafe uint GetItemCount(uint itemID)
     {
         var instance = InventoryManager.Instance();
         return (uint)(instance->GetInventoryItemCount(itemID) + instance->GetInventoryItemCount(itemID, true));
