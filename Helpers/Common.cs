@@ -13,8 +13,8 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    public static bool IsPluginEnabled(string internalName) => 
-        DService.PI.InstalledPlugins.Any(x => x.InternalName == internalName && x.IsLoaded);
+    public static bool IsPluginEnabled(string internalName, Version? minVersion = null) => 
+        DService.PI.InstalledPlugins.Any(x => x.InternalName == internalName && x.IsLoaded && (minVersion == null || x.Version >= minVersion));
     
     public static RowRef<T> LuminaCreateRef<T>(uint rowID) where T : struct, IExcelRow<T> => 
         new(DService.Data.Excel, rowID);
