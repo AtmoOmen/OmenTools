@@ -189,20 +189,30 @@ public partial class TaskHelper : IDisposable
         return true;
     }
 
-    public bool RemoveQueue(int weight) => 
-        Queues.RemoveWhere(q => q.Weight == weight) > 0;
+    public bool RemoveQueue(int weight)
+    {
+        Warning($"移除了权重 {weight} 队列");
+        return Queues.RemoveWhere(q => q.Weight == weight) > 0;
+    }
 
-    public void RemoveAllTasks(int weight) =>
+    public void RemoveAllTasks(int weight)
+    {
+        Warning($"清除了权重 {weight} 队列中的所有任务");
         Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks.Clear();
+    }
 
-    public bool RemoveFirstTask(int weight) =>
-        Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks.TryDequeue(out _) ?? false;
+    public bool RemoveFirstTask(int weight)
+    {
+        Warning($"移除了权重 {weight} 队列中的第一个任务");
+        return Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks.TryDequeue(out _) ?? false;
+    }
 
     public bool RemoveLastTask(int weight)
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
         if (!(queue?.Tasks.Count > 0)) return false;
         
+        Warning($"清除了权重 {weight} 队列中的最后一个任务");
         queue.Tasks.RemoveAt(queue.Tasks.Count - 1);
         return true;
     }
@@ -212,6 +222,8 @@ public partial class TaskHelper : IDisposable
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
         if (queue?.Tasks.Count > 0)
         {
+            Warning($"清除了权重 {weight} 队列中的起始 {count} 个任务");
+            
             var actualCountToRemove = Math.Min(count, queue.Tasks.Count);
             queue.Tasks.RemoveRange(0, actualCountToRemove);
             return true;
