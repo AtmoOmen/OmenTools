@@ -278,7 +278,7 @@ public class FontManager : OmenServiceBase
                                                    ".fonts")
                                            ];
 
-        string[] fontExtensions = [".ttf", ".otf"];
+        string[] fontExtensions = [".ttf", ".otf", ".ttc"];
 
         var       localInstalledFonts = new ConcurrentDictionary<string, string>();
         var       errors              = new ConcurrentBag<Exception>();
