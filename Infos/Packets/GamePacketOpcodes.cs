@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace OmenTools.Infos;
 
@@ -80,8 +79,8 @@ public static class GamePacketOpcodes
         ExecuteCommandOpcode         = ReadOpcode("ExecuteCommand",         ExecuteCommandOpcodeBaseSig,    0x6D);
         CharaCardOpenOpcode          = ReadOpcode("CharaCardOpen",          CharaCardOpenOpcodeBaseSig,     0x4);
         HandOverItemOpcode           = ReadOpcode("HandOverItem",           HandOverItemOpcodeBaseSig,      0xBD);
-
-        PositionUpdateOpcode = ReadOpcode("PositionUpdate", GameState.IsCN ? PositionUpdateBaseSig : PositionUpdateGlobalBaseSig, 0x4);
+        
+        PositionUpdateOpcode         = ReadOpcodes("PositionUpdate", (PositionUpdateBaseSig, 0x4), (PositionUpdateGlobalBaseSig, 0x4));
     }
 
     private static int ReadOpcode(string name, CompSig sig, int offset)
@@ -93,7 +92,31 @@ public static class GamePacketOpcodes
         catch (Exception ex)
         {
             Error($"尝试读取 OPCODE {name} 时发生错误", ex);
-            return 0;
+            Chat($"尝试读取 OPCODE {name} 发生错误, 请在 Discord 内上报\n" +
+                 $"Error while reading OPCODE {name}. Please report on Discord.");
+            throw;
         }
+    }
+    
+    private static int ReadOpcodes(string name, params (CompSig sig, int offset)[] data)
+    {
+        Exception? exception = null;
+        
+        foreach (var (sig, offset) in data)
+        {
+            try
+            {
+                return Marshal.ReadInt32(sig.ScanText() + offset);
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+        }
+        
+        Error($"尝试读取 OPCODE {name} 时发生错误", exception);
+        Chat($"尝试读取 OPCODE {name} 发生错误, 请在 Discord 内上报\n" +
+             $"Error while reading OPCODE {name}. Please report on Discord.");
+        throw exception;
     }
 }
