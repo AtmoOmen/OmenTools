@@ -68,7 +68,7 @@ internal unsafe class GameObject(nint address) : IGameObject
     public static bool operator !=(GameObject? actor1, GameObject? actor2) => !(actor1 == actor2);
 
     public static bool IsValid(IGameObject? actor) =>
-        actor is not null && DService.ClientState.LocalContentId != 0;
+        actor is not null && LocalPlayerState.ContentID != 0;
     
     bool IEquatable<IGameObject>.Equals(IGameObject? other) => GameObjectID == other?.GameObjectID;
 

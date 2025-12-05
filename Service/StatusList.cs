@@ -34,9 +34,7 @@ public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status
 
     public static StatusList? CreateStatusListReference(nint address)
     {
-        var clientState = DService.ClientState;
-
-        if (clientState.LocalContentId == 0)
+        if (LocalPlayerState.ContentID == 0)
             return null;
 
         if (address == nint.Zero)
@@ -47,9 +45,7 @@ public sealed unsafe class StatusList(nint address) : IReadOnlyCollection<Status
 
     public static Status? CreateStatusReference(nint address)
     {
-        var clientState = DService.ClientState;
-
-        if (clientState.LocalContentId == 0)
+        if (LocalPlayerState.ContentID == 0)
             return null;
 
         if (address == nint.Zero)

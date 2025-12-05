@@ -71,7 +71,7 @@ internal sealed class ObjectTable : IObjectTable
 
     public unsafe IGameObject? CreateObjectReference(nint address)
     {
-        if (DService.ClientState.LocalContentId == 0)
+        if (LocalPlayerState.ContentID == 0)
             return null;
 
         if (address == nint.Zero)
