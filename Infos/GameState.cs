@@ -79,6 +79,7 @@ public unsafe class GameState : OmenServiceBase
         !Framework.Instance()->WindowInactive;
 
     // 因为生命周期里不会变更, 因此只需要懒加载一次即可
+    // 4 - 简中; 7 - 繁中
     private static readonly Lazy<bool> isCNLazy = 
         new(() => Framework.Instance()->ClientLanguage is 4 or 7);
     
