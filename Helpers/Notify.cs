@@ -1,6 +1,7 @@
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Interface.Textures;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 
@@ -8,7 +9,10 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    private static unsafe bool IsWindowBackground => Framework.Instance()->WindowInactive;
+    public static ISharedImmediateTexture? NotificationIcon { get; set; }
+    
+    private static unsafe bool IsWindowBackground => 
+        Framework.Instance()->WindowInactive;
     
     public static unsafe void ContentHintBlue(string message, int hundredMS = 30) =>
         RaptureAtkModule.Instance()->ShowTextGimmickHint(message, RaptureAtkModule.TextGimmickHintStyle.Info, hundredMS);
@@ -24,6 +28,7 @@ public static partial class HelpersOm
             Content                            = message,
             Type                               = NotificationType.Success,
             Minimized                          = false,
+            IconTexture                        = NotificationIcon,
             InitialDuration                    = TimeSpan.FromSeconds(3),
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
@@ -40,6 +45,7 @@ public static partial class HelpersOm
             Content                            = message,
             Type                               = NotificationType.Warning,
             Minimized                          = false,
+            IconTexture                        = NotificationIcon,
             InitialDuration                    = TimeSpan.FromSeconds(3),
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
@@ -56,6 +62,7 @@ public static partial class HelpersOm
             Content                            = message,
             Type                               = NotificationType.Error,
             Minimized                          = false,
+            IconTexture                        = NotificationIcon,
             InitialDuration                    = TimeSpan.FromSeconds(3),
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
@@ -72,6 +79,7 @@ public static partial class HelpersOm
             Content                            = message,
             Type                               = NotificationType.Info,
             Minimized                          = false,
+            IconTexture                        = NotificationIcon,
             InitialDuration                    = TimeSpan.FromSeconds(3),
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
