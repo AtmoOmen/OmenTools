@@ -54,7 +54,7 @@ public class FontManager : OmenServiceBase
     public static IFontHandle UIFont80  => GetUIFont(0.8f);
     public static IFontHandle UIFont60  => GetUIFont(0.6f);
 
-    public static float GlobalFontScale => Config.FontSize / 12f;
+    public static float GlobalFontScale => Config.FontSize / 14f * (ImGui.GetIO().DisplaySize.Y / 1440f);
 
     public static bool IsFontBuilding => ActiveFontBuilds > 0;
     
