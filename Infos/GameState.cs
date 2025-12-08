@@ -81,7 +81,7 @@ public unsafe class GameState : OmenServiceBase
     // 因为生命周期里不会变更, 因此只需要懒加载一次即可
     // 4 - 简中; 7 - 繁中
     private static readonly Lazy<bool> isCNLazy = 
-        new(() => Framework.Instance()->ClientLanguage is 4 or 7);
+        new(() => Framework.Instance()->ClientLanguage >= 4);
     
     /// <summary>
     /// 是否为国服客户端
