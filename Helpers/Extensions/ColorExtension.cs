@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using FFXIVClientStructs.FFXIV.Client.Graphics;
 
 namespace OmenTools.Helpers;
 
@@ -41,4 +42,26 @@ public static class ColorExtension
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector4 Invert(this Vector4 v) => 
         v with { X = 1f - v.X, Y = 1f - v.Y, Z = 1f - v.Z };
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ByteColor ToByteColor(this Vector4 color)
+    {
+        var r = (byte)Math.Round(Math.Clamp(color.X, 0f, 1f) * 255f, MidpointRounding.AwayFromZero);
+        var g = (byte)Math.Round(Math.Clamp(color.Y, 0f, 1f) * 255f, MidpointRounding.AwayFromZero);
+        var b = (byte)Math.Round(Math.Clamp(color.Z, 0f, 1f) * 255f, MidpointRounding.AwayFromZero);
+        var a = (byte)Math.Round(Math.Clamp(color.W, 0f, 1f) * 255f, MidpointRounding.AwayFromZero);
+
+        return new ByteColor { R = r, G = g, B = b, A = a };
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector4 ToVector4(this ByteColor color)
+    {
+        var r = color.R / 255f;
+        var g = color.G / 255f;
+        var b = color.B / 255f;
+        var a = color.A / 255f;
+
+        return new Vector4(r, g, b, a);
+    }
 }
