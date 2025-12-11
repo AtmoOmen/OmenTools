@@ -122,10 +122,11 @@ public class DService
     [PluginService] public static IPartyList           PartyList       { get; private set; } = null!;
     // TODO: 7.4 再说
     // [PluginService] public static IPlayerState         PlayerState     { get; private set; } = null!;
-    [PluginService] public static IPluginLog           Log             { get; private set; } = null!;
-    [PluginService] public static ITextureProvider     Texture         { get; private set; } = null!;
-    [PluginService] public static ITitleScreenMenu     TitleScreenMenu { get; private set; } = null!;
-    [PluginService] public static IToastGui            Toast           { get; private set; } = null!;
+    [PluginService] public static IPluginLog         Log               { get; private set; } = null!;
+    [PluginService] public static ISeStringEvaluator SeStringEvaluator { get; private set; } = null!;
+    [PluginService] public static ITextureProvider   Texture           { get; private set; } = null!;
+    [PluginService] public static ITitleScreenMenu   TitleScreenMenu   { get; private set; } = null!;
+    [PluginService] public static IToastGui          Toast             { get; private set; } = null!;
 
     public static IDalamudPluginInterface PI            { get; private set; } = null!;
     public static IUiBuilder              UIBuilder     { get; private set; } = null!;
