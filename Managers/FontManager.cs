@@ -73,8 +73,7 @@ public class FontManager : OmenServiceBase
     private static int                      ActiveFontBuilds;
 
     private static string DefaultFontPath => 
-        Path.Join(DService.PI.DalamudAssetDirectory.FullName, "UIRes",
-                  GameState.IsCN ? "NotoSansCJKsc-Medium.otf" : "NotoSansCJKjp-Medium.otf");
+        Path.Join(DService.PI.DalamudAssetDirectory.FullName, "UIRes", GetDefaultDalamudFontFileName());
 
     internal override void Init()
     {
@@ -354,6 +353,20 @@ public class FontManager : OmenServiceBase
             foreach (var error in errors.Take(maxErrors))
                 Error("处理字体文件时出错", error);
         }
+    }
+
+    public static string GetDefaultDalamudFontFileName()
+    {
+        if (GameState.IsCN)
+            return "NotoSansCJKsc-Medium.otf";
+        if (GameState.IsTC)
+            return "NotoSansCJKsc-Medium.otf";
+        if (GameState.IsGL)
+            return "NotoSansCJKjp-Medium.otf";
+        if (GameState.IsKR)
+            return "NotoSansCJKkr-Medium.otf";
+
+        return "NotoSansCJKsc-Medium.otf";
     }
 
     internal override void Uninit()
