@@ -77,16 +77,43 @@ public unsafe class GameState : OmenServiceBase
     /// </summary>
     public static bool IsForeground => 
         !Framework.Instance()->WindowInactive;
+    
+    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
+    private static readonly Lazy<bool> isGLLazy = 
+        new(() => Framework.Instance()->ClientLanguage < 4);
+    
+    /// <summary>
+    /// 是否为国际服客户端
+    /// </summary>
+    public static bool IsGL => isGLLazy.Value;
 
     // 因为生命周期里不会变更, 因此只需要懒加载一次即可
-    // 4 - 简中; 7 - 繁中
+    // 4 - 国服简中 (CHS); 5 - 国服繁中 (CHT, 很神奇, 但确实是有)
     private static readonly Lazy<bool> isCNLazy = 
-        new(() => Framework.Instance()->ClientLanguage >= 4);
+        new(() => Framework.Instance()->ClientLanguage is 4 or 5);
     
     /// <summary>
     /// 是否为国服客户端
     /// </summary>
     public static bool IsCN => isCNLazy.Value;
+    
+    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
+    private static readonly Lazy<bool> isTCLazy = 
+        new(() => Framework.Instance()->ClientLanguage == 7);
+    
+    /// <summary>
+    /// 是否为繁中客户端
+    /// </summary>
+    public static bool IsTC => isTCLazy.Value;
+    
+    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
+    private static readonly Lazy<bool> isKRLazy = 
+        new(() => Framework.Instance()->ClientLanguage == 6);
+    
+    /// <summary>
+    /// 是否为韩服客户端
+    /// </summary>
+    public static bool IsKR => isKRLazy.Value;
 
     /// <summary>
     /// 进入临危受命范围时
