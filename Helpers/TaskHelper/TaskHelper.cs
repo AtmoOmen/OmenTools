@@ -198,19 +198,19 @@ public partial class TaskHelper : IDisposable
     public void RemoveAllTasks(int weight)
     {
         Warning($"清除了权重 {weight} 队列中的所有任务");
-        Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks.Clear();
+        (Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks ?? []).Clear();
     }
 
     public bool RemoveFirstTask(int weight)
     {
         Warning($"移除了权重 {weight} 队列中的第一个任务");
-        return Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks.TryDequeue(out _) ?? false;
+        return (Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks ?? []).TryDequeue(out _);
     }
 
     public bool RemoveLastTask(int weight)
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
-        if (!(queue?.Tasks.Count > 0)) return false;
+        if (!((queue?.Tasks ?? []).Count > 0)) return false;
         
         Warning($"清除了权重 {weight} 队列中的最后一个任务");
         queue.Tasks.RemoveAt(queue.Tasks.Count - 1);
@@ -220,7 +220,7 @@ public partial class TaskHelper : IDisposable
     public bool RemoveFirstNTasks(int weight, int count)
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
-        if (queue?.Tasks.Count > 0)
+        if ((queue?.Tasks ?? []).Count > 0)
         {
             Warning($"清除了权重 {weight} 队列中的起始 {count} 个任务");
             
