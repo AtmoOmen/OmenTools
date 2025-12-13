@@ -1,17 +1,18 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI;
 using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace OmenTools.Infos;
 
 public sealed unsafe class InputData : IDisposable
 {
-    private nint Bytes;
+    private readonly InputDataSafeHandle handle;
+
     private bool disposedValue;
 
     private InputData()
     {
-        Bytes = Marshal.AllocHGlobal(0x40);
-        Data = (void**)Bytes;
+        handle = new InputDataSafeHandle();
+        Data   = (void**)handle.DangerousGetHandle();
         if (Data == null)
             throw new ArgumentNullException();
 
@@ -39,19 +40,30 @@ public sealed unsafe class InputData : IDisposable
 
     private void Dispose(bool disposing)
     {
-        if(disposedValue) return;
+        if (disposedValue) return;
         if (disposing) 
-        { }
+            handle.Dispose();
 
-        Marshal.FreeHGlobal(Bytes);
         disposedValue = true;
     }
 
-    ~InputData() => Dispose(false);
-
-    public void Dispose()
-    {
+    public void Dispose() => 
         Dispose(true);
-        GC.SuppressFinalize(this);
+
+    private sealed class InputDataSafeHandle : SafeHandle
+    {
+        public InputDataSafeHandle() : base(nint.Zero, true) => 
+            SetHandle(Marshal.AllocHGlobal(0x40));
+
+        public override bool IsInvalid => 
+            handle == nint.Zero;
+
+        protected override bool ReleaseHandle()
+        {
+            if (!IsInvalid) 
+                Marshal.FreeHGlobal(handle);
+
+            return true;
+        }
     }
 }

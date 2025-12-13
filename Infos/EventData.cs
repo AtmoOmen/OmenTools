@@ -4,13 +4,14 @@ namespace OmenTools.Infos;
 
 public sealed unsafe class EventData : IDisposable
 {
-    private readonly nint Bytes;
-    private          bool disposedValue;
+    private readonly EventDataSafeHandle handle;
+
+    private bool disposedValue;
 
     private EventData()
     {
-        Bytes = Marshal.AllocHGlobal(0x18);
-        Data  = (void**)Bytes;
+        handle = new EventDataSafeHandle();
+        Data   = (void**)handle.DangerousGetHandle();
         if (Data == null)
             throw new ArgumentNullException();
 
@@ -32,18 +33,29 @@ public sealed unsafe class EventData : IDisposable
     private void Dispose(bool disposing)
     {
         if (disposedValue) return;
-        if (disposing) 
-        { }
+        if (disposing)
+            handle.Dispose();
 
-        Marshal.FreeHGlobal(Bytes);
         disposedValue = true;
     }
 
-    ~EventData() => Dispose(false);
-
-    public void Dispose()
-    {
+    public void Dispose() => 
         Dispose(true);
-        GC.SuppressFinalize(this);
+
+    private sealed class EventDataSafeHandle : SafeHandle
+    {
+        public EventDataSafeHandle() : base(nint.Zero, true) =>
+            SetHandle(Marshal.AllocHGlobal(0x18));
+
+        public override bool IsInvalid =>
+            handle == nint.Zero;
+
+        protected override bool ReleaseHandle()
+        {
+            if (!IsInvalid)
+                Marshal.FreeHGlobal(handle);
+
+            return true;
+        }
     }
 }

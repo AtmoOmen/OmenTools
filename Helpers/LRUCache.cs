@@ -462,7 +462,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
 
     private void TrimCache(double percentage)
     {
-        if (percentage <= 0 || percentage > 1)
+        if (percentage is <= 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(percentage), "百分比必须在0到1之间");
 
         lockSlim.EnterWriteLock();
@@ -500,41 +500,17 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        ClearAll(true);
+        cleanupTimer.Dispose();
+        lockSlim.Dispose();
+        isDisposed = true;
     }
 
-    protected virtual void Dispose(bool disposing)
+    private class CacheItem(TKey key, TValue value, DateTime expirationTime, bool isPermanent = false)
     {
-        if (isDisposed) return;
-
-        if (disposing)
-        {
-            ClearAll(true);
-            cleanupTimer.Dispose();
-            lockSlim.Dispose();
-            isDisposed = true;
-        }
-    }
-
-    ~LRUCache()
-    {
-        Dispose(false);
-    }
-
-    private class CacheItem
-    {
-        public TKey     Key            { get; }
-        public TValue   Value          { get; }
-        public DateTime ExpirationTime { get; }
-        public bool     IsPermanent    { get; }
-
-        public CacheItem(TKey key, TValue value, DateTime expirationTime, bool isPermanent = false)
-        {
-            Key            = key;
-            Value          = value;
-            ExpirationTime = expirationTime;
-            IsPermanent    = isPermanent;
-        }
+        public TKey     Key            { get; } = key;
+        public TValue   Value          { get; } = value;
+        public DateTime ExpirationTime { get; } = expirationTime;
+        public bool     IsPermanent    { get; } = isPermanent;
     }
 }
