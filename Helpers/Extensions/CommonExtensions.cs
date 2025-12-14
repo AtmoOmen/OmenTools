@@ -1,4 +1,5 @@
-﻿using Dalamud.Hooking;
+﻿using System.Globalization;
+using Dalamud.Hooking;
 using Timer = System.Timers.Timer;
 
 namespace OmenTools.Helpers;
@@ -53,5 +54,34 @@ public static class CommonExtensions
             i = min;
         
         return ref i;
+    }
+
+    extension(byte[] haystack)
+    {
+        public bool TryFindBytes(byte[] needle, out int pos)
+        {
+            var len   = needle.Length;
+            var limit = haystack.Length - len;
+            for (var i = 0; i <= limit; i++)
+            {
+                var k = 0;
+                for (; k < len; k++)
+                {
+                    if (needle[k] != haystack[i + k]) break;
+                }
+
+                if (k == len)
+                {
+                    pos = i;
+                    return true;
+                }
+            }
+
+            pos = 0;
+            return false;
+        }
+
+        public bool TryFindBytes(string needle, out int pos) => 
+            TryFindBytes(haystack, needle.Split(" ").Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray(), out pos);
     }
 }
