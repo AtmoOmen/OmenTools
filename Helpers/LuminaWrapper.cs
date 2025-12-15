@@ -126,4 +126,7 @@ public static class LuminaWrapper
     
     public static string GetMKDTraitName(uint rowID) => 
         LuminaGetter.TryGetRow<MKDTrait>(rowID, out var item) ? item.Unknown0.ExtractText() : string.Empty;
+    
+    public static string GetWeatherName(uint rowID) => 
+        LuminaGetter.TryGetRow<Weather>(rowID, out var item) ? item.Name.ExtractText() : string.Empty;
 }
