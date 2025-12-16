@@ -30,7 +30,7 @@ public unsafe class LogMessageManager : OmenServiceBase
     private delegate        void                               ShowLogMessageUInt2Delegate(RaptureLogModule* module, uint logMessageID, uint value1, uint value2);
     private static          Hook<ShowLogMessageUInt2Delegate>? ShowLogMessageUInt2Hook;
 
-    private static readonly CompSig ShowMessageUInt3Sig = new("E8 ?? ?? ?? ?? 40 84 ED 0F 84 ?? ?? ?? ?? 83 7F 20 00 ?? ?? ?? ?? ?? ??");
+    private static readonly CompSig ShowMessageUInt3Sig = new("E8 ?? ?? ?? ?? 80 67 37 FE");
     private delegate        void ShowLogMessageUInt3Delegate(RaptureLogModule* module, uint logMessageID, uint value1, uint value2, uint value3);
     private static          Hook<ShowLogMessageUInt3Delegate>? ShowLogMessageUInt3Hook;
 

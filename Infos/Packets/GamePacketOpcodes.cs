@@ -34,9 +34,6 @@ public static class GamePacketOpcodes
     private static readonly CompSig PositionUpdateBaseSig = 
         new("C7 44 24 ?? ?? ?? ?? ?? F7 D9");
     
-    private static readonly CompSig PositionUpdateGlobalBaseSig = 
-        new("C7 44 24 ?? ?? ?? ?? ?? 44 8B CB 48 C7 44 24");
-    
     private static readonly CompSig PositionUpdateInstanceBaseSig = 
         new("C7 44 24 ?? ?? ?? ?? ?? 48 8D 54 24 ?? 48 C7 44 24 ?? ?? ?? ?? ?? 0F 11 44 24");
 
@@ -47,10 +44,10 @@ public static class GamePacketOpcodes
         new("C7 44 24 ?? ?? ?? ?? ?? 48 F7 F1");
 
     private static readonly CompSig UseActionOpcodeBaseSig =
-        new("C7 44 24 ?? ?? ?? ?? ?? 45 33 C0 48 C7 44 24 ?? ?? ?? ?? ?? 40 88 74 24");
+        new("C7 44 24 ?? ?? ?? ?? ?? 45 33 C0 48 C7 44 24 ?? ?? ?? ?? ?? 89 7C 24");
     
     private static readonly CompSig UseActionLocationOpcodeBaseSig =
-        new("C7 44 24 ?? ?? ?? ?? ?? 48 C7 44 24 ?? ?? ?? ?? ?? 40 88 6C 24");
+        new("C7 44 24 ?? ?? ?? ?? ?? 48 C7 44 24 ?? ?? ?? ?? ?? 89 74 24 ?? 40 88 6C 24");
     
     private static readonly CompSig MJIInteractOpcodeBaseSig =
         new("C7 44 24 ?? ?? ?? ?? ?? 48 C7 44 24 ?? ?? ?? ?? ?? 0F 11 44 24 ?? E8 ?? ?? ?? ?? 48 8B AC 24");
@@ -79,8 +76,7 @@ public static class GamePacketOpcodes
         ExecuteCommandOpcode         = ReadOpcode("ExecuteCommand",         ExecuteCommandOpcodeBaseSig,    0x6D);
         CharaCardOpenOpcode          = ReadOpcode("CharaCardOpen",          CharaCardOpenOpcodeBaseSig,     0x4);
         HandOverItemOpcode           = ReadOpcode("HandOverItem",           HandOverItemOpcodeBaseSig,      0xBD);
-        
-        PositionUpdateOpcode         = ReadOpcodes("PositionUpdate", (PositionUpdateBaseSig, 0x4), (PositionUpdateGlobalBaseSig, 0x4));
+        PositionUpdateOpcode         = ReadOpcode("PositionUpdate",         PositionUpdateBaseSig,          0x4);
     }
 
     private static int ReadOpcode(string name, CompSig sig, int offset)

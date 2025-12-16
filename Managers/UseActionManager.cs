@@ -116,7 +116,7 @@ public unsafe class UseActionManager : OmenServiceBase
         bool* outOptAreaTargeted);
     internal static Hook<UseActionDelegate>? UseActionHook;
     
-    internal static readonly CompSig UseActionLocationSig = new("E8 ?? ?? ?? ?? 40 3A C7 0F 85 ?? ?? ?? ??");
+    internal static readonly CompSig UseActionLocationSig = new("48 89 5C 24 ?? 44 89 44 24 ?? 89 54 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24");
     internal delegate bool UseActionLocationDelegate(
         ActionManager* manager,
         ActionType     type,
