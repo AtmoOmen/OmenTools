@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Dalamud.Game.ClientState.Objects.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -76,6 +77,21 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     ///     辅助盗贼
     /// </summary>
     public static CrescentSupportJob Thief { get; } = new(12, CrescentSupportJobType.Thief, CrescentSupportJobUnlockType.GoldPiece, 45044);
+    
+    /// <summary>
+    ///     辅助魔法剑士
+    /// </summary>
+    public static CrescentSupportJob MysticKnight { get; } = new(13, CrescentSupportJobType.MysticKnight, CrescentSupportJobUnlockType.SilverPiece, 45043);
+    
+    /// <summary>
+    ///     辅助剑斗士
+    /// </summary>
+    public static CrescentSupportJob Gladiator { get; } = new(14, CrescentSupportJobType.Gladiator, CrescentSupportJobUnlockType.GoldPiece, 45044);
+    
+    /// <summary>
+    ///     辅助舞者
+    /// </summary>
+    public static CrescentSupportJob Dancer { get; } = new(15, CrescentSupportJobType.Dancer, CrescentSupportJobUnlockType.SilverPiece, 45043);
 
     /// <summary>
     /// 全部辅助职业
@@ -94,7 +110,10 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
         Cannoneer,
         Chemist,
         Oracle,
-        Thief
+        Thief,
+        MysticKnight,
+        Gladiator,
+        Dancer
     ];
 
     /// <summary>
@@ -241,6 +260,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// <summary>
     /// 辅助职业当前等级, 新月岛副本区域外调用返回 0
     /// </summary>
+    // TODO: 依旧等待 FFCS 修
     public unsafe byte CurrentLevel
     {
         get
@@ -248,7 +268,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
             var state = PublicContentOccultCrescent.GetState();
             if (state == null) return 0;
             
-            return state->SupportJobLevels[DataID];
+            return *((byte*)Unsafe.AsPointer(ref state->SupportJobLevels[0]) + DataID);
         }
     }
 
@@ -400,7 +420,22 @@ public enum CrescentSupportJobType : byte
     /// <summary>
     /// 辅助盗贼
     /// </summary>
-    Thief = 12
+    Thief = 12,
+    
+    /// <summary>
+    /// 辅助魔法剑士
+    /// </summary>
+    MysticKnight = 13,
+    
+    /// <summary>
+    /// 辅助剑斗士
+    /// </summary>
+    Gladiator = 14,
+    
+    /// <summary>
+    /// 辅助舞者
+    /// </summary>
+    Dancer = 15
 }
 
 public enum CrescentSupportJobUnlockType
