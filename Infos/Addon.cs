@@ -62,8 +62,8 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* MovieStaffList                  => GetAddonByName("MovieStaffList");
     public static AtkUnitBase* Hud                             => GetAddonByName("Hud");
     public static AtkUnitBase* ChatLog                         => GetAddonByName("ChatLog");
-    public static AtkUnitBase* ContextMenu                     => GetAddonByName("ContextMenu");
-    public static AtkUnitBase* SelectOk                        => GetAddonByName("SelectOk");
+    public static AtkUnitBase* ContextMenu                     => GetAddonByName("ContextMenu"); // TODO: 修改名称, 现在冲突太多了
+    public static AtkUnitBase* SelectOK                        => GetAddonByName("SelectOk");
     public static AtkUnitBase* SelectYesno                     => GetAddonByName("SelectYesno");
     public static AtkUnitBase* SelectString                    => GetAddonByName("SelectString");
     public static AtkUnitBase* SelectList                      => GetAddonByName("SelectList");

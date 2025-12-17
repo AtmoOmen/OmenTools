@@ -316,14 +316,14 @@ public unsafe class GameState : OmenServiceBase
     /// <summary>
     /// 当前 TerritoryIntendedUse ID
     /// </summary>
-    public static uint TerritoryIntendedUse => 
+    public static FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse TerritoryIntendedUse => 
         GameMain.Instance()->CurrentTerritoryIntendedUseId;
     
     /// <summary>
     /// 当前 TerritoryIntendedUse 表数据
     /// </summary>
     public static TerritoryIntendedUse TerritoryIntendedUseData =>
-        LuminaGetter.GetRow<TerritoryIntendedUse>(TerritoryIntendedUse).GetValueOrDefault();
+        LuminaGetter.GetRow<TerritoryIntendedUse>((uint)TerritoryIntendedUse).GetValueOrDefault();
     
     /// <summary>
     /// 当前 ContentFinderCondition ID

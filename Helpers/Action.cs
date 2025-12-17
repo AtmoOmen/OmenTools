@@ -3,6 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
 using Action = Lumina.Excel.Sheets.Action;
 using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
+using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
 namespace OmenTools.Helpers;
 
@@ -21,11 +22,11 @@ public static unsafe partial class HelpersOm
             return row.Action.RowId;
         
         // 开拓无人岛
-        if (GameMain.Instance()->CurrentTerritoryIntendedUseId == 49)
+        if (GameMain.Instance()->CurrentTerritoryIntendedUseId == TerritoryIntendedUse.IslandSanctuary)
             return 31314;
         
         // 宇宙探索
-        if (GameMain.Instance()->CurrentTerritoryIntendedUseId == 60 && jobRow.DohDolJobIndex > -1)
+        if (GameMain.Instance()->CurrentTerritoryIntendedUseId == TerritoryIntendedUse.CosmicExploration && jobRow.DohDolJobIndex > -1)
             return 43357;
         
         return row.Action.RowId;

@@ -3,6 +3,7 @@ using Dalamud.Game.ClientState.Objects.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
+using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
 namespace OmenTools.Infos;
 
@@ -114,7 +115,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     public static bool TryFindKnowledgeCrystal([NotNullWhen(true)] out IGameObject? knowledgeCrystal)
     {
         knowledgeCrystal = null;
-        if (GameState.TerritoryIntendedUse != 61) return false;
+        if (GameState.TerritoryIntendedUse != TerritoryIntendedUse.OccultCrescent) return false;
         
         knowledgeCrystal = DService.ObjectTable.FirstOrDefault(x => x is { ObjectKind: ObjectKind.EventObj, DataID: 2007457 } &&
                                                                     string.IsNullOrEmpty(x.Name.TextValue)                    &&
@@ -142,14 +143,12 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
         LongTimeStatusID       = longTimeStatusID;
 
         var        data    = GetData();
-        List<uint> actions = [data.Unknown5, data.Unknown6, data.Unknown7, data.Unknown8, data.Unknown9];
-        List<byte> levels  = [data.Unknown12, data.Unknown13, data.Unknown14, data.Unknown15, data.Unknown16];
-        for (var i = 0; i < actions.Count; i++)
+        foreach (var actionData in data.Actions)
         {
-            var action = actions[i];
-            var level  = levels[i];
+            var action = actionData.Action.RowId;
+            var level  = actionData.LevelUnlock;
             if (action == 0 || level == 0) continue;
-
+            
             Actions[action] = level;
         }
 
@@ -213,7 +212,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// 辅助职业名称
     /// </summary>
     public string Name =>
-        GetData().Unknown0.ExtractText();
+        GetData().Name.ExtractText();
 
     public string UnlockTypeName =>
         UnlockType switch
@@ -237,7 +236,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// 辅助职业最大能达到的等级
     /// </summary>
     public byte MaxLevel => 
-        GetData().Unknown10;
+        GetData().LevelMax;
     
     /// <summary>
     /// 辅助职业当前等级, 新月岛副本区域外调用返回 0

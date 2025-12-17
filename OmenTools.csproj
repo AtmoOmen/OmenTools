@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<Project Sdk="Dalamud.CN.NET.Sdk/13.1.0">
+<Project Sdk="Dalamud.CN.NET.Sdk/14.0.0">
 
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <TargetFramework>net9.0-windows</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -13,6 +12,7 @@
         <BaseOutputPath>$(SolutionDir)bin</BaseOutputPath>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <UseWindowsForms>true</UseWindowsForms>
+        <UseWPF>true</UseWPF>
         <ResolveComReferenceSilent>true</ResolveComReferenceSilent>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
         <Use_DalamudPackager>false</Use_DalamudPackager>

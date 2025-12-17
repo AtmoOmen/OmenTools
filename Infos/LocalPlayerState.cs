@@ -151,7 +151,7 @@ public class LocalPlayerState : OmenServiceBase
     /// 获取当前玩家指定职业的等级
     /// </summary>
     public static unsafe ushort GetClassJobLevel(uint classJobID, bool shouldGetSynced = true) =>
-        ClassJob == classJobID ? CurrentLevel : (ushort)PlayerState.Instance()->GetClassJobLevel(classJobID, shouldGetSynced);
+        ClassJob == classJobID ? CurrentLevel : PlayerState.Instance()->GetClassJobLevel((int)classJobID, shouldGetSynced);
 
     /// <summary>
     /// 获取当前玩家第一个可用的职业套装

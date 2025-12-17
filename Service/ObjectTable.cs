@@ -7,36 +7,42 @@ using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
 namespace OmenTools.Service;
 
-internal sealed class ObjectTable : IObjectTable
+internal sealed partial class ObjectTable : IObjectTable
 {
-    private static   int           objectTableLength;
+    private static int ObjectTableLength;
+
     private readonly CachedEntry[] cachedObjectTable;
-    private readonly Enumerator?[] frameworkThreadEnumerators = new Enumerator?[4];
 
     internal unsafe ObjectTable()
     {
         var nativeObjectTable = CSGameObjectManager.Instance()->Objects.IndexSorted;
-        objectTableLength = nativeObjectTable.Length;
+        ObjectTableLength = nativeObjectTable.Length;
 
-        cachedObjectTable = new CachedEntry[objectTableLength];
+        cachedObjectTable = new CachedEntry[ObjectTableLength];
         for (var i = 0; i < cachedObjectTable.Length; i++)
             cachedObjectTable[i] = new(nativeObjectTable.GetPointer(i));
-
-        for (var i = 0; i < frameworkThreadEnumerators.Length; i++)
-            frameworkThreadEnumerators[i] = new(this, i);
     }
 
-    public unsafe nint Address
-    {
-        get => (nint)(&CSGameObjectManager.Instance()->Objects);
-    }
+    public unsafe nint Address => (nint)(&CSGameObjectManager.Instance()->Objects);
 
-    public int Length => objectTableLength;
+    public int Length => ObjectTableLength;
 
-    public IGameObject? this[int index]
-    {
-        get => index >= objectTableLength || index < 0 ? null : cachedObjectTable[index].Update();
-    }
+    public IPlayerCharacter? LocalPlayer => this[0] as IPlayerCharacter;
+
+    public IEnumerable<IBattleChara> PlayerObjects => GetPlayerObjects();
+
+    public IEnumerable<IGameObject> CharacterManagerObjects => GetObjectsInRange(..199);
+
+    public IEnumerable<IGameObject> ClientObjects => GetObjectsInRange(200..448);
+
+    public IEnumerable<IGameObject> EventObjects => GetObjectsInRange(449..488);
+
+    public IEnumerable<IGameObject> StandObjects => GetObjectsInRange(489..628);
+
+    public IEnumerable<IGameObject> ReactionEventObjects => GetObjectsInRange(629..728);
+
+    public IGameObject? this[int index] => 
+        index >= ObjectTableLength || index < 0 ? null : cachedObjectTable[index].Update();
 
     public IGameObject? SearchByID(ulong gameObjectID)
     {
@@ -66,18 +72,18 @@ internal sealed class ObjectTable : IObjectTable
         return null;
     }
 
-    public unsafe nint GetObjectAddress(int index) =>
-        index >= objectTableLength || index < 0 ? nint.Zero : (nint)cachedObjectTable[index].Address;
+    public unsafe nint GetObjectAddress(int index) => 
+        index >= ObjectTableLength || index < 0 ? nint.Zero : (nint)cachedObjectTable[index].Address;
 
     public unsafe IGameObject? CreateObjectReference(nint address)
     {
-        if (LocalPlayerState.ContentID == 0)
-            return null;
-
         if (address == nint.Zero)
             return null;
 
-        var obj     = (CSGameObject*)address;
+        if (!DService.PlayerState.IsLoaded)
+            return null;
+
+        var obj = (CSGameObject*)address;
         var objKind = (ObjectKind)obj->ObjectKind;
         return objKind switch
         {
@@ -89,80 +95,32 @@ internal sealed class ObjectTable : IObjectTable
             ObjectKind.Companion => new NPC(address),
             ObjectKind.MountType => new NPC(address),
             ObjectKind.Ornament  => new NPC(address),
-            _                    => new GameObject(address)
+            _                    => new GameObject(address),
         };
     }
-    
-    public IPlayerCharacter? LocalPlayer => this[0] as IPlayerCharacter;
-    
-    public IEnumerator<IGameObject> GetEnumerator()
-    {
-        foreach (ref var x in frameworkThreadEnumerators.AsSpan())
-        {
-            if (x is not null)
-            {
-                var t = x;
-                x = null;
-                t.Reset();
-                return t;
-            }
-        }
 
-        return new Enumerator(this, -1);
+    private IEnumerable<IBattleChara> GetPlayerObjects()
+    {
+        for (var index = 0; index < 200; index += 2)
+        {
+            if (this[index] is IBattleChara { ObjectKind: ObjectKind.Player } gameObject)
+                yield return gameObject;
+        }
     }
 
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    private sealed class Enumerator(ObjectTable owner, int slotID) : IEnumerator<IGameObject>
+    private IEnumerable<IGameObject> GetObjectsInRange(Range range)
     {
-        private readonly ObjectTable? owner = owner;
-
-        private int index = -1;
-
-        public IGameObject Current { get; private set; } = null!;
-
-        object IEnumerator.Current => Current;
-
-        public bool MoveNext()
+        for (var index = range.Start.Value; index <= range.End.Value; index++)
         {
-            if (index == objectTableLength)
-                return false;
-
-            var cache = owner!.cachedObjectTable.AsSpan();
-            for (index++; index < objectTableLength; index++)
-            {
-                if (cache[index].Update() is { } ao)
-                {
-                    Current = ao;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public void Reset() => index = -1;
-
-        public void Dispose()
-        {
-            if (owner is not { } o)
-                return;
-
-            if (slotID != -1)
-                o.frameworkThreadEnumerators[slotID] = this;
-        }
-
-        public bool TryReset()
-        {
-            Reset();
-            return true;
+            if (this[index] is { } gameObject)
+                yield return gameObject;
         }
     }
-    
+
     internal readonly unsafe struct CachedEntry(Pointer<CSGameObject>* gameObjectPtr)
     {
         private readonly PlayerCharacter playerCharacter = new(nint.Zero);
-        private readonly BattleNPC       battleNPC       = new(nint.Zero);
+        private readonly BattleNPC       BattleNPC       = new(nint.Zero);
         private readonly NPC             npc             = new(nint.Zero);
         private readonly EventObj        eventObj        = new(nint.Zero);
         private readonly GameObject      gameObject      = new(nint.Zero);
@@ -182,34 +140,90 @@ internal sealed class ObjectTable : IObjectTable
             var activeObject = (ObjectKind)address->ObjectKind switch
             {
                 ObjectKind.Player    => playerCharacter,
-                ObjectKind.BattleNpc => battleNPC,
+                ObjectKind.BattleNpc => BattleNPC,
                 ObjectKind.EventNpc  => npc,
                 ObjectKind.Retainer  => npc,
                 ObjectKind.EventObj  => eventObj,
                 ObjectKind.Companion => npc,
                 ObjectKind.MountType => npc,
                 ObjectKind.Ornament  => npc,
-                _                    => gameObject
+                _                    => gameObject,
             };
+            
             activeObject.Address = (nint)address;
             return activeObject;
         }
     }
 }
 
+internal sealed partial class ObjectTable
+{
+    public IEnumerator<IGameObject> GetEnumerator() => 
+        new Enumerator(this);
+
+    IEnumerator IEnumerable.GetEnumerator() => 
+        GetEnumerator();
+
+    private struct Enumerator(ObjectTable owner) : IEnumerator<IGameObject>
+    {
+        private int index = -1;
+
+        public IGameObject Current { get; private set; }
+
+        object IEnumerator.Current => 
+            Current;
+
+        public bool MoveNext()
+        {
+            var cache = owner.cachedObjectTable.AsSpan();
+
+            while (++index < ObjectTableLength)
+            {
+                if (cache[index].Update() is { } ao)
+                {
+                    Current = ao;
+                    return true;
+                }
+            }
+
+            Current = null;
+            return false;
+        }
+
+        public void Reset() => 
+            index = -1;
+
+        public void Dispose() { }
+    }
+}
+
 public interface IObjectTable : IEnumerable<IGameObject>
 {
-    public IGameObject? this[int index] { get; }
+    public nint Address { get; }
     
-    public nint              Address     { get; }
-    public int               Length      { get; }
+    public int Length { get; }
+
     public IPlayerCharacter? LocalPlayer { get; }
 
+    public IEnumerable<IBattleChara> PlayerObjects { get; }
+
+    public IEnumerable<IGameObject> CharacterManagerObjects { get; }
+
+    public IEnumerable<IGameObject> ClientObjects { get; }
+
+    public IEnumerable<IGameObject> EventObjects { get; }
+
+    public IEnumerable<IGameObject> StandObjects { get; }
+    
+    public IEnumerable<IGameObject> ReactionEventObjects { get; }
+
+    public IGameObject? this[int index] { get; }
+
     public IGameObject? SearchByID(ulong gameObjectID);
-    
+
     public IGameObject? SearchByEntityID(uint entityID);
-    
+
     public nint GetObjectAddress(int index);
-    
+
     public IGameObject? CreateObjectReference(nint address);
 }

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Drawing.Text;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
 using Dalamud.Interface.GameFonts;

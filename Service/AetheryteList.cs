@@ -1,8 +1,18 @@
 ﻿using System.Collections;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel;
+using Lumina.Excel.Sheets;
 
 namespace OmenTools.Service;
+
+#region AetheryteList
+
+public interface IAetheryteList : IReadOnlyCollection<IAetheryteEntry>
+{
+    public int Length { get; }
+
+    public IAetheryteEntry? this[int index] { get; }
+}
 
 internal sealed unsafe partial class AetheryteList : IAetheryteList
 {
@@ -15,11 +25,12 @@ internal sealed unsafe partial class AetheryteList : IAetheryteList
             if (DService.ObjectTable.LocalPlayer == null)
                 return 0;
 
-            this.Update();
+            Update();
 
-            return this.telepoInstance->TeleportList.First == this.telepoInstance->TeleportList.Last ? 
-                       0 : 
-                       this.telepoInstance->TeleportList.Count;
+            if (telepoInstance->TeleportList.First == telepoInstance->TeleportList.Last)
+                return 0;
+
+            return telepoInstance->TeleportList.Count;
         }
     }
 
@@ -27,10 +38,13 @@ internal sealed unsafe partial class AetheryteList : IAetheryteList
     {
         get
         {
-            if (index < 0 || index >= this.Length)
+            if (index < 0 || index >= Length)
                 return null;
 
-            return DService.ObjectTable.LocalPlayer == null ? null : new AetheryteEntry(this.telepoInstance->TeleportList[index]);
+            if (DService.ObjectTable.LocalPlayer == null)
+                return null;
+
+            return new AetheryteEntry(telepoInstance->TeleportList[index]);
         }
     }
 
@@ -39,9 +53,50 @@ internal sealed unsafe partial class AetheryteList : IAetheryteList
         if (DService.ObjectTable.LocalPlayer == null)
             return;
 
-        this.telepoInstance->UpdateAetheryteList();
+        telepoInstance->UpdateAetheryteList();
     }
 }
+
+internal sealed partial class AetheryteList
+{
+    public int Count => Length;
+
+    public IEnumerator<IAetheryteEntry> GetEnumerator() => new Enumerator(this);
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    private struct Enumerator(AetheryteList aetheryteList) : IEnumerator<IAetheryteEntry>
+    {
+        private int index = -1;
+
+        public IAetheryteEntry Current { get; private set; }
+
+        object IEnumerator.Current => Current;
+
+        public bool MoveNext()
+        {
+            if (++index < aetheryteList.Length)
+            {
+                Current = aetheryteList[index];
+                return true;
+            }
+
+            Current = null;
+            return false;
+        }
+
+        public void Reset() => 
+            index = -1;
+
+        public void Dispose()
+        {
+        }
+    }
+}
+
+#endregion
+
+#region AetheryteEntry
 
 public interface IAetheryteEntry
 {
@@ -63,53 +118,30 @@ public interface IAetheryteEntry
 
     bool IsApartment { get; }
 
-    RowRef<Lumina.Excel.Sheets.Aetheryte> AetheryteData { get; }
+    RowRef<Aetheryte> AetheryteData { get; }
 }
 
-internal sealed class AetheryteEntry : IAetheryteEntry
+internal readonly struct AetheryteEntry(TeleportInfo data) : IAetheryteEntry
 {
-    private readonly TeleportInfo data;
+    public uint AetheryteID => data.AetheryteId;
 
-    internal AetheryteEntry(TeleportInfo data) => this.data = data;
+    public uint TerritoryID => data.TerritoryId;
 
-    public uint AetheryteID => this.data.AetheryteId;
+    public byte SubIndex => data.SubIndex;
 
-    public uint TerritoryID => this.data.TerritoryId;
+    public byte Ward => data.Ward;
 
-    public byte SubIndex => this.data.SubIndex;
+    public byte Plot => data.Plot;
 
-    public byte Ward => this.data.Ward;
+    public uint GilCost => data.GilCost;
 
-    public byte Plot => this.data.Plot;
+    public bool IsFavourite => data.IsFavourite;
 
-    public uint GilCost => this.data.GilCost;
+    public bool IsSharedHouse => data.IsSharedHouse;
 
-    public bool IsFavourite => this.data.IsFavourite;
-    
-    public bool IsSharedHouse => this.data.IsSharedHouse;
+    public bool IsApartment => data.IsApartment;
 
-    public bool IsApartment => this.data.IsApartment;
-
-    public RowRef<Lumina.Excel.Sheets.Aetheryte> AetheryteData => 
-        LuminaCreateRef<Lumina.Excel.Sheets.Aetheryte>(this.AetheryteID);
+    public RowRef<Aetheryte> AetheryteData => LuminaCreateRef<Aetheryte>(this.AetheryteID);
 }
 
-internal sealed partial class AetheryteList
-{
-    public int Count => this.Length;
-
-    public IEnumerator<IAetheryteEntry> GetEnumerator()
-    {
-        for (var i = 0; i < this.Length; i++)
-            yield return this[i];
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
-}
-
-public interface IAetheryteList : IReadOnlyCollection<IAetheryteEntry>
-{
-    public int Length { get; }
-
-    public IAetheryteEntry? this[int index] { get; }
-}
+#endregion

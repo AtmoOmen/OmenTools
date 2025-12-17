@@ -40,7 +40,7 @@ internal unsafe class GameObject(nint address) : IGameObject
     public Vector3               DrawOffset       => Struct->DrawOffset;
     public float                 Height           => Struct->Height;
     public byte                  Sex              => Struct->Sex;
-    public int                   RenderFlags      => Struct->RenderFlags;
+    public VisibilityFlags       RenderFlags      => Struct->RenderFlags;
     public Vector3               DefaultPosition  => Struct->DefaultPosition;
     public float                 DefaultRotation  => Struct->DefaultRotation;
     public bool                  IsDead           => Struct->IsDead();
@@ -182,7 +182,7 @@ internal unsafe class BattleChara(nint address) : Character(address), IBattleCha
     public StatusList   StatusList          => new(this.Struct->GetStatusManager());
     public bool         IsCasting           => CastInfo.IsCasting;
     public bool         IsCastInterruptible => CastInfo.Interruptible;
-    public ActionType   CastActionType      => CastInfo.ActionType;
+    public ActionType   CastActionType      => (ActionType)CastInfo.ActionType;
     public uint         CastActionID        => CastInfo.ActionId;
     public ulong        CastTargetObjectID  => CastInfo.TargetId;
     public IGameObject? CastTargetObject    => DService.ObjectTable.SearchByID(CastTargetObjectID);
@@ -241,7 +241,7 @@ public interface IGameObject : IEquatable<IGameObject>
     public Vector3               DrawOffset       { get; }
     public float                 Height           { get; }
     public byte                  Sex              { get; }
-    public int                   RenderFlags      { get; }
+    public VisibilityFlags       RenderFlags      { get; }
     public Vector3               DefaultPosition  { get; }
     public float                 DefaultRotation  { get; }
 

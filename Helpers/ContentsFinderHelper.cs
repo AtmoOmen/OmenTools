@@ -67,7 +67,7 @@ public class ContentsFinderHelper
         var localRole = localPlayer.ClassJob.Value.Role;
 
         if (!LuminaGetter.TryGetRow<DawnContent>(dawnContentID, out var content)) return;
-        if (!LuminaGetter.TryGetRow<ContentMemberTypeTemp>(content.Content.Value.ContentMemberType.RowId, out var memberType)) return;
+        if (!LuminaGetter.TryGetRow<ContentMemberType>(content.Content.Value.ContentMemberType.RowId, out var memberType)) return;
 
         var partyComposition = new
         {

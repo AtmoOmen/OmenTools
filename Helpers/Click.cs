@@ -88,25 +88,25 @@ public static unsafe partial class HelpersOm
     
     public static bool ClickContextMenu(IReadOnlyList<string> text)
     {
-        if (!IsAddonAndNodesReady(ContextMenu)) return false;
-        if (!TryScanContextMenuText(ContextMenu, text, out var index)) return false;
+        if (!IsAddonAndNodesReady(InfosOm.ContextMenu)) return false;
+        if (!TryScanContextMenuText(InfosOm.ContextMenu, text, out var index)) return false;
 
         return ClickContextMenu(index);
     }
 
     public static bool ClickContextMenu(string text)
     {
-        if (!IsAddonAndNodesReady(ContextMenu)) return false;
-        if (!TryScanContextMenuText(ContextMenu, text, out var index)) return false;
+        if (!IsAddonAndNodesReady(InfosOm.ContextMenu)) return false;
+        if (!TryScanContextMenuText(InfosOm.ContextMenu, text, out var index)) return false;
 
         return ClickContextMenu(index);
     }
 
     public static bool ClickContextMenu(int index)
     {
-        if (!IsAddonAndNodesReady(ContextMenu)) return false;
+        if (!IsAddonAndNodesReady(InfosOm.ContextMenu)) return false;
 
-        Callback(ContextMenu, true, 0, index, 0U, 0, 0);
+        Callback(InfosOm.ContextMenu, true, 0, index, 0U, 0, 0);
         return true;
     }
 
