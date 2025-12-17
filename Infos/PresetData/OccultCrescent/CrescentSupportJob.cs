@@ -260,7 +260,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// <summary>
     /// 辅助职业当前等级, 新月岛副本区域外调用返回 0
     /// </summary>
-    // TODO: 依旧等待 FFCS 修
+    // TODO: 等待 FFCS 修改偏移量
     public unsafe byte CurrentLevel
     {
         get
@@ -268,7 +268,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
             var state = PublicContentOccultCrescent.GetState();
             if (state == null) return 0;
             
-            return *((byte*)Unsafe.AsPointer(ref state->SupportJobLevels[0]) + DataID);
+            return *(byte*)((nint)state + 80 + DataID);
         }
     }
 
