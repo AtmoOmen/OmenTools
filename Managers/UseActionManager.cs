@@ -106,14 +106,14 @@ public unsafe class UseActionManager : OmenServiceBase
 
     internal static readonly CompSig UseActionSig = new("E8 ?? ?? ?? ?? B0 01 EB B6 ?? ?? ?? ?? ?? ?? ??");
     internal delegate bool UseActionDelegate(
-        ActionManager* actionManager, 
-        ActionType actionType, 
-        uint actionID, 
-        ulong targetID,
-        uint extraParam, 
-        ActionManager.UseActionMode queueState, 
-        uint comboRouteID, 
-        bool* outOptAreaTargeted);
+        ActionManager*              actionManager,
+        ActionType                  actionType,
+        uint                        actionID,
+        ulong                       targetID,
+        uint                        extraParam,
+        ActionManager.UseActionMode queueState,
+        uint                        comboRouteID,
+        bool*                       outOptAreaTargeted);
     internal static Hook<UseActionDelegate>? UseActionHook;
     
     internal static readonly CompSig UseActionLocationSig = new("48 89 5C 24 ?? 44 89 44 24 ?? 89 54 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24");
@@ -155,7 +155,7 @@ public unsafe class UseActionManager : OmenServiceBase
 
     #endregion
 
-    private static readonly ConcurrentDictionary<Type, ConcurrentBag<Delegate>> methodsCollection = [];
+    private static readonly ConcurrentDictionary<Type, ConcurrentBag<Delegate>> MethodsCollection = [];
 
     internal override void Init()
     {
@@ -173,7 +173,7 @@ public unsafe class UseActionManager : OmenServiceBase
     private static bool RegisterGeneric<T>(params T[] methods) where T : Delegate
     {
         var type = typeof(T);
-        var bag = methodsCollection.GetOrAdd(type, _ => []);
+        var bag = MethodsCollection.GetOrAdd(type, _ => []);
         foreach (var method in methods)
             bag.Add(method);
 
@@ -184,12 +184,12 @@ public unsafe class UseActionManager : OmenServiceBase
     private static bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
     {
         var type = typeof(T);
-        if (methodsCollection.TryGetValue(type, out var bag))
+        if (MethodsCollection.TryGetValue(type, out var bag))
         {
             foreach (var method in methods)
             {
                 var newBag = new ConcurrentBag<Delegate>(bag.Where(d => d != method));
-                methodsCollection[type] = newBag;
+                MethodsCollection[type] = newBag;
             }
             return true;
         }
@@ -273,7 +273,7 @@ public unsafe class UseActionManager : OmenServiceBase
                   $"额外参数: {extraParam} | 队列状态: {queueState} | 连击路径ID: {comboRouteID}");
 
         var isPrevented = false;
-        if (methodsCollection.TryGetValue(typeof(PreUseActionDelegate), out var preDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PreUseActionDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -286,7 +286,7 @@ public unsafe class UseActionManager : OmenServiceBase
 
         var original = UseActionHook.Original(actionManager, actionType, actionID, targetID, extraParam, queueState, comboRouteID, outOptAreaTargeted);
 
-        if (methodsCollection.TryGetValue(typeof(PostUseActionDelegate), out var postDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PostUseActionDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -307,7 +307,7 @@ public unsafe class UseActionManager : OmenServiceBase
 
         var isPrevented = false;
         var location0 = *location;
-        if (methodsCollection.TryGetValue(typeof(PreUseActionLocationDelegate), out var preDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PreUseActionLocationDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -319,7 +319,7 @@ public unsafe class UseActionManager : OmenServiceBase
 
         var original = UseActionLocationHook.Original(manager, type, actionID, targetID, &location0, extraParam, a7);
         
-        if (methodsCollection.TryGetValue(typeof(PostUseActionLocationDelegate), out var postDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PostUseActionLocationDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -337,7 +337,7 @@ public unsafe class UseActionManager : OmenServiceBase
 
         var isPrevented = false;
         var queueTime = 0.5f;
-        if (methodsCollection.TryGetValue(typeof(PreIsActionOffCooldownDelegate), out var preDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PreIsActionOffCooldownDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -390,7 +390,7 @@ public unsafe class UseActionManager : OmenServiceBase
                   $"技能序列: {lastUsedActionSequence} | 动画变化: {animationVariation} | 弩炮实体 ID: {ballistaEntityID}");
 
         var isPrevented = false;
-        if (methodsCollection.TryGetValue(typeof(PreCharacterCompleteCastDelegate), out var preDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PreCharacterCompleteCastDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -423,7 +423,7 @@ public unsafe class UseActionManager : OmenServiceBase
             animationVariation,
             ballistaEntityID);
 
-        if (methodsCollection.TryGetValue(typeof(PostCharacterCompleteCastDelegate), out var postDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PostCharacterCompleteCastDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -462,7 +462,7 @@ public unsafe class UseActionManager : OmenServiceBase
                   $"P4: {a4} | P6: {a6}");
 
         var isPrevented = false;
-        if (methodsCollection.TryGetValue(typeof(PreCharacterStartCastDelegate), out var preDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PreCharacterStartCastDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -476,7 +476,7 @@ public unsafe class UseActionManager : OmenServiceBase
 
         var original = CharacterStartCastHook.Original(battlePlayer.ToStruct(), type, actionID, a4, rotation, a6);
 
-        if (methodsCollection.TryGetValue(typeof(PostCharacterStartCastDelegate), out var postDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PostCharacterStartCastDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -622,7 +622,7 @@ public unsafe class UseActionManager : OmenServiceBase
         CharacterStartCastHook?.Dispose();
         CharacterStartCastHook = null;
         
-        methodsCollection.Clear();
+        MethodsCollection.Clear();
     }
     
     public class UseActionManagerConfig : OmenServiceConfiguration
