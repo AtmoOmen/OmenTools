@@ -9,6 +9,19 @@ namespace OmenTools.Infos;
 /// </summary>
 public record CompSig
 {
+    private static readonly List<IDalamudHook> Hooks = [];
+
+    public static void DisposeAllHooks()
+    {
+        foreach (var hook in Hooks)
+        {
+            if (hook == null || hook.IsDisposed) continue;
+            hook.Dispose();
+        }
+        
+        Hooks.Clear();
+    }
+    
     public string Signature { get; init; }
 
     public CompSig(string signature) => 
@@ -53,6 +66,10 @@ public record CompSig
     public T GetDelegate<T>() where T : Delegate => 
         Marshal.GetDelegateForFunctionPointer<T>(ScanText());
 
-    public Hook<T> GetHook<T>(T detour) where T : Delegate => 
-        DService.Hook.HookFromSignature(Signature, detour);
+    public Hook<T> GetHook<T>(T detour) where T : Delegate
+    {
+        var hook = DService.Hook.HookFromSignature(Signature, detour);
+        Hooks.Add(hook);
+        return hook;
+    }
 }

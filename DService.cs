@@ -85,6 +85,7 @@ public class DService
         MemoryPatch.DisposeAll();
         ThrottlerHelper.Uninit();
         TrayNotify.Uninit();
+        CompSig.DisposeAllHooks();
     }
 
     public static T? GetOmenService<T>() where T : OmenServiceBase => 
