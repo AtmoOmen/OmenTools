@@ -335,7 +335,7 @@ public static unsafe partial class HelpersOm
 
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String.Value);
+            var currentString = addon->AtkValues[i + 8].String.ToString();
             if (!currentString.Contains(text, StringComparison.OrdinalIgnoreCase)) continue;
 
             index = i;
@@ -355,7 +355,7 @@ public static unsafe partial class HelpersOm
 
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String.Value);
+            var currentString = addon->AtkValues[i + 8].String.ToString();
             if (!texts.Any(x => currentString.Contains(x, StringComparison.OrdinalIgnoreCase))) continue;
 
             index = i;
