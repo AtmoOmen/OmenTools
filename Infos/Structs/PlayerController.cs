@@ -54,9 +54,8 @@ public unsafe struct PlayerController
     [FieldOffset(1409)]
     public byte FollowState;
 
-    private static readonly CompSig InstanceSig =
-        new("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? 32 C0");
-    private static PlayerController* instance;
+    private static readonly CompSig           InstanceSig = new("48 8D 0D ?? ?? ?? ?? 0F B6 9A");
+    private static          PlayerController* instance;
     
     public static PlayerController* Instance()
     {

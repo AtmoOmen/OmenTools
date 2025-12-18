@@ -19,7 +19,7 @@ public unsafe class PlayerStatusManager : OmenServiceBase
 
     #region 内部 Hook
 
-    private static readonly CompSig OnGainStatusSig = new("E8 ?? ?? ?? ?? 80 BC 24 C0 00 00 00 00");
+    private static readonly CompSig OnGainStatusSig = new("48 8B C4 55 57 41 54 41 56");
     private delegate void OnGainStatusDelegate(BattleChara** player, ushort statusID, float remainingTime, ushort statusParam, ulong sourceID, ushort stackCount);
     private static Hook<OnGainStatusDelegate>? OnGainStatusHook;
     
