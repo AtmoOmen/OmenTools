@@ -4,7 +4,6 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace OmenTools.Infos;
 
-// TODO: 偏移了
 [StructLayout(LayoutKind.Explicit, Size = 48)]
 public struct UseActionLocationPacket(ActionType type, uint actionID, float rotation, Vector3 location) : IGamePacket
 {

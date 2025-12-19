@@ -51,7 +51,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
     {
         if (args.AddonName != "MiragePrismPrismBoxCrystallize") return null;
 
-        var addon = InfosOm.ContextMenu;
+        var addon = ContextMenuXIV;
         if (addon == null || !IsAddonAndNodesReady(addon)) return null;
 
         var searchText = LuminaWrapper.GetAddonText(11900);
@@ -289,7 +289,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
     private static void OnHoveredItemChanged(object? sender, ulong id)
     {
         if (!IsOnItemHover) return;
-        if (IsAddonAndNodesReady(InfosOm.ContextMenu)) return;
+        if (IsAddonAndNodesReady(ContextMenuXIV)) return;
 
         var processedID = ProcessRawItemID(id);
         if (processedID != 0 && LastHoveredItemID != processedID)

@@ -3,7 +3,6 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace OmenTools.Infos;
 
-// TODO: 偏移了
 [StructLayout(LayoutKind.Explicit, Size = 48)]
 public struct UseActionPacket(ActionType type, uint actionID, ulong targetID, float rotation) : IGamePacket
 {

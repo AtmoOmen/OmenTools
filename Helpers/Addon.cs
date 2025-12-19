@@ -2,37 +2,33 @@
 using Dalamud.Interface.Utility;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 namespace OmenTools.Helpers;
 
-// TODO: 删除制作 Node 方法
 public static unsafe partial class HelpersOm
 {
-    public record PartInfo(ushort U, ushort V, ushort Width, ushort Height);
-
-    public static bool TryGetInventoryItems(IEnumerable<InventoryType> targetTypes,
-        Func<InventoryItem, bool> predicateFunc, out List<InventoryItem> itemResult)
+    public static bool TryGetInventoryItems(
+        IEnumerable<InventoryType> targetTypes,
+        Func<InventoryItem, bool>  predicateFunc,
+        out List<InventoryItem>    itemResult)
     {
         itemResult = [];
 
         var manager = InventoryManager.Instance();
-        if(manager == null) return false;
+        if (manager == null) return false;
 
         foreach (var type in targetTypes)
         {
             var container = manager->GetInventoryContainer(type);
-            if(container == null || !container->IsLoaded) return false;
+            if (container == null || !container->IsLoaded) return false;
             for (var i = 0; i < container->Size; i++)
             {
                 var slot = container->GetInventorySlot(i);
-                if(slot == null || !predicateFunc(*slot)) continue;
+                if (slot == null || !predicateFunc(*slot)) continue;
 
                 itemResult.Add(*slot);
             }
@@ -41,7 +37,10 @@ public static unsafe partial class HelpersOm
         return itemResult.Count > 0;
     }
 
-    public static bool TryGetFirstInventoryItem(IEnumerable<InventoryType> targetTypes, Func<InventoryItem, bool> predicateFunc, out InventoryItem* itemResult)
+    public static bool TryGetFirstInventoryItem(
+        IEnumerable<InventoryType> targetTypes,
+        Func<InventoryItem, bool>  predicateFunc,
+        out InventoryItem*         itemResult)
     {
         itemResult = null;
 
