@@ -50,15 +50,14 @@ public class Polygon
         if (IsPointInPolygon(centroid) && !IsPointOnBoundary(centroid))
             return centroid;
 
-        var random = new Random();
         for (var attempts = 0; attempts < 100; attempts++)
         {
-            var idx1 = random.Next(vertices.Length);
-            var idx2 = random.Next(vertices.Length);
-            var idx3 = random.Next(vertices.Length);
+            var idx1 = Random.Shared.Next(vertices.Length);
+            var idx2 = Random.Shared.Next(vertices.Length);
+            var idx3 = Random.Shared.Next(vertices.Length);
 
-            var w1 = (float)random.NextDouble();
-            var w2 = (float)random.NextDouble() * (1 - w1);
+            var w1 = (float)Random.Shared.NextDouble();
+            var w2 = (float)Random.Shared.NextDouble() * (1 - w1);
             var w3 = 1 - w1 - w2;
 
             var candidate = new Vector2(

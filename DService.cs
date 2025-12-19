@@ -27,11 +27,10 @@ public class DService
                                .Where(t => typeof(OmenServiceBase).IsAssignableFrom(t) && !t.IsAbstract)
                                .ToList();
 
-        var random = new Random();
         foreach (var serviceType in services)
         {
             // 防炸
-            Thread.Sleep(random.Next(10, 50));
+            Thread.Sleep(Random.Shared.Next(10, 50));
             
             if (Activator.CreateInstance(serviceType) is not OmenServiceBase serviceInstance) continue;
             OmenServices.TryAdd(serviceType, serviceInstance);
