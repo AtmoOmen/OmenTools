@@ -83,11 +83,13 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
 
     private static TaskHelper? TaskHelper;
 
-    private readonly CompSig MiragePrismBoxReceiveEventSig =
-        new("40 53 48 83 EC ?? 48 8B 44 24 ?? 48 8B DA 48 85 C0 74 ?? 48 89 44 24");
+    private readonly CompSig MiragePrismBoxReceiveEventSig = new("40 53 48 83 EC ?? 48 8B 44 24 ?? 48 8B DA 48 85 C0 74 ?? 48 89 44 24");
     private delegate AtkValue* MiragePrismBoxReceiveEventDelegate(
-        AgentMiragePrismPrismBox* a1,     AtkValue* returnValue,
-        AtkValue*                 values, uint      valueCount, ulong eventKind);
+        AgentMiragePrismPrismBox* agent,
+        AtkValue*                 returnValue,
+        AtkValue*                 values,
+        uint                      valueCount,
+        ulong                     eventKind);
     private Hook<MiragePrismBoxReceiveEventDelegate>? MiragePrismBoxReceiveEventHook;
     
     private readonly CompSig AchievementReceiveEventSig =
@@ -117,8 +119,9 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
 
         CharacterInspectItems.Clear();
 
-        MiragePrismBoxReceiveEventHook ??= MiragePrismBoxReceiveEventSig.GetHook<MiragePrismBoxReceiveEventDelegate>(MiragePrismBoxReceiveEventDetour);
-        MiragePrismBoxReceiveEventHook.Enable();
+        // TODO: 7.4 崩了
+        // MiragePrismBoxReceiveEventHook ??= MiragePrismBoxReceiveEventSig.GetHook<MiragePrismBoxReceiveEventDelegate>(MiragePrismBoxReceiveEventDetour);
+        // MiragePrismBoxReceiveEventHook.Enable();
 
         AchievementReceiveEventHook ??= AchievementReceiveEventSig.GetHook<AchievementReceiveEventDelegate>(AchievementReceiveEventDetour);
         AchievementReceiveEventHook.Enable();
