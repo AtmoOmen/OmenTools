@@ -10,20 +10,27 @@ namespace OmenTools.Helpers;
 
 public static class SeStringExtension
 {
-    public static char ToSeChar(this uint integer) =>
-        integer switch
+    private const char SECountBaseChar = '\ue08f';
+
+    public static char ToSEChar(this uint integer) => 
+        integer <= 9 ? (char)(SECountBaseChar + integer) : char.MinValue;
+
+    public static string ToSECountString(this object value)
+    {
+        if (value == null) 
+            return string.Empty;
+        
+        var s = value.ToString();
+        var result = new char[s.Length];
+        for (var i = 0; i < s.Length; i++)
         {
-            1 => '\ue0b1',
-            2 => '\ue0b2',
-            3 => '\ue0b3',
-            4 => '\ue0b4',
-            5 => '\ue0b5',
-            6 => '\ue0b6',
-            7 => '\ue0b7',
-            8 => '\ue0b8',
-            9 => '\ue0b9',
-            _ => char.MinValue,
-        };
+            if (char.IsDigit(s[i]))
+                result[i] = (char)(SECountBaseChar + (s[i] - '0'));
+            else
+                result[i] = s[i];
+        }
+        return new string(result);
+    }
 
     public static string ExtractText(this ReadOnlySeString s, bool onlyFirst = false) => 
         s.ToDalamudString().ExtractText(onlyFirst);
