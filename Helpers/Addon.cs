@@ -90,10 +90,12 @@ public static unsafe partial class HelpersOm
         return 0;
     }
 
-    public static bool IsInventoryFull(IEnumerable<InventoryType> inventoryTypes)
+    public static bool IsInventoryFull(IEnumerable<InventoryType> inventoryTypes, uint threshold = 0)
     {
         var manager = InventoryManager.Instance();
         if (manager == null) return true;
+
+        uint emptySlotsCount = 0;
 
         foreach (var inventoryType in inventoryTypes)
         {
@@ -103,11 +105,17 @@ public static unsafe partial class HelpersOm
             for (var index = 0; index < container->Size; index++)
             {
                 var slot = container->GetInventorySlot(index);
-                if (slot->ItemId == 0) return false;
+                if (slot->ItemId == 0)
+                {
+                    emptySlotsCount++;
+
+                    if (emptySlotsCount > threshold)
+                        return false;
+                }
             }
         }
 
-        return true;
+        return emptySlotsCount <= threshold;
     }
 
     public static void OutlineNode(AtkResNode* node)
