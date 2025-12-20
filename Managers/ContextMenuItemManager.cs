@@ -119,9 +119,8 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
 
         CharacterInspectItems.Clear();
 
-        // TODO: 7.4 崩了
-        // MiragePrismBoxReceiveEventHook ??= MiragePrismBoxReceiveEventSig.GetHook<MiragePrismBoxReceiveEventDelegate>(MiragePrismBoxReceiveEventDetour);
-        // MiragePrismBoxReceiveEventHook.Enable();
+        MiragePrismBoxReceiveEventHook ??= MiragePrismBoxReceiveEventSig.GetHook<MiragePrismBoxReceiveEventDelegate>(MiragePrismBoxReceiveEventDetour);
+        MiragePrismBoxReceiveEventHook.Enable();
 
         AchievementReceiveEventHook ??= AchievementReceiveEventSig.GetHook<AchievementReceiveEventDelegate>(AchievementReceiveEventDetour);
         AchievementReceiveEventHook.Enable();
@@ -157,6 +156,11 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
 
     private AtkValue* MiragePrismBoxReceiveEventDetour(AgentMiragePrismPrismBox* agent, AtkValue* returnValue, AtkValue* values, uint valueCount, ulong eventKind)
     {
+        if (values is null || returnValue is null)
+        {
+            return MiragePrismPrismBoxReceiveEventHook.Original(agent, returnValue, values, valueCount, eventKind);
+        }
+        
         if (values->UInt == 13)
             return MiragePrismBoxReceiveEventHook.Original(agent, returnValue, values, valueCount, eventKind);
 
