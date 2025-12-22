@@ -25,7 +25,7 @@ public class InstancesManager : OmenServiceBase
         ServiceConfig = LoadConfig<Config>() ?? new();
         TaskHelper ??= new() { TimeLimitMS = 15_000 };
 
-        ExecuteCommandManager.Register(OnPostExecuteCommand);
+        ExecuteCommandManager.RegPost(OnPostExecuteCommand);
         EnqueueInstancesCountRetrieve(GameState.TerritoryType);
     }
 
@@ -115,7 +115,7 @@ public class InstancesManager : OmenServiceBase
 
     internal override void Uninit()
     {
-        ExecuteCommandManager.Unregister(OnPostExecuteCommand);
+        ExecuteCommandManager.Unreg(OnPostExecuteCommand);
         TaskHelper?.Abort();
     }
 

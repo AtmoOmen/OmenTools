@@ -92,19 +92,25 @@ public class ExecuteCommandManager : OmenServiceBase
         return false;
     }
 
-    public static bool Register(params PreExecuteCommandDelegate[]                 methods) => RegisterGeneric(methods);
-    public static bool Register(params PostExecuteCommandDelegate[]                methods) => RegisterGeneric(methods);
-    public static bool Register(params PreExecuteCommandComplexDelegate[]          methods) => RegisterGeneric(methods);
-    public static bool Register(params PostExecuteCommandComplexDelegate[]         methods) => RegisterGeneric(methods);
-    public static bool Register(params PreExecuteCommandComplexLocationDelegate[]  methods) => RegisterGeneric(methods);
-    public static bool Register(params PostExecuteCommandComplexLocationDelegate[] methods) => RegisterGeneric(methods);
+    public static bool RegPre(params PreExecuteCommandDelegate[]                                  methods) => RegisterGeneric(methods);
+    public static bool RegPre(PreExecuteCommandDelegate                                           methods) => RegisterGeneric(methods);
+    public static bool RegPost(params PostExecuteCommandDelegate[]                                methods) => RegisterGeneric(methods);
+    public static bool RegPost(PostExecuteCommandDelegate                                         methods) => RegisterGeneric(methods);
+    public static bool RegPreComplext(params PreExecuteCommandComplexDelegate[]                   methods) => RegisterGeneric(methods);
+    public static bool RegPreComplext(PreExecuteCommandComplexDelegate                            methods) => RegisterGeneric(methods);
+    public static bool RegPostComplext(params PostExecuteCommandComplexDelegate[]                 methods) => RegisterGeneric(methods);
+    public static bool RegPostComplext(PostExecuteCommandComplexDelegate                          methods) => RegisterGeneric(methods);
+    public static bool RegPreComplextLocation(params PreExecuteCommandComplexLocationDelegate[]   methods) => RegisterGeneric(methods);
+    public static bool RegPreComplextLocation(PreExecuteCommandComplexLocationDelegate            methods) => RegisterGeneric(methods);
+    public static bool RegPostComplextLocation(params PostExecuteCommandComplexLocationDelegate[] methods) => RegisterGeneric(methods);
+    public static bool RegPostComplextLocation(PostExecuteCommandComplexLocationDelegate          methods) => RegisterGeneric(methods);
 
-    public static bool Unregister(params PreExecuteCommandDelegate[]                 methods) => UnregisterGeneric(methods);
-    public static bool Unregister(params PostExecuteCommandDelegate[]                methods) => UnregisterGeneric(methods);
-    public static bool Unregister(params PreExecuteCommandComplexDelegate[]          methods) => UnregisterGeneric(methods);
-    public static bool Unregister(params PostExecuteCommandComplexDelegate[]         methods) => UnregisterGeneric(methods);
-    public static bool Unregister(params PreExecuteCommandComplexLocationDelegate[]  methods) => UnregisterGeneric(methods);
-    public static bool Unregister(params PostExecuteCommandComplexLocationDelegate[] methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PreExecuteCommandDelegate[]                 methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PostExecuteCommandDelegate[]                methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PreExecuteCommandComplexDelegate[]          methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PostExecuteCommandComplexDelegate[]         methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PreExecuteCommandComplexLocationDelegate[]  methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PostExecuteCommandComplexLocationDelegate[] methods) => UnregisterGeneric(methods);
 
     #endregion
 
