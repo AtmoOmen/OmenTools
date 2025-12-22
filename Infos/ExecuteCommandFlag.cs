@@ -435,6 +435,14 @@ public enum ExecuteCommandFlag
     /// 退出闲置状态姿势
     /// </summary>
     IdlePostureExit = 507,
+    
+    /// <summary>
+    /// 固定路径跳跃结束
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 未知 (看起来像内部计数器)</para>
+    /// </remarks>
+    GimmickJumpEnd = 602,
 
     /// <summary>
     /// 进入游泳状态 (也会强制下坐骑)
@@ -478,6 +486,14 @@ public enum ExecuteCommandFlag
     /// <para><c>param2</c>: 额外参数 (若为换饵, 则为物品 ID; 若为游动饵, 则为饵索引)</para>
     /// </remarks>
     Fish = 701,
+    
+    /// <summary>
+    /// 固定路径跳跃开始 (看起来似乎并不是必须发这个, 但是结束 <see cref="GimmickJumpEnd"/> 是会有的)
+    /// </summary>
+    /// <remarks>
+    /// <para><c>param1</c>: 未知</para>
+    /// </remarks>
+    GimmickJumpStart = 706,
 
     /// <summary>
     /// 加载制作笔记数据
