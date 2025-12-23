@@ -97,8 +97,8 @@ public unsafe class ChatManager : OmenServiceBase
     public static bool RegPostProcessChatBoxEntry(params PostProcessChatBoxEntryDelagte[] methods) => RegisterGeneric(methods);
     public static bool RegPreExecuteCommandInner(PreExecuteCommandInnerDelagte            methods) => RegisterGeneric(methods);
     public static bool RegPreExecuteCommandInner(params PreExecuteCommandInnerDelagte[]   methods) => RegisterGeneric(methods);
-    public static bool PostExecuteCommandInner(PostExecuteCommandInnerDelagte             methods) => RegisterGeneric(methods);
-    public static bool PostExecuteCommandInner(params PostExecuteCommandInnerDelagte[]    methods) => RegisterGeneric(methods);
+    public static bool RegPostExecuteCommandInner(PostExecuteCommandInnerDelagte          methods) => RegisterGeneric(methods);
+    public static bool RegPostExecuteCommandInner(params PostExecuteCommandInnerDelagte[] methods) => RegisterGeneric(methods);
     
     public static bool Unreg(params PreProcessChatBoxEntryDelagte[]  methods) => UnregisterGeneric(methods);
     public static bool Unreg(params PostProcessChatBoxEntryDelagte[] methods) => UnregisterGeneric(methods);
