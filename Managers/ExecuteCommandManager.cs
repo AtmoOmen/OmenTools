@@ -13,17 +13,31 @@ public class ExecuteCommandManager : OmenServiceBase
 
     private static readonly CompSig ExecuteCommandSig = new("E8 ?? ?? ?? ?? 48 8B 06 48 8B CE FF 50 ?? E9 ?? ?? ?? ?? 49 8B CC");
     private delegate nint ExecuteCommandDelegate(
-        ExecuteCommandFlag command, uint param1, uint param2, uint param3, uint param4);
+        ExecuteCommandFlag command,
+        uint               param1,
+        uint               param2,
+        uint               param3,
+        uint               param4);
     private static Hook<ExecuteCommandDelegate>? ExecuteCommandHook;
 
     private static readonly CompSig ExecuteCommandComplexSig = new("E8 ?? ?? ?? ?? 80 7D ?? ?? 74 ?? 41 0F B6 45");
     private delegate nint ExecuteCommandComplexDelegate(
-        ExecuteCommandComplexFlag command, long target, uint param1, uint param2, uint param3, uint param4);
+        ExecuteCommandComplexFlag command,
+        long                      target,
+        uint                      param1,
+        uint                      param2,
+        uint                      param3,
+        uint                      param4);
     private static Hook<ExecuteCommandComplexDelegate>? ExecuteCommandComplexHook;
 
     private static readonly CompSig ExecuteCommandComplexLocationSig = new("E8 ?? ?? ?? ?? EB ?? 48 8B 54 24 ?? 45 33 C9");
     private unsafe delegate nint ExecuteCommandComplexLocationDelegate(
-        ExecuteCommandComplexFlag command, Vector3* location, uint param1, uint param2, uint param3, uint param4);
+        ExecuteCommandComplexFlag command,
+        Vector3*                  location,
+        uint                      param1,
+        uint                      param2,
+        uint                      param3,
+        uint                      param4);
     private static Hook<ExecuteCommandComplexLocationDelegate>? ExecuteCommandComplexLocationHook;
 
     #endregion
@@ -236,13 +250,25 @@ public class ExecuteCommandManager : OmenServiceBase
 
     #region Invokes
 
-    public static void ExecuteCommand(
-        ExecuteCommandFlag command, uint param1 = 0, uint param2 = 0, uint param3 = 0, uint param4 = 0)
+    public static void ExecuteCommand(ExecuteCommandFlag command, uint param1 = 0, uint param2 = 0, uint param3 = 0, uint param4 = 0)
     {
         Semaphore.Wait();
 
         try
         {
+            var isPrevented = false;
+
+            if (methodsCollection.TryGetValue(typeof(PreExecuteCommandDelegate), out var preDelegates))
+            {
+                foreach (var postDelegate in preDelegates)
+                {
+                    var postExecuteCommand = (PreExecuteCommandDelegate)postDelegate;
+                    postExecuteCommand(ref isPrevented, ref command, ref param1, ref param2, ref param3, ref param4);
+                    if (isPrevented)
+                        return;
+                }
+            }
+
             ExecuteCommandHook.Original(command, param1, param2, param3, param4);
 
             if (methodsCollection.TryGetValue(typeof(PostExecuteCommandDelegate), out var postDelegates))
@@ -260,13 +286,31 @@ public class ExecuteCommandManager : OmenServiceBase
         }
     }
 
-    public static void ExecuteCommandComplex(ExecuteCommandComplexFlag command, long target = 0xE0000000, uint param1 = 0, 
-                                      uint param2 = 0, uint param3 = 0, uint param4 = 0)
+    public static void ExecuteCommandComplex(
+        ExecuteCommandComplexFlag command,
+        long                      target = 0xE0000000,
+        uint                      param1 = 0,
+        uint                      param2 = 0,
+        uint                      param3 = 0,
+        uint                      param4 = 0)
     {
         Semaphore.Wait();
 
         try
         {
+            var isPrevented = false;
+
+            if (methodsCollection.TryGetValue(typeof(PreExecuteCommandComplexDelegate), out var preDelegates))
+            {
+                foreach (var postDelegate in preDelegates)
+                {
+                    var postExecuteCommand = (PreExecuteCommandComplexDelegate)postDelegate;
+                    postExecuteCommand(ref isPrevented, ref command, ref target, ref param1, ref param2, ref param3, ref param4);
+                    if (isPrevented)
+                        return;
+                }
+            }
+
             ExecuteCommandComplexHook.Original(command, target, param1, param2, param3, param4);
 
             if (methodsCollection.TryGetValue(typeof(PostExecuteCommandComplexDelegate), out var postDelegates))
@@ -277,20 +321,38 @@ public class ExecuteCommandManager : OmenServiceBase
                     postExecuteCommand(command, target, param1, param2, param3, param4);
                 }
             }
-        } 
+        }
         finally
         {
-            Semaphore.Release(); 
+            Semaphore.Release();
         }
     }
 
-    public static unsafe void ExecuteCommandComplexLocation(ExecuteCommandComplexFlag command, Vector3 location = default, 
-                                                     uint param1 = 0, uint param2 = 0, uint param3 = 0, uint param4 = 0)
+    public static unsafe void ExecuteCommandComplexLocation(
+        ExecuteCommandComplexFlag command,
+        Vector3                   location = default,
+        uint                      param1   = 0,
+        uint                      param2   = 0,
+        uint                      param3   = 0,
+        uint                      param4   = 0)
     {
         Semaphore.Wait();
 
         try
         {
+            var isPrevented = false;
+
+            if (methodsCollection.TryGetValue(typeof(PreExecuteCommandComplexLocationDelegate), out var preDelegates))
+            {
+                foreach (var postDelegate in preDelegates)
+                {
+                    var postExecuteCommand = (PreExecuteCommandComplexLocationDelegate)postDelegate;
+                    postExecuteCommand(ref isPrevented, ref command, ref location, ref param1, ref param2, ref param3, ref param4);
+                    if (isPrevented)
+                        return;
+                }
+            }
+
             ExecuteCommandComplexLocationHook.Original(command, &location, param1, param2, param3, param4);
 
             if (methodsCollection.TryGetValue(typeof(PostExecuteCommandComplexLocationDelegate), out var postDelegates))
