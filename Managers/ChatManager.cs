@@ -91,14 +91,14 @@ public unsafe class ChatManager : OmenServiceBase
         return false;
     }
     
-    public static bool RegPreProcessChatBoxEntry(PreProcessChatBoxEntryDelagte               methods) => RegisterGeneric(methods);
-    public static bool RegPreProcessChatBoxEntry(params PreProcessChatBoxEntryDelagte[]      methods) => RegisterGeneric(methods);
-    public static bool RegPostProcessChatBoxEntryDelagte(PostProcessChatBoxEntryDelagte      methods) => RegisterGeneric(methods);
-    public static bool RegPostProcessChatBoxEntry(params PostProcessChatBoxEntryDelagte[]    methods) => RegisterGeneric(methods);
-    public static bool RegPreExecuteCommandInnerEntry(PreExecuteCommandInnerDelagte          methods) => RegisterGeneric(methods);
-    public static bool RegPreExecuteCommandInnerEntry(params PreExecuteCommandInnerDelagte[] methods) => RegisterGeneric(methods);
-    public static bool PostExecuteCommandInnerEntry(PostExecuteCommandInnerDelagte           methods) => RegisterGeneric(methods);
-    public static bool PostExecuteCommandInnerEntry(params PostExecuteCommandInnerDelagte[]  methods) => RegisterGeneric(methods);
+    public static bool RegPreProcessChatBoxEntry(PreProcessChatBoxEntryDelagte            methods) => RegisterGeneric(methods);
+    public static bool RegPreProcessChatBoxEntry(params PreProcessChatBoxEntryDelagte[]   methods) => RegisterGeneric(methods);
+    public static bool RegPostProcessChatBoxEntryDelagte(PostProcessChatBoxEntryDelagte   methods) => RegisterGeneric(methods);
+    public static bool RegPostProcessChatBoxEntry(params PostProcessChatBoxEntryDelagte[] methods) => RegisterGeneric(methods);
+    public static bool RegPreExecuteCommandInner(PreExecuteCommandInnerDelagte            methods) => RegisterGeneric(methods);
+    public static bool RegPreExecuteCommandInner(params PreExecuteCommandInnerDelagte[]   methods) => RegisterGeneric(methods);
+    public static bool PostExecuteCommandInner(PostExecuteCommandInnerDelagte             methods) => RegisterGeneric(methods);
+    public static bool PostExecuteCommandInner(params PostExecuteCommandInnerDelagte[]    methods) => RegisterGeneric(methods);
     
     public static bool Unreg(params PreProcessChatBoxEntryDelagte[]  methods) => UnregisterGeneric(methods);
     public static bool Unreg(params PostProcessChatBoxEntryDelagte[] methods) => UnregisterGeneric(methods);
