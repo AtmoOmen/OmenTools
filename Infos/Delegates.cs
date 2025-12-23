@@ -12,5 +12,7 @@ public static unsafe partial class InfosOm
     
     public delegate void AgentShowDelegate(AgentInterface* agent);
     
+    public delegate void AgentHideDelegate(AgentInterface* agent);
+    
     public delegate ulong LuaFunctionDelegate(lua_State* state);
 }
