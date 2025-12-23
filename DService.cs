@@ -74,6 +74,9 @@ public class DService
         {
             if (x.Value.IsDisposed) return;
             
+            // 防炸
+            Thread.Sleep(Random.Shared.Next(10, 50));
+            
             try
             {
                 x.Value.Uninit();

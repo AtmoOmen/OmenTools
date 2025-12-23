@@ -212,7 +212,7 @@ public class LocalPlayerState : OmenServiceBase
 
         if (TryFindClassJobGearset(classJob, out var gearsetID))
         {
-            ChatHelper.SendMessage($"/gearset change {gearsetID + 1}");
+            ChatManager.SendMessage($"/gearset change {gearsetID + 1}");
             return true;
         }
 
@@ -273,7 +273,7 @@ public class LocalPlayerState : OmenServiceBase
             gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.MainHandMissing))
             return false;
         
-        ChatHelper.SendMessage($"/gearset change {gearsetID + 1}");
+        ChatManager.SendMessage($"/gearset change {gearsetID + 1}");
         return true;
     }
 
