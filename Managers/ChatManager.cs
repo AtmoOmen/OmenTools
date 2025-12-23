@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Text;
 using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.String;
@@ -15,8 +16,12 @@ namespace OmenTools.Managers;
 public unsafe class ChatManager : OmenServiceBase
 {
     public static ChatManagerConfig Config { get; private set; } = null!;
-    
-    private delegate        void                         ProcessChatBoxEntryDelegate(UIModule* module, Utf8String* message, nint a3, [MarshalAs(UnmanagedType.U1)] bool saveToHistory);
+
+    private delegate void ProcessChatBoxEntryDelegate(
+        UIModule*                          module,
+        Utf8String*                        message,
+        nint                               a3,
+        [MarshalAs(UnmanagedType.U1)] bool saveToHistory);
     private static readonly CompSig                      ProcessChatBoxEntrySig = new("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 20 48 8B F2 48 8B F9 45 84 C9");
     private static          Hook<ProcessChatBoxEntryDelegate> ProcessChatBoxEntryHook;
     
@@ -117,7 +122,8 @@ public unsafe class ChatManager : OmenServiceBase
         
         if (Config.ShowProcessChatBoxEntryLog)
             Debug($"[Chat Manager] Process Chat Box Entry\n" +
-                  $"消息: {stringToModify} | 存储至历史记录: {saveToHistory}");
+                  $"消息: {stringToModify}\n"                  +
+                  $"存储至历史记录: {saveToHistory}");
 
         if (MethodsCollection.TryGetValue(typeof(PreProcessChatBoxEntryDelagte), out var preDelegates))
         {
@@ -151,8 +157,8 @@ public unsafe class ChatManager : OmenServiceBase
             ExecuteCommandInnerHook.Original(module, message, uiModule);
             return;
         }
-        
-        var isPrevented = false;
+
+        var isPrevented    = false;
         var stringToModify = message->StringPtr.AsReadOnlySeString();
 
         if (Config.ShowExecuteCommandInnerLog)
@@ -188,31 +194,34 @@ public unsafe class ChatManager : OmenServiceBase
 
     #region 调用
 
-    public static void SendMessage(string message)
+    public static void SendMessage(string message, bool saveToHistory = false)
     {
-        using var builder = new RentedSeStringBuilder();
-        var       bytes   = builder.Builder.Append(message).GetViewAsSpan();
-        SendMessage(bytes);
+        var bytes = Encoding.UTF8.GetBytes(message);
+        SendMessage(bytes, saveToHistory);
     }
     
     public static void SendMessage(ReadOnlySpan<byte> message, bool saveToHistory = false)
     {
         if (message.Length == 0) return;
-        
-        using var builder = new RentedSeStringBuilder();
-        var bytes = builder.Builder.Append(message).GetViewAsSpan();
 
-        using var utf8String = new Utf8String();
-        utf8String.SetString(bytes);
-        if (utf8String.IsEmpty) return;
-        
-        ProcessChatBoxEntryDetour(UIModule.Instance(), &utf8String, nint.Zero, saveToHistory);
+        using var builder    = new RentedSeStringBuilder();
+        message = builder.Builder.Append(message).ToReadOnlySeString().ToDalamudString().EncodeWithNullTerminator();
+
+        var utf8String = Utf8String.FromSequence(message);
+        try
+        {
+            ProcessChatBoxEntryDetour(UIModule.Instance(), utf8String, (nint)utf8String, saveToHistory);
+            // 避免折叠
+        }
+        finally
+        {
+            utf8String->Dtor(true);
+        }
     }
 
     public static void SendCommand(string command)
     {
-        using var builder = new RentedSeStringBuilder();
-        var       bytes   = builder.Builder.Append(command).GetViewAsSpan();
+        var bytes = Encoding.UTF8.GetBytes(command);
         SendCommand(bytes);
     }
     
@@ -220,14 +229,19 @@ public unsafe class ChatManager : OmenServiceBase
     {
         if (command.Length == 0) return;
         
-        using var builder = new RentedSeStringBuilder();
-        var       bytes   = builder.Builder.Append(command).GetViewAsSpan();
-
-        using var utf8String = new Utf8String();
-        utf8String.SetString(bytes);
-        if (utf8String.IsEmpty) return;
+        using var builder    = new RentedSeStringBuilder();
+        command = builder.Builder.Append(command).ToReadOnlySeString().ToDalamudString().EncodeWithNullTerminator();
         
-        ExecuteCommandInnerDetour((ShellCommandModule*)RaptureShellModule.Instance(), &utf8String, UIModule.Instance());
+        var utf8String = Utf8String.FromSequence(command);
+        try
+        {
+            ExecuteCommandInnerDetour((ShellCommandModule*)RaptureShellModule.Instance(), utf8String, UIModule.Instance());
+            // 避免折叠
+        }
+        finally
+        {
+            utf8String->Dtor(true);
+        }
     }
 
     public static string SanitiseText(string text)
