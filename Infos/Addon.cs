@@ -962,6 +962,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* ToggleContextMenu               => GetAddonByName("ToggleContextMenu");
     public static AtkUnitBase* MiniTalkPlayer                  => GetAddonByName("MiniTalkPlayer");
     public static AtkUnitBase* CastBarEnemy                    => GetAddonByName("CastBarEnemy");
+    public static AtkUnitBase* ConfigShareMain                 => GetAddonByName("ConfigShareMain");
 
     #endregion
 }
