@@ -22,12 +22,10 @@ public unsafe class ChatManager : OmenServiceBase
         Utf8String*                        message,
         nint                               a3,
         [MarshalAs(UnmanagedType.U1)] bool saveToHistory);
-    private static readonly CompSig                      ProcessChatBoxEntrySig = new("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 20 48 8B F2 48 8B F9 45 84 C9");
     private static          Hook<ProcessChatBoxEntryDelegate> ProcessChatBoxEntryHook;
     
-    private delegate        void                              ExecuteCommandInnerDelegate(ShellCommandModule* module, Utf8String* message, UIModule* uiModule);
-    private static readonly CompSig                           ExecuteCommandInnerSig = new("E8 ?? ?? ?? ?? FE 87 ?? ?? ?? ?? C7 87 ?? ?? ?? ?? ?? ?? ?? ??");
-    private static          Hook<ExecuteCommandInnerDelegate> ExecuteCommandInnerHook;
+    private delegate void                              ExecuteCommandInnerDelegate(ShellCommandModule* module, Utf8String* message, UIModule* uiModule);
+    private static   Hook<ExecuteCommandInnerDelegate> ExecuteCommandInnerHook;
     
     private static readonly ConcurrentDictionary<Type, ConcurrentBag<Delegate>> MethodsCollection = [];
 
@@ -44,11 +42,15 @@ public unsafe class ChatManager : OmenServiceBase
     internal override void Init()
     {
         Config = LoadConfig<ChatManagerConfig>() ?? new();
-        
-        ProcessChatBoxEntryHook = ProcessChatBoxEntrySig.GetHook<ProcessChatBoxEntryDelegate>(ProcessChatBoxEntryDetour);
+
+        ProcessChatBoxEntryHook = DService.Hook.HookFromAddress<ProcessChatBoxEntryDelegate>(
+            GetMemberFuncByName(typeof(UIModule.MemberFunctionPointers), "ProcessChatBoxEntry"),
+            ProcessChatBoxEntryDetour);
         ProcessChatBoxEntryHook.Enable();
-        
-        ExecuteCommandInnerHook = ExecuteCommandInnerSig.GetHook<ExecuteCommandInnerDelegate>(ExecuteCommandInnerDetour);
+
+        ExecuteCommandInnerHook = DService.Hook.HookFromAddress<ExecuteCommandInnerDelegate>(
+            GetMemberFuncByName(typeof(ShellCommandModule.MemberFunctionPointers), "ExecuteCommandInner"),
+            ExecuteCommandInnerDetour);
         ExecuteCommandInnerHook.Enable();
     }
     
