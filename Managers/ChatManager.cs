@@ -120,6 +120,7 @@ public unsafe class ChatManager : OmenServiceBase
         }
         
         var isPrevented    = false;
+        var stringOriginal = message->StringPtr.AsReadOnlySeString();
         var stringToModify = message->StringPtr.AsReadOnlySeString();
         
         if (Config.ShowProcessChatBoxEntryLog)
@@ -138,7 +139,8 @@ public unsafe class ChatManager : OmenServiceBase
             }
         }
 
-        message->SetString(stringToModify.ToDalamudString().EncodeWithNullTerminator());
+        if (stringOriginal != stringToModify)
+            message->SetString(stringToModify.ToDalamudString().EncodeWithNullTerminator());
         
         ProcessChatBoxEntryHook.Original(module, message, a3, saveToHistory);
 
@@ -161,6 +163,7 @@ public unsafe class ChatManager : OmenServiceBase
         }
 
         var isPrevented    = false;
+        var stringOriginal = message->StringPtr.AsReadOnlySeString();
         var stringToModify = message->StringPtr.AsReadOnlySeString();
 
         if (Config.ShowExecuteCommandInnerLog)
@@ -178,7 +181,8 @@ public unsafe class ChatManager : OmenServiceBase
             }
         }
 
-        message->SetString(stringToModify.ToDalamudString().EncodeWithNullTerminator());
+        if (stringOriginal != stringToModify)
+            message->SetString(stringToModify.ToDalamudString().EncodeWithNullTerminator());
 
         ExecuteCommandInnerHook.Original(module, message, uiModule);
 
