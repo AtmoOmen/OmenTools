@@ -9,6 +9,7 @@ using OmenTools.Abstracts;
 
 namespace OmenTools;
 
+// TODO: 改为实例
 public class DService
 {
     internal static Dictionary<Type, OmenServiceBase> OmenServices { get; private set; } = [];
