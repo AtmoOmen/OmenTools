@@ -9,13 +9,15 @@ using OmenTools.Abstracts;
 
 namespace OmenTools;
 
-// TODO: 改为实例
 public class DService
 {
     internal static Dictionary<Type, OmenServiceBase> OmenServices { get; private set; } = [];
     
     public static void Init(IDalamudPluginInterface pluginInterface)
     {
+        // 防炸
+        Thread.Sleep(Random.Shared.Next(10, 100));
+        
         pluginInterface.Create<DService>();
         
         PI            = pluginInterface;
@@ -30,9 +32,6 @@ public class DService
 
         foreach (var serviceType in services)
         {
-            // 防炸
-            Thread.Sleep(Random.Shared.Next(10, 50));
-            
             if (Activator.CreateInstance(serviceType) is not OmenServiceBase serviceInstance) continue;
             OmenServices.TryAdd(serviceType, serviceInstance);
         }
@@ -71,12 +70,12 @@ public class DService
 
     public static void Uninit()
     {
+        // 防炸
+        Thread.Sleep(Random.Shared.Next(10, 100));
+        
         OmenServices.Reverse().ForEach(x =>
         {
             if (x.Value.IsDisposed) return;
-            
-            // 防炸
-            Thread.Sleep(Random.Shared.Next(10, 50));
             
             try
             {
