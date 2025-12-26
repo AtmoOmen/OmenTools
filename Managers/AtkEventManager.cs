@@ -5,7 +5,7 @@ using OmenTools.Abstracts;
 
 namespace OmenTools.Managers;
 
-public unsafe class AtkEventManager : OmenServiceBase
+internal unsafe class AtkEventManager : OmenServiceBase
 {
     private static readonly CompSig GlobalEventSig = new("48 89 5C 24 ?? 55 57 41 57 48 83 EC 50 48 8B D9 0F B7 EA");
     private delegate        void* GlobalEventDelegate(AtkUnitBase* addon, AtkEventType eventType, uint eventParam, AtkResNode** eventData, uint* a5);
