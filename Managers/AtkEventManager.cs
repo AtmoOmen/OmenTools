@@ -17,7 +17,7 @@ internal unsafe class AtkEventManager : OmenServiceBase
     private const  uint BaseParamKey = 0x53540000U;
     private const  uint MaxHandlers  = 1000000;
     private static uint NextParamKey = BaseParamKey - 1;
-
+    
     internal override void Init()
     {
         GlobalEventHook ??= GlobalEventSig.GetHook<GlobalEventDelegate>(GlobalEventDetour);
@@ -28,6 +28,9 @@ internal unsafe class AtkEventManager : OmenServiceBase
     {
         GlobalEventHook?.Dispose();
         GlobalEventHook = null;
+
+        foreach (var (_, atkEvent) in EventHandlers)
+            atkEvent.Dispose();
         
         EventHandlers.Clear();
         AvailableParamKeys.Clear();
@@ -83,7 +86,7 @@ internal unsafe class AtkEventManager : OmenServiceBase
 public unsafe class AtkEventWrapper : IDisposable
 {
     public delegate void AtkEventActionDelegate(AtkEventType eventType, AtkUnitBase* addon, AtkResNode* node);
-
+    
     /// <summary>
     /// 事件触发时要执行的回调。
     /// </summary>
@@ -93,21 +96,43 @@ public unsafe class AtkEventWrapper : IDisposable
     /// 唯一事件ID
     /// </summary>
     public uint ParamKey { get; }
+    
+    private readonly List<(nint AddonPtr, nint NodePtr, AtkEventType Type)> RegisteredData = [];
+
+    private bool IsDisposed;
 
     public AtkEventWrapper(AtkEventActionDelegate action)
     {
-        this.Action = action;
+        this.Action   = action;
         this.ParamKey = AtkEventManager.RegisterEvent(this);
     }
     
     public void Dispose()
     {
-        AtkEventManager.UnregisterEvent(this.ParamKey);
+        if (IsDisposed) return;
+        IsDisposed = true;
+        
+        if (RegisteredData is { Count: > 0 })
+        {
+            foreach (var (addonPtr, nodePtr, type) in RegisteredData)
+            {
+                var addon = (AtkUnitBase*)addonPtr;
+                var node  = (AtkResNode*)nodePtr;
+                if (addon == null || node == null) continue;
+
+                Remove(addon, node, type);
+            }
+        }
+
+        AtkEventManager.UnregisterEvent(ParamKey);
         GC.SuppressFinalize(this);
     }
     
-    public void Add(AtkUnitBase* addon, AtkResNode* node, AtkEventType eventType) => 
+    public void Add(AtkUnitBase* addon, AtkResNode* node, AtkEventType eventType)
+    {
+        if (IsDisposed) return;
         node->AddEvent(eventType, ParamKey, (AtkEventListener*)addon, node, true);
+    }
 
     public void Remove(AtkUnitBase* addon, AtkResNode* node, AtkEventType eventType) => 
         node->RemoveEvent(eventType, ParamKey, (AtkEventListener*)addon, true);
