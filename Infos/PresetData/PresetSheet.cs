@@ -1,5 +1,4 @@
 using Lumina.Excel.Sheets;
-using OmenTools.Helpers;
 using Action = Lumina.Excel.Sheets.Action;
 using Status = Lumina.Excel.Sheets.Status;
 
@@ -7,18 +6,15 @@ namespace OmenTools.Infos;
 
 public static class PresetSheet
 {
-    /// <summary>
-    /// 可驱散的状态效果
-    /// </summary>
     public static Dictionary<uint, Status> DispellableStatuses { get; } = 
         LuminaGetter.Get<Status>()
-                    .Where(x => x is { CanDispel: true } && !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
+                    .Where(x => x is { CanDispel: true } && !string.IsNullOrEmpty(x.Name.ToString()))
                     .ToDictionary(x => x.RowId, s => s);
     
     public static Dictionary<uint, Action> PlayerActions { get; } =
         LuminaGetter.Get<Action>()
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
-                    .Where(x => !string.IsNullOrWhiteSpace(x.ClassJobCategory.ValueNullable?.Name.ExtractText() ?? string.Empty))
+                    .Where(x => !string.IsNullOrEmpty(x.Name.ToString()))
+                    .Where(x => !string.IsNullOrEmpty(x.ClassJobCategory.ValueNullable?.Name.ToString() ?? string.Empty))
                     .Where(x => x is
                     {
                         IsPlayerAction: false,
@@ -34,12 +30,12 @@ public static class PresetSheet
 
     public static Dictionary<uint, Status> Statuses { get; } =
         LuminaGetter.Get<Status>()
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
+                    .Where(x => !string.IsNullOrEmpty(x.Name.ToString()))
                     .ToDictionary(x => x.RowId, x => x);
 
     public static Dictionary<uint, ContentFinderCondition> Contents { get; } =
         LuminaGetter.Get<ContentFinderCondition>()
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()))
+                    .Where(x => !string.IsNullOrEmpty(x.Name.ToString()))
                     .DistinctBy(x => x.TerritoryType.RowId)
                     .OrderBy(x => x.ContentType.RowId)
                     .ThenBy(x => x.ClassJobLevelRequired)
@@ -58,26 +54,23 @@ public static class PresetSheet
 
     public static Dictionary<uint, World> Worlds { get; } =
         LuminaGetter.Get<World>()
-                    .Where(x => x.DataCenter.ValueNullable                != null                          &&
-                                (x.DataCenter.ValueNullable?.Region ?? 0) != 0                             &&
-                                !string.IsNullOrWhiteSpace(x.DataCenter.ValueNullable?.Name.ExtractText()) &&
-                                !string.IsNullOrWhiteSpace(x.Name.ExtractText())                           &&
-                                !string.IsNullOrWhiteSpace(x.InternalName.ExtractText())                   &&
-                                !x.Name.ExtractText().Contains('-')                                        &&
-                                !x.Name.ExtractText().Contains('_'))
-                    .Where(x => x.DataCenter.Value.Region != 5 ||
-                                (x.RowId > 1000 && x.RowId != 1200 &&
-                                 IsChineseString(x.Name.ExtractText())))
+                    .Where(x => x.DataCenter.RowId != 0                          &&
+                                x.DataCenter.RowId != 13                         && // 北美云服务器
+                                x.UserType         != 0                          &&
+                                x.Region           != 0                          &&
+                                !string.IsNullOrEmpty(x.Name.ToString())         &&
+                                !string.IsNullOrEmpty(x.InternalName.ToString()) &&
+                                !x.Name.ToString().Contains("-"))
                     .ToDictionary(x => x.RowId, x => x);
 
     public static Dictionary<uint, World> CNWorlds { get; } =
-        LuminaGetter.Get<World>()
-                    .Where(x => x.DataCenter.Value.Region == 5                           &&
-                                x.RowId                   > 1000                         && x.RowId != 1200 &&
-                                !string.IsNullOrWhiteSpace(x.Name.ExtractText())         &&
-                                !string.IsNullOrWhiteSpace(x.InternalName.ExtractText()) &&
-                                IsChineseString(x.Name.ExtractText()))
-                    .ToDictionary(x => x.RowId, x => x);
+        Worlds
+            .Where(x => x.Key is > 1000 and < 2000           &&
+                        x.Value.DataCenter.RowId        != 0 &&
+                        x.Value.UserType                == 2 &&
+                        x.Value.DataCenter.Value.Region == 5 &&
+                        x.Value.Region                  == 101)
+            .ToDictionary(x => x.Key, x => x.Value);
 
     public static Dictionary<uint, TerritoryType> Zones { get; } =
         LuminaGetter.Get<TerritoryType>()
@@ -86,12 +79,12 @@ public static class PresetSheet
 
     public static Dictionary<uint, Mount> Mounts { get; } =
         LuminaGetter.Get<Mount>()
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Singular.ExtractText()) && x.Icon > 0)
+                    .Where(x => !string.IsNullOrEmpty(x.Singular.ToString()) && x.Icon > 0)
                     .ToDictionary(x => x.RowId, x => x);
 
     public static Dictionary<uint, Item> Food { get; } =
         LuminaGetter.Get<Item>()
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()) && x.FilterGroup == 5)
+                    .Where(x => !string.IsNullOrEmpty(x.Name.ToString()) && x.FilterGroup == 5)
                     .ToDictionary(x => x.RowId, x => x);
 
     public static Dictionary<uint, Item> Seeds { get; } =
@@ -111,6 +104,6 @@ public static class PresetSheet
 
     public static Dictionary<uint, Item> Materias { get; } =
         LuminaGetter.Get<Item>()
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Name.ExtractText()) && x.FilterGroup == 13)
+                    .Where(x => !string.IsNullOrEmpty(x.Name.ToString()) && x.FilterGroup == 13)
                     .ToDictionary(x => x.RowId, x => x);
 }
