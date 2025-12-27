@@ -881,6 +881,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* TofuObjectList                  => GetAddonByName("TofuObjectList");
     public static AtkUnitBase* TofuInputString                 => GetAddonByName("TofuInputString");
     public static AtkUnitBase* TofuGroupSetting                => GetAddonByName("TofuGroupSetting");
+    public static AtkUnitBase* TofuExport                      => GetAddonByName("TofuExport");
     public static AtkUnitBase* BannerParty                     => GetAddonByName("BannerParty");
     public static AtkUnitBase* BannerPartySetting              => GetAddonByName("BannerPartySetting");
     public static AtkUnitBase* BannerMIP                       => GetAddonByName("BannerMIP");
