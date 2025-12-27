@@ -33,49 +33,43 @@ public static partial class ImGuiOm
 
     public static void TextDisabledWrapped(string text)
     {
-        ImGui.BeginDisabled();
+        using var disabled = ImRaii.Disabled();
+
         ImGui.TextWrapped(text);
-        ImGui.EndDisabled();
     }
 
     public static void TextDisabledWrapped(string text, float warpPos)
     {
-        ImGui.BeginDisabled();
-        ImGui.PushTextWrapPos(ImGui.GetFontSize() * warpPos);
+        using var disabled = ImRaii.Disabled();
+        using var warp     = ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos);
+        
         Text(text);
-        ImGui.PopTextWrapPos();
-        ImGui.EndDisabled();
     }
 
     public static bool TextIcon(FontAwesomeIcon icon, string text, bool useStaticFont = false)
     {
-        if (useStaticFont) 
-            ImGui.PushFont(UiBuilder.IconFont);
-        var iconSize = ImGui.CalcTextSize(icon.ToIconString());
-        if (useStaticFont) 
-            ImGui.PopFont();
+        var iconSize = Vector2.Zero;
+        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
+            iconSize = ImGui.CalcTextSize(icon.ToIconString());
 
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorPos      = ImGui.GetCursorScreenPos();
         var padding        = ImGui.GetStyle().FramePadding;
+        var textSize       = ImGui.CalcTextSize(text);
+        var buttonHeight   = Math.Max(iconSize.Y, textSize.Y);
 
-        var textSize     = ImGui.CalcTextSize(text);
-        var buttonHeight = Math.Max(iconSize.Y, textSize.Y);
-
-        ImGui.BeginDisabled();
-        ImGui.PushStyleColor(ImGuiCol.Button, 0);
-        var result = ImGui.Button("", new Vector2(iconSize.X + textSize.X + 3 * padding.X, buttonHeight + 2 * padding.Y));
-        ImGui.PopStyleColor();
-        ImGui.EndDisabled();
+        var result = false;
+        
+        using (ImRaii.Disabled())
+        using (ImRaii.PushColor(ImGuiCol.Button, 0))
+            result = ImGui.Button(string.Empty, new(iconSize.X + textSize.X + (3 * padding.X), buttonHeight + (2 * padding.Y)));
 
         var iconPos = new Vector2(cursorPos.X + padding.X, cursorPos.Y + padding.Y);
-        if (useStaticFont) 
-            ImGui.PushFont(UiBuilder.IconFont);
-        windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-        if (useStaticFont) 
-            ImGui.PopFont();
 
-        var textPos = new Vector2(iconPos.X + iconSize.X + 2 * padding.X, cursorPos.Y + padding.Y);
+        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
+            windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
+
+        var textPos = new Vector2(iconPos.X + iconSize.X + (2 * padding.X), cursorPos.Y + padding.Y);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         return result;

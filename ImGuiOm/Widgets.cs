@@ -54,32 +54,35 @@ public static partial class ImGuiOm
         }
     }
 
-    public static void HelpMarker(string tooltip, float warpPos = 20f, FontAwesomeIcon icon = FontAwesomeIcon.InfoCircle, bool useStaticFont = false)
+    public static void HelpMarker(
+        string tooltip,
+        float warpPos = 20f,
+        FontAwesomeIcon icon = FontAwesomeIcon.InfoCircle,
+        bool useStaticFont = false)
     {
         ImGui.SameLine();
-
-        using (ImRaii.Group())
+        
+        using var group = ImRaii.Group();
+        
+        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
         {
-            if (useStaticFont) 
-                ImGui.PushFont(UiBuilder.IconFont);
-
             var origPosY = ImGui.GetCursorPosY();
             ImGui.SetCursorPosY(origPosY + (ImGui.GetStyle().FramePadding.Y * 0.5f));
-            ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
+            ImGui.TextDisabled(icon.ToIconString());
             ImGui.SetCursorPosY(origPosY);
-            if (useStaticFont) 
-                ImGui.PopFont();
-            if (ImGui.IsItemHovered())
+        }
+        
+        if (ImGui.IsItemHovered())
+        {
+            using (ImRaii.Tooltip())
             {
-                using (ImRaii.Tooltip())
-                {
-                    using (ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos))
-                        ImGui.TextUnformatted(tooltip);
-                }
+                using (ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos))
+                    ImGui.TextUnformatted(tooltip);
             }
         }
     }
 
+    // TODO: 移除
     public static void DisableZoneWithHelp(Action interfaceAction, List<KeyValuePair<bool, string>> conditions,
         string header = "由于以下原因被禁用")
     {
