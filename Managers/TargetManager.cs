@@ -162,45 +162,46 @@ public sealed unsafe class TargetManager : OmenServiceBase
     }
 
     #region Register
-
+    
+    public static bool RegPreSetHardTarget(PreSetHardTargetDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPreSetHardTarget(params PreSetHardTargetDelegate[] methods) => RegisterGeneric(methods);
 
+    public static bool RegPostSetHardTarget(PostSetHardTargetDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPostSetHardTarget(params PostSetHardTargetDelegate[] methods) => RegisterGeneric(methods);
 
+    public static bool RegPreSetSoftTarget(PreSetSoftTargetDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPreSetSoftTarget(params PreSetSoftTargetDelegate[] methods) => RegisterGeneric(methods);
 
+    public static bool RegPostSetSoftTarget(PostSetSoftTargetDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPostSetSoftTarget(params PostSetSoftTargetDelegate[] methods) => RegisterGeneric(methods);
 
+    public static bool RegPreSetFocusTarget(PreSetFocusTargetDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPreSetFocusTarget(params PreSetFocusTargetDelegate[] methods) => RegisterGeneric(methods);
 
+    public static bool RegPostSetFocusTarget(PostSetFocusTargetDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPostSetFocusTarget(params PostSetFocusTargetDelegate[] methods) => RegisterGeneric(methods);
 
+    public static bool RegPreInteractWithObject(PreInteractWithObjectDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPreInteractWithObject(params PreInteractWithObjectDelegate[] methods) => RegisterGeneric(methods);
 
+    public static bool RegPostInteractWithObject(PostInteractWithObjectDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPostInteractWithObject(params PostInteractWithObjectDelegate[] methods) => RegisterGeneric(methods);
 
+    public static bool RegPreOpenObjectInteraction(PreOpenObjectInteractionDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPreOpenObjectInteraction(params PreOpenObjectInteractionDelegate[] methods) => RegisterGeneric(methods);
 
+    public static bool RegPostOpenObjectInteraction(PostOpenObjectInteractionDelegate          methods) => RegisterGeneric(methods);
     public static bool RegPostOpenObjectInteraction(params PostOpenObjectInteractionDelegate[] methods) => RegisterGeneric(methods);
 
-    public static bool Unreg(params PreSetHardTargetDelegate[] methods) => UnregisterGeneric(methods);
-
-    public static bool Unreg(params PostSetHardTargetDelegate[] methods) => UnregisterGeneric(methods);
-
-    public static bool Unreg(params PreSetSoftTargetDelegate[] methods) => UnregisterGeneric(methods);
-
-    public static bool Unreg(params PostSetSoftTargetDelegate[] methods) => UnregisterGeneric(methods);
-
-    public static bool Unreg(params PreSetFocusTargetDelegate[] methods) => UnregisterGeneric(methods);
-
-    public static bool Unreg(params PostSetFocusTargetDelegate[] methods) => UnregisterGeneric(methods);
-
-    public static bool Unreg(params PreInteractWithObjectDelegate[] methods) => UnregisterGeneric(methods);
-
-    public static bool Unreg(params PostInteractWithObjectDelegate[] methods) => UnregisterGeneric(methods);
-
-    public static bool Unreg(params PreOpenObjectInteractionDelegate[] methods) => UnregisterGeneric(methods);
-
+    public static bool Unreg(params PreSetHardTargetDelegate[]          methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PostSetHardTargetDelegate[]         methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PreSetSoftTargetDelegate[]          methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PostSetSoftTargetDelegate[]         methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PreSetFocusTargetDelegate[]         methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PostSetFocusTargetDelegate[]        methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PreInteractWithObjectDelegate[]     methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PostInteractWithObjectDelegate[]    methods) => UnregisterGeneric(methods);
+    public static bool Unreg(params PreOpenObjectInteractionDelegate[]  methods) => UnregisterGeneric(methods);
     public static bool Unreg(params PostOpenObjectInteractionDelegate[] methods) => UnregisterGeneric(methods);
 
     #endregion
