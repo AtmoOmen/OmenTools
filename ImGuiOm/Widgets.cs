@@ -81,19 +81,4 @@ public static partial class ImGuiOm
             }
         }
     }
-
-    // TODO: 移除
-    public static void DisableZoneWithHelp(Action interfaceAction, List<KeyValuePair<bool, string>> conditions,
-        string header = "由于以下原因被禁用")
-    {
-        var isNeedToDisable = conditions.Any(kvp => kvp.Key);
-
-        using (ImRaii.Group())
-        {
-            using (ImRaii.Disabled(isNeedToDisable))
-                interfaceAction();
-        }
-
-        TooltipDisableHelp(conditions, header);
-    }
 }
