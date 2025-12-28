@@ -12,7 +12,7 @@ public static class GameObjectExtension
     {
         if (gameObject == null) return false;
         
-        DService.Targets.Target = gameObject;
+        TargetManager.Target = gameObject;
         return TargetSystem.Instance()->InteractWithObject(gameObject.ToStruct()) != 0;
     }
 

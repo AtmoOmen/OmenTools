@@ -23,7 +23,6 @@ public class DService
         PI            = pluginInterface;
         UIBuilder     = pluginInterface.UiBuilder;
         ObjectTable   = new ObjectTable();
-        Targets       = new TargetManager();
         AetheryteList = new AetheryteList();
         
         var services = Assembly.GetExecutingAssembly().GetTypes()
@@ -134,11 +133,13 @@ public class DService
     [PluginService] public static ITextureProvider     Texture           { get; private set; } = null!;
     [PluginService] public static ITitleScreenMenu     TitleScreenMenu   { get; private set; } = null!;
     [PluginService] public static IToastGui            Toast             { get; private set; } = null!;
+    
+    [Obsolete("请使用 Managers.TargetManager", true)]
+    [PluginService] public static ITargetManager TargetManager { get; private set; } = null!;
 
     public static IDalamudPluginInterface PI            { get; private set; } = null!;
     public static IUiBuilder              UIBuilder     { get; private set; } = null!;
     public static IAetheryteList          AetheryteList { get; private set; } = null!;
     public static IObjectTable            ObjectTable   { get; private set; } = null!;
-    public static ITargetManager          Targets       { get; private set; } = null!;
     public static SigScanner              SigScanner    { get; private set; } = new();
 }

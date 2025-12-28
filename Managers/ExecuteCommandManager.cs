@@ -57,10 +57,13 @@ public class ExecuteCommandManager : OmenServiceBase
         Config = LoadConfig<ExecuteCommandManagerConfig>() ?? new();
         
         ExecuteCommandHook                ??= ExecuteCommandSig.GetHook<ExecuteCommandDelegate>(ExecuteCommandDetour);
+        ExecuteCommandHook?.Enable();
+        
         ExecuteCommandComplexHook         ??= ExecuteCommandComplexSig.GetHook<ExecuteCommandComplexDelegate>(ExecuteCommandComplexDetour);
+        ExecuteCommandComplexHook?.Enable();
+        
         ExecuteCommandComplexLocationHook ??= ExecuteCommandComplexLocationSig.GetHook<ExecuteCommandComplexLocationDelegate>(ExecuteCommandComplexLocationDetour);
-
-        EnableHooks();
+        ExecuteCommandComplexLocationHook?.Enable();
     }
 
     #region Register
@@ -72,7 +75,6 @@ public class ExecuteCommandManager : OmenServiceBase
         foreach (var method in methods)
             bag.Add(method);
 
-        EnableHooks();
         return true;
     }
 
@@ -115,20 +117,6 @@ public class ExecuteCommandManager : OmenServiceBase
     #endregion
 
     #region Hooks
-
-    public static void EnableHooks()
-    {
-        ExecuteCommandHook?.Enable();
-        ExecuteCommandComplexHook?.Enable();
-        ExecuteCommandComplexLocationHook?.Enable();
-    }
-
-    public static void DisableHooks()
-    {
-        ExecuteCommandHook?.Disable();
-        ExecuteCommandComplexHook?.Disable();
-        ExecuteCommandComplexLocationHook?.Disable();
-    }
 
     private static nint ExecuteCommandDetour(ExecuteCommandFlag command, uint param1, uint param2, uint param3, uint param4)
     {
@@ -312,8 +300,6 @@ public class ExecuteCommandManager : OmenServiceBase
 
     internal override void Uninit()
     {
-        DisableHooks();
-
         ExecuteCommandHook?.Dispose();
         ExecuteCommandHook = null;
 

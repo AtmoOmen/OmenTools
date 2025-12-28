@@ -464,11 +464,11 @@ public unsafe class GameTooltipManager : OmenServiceBase
 
         if (args->TextArgs.Text.Value == null) return;
 
-        var currentTarget = DService.Targets.Target;
+        var currentTarget = TargetManager.Target;
         if (currentTarget != null && currentTarget.Address != localPlayer.Address)
             AddStatusesToMap(currentTarget.ToBCStruct()->StatusManager, ref IconStatusIDMap);
 
-        var focusTarget = DService.Targets.FocusTarget;
+        var focusTarget = TargetManager.FocusTarget;
         if (focusTarget != null)
             AddStatusesToMap(focusTarget.ToBCStruct()->StatusManager, ref IconStatusIDMap);
 
