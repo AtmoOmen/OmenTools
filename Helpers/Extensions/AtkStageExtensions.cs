@@ -104,5 +104,8 @@ public static unsafe class AtkStageExtensions
                 tooltipArgs
             );
         }
+
+        public void HideTooltip(ushort addonID) => 
+            atkStage.TooltipManager.HideTooltip(addonID);
     }
 }
