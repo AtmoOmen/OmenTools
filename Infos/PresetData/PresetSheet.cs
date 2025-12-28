@@ -60,7 +60,11 @@ public static class PresetSheet
                                 x.Region           != 0                          &&
                                 !string.IsNullOrEmpty(x.Name.ToString())         &&
                                 !string.IsNullOrEmpty(x.InternalName.ToString()) &&
-                                !x.Name.ToString().Contains("-"))
+                                !x.Name.ToString().Contains('-')                 &&
+                                (x.UserType - 1) * 1000 is var minWorldID        &&
+                                x.UserType       * 1000 is var maxWorldID        &&
+                                x.RowId > minWorldID                             &&
+                                x.RowId < maxWorldID)
                     .ToDictionary(x => x.RowId, x => x);
 
     public static Dictionary<uint, World> CNWorlds { get; } =
