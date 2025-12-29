@@ -283,7 +283,7 @@ public sealed unsafe class TargetManager : OmenServiceBase
         {
             var gameObj = DService.ObjectTable.SearchByID(gameObjectID);
             Debug($"[Target Manager] Set Focus Target\n"                   +
-                  $"目标: {gameObj?.Name ?? "[空]"} ({gameObj?.Address:X})\n" +
+                  $"目标: {gameObj?.Name ?? "[空]"} ({gameObj?.Address:X}) | GameObjectID: {(ulong)gameObjectID:X}\n" +
                   $"GameObjectID: {gameObj?.GameObjectID} | EntityID: {gameObj?.EntityID}");
         }
 
