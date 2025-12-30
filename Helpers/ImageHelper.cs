@@ -10,12 +10,15 @@ namespace OmenTools.Helpers;
 
 public class ImageHelper : OmenServiceBase
 {
-    private static readonly ConcurrentDictionary<string, ImageLoadingResult>                                      CachedTextures      = new();
-    private static readonly ConcurrentDictionary<(uint ID, bool HQ, ClientLanguage Language), ImageLoadingResult> CachedIcons         = new();
+    private static readonly ConcurrentDictionary<string, ImageLoadingResult>                                      CachedTextures      = [];
+    private static readonly ConcurrentDictionary<(uint ID, bool HQ, ClientLanguage Language), ImageLoadingResult> CachedIcons         = [];
     private static readonly List<Func<byte[], byte[]>>                                                            ConversionsToBitmap = [b => b];
 
-    private static readonly HttpClient               HttpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
-    private static          CancellationTokenSource? CancelSource;
+    private static HttpClient?              HttpClient;
+    private static CancellationTokenSource? CancelSource;
+
+    internal override void Init() => 
+        HttpClient ??= new() { Timeout = TimeSpan.FromSeconds(30) };
 
     public static IDalamudTextureWrap? GetGameLangIcon(uint iconID, ClientLanguage language, bool isHQ = false) =>
         TryGetGameLangIcon(iconID, language, out var texture, isHQ) ? texture : null;
@@ -94,6 +97,9 @@ public class ImageHelper : OmenServiceBase
         {
             if (Uri.TryCreate(key, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
             {
+                while (HttpClient == null)
+                    await Task.Delay(100);
+                
                 var content = await HttpClient.GetByteArrayAsync(uri);
                 foreach (var conversion in ConversionsToBitmap)
                 {
@@ -176,6 +182,9 @@ public class ImageHelper : OmenServiceBase
         CancelSource?.Cancel();
         CancelSource?.Dispose();
         CancelSource = null;
+        
+        HttpClient?.Dispose();
+        HttpClient = null;
     }
     
     private record ImageLoadingResult
