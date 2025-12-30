@@ -8,16 +8,19 @@ public static class GameObjectExtension
     public static Vector3 ToVector3(this Vector2 vector2) => 
         vector2.ToVector3(DService.ObjectTable.LocalPlayer?.Position.Y ?? 0);
 
-    public static unsafe bool TargetInteract(this IGameObject? gameObject)
+    extension(IGameObject? gameObject)
     {
-        if (gameObject == null) return false;
+        public unsafe bool TargetInteract()
+        {
+            if (gameObject == null) return false;
         
-        TargetManager.Target = gameObject;
-        return TargetSystem.Instance()->InteractWithObject(gameObject.ToStruct()) != 0;
-    }
+            TargetManager.Target = gameObject;
+            return TargetSystem.Instance()->InteractWithObject(gameObject.ToStruct()) != 0;
+        }
 
-    public static unsafe bool Interact(this IGameObject? gameObject) => 
-        gameObject != null && TargetSystem.Instance()->InteractWithObject(gameObject.ToStruct()) != 0;
+        public unsafe bool Interact() => 
+            gameObject != null && TargetSystem.Instance()->InteractWithObject(gameObject.ToStruct()) != 0;
+    }
 
     public static IGameObject? FindNearest(this IEnumerable<IGameObject> gameObjects, 
                                            Vector3                       source,
