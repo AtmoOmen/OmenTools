@@ -30,21 +30,37 @@ public unsafe class GamePacketManager : OmenServiceBase
     public delegate void PreReceivePacketDelegate(ref bool isPrevented, int   opcode, ref byte* packet);
     public delegate void PostReceivePacketDelegate(int opcode, byte* packet);
 
-    private static readonly ConcurrentDictionary<Type, ConcurrentBag<Delegate>> methodsCollection = [];
+    private static readonly ConcurrentDictionary<Type, ConcurrentBag<Delegate>> MethodsCollection = [];
     
     internal override void Init()
     {
         Config = LoadConfig<GamePacketManagerConfig>() ?? new();
         
         SendPacketInternalHook ??= SendPacketInternalSig.GetHook<SendPacketInternalDelegate>(SendPacketInternalDetour);
-        SendPacketInternalHook.Enable();
-
         ReceivePacketInternalHook ??=
-            DService.Hook.HookFromAddress<ReceivePacketInternalDelegate>(GetVFuncByName(PacketDispatcher.StaticVirtualTablePointer, "OnReceivePacket"),
-                                                                         ReceivePacketInternalDetour);
-        ReceivePacketInternalHook.Enable();
+            DService.Hook.HookFromVirtualTable<ReceivePacketInternalDelegate, PacketDispatcher.PacketDispatcherVirtualTable>(
+                PacketDispatcher.StaticVirtualTablePointer, 
+                "OnReceivePacket",
+                ReceivePacketInternalDetour);
+        
+        GameState.Login  += OnLogin;
+        GameState.Logout += OnLogout;
+        if (DService.ClientState.IsLoggedIn)
+            Toggle(true);
     }
+
+    private static void OnLogin() => 
+        Toggle(true);
     
+    private static void OnLogout() => 
+        Toggle(false);
+    
+    public static void Toggle(bool isEnabled)
+    {
+        SendPacketInternalHook?.Toggle(isEnabled);
+        ReceivePacketInternalHook?.Toggle(isEnabled);
+    }
+
     public static void SendPackt<T>(T data) where T : unmanaged, IGamePacket => 
         SendPacket(Framework.Instance()->NetworkModuleProxy, (byte*)&data, 0, 0x9876543); // 打个标记
 
@@ -54,7 +70,7 @@ public unsafe class GamePacketManager : OmenServiceBase
         LogKnownGamePacket(*(ushort*)packet, packet, priority);
         
         var isPrevented = false;
-        if (a4 != 0x9876543 && methodsCollection.TryGetValue(typeof(PreSendPacketDelegate), out var preDelegates))
+        if (a4 != 0x9876543 && MethodsCollection.TryGetValue(typeof(PreSendPacketDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -76,7 +92,7 @@ public unsafe class GamePacketManager : OmenServiceBase
         
         var original = SendPacketInternalHook.Original(module, packet, a3, a4 == 0x9876543 ? 0 : a4, priority);
 
-        if (a4 != 0x9876543 && methodsCollection.TryGetValue(typeof(PostSendPacketDelegate), out var postDelegates))
+        if (a4 != 0x9876543 && MethodsCollection.TryGetValue(typeof(PostSendPacketDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -96,7 +112,7 @@ public unsafe class GamePacketManager : OmenServiceBase
         LogKnownReceivedPacket(opcode, targetID);
         
         var isPrevented = false;
-        if (methodsCollection.TryGetValue(typeof(PreReceivePacketDelegate), out var preDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PreReceivePacketDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -110,7 +126,7 @@ public unsafe class GamePacketManager : OmenServiceBase
         
         ReceivePacketInternalHook.Original(dispatcher, targetID, packet + 16);
         
-        if (methodsCollection.TryGetValue(typeof(PostReceivePacketDelegate), out var postDelegates))
+        if (MethodsCollection.TryGetValue(typeof(PostReceivePacketDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -169,7 +185,7 @@ public unsafe class GamePacketManager : OmenServiceBase
     private static bool RegisterGeneric<T>(params T[] methods) where T : Delegate
     {
         var type = typeof(T);
-        var bag  = methodsCollection.GetOrAdd(type, _ => []);
+        var bag  = MethodsCollection.GetOrAdd(type, _ => []);
         foreach (var method in methods)
             bag.Add(method);
 
@@ -179,12 +195,12 @@ public unsafe class GamePacketManager : OmenServiceBase
     private static bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
     {
         var type = typeof(T);
-        if (methodsCollection.TryGetValue(type, out var bag))
+        if (MethodsCollection.TryGetValue(type, out var bag))
         {
             foreach (var method in methods)
             {
                 var newBag = new ConcurrentBag<Delegate>(bag.Where(d => d != method));
-                methodsCollection[type] = newBag;
+                MethodsCollection[type] = newBag;
             }
             return true;
         }
@@ -196,13 +212,16 @@ public unsafe class GamePacketManager : OmenServiceBase
     
     internal override void Uninit()
     {
+        GameState.Login  -= OnLogin;
+        GameState.Logout -= OnLogout;
+        
         SendPacketInternalHook?.Dispose();
         SendPacketInternalHook = null;
         
         ReceivePacketInternalHook?.Dispose();
         ReceivePacketInternalHook = null;
         
-        methodsCollection.Clear();
+        MethodsCollection.Clear();
     }
     
     private class PacketHandler(Func<bool> shouldLog, PacketLogger log)
