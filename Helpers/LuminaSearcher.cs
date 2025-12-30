@@ -10,26 +10,35 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
     private readonly Throttler<Guid> SearchThrottler = new();
 
     public LuminaSearcher(
-        IEnumerable<T>    data,
-        Func<T, string>[] searchFuncs,
-        Func<T, string>   orderFunc,
-        int               resultLimit      = 100,
-        int               throttleInterval = 100,
-        int               retryInterval    = 50,
-        int               maxRetries       = 3)
+        IEnumerable<T>                             data,
+        Func<T, string>[]                          searchFuncs,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderFunc        = null,
+        int                                        resultLimit      = 100,
+        int                                        throttleInterval = 100,
+        int                                        retryInterval    = 50,
+        int                                        maxRetries       = 3)
     {
         Guid = Guid.NewGuid();
-        Data = data
-               .OrderBy(item => orderFunc(item).Length)
-               .ThenBy(x => x.RowId)
-               .ToList();
+
+        if (orderFunc != null)
+        {
+            var query = data.AsQueryable();
+            Data = orderFunc(query)
+                   .ThenBy(x => x.RowId)
+                   .ToList();
+        }
+        else
+        {
+            Data = data.OrderBy(x => x.RowId)
+                       .ToList();
+        }
 
         SearchResult          = Data.Take(resultLimit).ToList();
         this.resultLimit      = resultLimit;
         this.throttleInterval = throttleInterval;
         this.retryInterval    = retryInterval;
         this.maxRetries       = maxRetries;
-        
+
         preprocessedData = Data
                            .Select(item => searchFuncs.Select(func => $"{func(item)}_{PinyinHelper.GetPinyin(func(item), string.Empty)}").ToList())
                            .ToList();
@@ -130,19 +139,28 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
     private readonly Throttler<Guid> SearchThrottler = new();
 
     public LuminaSearcherSubRow(
-        IEnumerable<T>    data,
-        Func<T, string>[] searchFuncs,
-        Func<T, string>   orderFunc,
-        int               resultLimit      = 100,
-        int               throttleInterval = 100,
-        int               retryInterval    = 50,
-        int               maxRetries       = 3)
+        IEnumerable<T>                             data,
+        Func<T, string>[]                          searchFuncs,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderFunc        = null,
+        int                                        resultLimit      = 100,
+        int                                        throttleInterval = 100,
+        int                                        retryInterval    = 50,
+        int                                        maxRetries       = 3)
     {
         Guid = Guid.NewGuid();
-        Data = data
-               .OrderBy(item => orderFunc(item).Length)
-               .ThenBy(x => x.RowId)
-               .ToList();
+
+        if (orderFunc != null)
+        {
+            var query = data.AsQueryable();
+            Data = orderFunc(query)
+                   .ThenBy(x => x.RowId)
+                   .ToList();
+        }
+        else
+        {
+            Data = data.OrderBy(x => x.RowId)
+                       .ToList();
+        }
 
         SearchResult          = Data.Take(resultLimit).ToList();
         this.resultLimit      = resultLimit;
