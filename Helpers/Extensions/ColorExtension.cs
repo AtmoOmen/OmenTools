@@ -9,23 +9,34 @@ public static class ColorExtension
     private static readonly Dictionary<ImGuiCol, Vector4>   ImGuiColToVector4   = [];
     private static readonly Dictionary<ImGuiCol, uint>      ImGuiColToUInt      = [];
     private static readonly Dictionary<KnownColor, Vector4> KnownColorToVector4 = [];
+    private static readonly Dictionary<KnownColor, uint>    KnownColorToUInt    = [];
     private static readonly Dictionary<uint, Vector4>       UIntToVector4       = [];
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 ToVector4(this ImGuiCol imguiCol) =>
-        ImGuiColToVector4.GetOrAdd(imguiCol, _ => ImGui.GetColorU32(imguiCol).ToVector4());
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static uint ToUInt(this ImGuiCol imguiCol) =>
-        ImGuiColToUInt.GetOrAdd(imguiCol, _ => ImGui.GetColorU32(imguiCol));
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Vector4 ToVector4(this KnownColor knownColor) =>
-        KnownColorToVector4.GetOrAdd(knownColor, _ =>
-        {
-            var rgbColor = Color.FromKnownColor(knownColor);
-            return new Vector4(rgbColor.R, rgbColor.G, rgbColor.B, rgbColor.A) / 255.0f;
-        });
+    extension(ImGuiCol imguiCol)
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4 ToVector4() =>
+            ImGuiColToVector4.GetOrAdd(imguiCol, _ => ImGui.GetColorU32(imguiCol).ToVector4());
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public uint ToUInt() =>
+            ImGuiColToUInt.GetOrAdd(imguiCol, _ => ImGui.GetColorU32(imguiCol));
+    }
+
+    extension(KnownColor knownColor)
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4 ToVector4() =>
+            KnownColorToVector4.GetOrAdd(knownColor, _ =>
+            {
+                var rgbColor = Color.FromKnownColor(knownColor);
+                return new Vector4(rgbColor.R, rgbColor.G, rgbColor.B, rgbColor.A) / 255.0f;
+            });
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public uint ToUInt() =>
+            KnownColorToUInt.GetOrAdd(knownColor, _ => knownColor.ToVector4().ToUInt());
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ToUInt(this Vector4 color) => 
