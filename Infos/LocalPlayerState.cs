@@ -7,6 +7,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
 using OmenTools.Abstracts;
+using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
 using GrandCompany = FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany;
 using Task = System.Threading.Tasks.Task;
 
@@ -68,6 +69,12 @@ public class LocalPlayerState : OmenServiceBase
     /// </summary>
     public static bool IsMoving => 
         IsPlayerMoving;
+
+    /// <summary>
+    /// 当前玩家是否正处于步行模式
+    /// </summary>
+    public static unsafe bool IsWalking =>
+        Control.Instance()->IsWalking;
 
     /// <summary>
     /// 当前玩家的用户名
