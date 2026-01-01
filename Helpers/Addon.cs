@@ -461,4 +461,38 @@ public static unsafe partial class HelpersOm
 
     public static void SetSize<T>(T* node, int? w, int? h) where T : unmanaged => 
         SetSize((AtkResNode*)node, w, h);
+    
+    public static bool TryGetActiveTextInput(out AtkComponentTextInput* component, out AtkUnitBase* addon)
+    {
+        component = null;
+        addon     = null;
+
+        var raptureAtkModule = RaptureAtkModule.Instance();
+        if (raptureAtkModule == null)
+            return false;
+
+        var textInputEventInterface = raptureAtkModule->TextInput.TargetTextInputEventInterface;
+        if (textInputEventInterface == null)
+            return false;
+
+        var ownerNode = textInputEventInterface->GetOwnerNode();
+        if (ownerNode == null || ownerNode->GetNodeType() != NodeType.Component)
+            return false;
+
+        var componentNode = (AtkComponentNode*)ownerNode;
+        var componentBase = componentNode->Component;
+        if (componentBase == null || componentBase->GetComponentType() != ComponentType.TextInput)
+            return false;
+
+        component = (AtkComponentTextInput*)componentBase;
+
+        addon = component->OwnerAddon;
+        if (addon == null)
+            addon = component->ContainingAddon2;
+
+        if (addon == null)
+            addon = RaptureAtkUnitManager.Instance()->GetAddonByNode((AtkResNode*)component->OwnerNode);
+
+        return addon != null;
+    }
 }
