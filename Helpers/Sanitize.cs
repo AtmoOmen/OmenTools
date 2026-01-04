@@ -6,27 +6,7 @@ namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
-    private static readonly Lazy<(int Start, int End, ulong[] Bitmap)> SeIconBitmap = new(
-        () =>
-        {
-            var seIcons    = Enum.GetValues(typeof(SeIconChar)).Cast<SeIconChar>().Select(i => (int)i).ToList();
-            var start      = seIcons.Min();
-            var end        = seIcons.Max();
-            var range      = end - start + 1;
-            var bitmapSize = (range + 63) / 64; // 向上取整到最接近的 64 的倍数
-            var bitmap     = new ulong[bitmapSize];
-
-            foreach (var icon in seIcons)
-            {
-                var adjustedValue = icon - start;
-                var index         = adjustedValue >> 6;
-                var bit           = adjustedValue & 63;
-                bitmap[index] |= 1UL << bit;
-            }
-
-            return (start, end, bitmap);
-        });
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string SanitizeXML(string text)
     {
         if(string.IsNullOrEmpty(text)) return string.Empty;
@@ -69,14 +49,16 @@ public static unsafe partial class HelpersOm
         return sb.ToString();
     }
 
-    public static string SanitizeSeIcon(string input) => SanitizeSeIcon(input.AsSpan());
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string SanitizeSEIcon(string input) => 
+        SanitizeSEIcon(input.AsSpan());
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string SanitizeSeIcon(ReadOnlySpan<char> input)
+    public static string SanitizeSEIcon(ReadOnlySpan<char> input)
     {
         if(input.IsEmpty) return string.Empty;
 
-        var (start, end, bitmap) = SeIconBitmap.Value;
+        var (start, end, bitmap) = SEIconBitmap.Value;
         Span<char> output      = stackalloc char[input.Length];
         var        outputIndex = 0;
 
@@ -123,4 +105,25 @@ public static unsafe partial class HelpersOm
 
         return new string(buffer[..length]);
     }
+
+    private static readonly Lazy<(int Start, int End, ulong[] Bitmap)> SEIconBitmap =
+        new(() =>
+        {
+            var seIcons    = Enum.GetValues<SeIconChar>().Select(i => (int)i).ToList();
+            var start      = seIcons.Min();
+            var end        = seIcons.Max();
+            var range      = end - start + 1;
+            var bitmapSize = (range + 63) / 64; // 向上取整到最接近的 64 的倍数
+            var bitmap     = new ulong[bitmapSize];
+
+            foreach (var icon in seIcons)
+            {
+                var adjustedValue = icon - start;
+                var index         = adjustedValue >> 6;
+                var bit           = adjustedValue & 63;
+                bitmap[index] |= 1UL << bit;
+            }
+
+            return (start, end, bitmap);
+        });
 }

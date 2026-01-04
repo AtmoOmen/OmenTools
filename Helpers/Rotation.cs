@@ -4,11 +4,11 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    public static float WorldDirHToCharaRotation(Vector2 direction) 
-        => direction == Vector2.Zero ? 0f : MathF.Atan2(direction.X, direction.Y);
+    public static float WorldDirHToCharaRotation(Vector2 direction) => 
+        direction == Vector2.Zero ? 0f : MathF.Atan2(direction.X, direction.Y);
 
-    public static float CharaRotationSymmetricTransform(float rotation) 
-        => MathF.IEEERemainder(rotation + MathF.PI, 2 * MathF.PI);
+    public static float CharaRotationSymmetricTransform(float rotation) => 
+        MathF.IEEERemainder(rotation + MathF.PI, 2 * MathF.PI);
     
     public static float CameraDirHToCharaRotation(float cameraDirH)
     {
