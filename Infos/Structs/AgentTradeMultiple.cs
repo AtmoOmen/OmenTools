@@ -52,7 +52,7 @@ public unsafe struct AgentTradeMultiple : IEnumerable<SelectedMateria>
             SelectCount = count
         };
 
-        SendEvent(AgentId.TradeMultiple, 1, (int)count);
+        AgentId.TradeMultiple.SendEvent(1, (int)count);
     }
 
     public bool IsAllMateriaSelected() => GetCurrentSelectedMateriaCount() == 5;

@@ -24,7 +24,7 @@ public unsafe struct AgentWorldTravel
         {
             WorldTravelSetupInfo(instance, AgentLobby.Instance()->LobbyData.CurrentWorldId, (ushort)WorldToTravel);
 
-            SendEvent(AgentId.WorldTravel, 1, 0);
+            AgentId.WorldTravel.SendEvent(1, 0);
         }
     }
 

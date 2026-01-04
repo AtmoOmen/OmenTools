@@ -7,8 +7,8 @@ public static unsafe class AgentLobbyEvent
 {
     public static void SelectCharacterByIndex(uint index)
     {
-        SendEvent(AgentId.Lobby, 0, 21, (int)index);
-        SendEvent(AgentId.Lobby, 3, 0);
+        AgentId.Lobby.SendEvent(0, 21, (int)index);
+        AgentId.Lobby.SendEvent(3, 0);
     }
 
     public static bool SelectCharacter(Predicate<CharaSelectCharacterEntry> condition)
@@ -38,7 +38,7 @@ public static unsafe class AgentLobbyEvent
     }
 
     public static void SelectWorldByIndex(uint index) =>
-        SendEvent(AgentId.Lobby, 0, 25, 0, (int)index);
+        AgentId.Lobby.SendEvent(0, 25, 0, (int)index);
     
     public static bool SelectWorldByName(string name)
     {
@@ -68,17 +68,17 @@ public static unsafe class AgentLobbyEvent
         SelectWorldByName(LuminaWrapper.GetWorldName(worldID));
 
     public static void OpenWorldSelect() =>
-        SendEvent(AgentId.Lobby, 0, 36);
+        AgentId.Lobby.SendEvent(0, 36);
     
     public static void OpenCharacterCreation() =>
-        SendEvent(AgentId.Lobby, 5, 7);
+        AgentId.Lobby.SendEvent(5, 7);
     
     public static void CloseCharacterCreation() =>
-        SendEvent(AgentId.Lobby, 0, 22);
+        AgentId.Lobby.SendEvent(0, 22);
 
     public static void CloseCharacterSelect() =>
-        SendEvent(AgentId.Lobby, 0, 19);
+        AgentId.Lobby.SendEvent(0, 19);
     
     public static void OpenCharacterSelect() =>
-        SendEvent(AgentId.Lobby, 0, 4);
+        AgentId.Lobby.SendEvent(0, 4);
 }
