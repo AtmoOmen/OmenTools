@@ -1,4 +1,6 @@
-﻿using Dalamud.Game.NativeWrapper;
+﻿using System.Numerics;
+using Dalamud.Game.Addon.Events.EventDataTypes;
+using Dalamud.Game.NativeWrapper;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Helpers;
@@ -9,108 +11,111 @@ public static unsafe class AtkExtension
     private static readonly InvokeListenerDelegate InvokeListener = 
         new CompSig("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 30 0F B7 FA").GetDelegate<InvokeListenerDelegate>();
 
-    public static List<nint> SearchSimpleNodesByType(this AtkUldManager manager, NodeType type)
+    extension(AtkUldManager manager)
     {
-        var result = new List<nint>();
-        for (var i = 0; i < manager.NodeListCount; i++)
+        public List<nint> SearchSimpleNodesByType(NodeType type)
         {
-            var node = manager.NodeList[i];
-            // 非 SimpleNode
-            if (node == null || (int)node->Type > 1000) continue;
-            if (node->Type != type) continue;
+            var result = new List<nint>();
+            for (var i = 0; i < manager.NodeListCount; i++)
+            {
+                var node = manager.NodeList[i];
+                // 非 SimpleNode
+                if (node == null || (int)node->Type > 1000) continue;
+                if (node->Type != type) continue;
 
-            result.Add((nint)node);
+                result.Add((nint)node);
+            }
+
+            return result;
         }
 
-        return result;
-    }
-
-    public static T* SearchSimpleNodeByType<T>(this AtkUldManager manager, NodeType type) where T : unmanaged
-    {
-        for (var i = 0; i < manager.NodeListCount; i++)
+        public T* SearchSimpleNodeByType<T>(NodeType type) where T : unmanaged
         {
-            var node = manager.NodeList[i];
-            // 非 SimpleNode
-            if (node == null || (int)node->Type > 1000) continue;
-            if (node->Type != type) continue;
+            for (var i = 0; i < manager.NodeListCount; i++)
+            {
+                var node = manager.NodeList[i];
+                // 非 SimpleNode
+                if (node == null || (int)node->Type > 1000) continue;
+                if (node->Type != type) continue;
 
-            return (T*)node;
+                return (T*)node;
+            }
+
+            return null;
         }
 
-        return null;
-    }
-
-    public static nint SearchSimpleNodeByType(this AtkUldManager manager, NodeType type)
-    {
-        for (var i = 0; i < manager.NodeListCount; i++)
+        public nint SearchSimpleNodeByType(NodeType type)
         {
-            var node = manager.NodeList[i];
-            // 非 SimpleNode
-            if (node == null || (int)node->Type > 1000) continue;
-            if (node->Type != type) continue;
+            for (var i = 0; i < manager.NodeListCount; i++)
+            {
+                var node = manager.NodeList[i];
+                // 非 SimpleNode
+                if (node == null || (int)node->Type > 1000) continue;
+                if (node->Type != type) continue;
 
-            return (nint)node;
+                return (nint)node;
+            }
+
+            return nint.Zero;
         }
 
-        return nint.Zero;
-    }
-
-    public static List<nint> SearchComponentNodesByType(this AtkUldManager manager, ComponentType type)
-    {
-        var result = new List<nint>();
-        for (var i = 0; i < manager.NodeListCount; i++)
+        public List<nint> SearchComponentNodesByType(ComponentType type)
         {
-            var node = manager.NodeList[i];
-            // 非 ComponentNode
-            if (node == null || (int)node->Type < 1000) continue;
+            var result = new List<nint>();
+            for (var i = 0; i < manager.NodeListCount; i++)
+            {
+                var node = manager.NodeList[i];
+                // 非 ComponentNode
+                if (node == null || (int)node->Type < 1000) continue;
 
-            var componentNode = (AtkComponentNode*)node;
-            var componentInfo = componentNode->Component->UldManager;
-            var objectInfo    = (AtkUldComponentInfo*)componentInfo.Objects;
-            if (objectInfo == null || objectInfo->ComponentType != type) continue;
+                var componentNode = (AtkComponentNode*)node;
+                var componentInfo = componentNode->Component->UldManager;
+                var objectInfo    = (AtkUldComponentInfo*)componentInfo.Objects;
+                if (objectInfo == null || objectInfo->ComponentType != type) continue;
 
-            result.Add((nint)componentNode->Component);
+                result.Add((nint)componentNode->Component);
+            }
+
+            return result;
         }
 
-        return result;
-    }
-
-    public static T* SearchComponentNodeByType<T>(this AtkUldManager manager, ComponentType type) where T : unmanaged
-    {
-        for (var i = 0; i < manager.NodeListCount; i++)
+        public T* SearchComponentNodeByType<T>(ComponentType type) where T : unmanaged
         {
-            var node = manager.NodeList[i];
-            // 非 ComponentNode
-            if (node == null || (int)node->Type < 1000) continue;
+            for (var i = 0; i < manager.NodeListCount; i++)
+            {
+                var node = manager.NodeList[i];
+                // 非 ComponentNode
+                if (node == null || (int)node->Type < 1000) continue;
 
-            var componentNode = (AtkComponentNode*)node;
-            var componentInfo = componentNode->Component->UldManager;
-            var objectInfo    = (AtkUldComponentInfo*)componentInfo.Objects;
-            if (objectInfo == null || objectInfo->ComponentType != type) continue;
+                var componentNode = (AtkComponentNode*)node;
+                var componentInfo = componentNode->Component->UldManager;
+                var objectInfo    = (AtkUldComponentInfo*)componentInfo.Objects;
+                if (objectInfo == null || objectInfo->ComponentType != type) continue;
 
-            return (T*)componentNode->Component;
+                return (T*)componentNode->Component;
+            }
+
+            return null;
         }
 
-        return null;
-    }
-
-    public static nint SearchComponentNodeByType(this AtkUldManager manager, ComponentType type)
-    {
-        for (var i = 0; i < manager.NodeListCount; i++)
+        public nint SearchComponentNodeByType(ComponentType type)
         {
-            var node = manager.NodeList[i];
-            // 非 ComponentNode
-            if (node == null || (int)node->Type < 1000) continue;
+            for (var i = 0; i < manager.NodeListCount; i++)
+            {
+                var node = manager.NodeList[i];
+                // 非 ComponentNode
+                if (node == null || (int)node->Type < 1000) continue;
 
-            var componentNode = (AtkComponentNode*)node;
-            var componentInfo = componentNode->Component->UldManager;
-            var objectInfo    = (AtkUldComponentInfo*)componentInfo.Objects;
-            if (objectInfo == null || objectInfo->ComponentType != type) continue;
+                var componentNode = (AtkComponentNode*)node;
+                var componentInfo = componentNode->Component->UldManager;
+                var objectInfo    = (AtkUldComponentInfo*)componentInfo.Objects;
+                if (objectInfo == null || objectInfo->ComponentType != type) continue;
 
-            return (nint)componentNode->Component;
+                return (nint)componentNode->Component;
+            }
+
+            return nint.Zero;
         }
-
-        return nint.Zero;
     }
 
     public static AtkUnitBase* ToAtkUnitBase(this nint ptr) =>
@@ -159,5 +164,19 @@ public static unsafe class AtkExtension
         var evt    = btnRes.AtkEventManager.Event;
 
         addon->ReceiveEvent(evt->State.EventType, (int)evt->Param, btnRes.AtkEventManager.Event);
+    }
+
+    extension(AtkEventData data)
+    {
+        public bool    IsLeftClick   => data.MouseData.ButtonId is 0;
+        public bool    IsRightClick  => data.MouseData.ButtonId is 1;
+        public bool    IsNoModifier  => data.MouseData.Modifier is 0;
+        public bool    IsAltHeld     => data.MouseData.Modifier.HasFlag(AtkEventData.AtkMouseData.ModifierFlag.Alt);
+        public bool    IsControlHeld => data.MouseData.Modifier.HasFlag(AtkEventData.AtkMouseData.ModifierFlag.Ctrl);
+        public bool    IsShiftHeld   => data.MouseData.Modifier.HasFlag(AtkEventData.AtkMouseData.ModifierFlag.Shift);
+        public bool    IsDragging    => data.MouseData.Modifier.HasFlag(AtkEventData.AtkMouseData.ModifierFlag.Dragging);
+        public bool    IsScrollUp    => data.MouseData.WheelDirection is 1;
+        public bool    IsScrollDown  => data.MouseData.WheelDirection is -1;
+        public Vector2 MousePosition => new(data.MouseData.PosX, data.MouseData.PosY);
     }
 }
