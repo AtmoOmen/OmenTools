@@ -223,8 +223,7 @@ public class LocalPlayerState : OmenServiceBase
             return true;
         }
 
-        if (TryGetFirstInventoryItem(
-                PlayerArmoryInventories,
+        if (PlayerArmoryInventories.TryGetFirstItem(
                 x => LuminaGetter.TryGetRow(x.GetBaseItemId(), out Item mainHandItemData) &&
                      mainHandItemData.ClassJobCategory.Value.IsClassJobIn(classJob)       &&
                      mainHandItemData.LevelEquip <= GetClassJobLevel(classJob)            &&
@@ -234,8 +233,7 @@ public class LocalPlayerState : OmenServiceBase
             InventoryManager.Instance()->MoveItemSlot(mainHandItem->GetInventoryType(), mainHandItem->GetSlot(), InventoryType.EquippedItems, 0, true);
 
             if (jobData.DohDolJobIndex > -1 &&
-                TryGetFirstInventoryItem(
-                    PlayerArmoryInventories,
+                PlayerArmoryInventories.TryGetFirstItem(
                     x => LuminaGetter.TryGetRow(x.GetBaseItemId(), out Item offHandItemData) &&
                          offHandItemData.ClassJobCategory.Value.IsClassJobIn(classJob)       &&
                          offHandItemData.LevelEquip <= GetClassJobLevel(classJob)            &&
