@@ -26,7 +26,10 @@ public class InstancesManager : OmenServiceBase
         TaskHelper ??= new() { TimeLimitMS = 15_000 };
 
         ExecuteCommandManager.RegPost(OnPostExecuteCommand);
-        EnqueueInstancesCountRetrieve(GameState.TerritoryType);
+        GameState.Login += OnLogin;
+
+        if (DService.ClientState.IsLoggedIn)
+            EnqueueInstancesCountRetrieve(GameState.TerritoryType);
     }
 
     public static int GetInstancesCount(uint zoneID = 0)
@@ -34,8 +37,8 @@ public class InstancesManager : OmenServiceBase
         if (zoneID == 0) 
             zoneID = GameState.TerritoryType;
 
-        ServiceConfig.InstancesAmount.TryAdd(CurrentVersion, []);
-        ServiceConfig.Save(DService.GetOmenService<InstancesManager>());
+        if (ServiceConfig.InstancesAmount.TryAdd(CurrentVersion, []))
+            ServiceConfig.Save(DService.GetOmenService<InstancesManager>());
 
         return ServiceConfig.InstancesAmount[CurrentVersion].GetValueOrDefault(zoneID, 0);
     }
@@ -65,11 +68,13 @@ public class InstancesManager : OmenServiceBase
     {
         if (command != ExecuteCommandFlag.Teleport) return;
 
-        var data = DService.AetheryteList.FirstOrDefault(x => x.AetheryteID == param1 && x.SubIndex == param3);
-        if (data == null || !UIState.Instance()->IsAetheryteUnlocked(data.AetheryteID)) return;
+        if (!LuminaGetter.TryGetRow(param1, out Aetheryte data) || !UIState.Instance()->IsAetheryteUnlocked(data.RowId)) return;
 
-        EnqueueInstancesCountRetrieve(data.TerritoryID);
+        EnqueueInstancesCountRetrieve(data.Territory.RowId);
     }
+    
+    private void OnLogin() => 
+        EnqueueInstancesCountRetrieve(GameState.TerritoryType);
 
     private unsafe void EnqueueInstancesCountRetrieve(uint zoneID)
     {
@@ -116,7 +121,11 @@ public class InstancesManager : OmenServiceBase
     internal override void Uninit()
     {
         ExecuteCommandManager.Unreg(OnPostExecuteCommand);
+        GameState.Login -= OnLogin;
+        
         TaskHelper?.Abort();
+        TaskHelper?.Dispose();
+        TaskHelper = null;
     }
 
     private class Config : OmenServiceConfiguration
