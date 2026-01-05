@@ -1,4 +1,6 @@
-﻿using Dalamud.Memory;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
@@ -6,6 +8,7 @@ namespace OmenTools.Helpers;
 
 public static unsafe partial class HelpersOm
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetAddonByName(string addonName, out AtkUnitBase* addonPtr)
     {
         var addon = DService.Gui.GetAddonByName(addonName).Address;
@@ -18,7 +21,8 @@ public static unsafe partial class HelpersOm
         addonPtr = (AtkUnitBase*)addon;
         return true;
     }
-    
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetAddonByName<T>(string addonName, out T* addonPtr) where T : unmanaged
     {
         var addon = DService.Gui.GetAddonByName(addonName).Address;
@@ -32,6 +36,7 @@ public static unsafe partial class HelpersOm
         return true;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T* GetAddonByName<T>(string addonName) where T : unmanaged
     {
         var a = DService.Gui.GetAddonByName(addonName).Address;
@@ -40,116 +45,226 @@ public static unsafe partial class HelpersOm
         return (T*)a;
     }
 
-    public static AtkUnitBase* GetAddonByName(string name) => 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static AtkUnitBase* GetAddonByName(string name) =>
         GetAddonByName<AtkUnitBase>(name);
 
-    public static bool TryScanSelectStringText(AtkUnitBase* addon, string text, out int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryScanSelectStringText(string text, out int index)
     {
         index = -1;
-        if (addon == null) return false;
+        if (SelectString == null) return false;
 
-        var entryCount = ((AddonSelectString*)addon)->PopupMenu.PopupMenu.EntryCount;
+        var entryCount = ((AddonSelectString*)SelectString)->PopupMenu.PopupMenu.EntryCount;
+        var atkValues  = ((AddonSelectString*)SelectString)->AtkValues;
+
+        Span<char> buffer     = stackalloc char[512];
+        var        searchSpan = text.AsSpan();
+
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String.Value);
-            if (!currentString.Contains(text, StringComparison.OrdinalIgnoreCase)) continue;
+            ref var atkValue = ref atkValues[i + 7];
+            if (atkValue.Type == 0 || !atkValue.String.HasValue) continue;
 
-            index = i;
-            return true;
+            var utf8Span = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(atkValue.String);
+            if (utf8Span.IsEmpty) continue;
+
+            var charCount = Encoding.UTF8.GetCharCount(utf8Span);
+            var slice     = charCount <= buffer.Length ? buffer[..charCount] : new char[charCount];
+
+            Encoding.UTF8.GetChars(utf8Span, slice);
+
+            if (slice.Contains(searchSpan, StringComparison.OrdinalIgnoreCase))
+            {
+                index = i;
+                return true;
+            }
         }
 
         return false;
     }
 
-    public static bool TryScanSelectStringText(AtkUnitBase* addon, IReadOnlyList<string> texts, out int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryScanSelectStringText(IReadOnlyList<string> texts, out int index)
     {
         index = -1;
-        if (addon == null) return false;
+        if (SelectString == null) return false;
 
-        var entryCount = ((AddonSelectString*)addon)->PopupMenu.PopupMenu.EntryCount;
+        var entryCount = ((AddonSelectString*)SelectString)->PopupMenu.PopupMenu.EntryCount;
+        var atkValues  = ((AddonSelectString*)SelectString)->AtkValues;
+
+        Span<char> buffer = stackalloc char[512];
+
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[i + 7].String.Value);
-            if (!texts.Any(x => currentString.Contains(x, StringComparison.OrdinalIgnoreCase))) continue;
+            ref var atkValue = ref atkValues[i + 7];
+            if (atkValue.Type == 0 || !atkValue.String.HasValue) continue;
 
-            index = i;
-            return true;
+            var utf8Span = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(atkValue.String);
+            if (utf8Span.IsEmpty) continue;
+
+            var charCount = Encoding.UTF8.GetCharCount(utf8Span);
+            var slice     = charCount <= buffer.Length ? buffer[..charCount] : new char[charCount];
+
+            Encoding.UTF8.GetChars(utf8Span, slice);
+
+            var count = texts.Count;
+            for (var j = 0; j < count; j++)
+            {
+                if (slice.Contains(texts[j].AsSpan(), StringComparison.OrdinalIgnoreCase))
+                {
+                    index = i;
+                    return true;
+                }
+            }
         }
 
         return false;
     }
 
-    public static bool TryScanSelectIconStringText(AtkUnitBase* addon, string text, out int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryScanSelectIconStringText(string text, out int index)
     {
         index = -1;
-        if (addon == null) return false;
+        if (SelectIconString == null) return false;
 
-        var entryCount = ((AddonSelectIconString*)addon)->PopupMenu.PopupMenu.EntryCount;
+        var entryCount = ((AddonSelectIconString*)SelectIconString)->PopupMenu.PopupMenu.EntryCount;
+        var atkValues  = ((AddonSelectIconString*)SelectIconString)->AtkValues;
+
+        Span<char> buffer     = stackalloc char[512];
+        var        searchSpan = text.AsSpan();
+
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[(i * 3) + 7].String.Value);
-            if (!currentString.Contains(text, StringComparison.OrdinalIgnoreCase)) continue;
+            ref var atkValue = ref atkValues[(i * 3) + 7];
+            if (atkValue.Type == 0 || !atkValue.String.HasValue) continue;
 
-            index = i;
-            return true;
+            var utf8Span = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(atkValue.String);
+            if (utf8Span.IsEmpty) continue;
+
+            var charCount = Encoding.UTF8.GetCharCount(utf8Span);
+            var slice     = charCount <= buffer.Length ? buffer[..charCount] : new char[charCount];
+
+            Encoding.UTF8.GetChars(utf8Span, slice);
+
+            if (slice.Contains(searchSpan, StringComparison.OrdinalIgnoreCase))
+            {
+                index = i;
+                return true;
+            }
         }
 
         return false;
     }
 
-    public static bool TryScanSelectIconStringText(AtkUnitBase* addon, IReadOnlyList<string> texts, out int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryScanSelectIconStringText(IReadOnlyList<string> texts, out int index)
     {
         index = -1;
-        if (addon == null) return false;
+        if (SelectIconString == null) return false;
 
-        var entryCount = ((AddonSelectIconString*)addon)->PopupMenu.PopupMenu.EntryCount;
+        var entryCount = ((AddonSelectIconString*)SelectIconString)->PopupMenu.PopupMenu.EntryCount;
+        var atkValues  = ((AddonSelectIconString*)SelectIconString)->AtkValues;
+
+        Span<char> buffer = stackalloc char[512];
+
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = MemoryHelper.ReadStringNullTerminated((nint)addon->AtkValues[(i * 3) + 7].String.Value);
-            if (!texts.Any(x => currentString.Contains(x, StringComparison.OrdinalIgnoreCase))) continue;
+            ref var atkValue = ref atkValues[(i * 3) + 7];
+            if (atkValue.Type == 0 || !atkValue.String.HasValue) continue;
 
-            index = i;
-            return true;
+            var utf8Span = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(atkValue.String);
+            if (utf8Span.IsEmpty) continue;
+
+            var charCount = Encoding.UTF8.GetCharCount(utf8Span);
+            var slice     = charCount <= buffer.Length ? buffer[..charCount] : new char[charCount];
+
+            Encoding.UTF8.GetChars(utf8Span, slice);
+
+            var count = texts.Count;
+            for (var j = 0; j < count; j++)
+            {
+                if (slice.Contains(texts[j].AsSpan(), StringComparison.OrdinalIgnoreCase))
+                {
+                    index = i;
+                    return true;
+                }
+            }
         }
 
         return false;
     }
 
-    public static bool TryScanContextMenuText(AtkUnitBase* addon, string text, out int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryScanContextMenuText(string text, out int index)
     {
         index = -1;
-        if (addon == null) return false;
+        if (ContextMenuXIV == null) return false;
 
-        var entryCount = addon->AtkValues[0].UInt;
+        var atkValues  = ((AddonContextMenu*)ContextMenuXIV)->AtkValues;
+        var entryCount = atkValues[0].UInt;
         if (entryCount == 0) return false;
 
+        Span<char> buffer     = stackalloc char[512];
+        var        searchSpan = text.AsSpan();
+
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = addon->AtkValues[i + 8].String.ToString();
-            if (!currentString.Contains(text, StringComparison.OrdinalIgnoreCase)) continue;
+            ref var atkValue = ref atkValues[i + 8];
+            if (atkValue.Type == 0 || !atkValue.String.HasValue) continue;
 
-            index = i;
-            return true;
+            var utf8Span = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(atkValue.String);
+            if (utf8Span.IsEmpty) continue;
+
+            var charCount = Encoding.UTF8.GetCharCount(utf8Span);
+            var slice     = charCount <= buffer.Length ? buffer[..charCount] : new char[charCount];
+
+            Encoding.UTF8.GetChars(utf8Span, slice);
+
+            if (slice.Contains(searchSpan, StringComparison.OrdinalIgnoreCase))
+            {
+                index = i;
+                return true;
+            }
         }
 
         return false;
     }
 
-    public static bool TryScanContextMenuText(AtkUnitBase* addon, IReadOnlyList<string> texts, out int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryScanContextMenuText(IReadOnlyList<string> texts, out int index)
     {
         index = -1;
-        if (addon == null) return false;
+        if (ContextMenuXIV == null) return false;
 
-        var entryCount = addon->AtkValues[0].UInt;
+        var atkValues  = ((AddonContextMenu*)ContextMenuXIV)->AtkValues;
+        var entryCount = atkValues[0].UInt;
         if (entryCount == 0) return false;
+
+        Span<char> buffer = stackalloc char[512];
 
         for (var i = 0; i < entryCount; i++)
         {
-            var currentString = addon->AtkValues[i + 8].String.ToString();
-            if (!texts.Any(x => currentString.Contains(x, StringComparison.OrdinalIgnoreCase))) continue;
+            ref var atkValue = ref atkValues[i + 8];
+            if (atkValue.Type == 0 || !atkValue.String.HasValue) continue;
 
-            index = i;
-            return true;
+            var utf8Span = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(atkValue.String);
+            if (utf8Span.IsEmpty) continue;
+
+            var charCount = Encoding.UTF8.GetCharCount(utf8Span);
+            var slice     = charCount <= buffer.Length ? buffer[..charCount] : new char[charCount];
+
+            Encoding.UTF8.GetChars(utf8Span, slice);
+
+            var count = texts.Count;
+            for (var j = 0; j < count; j++)
+            {
+                if (slice.Contains(texts[j].AsSpan(), StringComparison.OrdinalIgnoreCase))
+                {
+                    index = i;
+                    return true;
+                }
+            }
         }
 
         return false;

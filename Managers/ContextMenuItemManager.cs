@@ -55,7 +55,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         if (addon == null || !addon->IsAddonAndNodesReady()) return null;
 
         var searchText = LuminaWrapper.GetAddonText(11900);
-        return TryScanContextMenuText(addon, searchText, out _) ? LastPrismBoxItem : null;
+        return TryScanContextMenuText(searchText, out _) ? LastPrismBoxItem : null;
     }
 
     #endregion

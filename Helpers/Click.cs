@@ -82,7 +82,7 @@ public static unsafe partial class HelpersOm
     public static bool ClickContextMenu(IReadOnlyList<string> text)
     {
         if (!ContextMenuXIV->IsAddonAndNodesReady()) return false;
-        if (!TryScanContextMenuText(ContextMenuXIV, text, out var index)) return false;
+        if (!TryScanContextMenuText(text, out var index)) return false;
 
         return ClickContextMenu(index);
     }
@@ -90,7 +90,7 @@ public static unsafe partial class HelpersOm
     public static bool ClickContextMenu(string text)
     {
         if (!ContextMenuXIV->IsAddonAndNodesReady()) return false;
-        if (!TryScanContextMenuText(ContextMenuXIV, text, out var index)) return false;
+        if (!TryScanContextMenuText(text, out var index)) return false;
 
         return ClickContextMenu(index);
     }
@@ -106,7 +106,7 @@ public static unsafe partial class HelpersOm
     public static bool ClickSelectString(IReadOnlyList<string> text)
     {
         if (!SelectString->IsAddonAndNodesReady()) return false;
-        if (!TryScanSelectStringText(SelectString, text, out var index)) return false;
+        if (!TryScanSelectStringText(text, out var index)) return false;
 
         return ClickSelectString(index);
     }
@@ -114,7 +114,7 @@ public static unsafe partial class HelpersOm
     public static bool ClickSelectString(string text)
     {
         if (!SelectString->IsAddonAndNodesReady()) return false;
-        if (!TryScanSelectStringText(SelectString, text, out var index)) return false;
+        if (!TryScanSelectStringText(text, out var index)) return false;
 
         return ClickSelectString(index);
     }
@@ -130,7 +130,7 @@ public static unsafe partial class HelpersOm
     public static bool ClickSelectIconString(IReadOnlyList<string> text)
     {
         if (!SelectIconString->IsAddonAndNodesReady()) return false;
-        if (!TryScanSelectIconStringText(SelectIconString, text, out var index)) return false;
+        if (!TryScanSelectIconStringText(text, out var index)) return false;
 
         SelectIconString->Callback(index);
         return true;
@@ -140,7 +140,7 @@ public static unsafe partial class HelpersOm
     {
         if (!SelectIconString->IsAddonAndNodesReady()) return false;
 
-        if (!TryScanSelectIconStringText(SelectIconString, text, out var index)) return false;
+        if (!TryScanSelectIconStringText(text, out var index)) return false;
 
         SelectIconString->Callback(index);
         return true;
