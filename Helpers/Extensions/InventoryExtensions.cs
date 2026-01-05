@@ -95,7 +95,7 @@ public static unsafe class InventoryExtensions
             var agent = AgentInventoryContext.Instance();
             if (agent == null) return false;
             
-            agent->OpenForItemSlot(inventoryType, slot, 0, AgentInventory.GetActiveAddonID());
+            agent->OpenForItemSlot(inventoryType, slot, 0, AgentInventory.Instance()->GetActiveAddonID());
             return true;
         }
         
@@ -110,7 +110,7 @@ public static unsafe class InventoryExtensions
             new List<InventoryType> { inventoryType }.TryGetFirstItem(predicateFunc, out itemResult);
     }
 
-    extension(InventoryItem item)
+    extension(scoped in InventoryItem item)
     {
         public bool OpenContext() => 
             item.Container.OpenSlotContext((ushort)item.Slot);

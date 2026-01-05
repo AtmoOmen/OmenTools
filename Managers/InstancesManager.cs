@@ -2,6 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.Sheets;
 using OmenTools.Abstracts;
 
@@ -53,7 +54,7 @@ public class InstancesManager : OmenServiceBase
 
             foreach (var obj in eve.Item2.Value->EventObjects)
             {
-                if (obj.Value->NameString == LuminaGetter.GetRow<Aetheryte>(0)?.Singular.ExtractText())
+                if (obj.Value->NameString == LuminaGetter.GetRow<Aetheryte>(0)?.Singular.ToString())
                 {
                     eventID = eve.Item2.Value->Info.EventId;
                     return true;
@@ -87,8 +88,8 @@ public class InstancesManager : OmenServiceBase
 
         TaskHelper.Abort();
 
-        TaskHelper.Enqueue(() => DService.ClientState.TerritoryType == zoneID);
-        TaskHelper.Enqueue(() => !BetweenAreas && DService.ObjectTable.LocalPlayer != null && IsScreenReady());
+        TaskHelper.Enqueue(() => GameState.TerritoryType == zoneID);
+        TaskHelper.Enqueue(() => !BetweenAreas && DService.ObjectTable.LocalPlayer != null && UIModule.IsScreenReady());
         TaskHelper.Enqueue(() =>
         {
             if (!IsInstancedArea)
@@ -105,7 +106,7 @@ public class InstancesManager : OmenServiceBase
 
         TaskHelper.Enqueue(() =>
         {
-            if (!IsAddonAndNodesReady(SelectString)) return false;
+            if (!SelectString->IsAddonAndNodesReady()) return false;
             
             var currentInstanceAmount = *InstanceAmountSig.GetStatic<int>();
             if (currentInstanceAmount > 12) return true;

@@ -16,4 +16,27 @@ public static class HookExtensions
             where TVTable : unmanaged => 
             hook.HookFromAddress(GetVFuncByName(vTable, name), detour);
     }
+    
+    extension<T>(Hook<T>? hook) where T : Delegate
+    {
+        public void Toggle(bool? isEnabled = null)
+        {
+            if (hook == null || hook.IsDisposed) return;
+
+            if (isEnabled == null)
+            {
+                if (hook.IsEnabled) 
+                    hook.Disable();
+                else 
+                    hook.Enable();
+            }
+            else
+            {
+                if (isEnabled.Value) 
+                    hook.Enable();
+                else 
+                    hook.Disable();
+            }
+        }
+    }
 }

@@ -88,8 +88,8 @@ public static partial class HelpersOm
             return false;
         }
 
-        SendMessage(h, WindowMessage.WM_KEYDOWN, key, 0);
-        SendMessage(h, WindowMessage.WM_KEYUP, key, 0);
+        SendMessage(h, WindowMessage.WmKeydown, key, 0);
+        SendMessage(h, WindowMessage.WmKeyup, key, 0);
         return true;
     }
 
@@ -107,16 +107,16 @@ public static partial class HelpersOm
             case 1 | 4:
             {
                 var wparam = MAKEWPARAM(0, 0x0001);
-                SendMessage(h, WindowMessage.WM_XBUTTONDOWN, wparam, 0);
-                SendMessage(h, WindowMessage.WM_XBUTTONUP, wparam, 0);
+                SendMessage(h, WindowMessage.WmXbuttondown, wparam, 0);
+                SendMessage(h, WindowMessage.WmXbuttonup, wparam, 0);
                 break;
             }
             // XButton2
             case 2 | 4:
             {
                 var wparam = MAKEWPARAM(0, 0x0002);
-                SendMessage(h, WindowMessage.WM_XBUTTONDOWN, wparam, 0);
-                SendMessage(h, WindowMessage.WM_XBUTTONUP, wparam, 0);
+                SendMessage(h, WindowMessage.WmXbuttondown, wparam, 0);
+                SendMessage(h, WindowMessage.WmXbuttonup, wparam, 0);
                 break;
             }
             default:
@@ -137,7 +137,7 @@ public static partial class HelpersOm
             return;
         }
 
-        SendMessage(h, WindowMessage.WM_KEYDOWN, key, 0);
+        SendMessage(h, WindowMessage.WmKeydown, key, 0);
     }
 
     public static void SendKeyUp(int key)
@@ -148,7 +148,7 @@ public static partial class HelpersOm
             return;
         }
 
-        SendMessage(h, WindowMessage.WM_KEYUP, key, 0);
+        SendMessage(h, WindowMessage.WmKeyup, key, 0);
     }
 
     public static async Task<bool> SendKeypressLongPressAsync(Keys key, int durationMilliseconds)
@@ -159,20 +159,19 @@ public static partial class HelpersOm
             return false;
         }
 
-        SendMessage(h, WindowMessage.WM_KEYDOWN, (int)key, 0);
+        SendMessage(h, WindowMessage.WmKeydown, (int)key, 0);
         await Task.Delay(durationMilliseconds);
-        SendMessage(h, WindowMessage.WM_KEYUP, (int)key, 0);
+        SendMessage(h, WindowMessage.WmKeyup, (int)key, 0);
         return true;
     }
-
-
-    public static int MAKEWPARAM(int l, int h) => (l & 0xFFFF) | (h << 16);
-}
-
-public enum WindowMessage : uint
-{
-    WM_KEYDOWN     = 0x0100,
-    WM_KEYUP       = 0x0101,
-    WM_XBUTTONDOWN = 0x020B,
-    WM_XBUTTONUP   = 0x020C
+    
+    private static int MAKEWPARAM(int l, int h) => (l & 0xFFFF) | (h << 16);
+    
+    private enum WindowMessage : uint
+    {
+        WmKeydown     = 0x0100,
+        WmKeyup       = 0x0101,
+        WmXbuttondown = 0x020B,
+        WmXbuttonup   = 0x020C
+    }
 }

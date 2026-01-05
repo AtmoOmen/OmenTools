@@ -310,7 +310,7 @@ public class LocalPlayerState : OmenServiceBase
         if (Object == null)
             return float.MaxValue;
         
-        return Vector2.Distance(Object.Position.ToVector2(), target);
+        return Vector2.Distance(VectorExtensions.ToVector2(Object.Position), target);
     }
     
     public static float DistanceToObject2D(IGameObject? target, bool ignoreRadius = true)
@@ -321,16 +321,16 @@ public class LocalPlayerState : OmenServiceBase
         // 考虑在里面
         if (!ignoreRadius)
         {
-            if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
+            if (DistanceTo2D(VectorExtensions.ToVector2(target.Position)) <= target.HitboxRadius)
                 return 0f;
             
             if (!(GetNearestPointToObject(target) is var nearestPoint) || nearestPoint == Vector3.Zero)
                 return 0f;
             
-            return DistanceTo2D(nearestPoint.ToVector2());
+            return DistanceTo2D(VectorExtensions.ToVector2(nearestPoint));
         }
 
-        return DistanceTo2D(target.Position.ToVector2());
+        return DistanceTo2D(VectorExtensions.ToVector2(target.Position));
     }
     
     public static float DistanceToObject3D(IGameObject? target, bool ignoreRadius = true)
@@ -341,7 +341,7 @@ public class LocalPlayerState : OmenServiceBase
         // 考虑在里面
         if (!ignoreRadius)
         {
-            if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
+            if (DistanceTo2D(VectorExtensions.ToVector2(target.Position)) <= target.HitboxRadius)
                 return 0f;
             
             if (!(GetNearestPointToObject(target) is var nearestPoint) || nearestPoint == Vector3.Zero)
@@ -359,7 +359,7 @@ public class LocalPlayerState : OmenServiceBase
             return Vector3.One;
         
         // 现在就在里面
-        if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
+        if (DistanceTo2D(VectorExtensions.ToVector2(target.Position)) <= target.HitboxRadius)
             return Object.Position;
 
         return target.Position + (Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius);

@@ -11,7 +11,7 @@ public readonly struct SeStringParameter
     private readonly ReadOnlySeString str;
 
     public bool             IsString    { get; }
-    public uint             UIntValue   => IsString ? uint.TryParse(str.ExtractText(), out var value) ? value : 0 : num;
+    public uint             UIntValue   => IsString ? uint.TryParse(str.ToString(), out var value) ? value : 0 : num;
     public ReadOnlySeString StringValue => IsString ? str : new ReadOnlySeString(num.ToString());
 
     public SeStringParameter(uint value) => num = value;

@@ -1,14 +1,15 @@
 ﻿using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Infos;
 
-public sealed unsafe class EventData : IDisposable
+public sealed unsafe class ManagedAtkEvent : IDisposable
 {
     private readonly EventDataSafeHandle handle;
 
     private bool disposedValue;
 
-    private EventData()
+    private ManagedAtkEvent()
     {
         handle = new EventDataSafeHandle();
         Data   = (void**)handle.DangerousGetHandle();
@@ -21,10 +22,12 @@ public sealed unsafe class EventData : IDisposable
     }
 
     public void** Data { get; }
+    
+    public AtkEvent* AtkEvent => (AtkEvent*)Data;
 
-    public static EventData ForNormalTarget(void* target, void* listener)
+    public static ManagedAtkEvent ForNormalTarget(void* target, void* listener)
     {
-        var data = new EventData();
+        var data = new ManagedAtkEvent();
         data.Data[1] = target;
         data.Data[2] = listener;
         return data;

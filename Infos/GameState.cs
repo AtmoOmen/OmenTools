@@ -4,7 +4,9 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using Lumina.Data;
 using Lumina.Excel.Sheets;
 using OmenTools.Abstracts;
 using Action = System.Action;
@@ -50,7 +52,7 @@ public unsafe class GameState : OmenServiceBase
         TaskHelper.Enqueue(() =>
         {
             var agentLobby = AgentLobby.Instance();
-            return agentLobby != null && agentLobby->IsLoggedIn && DService.ObjectTable.LocalPlayer != null && IsScreenReady();
+            return agentLobby != null && agentLobby->IsLoggedIn && DService.ObjectTable.LocalPlayer != null && UIModule.IsScreenReady();
         });
         
         TaskHelper.Enqueue(() =>
@@ -77,6 +79,17 @@ public unsafe class GameState : OmenServiceBase
     /// </summary>
     public static bool IsForeground => 
         !Framework.Instance()->WindowInactive;
+
+    /// <summary>
+    /// 当前游戏客户端语言
+    /// </summary>
+    public static Language ClientLanguge => 
+        clientLangaugeLazy.Value;
+    
+    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
+    // 因为枚举前面多定义了一个 None, 所以要 + 1
+    private static readonly Lazy<Language> clientLangaugeLazy =
+        new(() => (Language)(Framework.Instance()->ClientLanguage + 1));
     
     // 因为生命周期里不会变更, 因此只需要懒加载一次即可
     private static readonly Lazy<bool> isGLLazy = 
@@ -138,7 +151,7 @@ public unsafe class GameState : OmenServiceBase
         get
         {
             var agentLobby = AgentLobby.Instance();
-            return agentLobby != null && agentLobby->IsLoggedIn && DService.ObjectTable.LocalPlayer != null && IsScreenReady();
+            return agentLobby != null && agentLobby->IsLoggedIn && LocalPlayerState.Object != null && UIModule.IsScreenReady();
         }
     }
 

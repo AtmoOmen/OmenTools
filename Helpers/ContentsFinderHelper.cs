@@ -150,7 +150,7 @@ public class ContentsFinderHelper
             var jobName = string.Empty;
             try
             {
-                jobName = data.ClassJob.Value.Name.ExtractText() ?? string.Empty;
+                jobName = data.ClassJob.Value.Name.ToString() ?? string.Empty;
             }
             catch
             {
@@ -160,7 +160,7 @@ public class ContentsFinderHelper
             selectedMembersForLog.Add($"{member.Name} ({(string.IsNullOrWhiteSpace(jobName) ? "未知职业" : jobName)})");
         }
 
-        Debug($"[ContentsFinderHelper] 剧情辅助器（{content.Content.Value.Name.ExtractText()}）\n" +
+        Debug($"[ContentsFinderHelper] 剧情辅助器（{content.Content.Value.Name.ToString()}）\n" +
               $"成员: {string.Join(", ", selectedMembersForLog)}");
 
         var parameters = finalTeam

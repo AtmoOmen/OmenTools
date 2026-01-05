@@ -67,8 +67,8 @@ public class AchievementInfo(uint id, uint current, uint max)
     public uint     Max         { get; init; } = max;
     public DateTime LastUpdated { get; init; } = DateTime.Now;
     
-    public string              Name        => GetData().Name.ExtractText()        ?? string.Empty;
-    public string              Description => GetData().Description.ExtractText() ?? string.Empty;
+    public string              Name        => GetData().Name.ToString()        ?? string.Empty;
+    public string              Description => GetData().Description.ToString() ?? string.Empty;
     public uint                Icon        => GetData().Icon;
     public IDalamudTextureWrap IconTexture => DService.Texture.GetFromGameIcon(new(Icon)).GetWrapOrEmpty();
     public bool                IsFinished  => Current == Max;

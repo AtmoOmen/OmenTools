@@ -5,11 +5,11 @@ namespace OmenTools.Infos;
 
 public readonly struct Angle(float radians)
 {
-    public const float RadToDeg = 180      / MathF.PI;
-    public const float DegToRad = MathF.PI / 180;
+    public const float RAD_TO_DEG = 180      / MathF.PI;
+    public const float DEG_TO_RAD = MathF.PI / 180;
 
     public float Rad { get; init; } = radians;
-    public float Deg => Rad * RadToDeg;
+    public float Deg => Rad * RAD_TO_DEG;
 
     public static Angle FromDirection(Vector2 dir) => new(MathF.Atan2(dir.X, dir.Y));
 
@@ -30,13 +30,13 @@ public readonly struct Angle(float radians)
         if (dist.LengthSquared() <= precision * precision) 
             return false;
 
-        var dirH = Angle.FromDirectionXZ(dist);
+        var dirH = FromDirectionXZ(dist);
         var dirV = allowVertical
-                       ? Angle.FromDirection(new(dist.Y, new Vector2(dist.X, dist.Z).Length()))
+                       ? FromDirection(new(dist.Y, new Vector2(dist.X, dist.Z).Length()))
                        : default;
 
         var refDir = DService.GameConfig.UiControl.TryGetUInt("MoveMode", out var mode) && mode == 1
-                         ? new Angle(((CameraEx*)CameraManager.Instance()->GetActiveCamera())->DirH) + new Angle(180 * DegToRad)
+                         ? new Angle(((CameraEx*)CameraManager.Instance()->GetActiveCamera())->DirH) + new Angle(180 * DEG_TO_RAD)
                          : new Angle(localPlayer.Rotation);
 
         direction = (dirH - refDir, dirV);

@@ -7,7 +7,7 @@ namespace OmenTools.Helpers;
 
 public unsafe class PathFindHelper : IDisposable
 {
-    private const float DefaultPrecision = 0.01f;
+    private const float DEFAULT_PRECISION = 0.01f;
 
     public bool Enabled
     {
@@ -29,7 +29,7 @@ public unsafe class PathFindHelper : IDisposable
 
     public bool    IsAutoMove      { get; set; } = true;
     public Vector3 DesiredPosition { get; set; }
-    public float   Precision       { get; set; } = DefaultPrecision;
+    public float   Precision       { get; set; } = DEFAULT_PRECISION;
 
     private delegate bool RMIWalkIsInputEnabledDelegate(void* self);
 

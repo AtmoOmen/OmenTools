@@ -79,7 +79,7 @@ public static partial class HelpersOm
                     localPlugin = t;
                     context = type.GetField("loader", BindingAllFlags)
                                   ?.GetValue(t)
-                                  ?.GetFoP<AssemblyLoadContext>("context");
+                                  ?.GetFieldOrProperty<AssemblyLoadContext>("context");
                     return true;
                 }
             }
@@ -97,13 +97,13 @@ public static partial class HelpersOm
     public static bool HasRepo(string repoURL)
     {
         var conf = GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
-        var repoList = (System.Collections.IEnumerable)conf.GetFoP("ThirdRepoList");
+        var repoList = (System.Collections.IEnumerable)conf.GetFieldOrProperty("ThirdRepoList");
         
         if(repoList != null)
         {
             foreach (var r in repoList)
             {
-                if ((string)r.GetFoP("Url") == repoURL)
+                if ((string)r.GetFieldOrProperty("Url") == repoURL)
                     return true;
             }
         }
@@ -114,12 +114,12 @@ public static partial class HelpersOm
     public static void AddRepo(string repoURL, bool enabled)
     {
         var conf = GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
-        var repoList = (System.Collections.IEnumerable)conf.GetFoP("ThirdRepoList");
+        var repoList = (System.Collections.IEnumerable)conf.GetFieldOrProperty("ThirdRepoList");
         if(repoList != null)
         {
             foreach (var r in repoList)
             {
-                if ((string)r.GetFoP("Url") == repoURL)
+                if ((string)r.GetFieldOrProperty("Url") == repoURL)
                     return;
             }
         }
@@ -127,9 +127,9 @@ public static partial class HelpersOm
         var instance = Activator.CreateInstance(DService.PI.GetType().Assembly.GetType("Dalamud.Configuration.ThirdPartyRepoSettings")!);
         if (instance == null) return;
         
-        instance.SetFoP("Url", repoURL);
-        instance.SetFoP("IsEnabled", enabled);
-        conf.GetFoP<System.Collections.IList>("ThirdRepoList").Add(instance!);
+        instance.SetFieldOrProperty("Url", repoURL);
+        instance.SetFieldOrProperty("IsEnabled", enabled);
+        conf.GetFieldOrProperty<System.Collections.IList>("ThirdRepoList").Add(instance!);
     }
 
     public static async Task<bool> AddPlugin(string masterURL, string pluginInternalName)
@@ -137,7 +137,7 @@ public static partial class HelpersOm
         var plugins = await GetPluginMaster(masterURL);
         if (plugins == null || plugins.Count == 0) return false;
         
-        var pluginManifest = plugins.FirstOrDefault(x => (string)x.GetFoP("InternalName") == pluginInternalName);
+        var pluginManifest = plugins.FirstOrDefault(x => (string)x.GetFieldOrProperty("InternalName") == pluginInternalName);
         if (pluginManifest == null) return false;
 
         object pm = null;
@@ -163,8 +163,8 @@ public static partial class HelpersOm
             var installCall = pm.Call<Task>("InstallPluginAsync", [pluginManifest, false, PluginLoadReason.Installer, null]);
             await installCall;
 
-            var localPlugin = installCall.GetFoP("Result");
-            if ((bool?)localPlugin?.GetFoP("IsLoaded") ?? false) 
+            var localPlugin = installCall.GetFieldOrProperty("Result");
+            if ((bool?)localPlugin?.GetFieldOrProperty("IsLoaded") ?? false) 
                 return true;
         }
         catch

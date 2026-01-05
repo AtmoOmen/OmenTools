@@ -104,7 +104,7 @@ public unsafe class PlayerStatusManager : OmenServiceBase
         {
             if (Config.ShowGainStatusLog)
             {
-                var sourceName = sourceID == 0xE000_0000 ? "本地对象" : DService.ObjectTable.SearchByEntityID((uint)sourceID)?.Name.ExtractText() ?? "未知对象";
+                var sourceName = sourceID == 0xE000_0000 ? "本地对象" : DService.ObjectTable.SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
                 Debug(
                     $"[Player Status Manager] Gain Status\n"                                        +
                     $"玩家: {(*player)->NameString} ({(*player)->EntityId})\n"                        +
@@ -138,7 +138,7 @@ public unsafe class PlayerStatusManager : OmenServiceBase
         {
             if (Config.ShowLoseStatusLog)
             {
-                var sourceName = sourceID == 0xE000_0000 ? "本地对象" : DService.ObjectTable.SearchByEntityID((uint)sourceID)?.Name.ExtractText() ?? "未知对象";
+                var sourceName = sourceID == 0xE000_0000 ? "本地对象" : DService.ObjectTable.SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
                 Debug(
                     $"[Player Status Manager] Lose Status\n"                        +
                     $"玩家: {(*player)->NameString} ({(*player)->EntityId})\n"        +

@@ -14,7 +14,7 @@ public static unsafe class AgentExtensions
         }
     }
 
-    extension(ref AgentInterface agentInterface)
+    extension(scoped ref AgentInterface agentInterface)
     {
         public AtkValue* SendEvent(ulong eventKind, params object[] eventParams)
         {

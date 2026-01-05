@@ -138,7 +138,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
         
         knowledgeCrystal = DService.ObjectTable.FirstOrDefault(x => x is { ObjectKind: ObjectKind.EventObj, DataID: 2007457 } &&
                                                                     string.IsNullOrEmpty(x.Name.TextValue)                    &&
-                                                                    LocalPlayerState.DistanceTo2D(x.Position.ToVector2()) <= 3);
+                                                                    LocalPlayerState.DistanceTo2D(VectorExtensions.ToVector2(x.Position)) <= 3);
         return knowledgeCrystal != null;
     }
 
@@ -231,7 +231,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// 辅助职业名称
     /// </summary>
     public string Name =>
-        GetData().Name.ExtractText();
+        GetData().Name.ToString();
 
     public string UnlockTypeName =>
         UnlockType switch

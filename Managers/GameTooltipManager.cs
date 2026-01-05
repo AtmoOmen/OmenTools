@@ -251,7 +251,7 @@ public unsafe class GameTooltipManager : OmenServiceBase
             if (extraCondition != null && !extraCondition(modification))
                 continue;
 
-            if (currentText.ExtractText().Contains(modification.Text.ExtractText()))
+            if (currentText.ToString().Contains(modification.Text.ToString()))
                 continue;
 
             switch (modification.Mode)

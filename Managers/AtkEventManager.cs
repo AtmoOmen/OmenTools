@@ -14,9 +14,10 @@ internal unsafe class AtkEventManager : OmenServiceBase
     private static readonly ConcurrentDictionary<uint, AtkEventWrapper> EventHandlers      = [];
     private static readonly ConcurrentStack<uint>                       AvailableParamKeys = [];
     
-    private const  uint BaseParamKey = 0x53540000U;
-    private const  uint MaxHandlers  = 1000000;
-    private static uint NextParamKey = BaseParamKey - 1;
+    private const uint BASE_PARAM_KEY = 0x53540000U;
+    private const uint MAX_HANDLERS   = 1000000;
+    
+    private static uint NextParamKey = BASE_PARAM_KEY - 1;
     
     internal override void Init()
     {
@@ -59,7 +60,7 @@ internal unsafe class AtkEventManager : OmenServiceBase
         if (!AvailableParamKeys.TryPop(out var newParam))
         {
             newParam = Interlocked.Increment(ref NextParamKey);
-            if (newParam >= BaseParamKey + MaxHandlers)
+            if (newParam >= BASE_PARAM_KEY + MAX_HANDLERS)
             {
                 Interlocked.Decrement(ref NextParamKey);
                 throw new Exception("事件处理器过多 (≥ 100 万)");
@@ -97,9 +98,9 @@ public unsafe class AtkEventWrapper : IDisposable
     /// </summary>
     public uint ParamKey { get; }
     
-    private readonly List<(nint AddonPtr, nint NodePtr, AtkEventType Type)> RegisteredData = [];
+    private readonly List<(nint AddonPtr, nint NodePtr, AtkEventType Type)> registeredData = [];
 
-    private bool IsDisposed;
+    private bool isDisposed;
 
     public AtkEventWrapper(AtkEventActionDelegate action)
     {
@@ -109,12 +110,12 @@ public unsafe class AtkEventWrapper : IDisposable
     
     public void Dispose()
     {
-        if (IsDisposed) return;
-        IsDisposed = true;
+        if (isDisposed) return;
+        isDisposed = true;
         
-        if (RegisteredData is { Count: > 0 })
+        if (registeredData is { Count: > 0 })
         {
-            foreach (var (addonPtr, nodePtr, type) in RegisteredData)
+            foreach (var (addonPtr, nodePtr, type) in registeredData)
             {
                 var addon = (AtkUnitBase*)addonPtr;
                 var node  = (AtkResNode*)nodePtr;
@@ -130,10 +131,16 @@ public unsafe class AtkEventWrapper : IDisposable
     
     public void Add(AtkUnitBase* addon, AtkResNode* node, AtkEventType eventType)
     {
-        if (IsDisposed) return;
+        if (isDisposed) return;
         node->AddEvent(eventType, ParamKey, (AtkEventListener*)addon, node, true);
+        
+        registeredData.Add(((nint)addon, (nint)node, eventType));
     }
 
-    public void Remove(AtkUnitBase* addon, AtkResNode* node, AtkEventType eventType) => 
+    public void Remove(AtkUnitBase* addon, AtkResNode* node, AtkEventType eventType)
+    {
         node->RemoveEvent(eventType, ParamKey, (AtkEventListener*)addon, true);
+        
+        registeredData.Remove(((nint)addon, (nint)node, eventType));
+    }
 }

@@ -1,27 +1,22 @@
 ﻿using System.Numerics;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+using Dalamud.Utility.Numerics;
 
 namespace OmenTools.Infos;
 
-public class NodeState
+public readonly record struct NodeState(
+    Vector2 TopLeft,
+    Vector2 Size,
+    bool    Visible)
 {
-    public Vector2 Position;
-    public Vector2 Position2;
-    public Vector2 Size;
-    public bool    Visible;
+    public float   Height      { get; } = Size.Y;
+    public float   Width       { get; } = Size.X;
+    
+    public Vector2 Center      { get; } = TopLeft + (Size / 2);
+    
+    public Vector2 TopRight    { get; } = TopLeft + Size.WithY(0);
+    public Vector2 BottomLeft  { get; } = TopLeft + Size.WithX(0);
+    public Vector2 BottomRight { get; } = TopLeft + Size;
 
-    public static unsafe NodeState Get(AtkResNode* node)
-    {
-        var position = GetNodePosition(node);
-        var scale    = GetNodeScale(node);
-        var size     = new Vector2(node->Width, node->Height) * scale;
-
-        return new NodeState()
-        {
-            Position  = position,
-            Position2 = position + size,
-            Visible   = GetNodeVisible(node),
-            Size      = size,
-        };
-    }
+    public float X { get; } = TopLeft.X;
+    public float Y { get; } = TopLeft.Y;
 }

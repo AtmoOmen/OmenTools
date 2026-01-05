@@ -1,15 +1,16 @@
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Infos;
 
-public sealed unsafe class InputData : IDisposable
+public sealed unsafe class ManagedAtkInputData : IDisposable
 {
     private readonly InputDataSafeHandle handle;
 
     private bool disposedValue;
 
-    private InputData()
+    private ManagedAtkInputData()
     {
         handle = new InputDataSafeHandle();
         Data   = (void**)handle.DangerousGetHandle();
@@ -27,12 +28,14 @@ public sealed unsafe class InputData : IDisposable
     }
 
     public void** Data { get; }
+    
+    public AtkEventData* AtkEventData => (AtkEventData*)Data;
 
-    public static InputData Empty() => new();
+    public static ManagedAtkInputData Empty() => new();
 
-    public static InputData ForPopupMenu(PopupMenu* popupMenu, ushort index)
+    public static ManagedAtkInputData ForPopupMenu(PopupMenu* popupMenu, ushort index)
     {
-        var data = new InputData();
+        var data = new ManagedAtkInputData();
         data.Data[0] = popupMenu->List->ItemRendererList[index].AtkComponentListItemRenderer;
         data.Data[2] = (void*)(index | ((ulong)index << 48));
         return data;

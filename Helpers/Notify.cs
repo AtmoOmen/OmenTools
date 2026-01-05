@@ -11,9 +11,6 @@ public static partial class HelpersOm
 {
     public static ISharedImmediateTexture? NotificationIcon { get; set; }
     
-    private static unsafe bool IsWindowBackground => 
-        Framework.Instance()->WindowInactive;
-    
     public static unsafe void ContentHintBlue(string message, int hundredMS = 30) =>
         RaptureAtkModule.Instance()->ShowTextGimmickHint(message, RaptureAtkModule.TextGimmickHintStyle.Info, hundredMS);
 
@@ -33,7 +30,7 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (IsWindowBackground) 
+        if (!GameState.IsForeground) 
             TrayNotify.ShowBalloonTip(title ?? message, message);
     }
 
@@ -50,7 +47,7 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (IsWindowBackground) 
+        if (!GameState.IsForeground) 
             TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Warning);
     }
 
@@ -67,7 +64,7 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (IsWindowBackground) 
+        if (!GameState.IsForeground) 
             TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Error);
     }
 
@@ -84,7 +81,7 @@ public static partial class HelpersOm
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (IsWindowBackground) 
+        if (!GameState.IsForeground) 
             TrayNotify.ShowBalloonTip(title ?? message, message);
     }
 

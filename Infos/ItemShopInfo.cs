@@ -75,7 +75,7 @@ public class ItemShopInfo
         {
             if (addedAetheryte.Contains(territory.RowId)) continue;
 
-            var file = GetLgbFileFromBg(territory.Bg.ExtractText());
+            var file = GetLgbFileFromBg(territory.Bg.ToString());
             if (file == null) continue;
 
             ParseLgbFile(file, territory);
@@ -89,7 +89,7 @@ public class ItemShopInfo
                                                   return condition.ContentType.RowId is 26 or 29 or 16;
                                               }))
         {
-            var file = GetLgbFileFromBg(territory.Bg.ExtractText());
+            var file = GetLgbFileFromBg(territory.Bg.ToString());
             if (file == null) continue;
 
             ParseLgbFile(file, territory);
@@ -234,7 +234,7 @@ public class ItemShopInfo
             if (MatchEventHandlerType(npcData, EventHandlerType.SpecialShop))
             {
                 var specialShop = LuminaGetter.GetRowOrDefault<SpecialShop>(npcData);
-                AddSpecialItem(specialShop, npcBase, resident, shop: specialShop.Name.ExtractText());
+                AddSpecialItem(specialShop, npcBase, resident, shop: specialShop.Name.ToString());
                 continue;
             }
 
@@ -255,8 +255,8 @@ public class ItemShopInfo
                     AddItemGeneral(scriptArgs[2],
                                    LuminaWrapper.GetItemName(scriptArgs[2]),
                                    npcBase.RowId,
-                                   resident.Singular.ExtractText(),
-                                   customTalk.MainOption.ExtractText(),
+                                   resident.Singular.ToString(),
+                                   customTalk.MainOption.ToString(),
                                    [new(scriptArgs[4], 28)],
                                    NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
                                    ItemShopType.SpecialShop);
@@ -516,10 +516,10 @@ public class ItemShopInfo
                                                          .Where(i => i.Item.Value.RowId == item.RowId)
                                                          .Select(d => d.Description)
                                                          .First()
-                                                         .ExtractText();
+                                                         .ToString();
                 }
 
-                AddItemGeneral(item.RowId, item.Name.ExtractText(), npcBase.RowId, resident.Singular.ExtractText(), shop, costs,
+                AddItemGeneral(item.RowId, item.Name.ToString(), npcBase.RowId, resident.Singular.ToString(), shop, costs,
                                NPCIDToLocations.GetValueOrDefault(npcBase.RowId), shopType, achievementDescription);
             }
         }
@@ -534,10 +534,10 @@ public class ItemShopInfo
                 if (!LuminaGetter.TryGetSubRow(gilShop.RowId, out GilShopItem item, i)) continue;
 
                 AddItemGeneral(item.Item.Value.RowId,
-                               item.Item.Value.Name.ExtractText(),
+                               item.Item.Value.Name.ToString(),
                                npcBase.RowId,
-                               resident.Singular.ExtractText(),
-                               shop != null ? $"{shop}\n{gilShop.Name}" : gilShop.Name.ExtractText(),
+                               resident.Singular.ToString(),
+                               shop != null ? $"{shop}\n{gilShop.Name}" : gilShop.Name.ToString(),
                                [new(item.Item.Value.PriceMid, 1)],
                                NPCIDToLocations.GetValueOrDefault(npcBase.RowId), ItemShopType.GilShop);
             }
@@ -550,7 +550,7 @@ public class ItemShopInfo
 
     private static void AddGcShopItem(GCShop gcID, ENpcBase npcBase, ENpcResident resident)
     {
-        var seal = GrandCompanySeals.Find(i => i.Description.ExtractText().Contains($"{gcID.GrandCompany.Value.Name.ExtractText()}"));
+        var seal = GrandCompanySeals.Find(i => i.Description.ToString().Contains($"{gcID.GrandCompany.Value.Name.ToString()}"));
 
         foreach (var category in LuminaGetter.Get<GCScripShopCategory>().Where(i => i.GrandCompany.RowId == gcID.GrandCompany.RowId))
         {
@@ -564,9 +564,9 @@ public class ItemShopInfo
                     if (item.Value.SortKey == 0) break;
 
                     AddItemGeneral(item.Value.Item.Value.RowId,
-                                   item.Value.Item.Value.Name.ExtractText(),
+                                   item.Value.Item.Value.Name.ToString(),
                                    npcBase.RowId,
-                                   resident.Singular.ExtractText(),
+                                   resident.Singular.ToString(),
                                    null,
                                    [new(item.Value.CostGCSeals, seal.RowId)],
                                    NPCIDToLocations.GetValueOrDefault(npcBase.RowId), ItemShopType.GcShop);
@@ -590,8 +590,8 @@ public class ItemShopInfo
 
                     var specialShop = series.SpecialShop.Value;
                     var shop        = "";
-                    if (!string.IsNullOrEmpty(inclusionShop.Unknown0.ExtractText()))
-                        shop += $"{inclusionShop.Unknown0.ExtractText()}\n";
+                    if (!string.IsNullOrEmpty(inclusionShop.Unknown0.ToString()))
+                        shop += $"{inclusionShop.Unknown0.ToString()}\n";
                     shop += $"{category.Value.Name}\n{specialShop.Name}";
                     AddSpecialItem(specialShop, npcBase, resident, shop: shop);
                 }
@@ -611,9 +611,9 @@ public class ItemShopInfo
             var cost = t.Cost;
 
             AddItemGeneral(item.RowId,
-                           item.Name.ExtractText(),
+                           item.Name.ToString(),
                            npcBase.RowId,
-                           resident.Singular.ExtractText(),
+                           resident.Singular.ToString(),
                            null,
                            [new(cost, 102233)],
                            NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
@@ -659,7 +659,7 @@ public class ItemShopInfo
             {
                 var specialShop = LuminaGetter.GetRowOrDefault<SpecialShop>(data);
 
-                AddSpecialItem(specialShop, npcBase, resident, shop: $"{topicSelect.Name.ExtractText()}\n{specialShop.Name.ExtractText()}");
+                AddSpecialItem(specialShop, npcBase, resident, shop: $"{topicSelect.Name.ToString()}\n{specialShop.Name.ToString()}");
 
                 continue;
             }
@@ -667,7 +667,7 @@ public class ItemShopInfo
             if (MatchEventHandlerType(data, EventHandlerType.GilShop))
             {
                 var gilShop = LuminaGetter.GetRowOrDefault<GilShop>(data);
-                AddGilShopItem(gilShop, npcBase, resident, topicSelect.Name.ExtractText());
+                AddGilShopItem(gilShop, npcBase, resident, topicSelect.Name.ToString());
                 continue;
             }
 
@@ -681,7 +681,7 @@ public class ItemShopInfo
 
     private static void AddCollectablesShop(CollectablesShop shop, ENpcBase npcBase, ENpcResident resident)
     {
-        if (shop.Name.ExtractText() == string.Empty)
+        if (shop.Name.ToString() == string.Empty)
             return;
 
         foreach (var t in shop.ShopItems)
@@ -702,14 +702,14 @@ public class ItemShopInfo
                         continue;
 
                     var shopName = "";
-                    if (!string.IsNullOrEmpty(shop.Name.ExtractText()))
-                        shopName += $"{shop.Name.ExtractText()}\n";
-                    shopName += $"{exchangeItem.CollectablesShopItemGroup.Value.Name.ExtractText()}";
+                    if (!string.IsNullOrEmpty(shop.Name.ToString()))
+                        shopName += $"{shop.Name.ToString()}\n";
+                    shopName += $"{exchangeItem.CollectablesShopItemGroup.Value.Name.ToString()}";
 
                     AddItemGeneral(rewardItem.Item.Value.RowId,
-                                   rewardItem.Item.Value.Name.ExtractText(),
+                                   rewardItem.Item.Value.Name.ToString(),
                                    npcBase.RowId,
-                                   resident.Singular.ExtractText(),
+                                   resident.Singular.ToString(),
                                    shopName,
                                    [
                                        new(rewardItem.RewardLow, exchangeItem.Item.RowId, Collectablity: refine.LowCollectability),
@@ -749,9 +749,9 @@ public class ItemShopInfo
                 break;
 
             AddItemGeneral(rewardItem.RowId,
-                           rewardItem.Value.Name.ExtractText(),
+                           rewardItem.Value.Name.ToString(),
                            npcBase.RowId,
-                           resident.Singular.ExtractText(), string.Empty,
+                           resident.Singular.ToString(), string.Empty,
                            cost,
                            NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
                            ItemShopType.QuestReward);

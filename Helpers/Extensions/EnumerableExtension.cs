@@ -1,183 +1,94 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace OmenTools.Helpers;
 
 public static class EnumerableExtension
 {
-    public static TValue GetOrAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, Func<TKey, TValue> valueFactory)
+    #region IEnumerable<T>
+
+    extension<T>(IEnumerable<T> source)
     {
-        if (dictionary.TryGetValue(key, out var value)) return value;
-        value           = valueFactory(key);
-        dictionary[key] = value;
-        return value;
-    }
-
-    public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> items)
-    {
-        foreach (var item in items)
-            collection.Add(item);
-    }
-    
-    public static void AddRange<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, IEnumerable<KeyValuePair<TKey, TValue>> items)
-        where TKey : notnull
-    {
-        if (dictionary == null) 
-            throw new ArgumentNullException(nameof(dictionary));
-        if (items      == null) 
-            throw new ArgumentNullException(nameof(items));
-
-        foreach (var item in items)
-            dictionary.TryAdd(item.Key, item.Value);
-    }
-    
-    public static void AddRange<T>(this ConcurrentBag<T> bag, IEnumerable<T> items)
-    {
-        if (bag   == null) 
-            throw new ArgumentNullException(nameof(bag));
-        if (items == null) 
-            throw new ArgumentNullException(nameof(items));
-
-        foreach (var item in items)
-            bag.Add(item);
-    }
-
-    public static ConcurrentBag<T> ToConcurrentBag<T>(this IEnumerable<T> source)
-    {
-        if (source == null)
-            throw new ArgumentNullException(nameof(source));
-
-        return new ConcurrentBag<T>(source);
-    }
-
-    public static ConcurrentDictionary<TKey, TValue> ToConcurrentDictionary<TSource, TKey, TValue>(
-        this IEnumerable<TSource> source,
-        Func<TSource, TKey>       keySelector,
-        Func<TSource, TValue>     valueSelector) where TKey : notnull
-    {
-        if (source        == null) 
-            throw new ArgumentNullException(nameof(source));
-        if (keySelector   == null) 
-            throw new ArgumentNullException(nameof(keySelector));
-        if (valueSelector == null) 
-            throw new ArgumentNullException(nameof(valueSelector));
-
-        return new ConcurrentDictionary<TKey, TValue>(
-            source.ToDictionary(keySelector, valueSelector));
-    }
-
-    public static ConcurrentDictionary<TKey, TSource> ToConcurrentDictionary<TSource, TKey>(
-        this IEnumerable<TSource> source,
-        Func<TSource, TKey>       keySelector) where TKey : notnull =>
-        source.ToConcurrentDictionary(keySelector, item => item);
-
-    public static void ForEach<T>(this ConcurrentBag<T> bag, Action<T> action)
-    {
-        if (bag    == null) 
-            throw new ArgumentNullException(nameof(bag));
-        if (action == null) 
-            throw new ArgumentNullException(nameof(action));
-
-        foreach (var item in bag)
-            action(item);
-    }
-
-    public static void ForEach<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, Action<TKey, TValue> action) where TKey : notnull
-    {
-        if (dictionary == null) 
-            throw new ArgumentNullException(nameof(dictionary));
-        if (action     == null) 
-            throw new ArgumentNullException(nameof(action));
-
-        foreach (var kvp in dictionary)
-            action(kvp.Key, kvp.Value);
-    }
-
-    public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
-    {
-        if (source == null) 
-            throw new ArgumentNullException(nameof(source));
-        if (action == null) 
-            throw new ArgumentNullException(nameof(action));
-
-        foreach (var item in source)
-            action(item);
-    }
-
-    public static bool Toggle<T>(this HashSet<T> hashSet, T value)
-    {
-        if (!hashSet.Add(value))
+        public ConcurrentBag<T> ToConcurrentBag()
         {
-            hashSet.Remove(value);
-            return false;
+            if (source == null) 
+                throw new ArgumentNullException(nameof(source));
+            return new ConcurrentBag<T>(source);
         }
 
-        return true;
-    }
-
-    public static bool Toggle<T>(this List<T> list, T value)
-    {
-        if (list.Contains(value))
+        public ConcurrentDictionary<TKey, TValue> ToConcurrentDictionary<TKey, TValue>(
+            Func<T, TKey>   keySelector,
+            Func<T, TValue> valueSelector) where TKey : notnull
         {
-            list.RemoveAll(x => x != null && x.Equals(value));
-            return false;
+            if (source        == null) 
+                throw new ArgumentNullException(nameof(source));
+            if (keySelector   == null) 
+                throw new ArgumentNullException(nameof(keySelector));
+            if (valueSelector == null) 
+                throw new ArgumentNullException(nameof(valueSelector));
+
+            return new ConcurrentDictionary<TKey, TValue>(source.ToDictionary(keySelector, valueSelector));
         }
 
-        list.Add(value);
-        return true;
-    }
+        public ConcurrentDictionary<TKey, T> ToConcurrentDictionary<TKey>(Func<T, TKey> keySelector) where TKey : notnull =>
+            source.ToConcurrentDictionary(keySelector, item => item);
 
-    public static T FirstOr0<T>(this IEnumerable<T> collection, Func<T, bool> predicate)
-    {
-        var enumerable = collection as T[] ?? collection.ToArray();
-        foreach (var x in enumerable)
+        public void ForEach(Action<T> action)
         {
-            if (predicate(x))
-                return x;
+            if (source == null) 
+                throw new ArgumentNullException(nameof(source));
+            if (action == null) 
+                throw new ArgumentNullException(nameof(action));
+
+            foreach (var item in source)
+                action(item);
         }
 
-        return enumerable.First();
-    }
-
-    public static IEnumerable<R> SelectMulti<T, R>(this IEnumerable<T> values, params Func<T, R>[] funcs)
-        => from v in values from x in funcs select x(v);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ContainsAll<T>(this IEnumerable<T> source, IEnumerable<T> values)
-        => values.All(source.Contains);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ContainsAny<T>(this IEnumerable<T> obj, params T[] values)
-    {
-        var enumerable = obj as T[] ?? obj.ToArray();
-        return values.Any(x => enumerable.Contains(x));
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool ContainsAny<T>(this IEnumerable<T> obj, IEnumerable<T> values)
-    {
-        var enumerable = obj as T[] ?? obj.ToArray();
-        return values.Any(x => enumerable.Contains(x));
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsAny<T>(this T obj, IEnumerable<T> values) => 
-        values.Any(x => x != null && x.Equals(obj));
-
-    public static IEnumerable<K> FindKeysByValue<K, V>(this IDictionary<K, V> dictionary, V value) => 
-        from x in dictionary where value != null && value.Equals(x.Value) select x.Key;
-
-    public static bool TryGetFirst<K, V>(this IDictionary<K, V> dictionary, Func<KeyValuePair<K, V>, bool> predicate, out KeyValuePair<K, V> keyValuePair)
-    {
-        try
+        public T FirstOr0(Func<T, bool> predicate)
         {
-            keyValuePair = dictionary.First(predicate);
-            return true;
+            var enumerable = source as T[] ?? source.ToArray();
+            foreach (var x in enumerable)
+            {
+                if (predicate(x))
+                    return x;
+            }
+
+            return enumerable.First();
         }
-        catch
+
+        public IEnumerable<TR> SelectMulti<TR>(params Func<T, TR>[] funcs)
+            => from v in source from x in funcs select x(v);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool ContainsAll(IEnumerable<T> values)
+            => values.All(source.Contains);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool ContainsAny(params T[] values)
         {
-            keyValuePair = default;
-            return false;
+            var enumerable = source as T[] ?? source.ToArray();
+            return values.Any(x => enumerable.Contains(x));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool ContainsAny(IEnumerable<T> values)
+        {
+            var enumerable = source as T[] ?? source.ToArray();
+            return values.Any(x => enumerable.Contains(x));
+        }
+
+        public int IndexOf(Predicate<T> predicate)
+        {
+            var ret = -1;
+            foreach (var v in source)
+            {
+                ret++;
+                if (predicate(v))
+                    return ret;
+            }
+
+            return -1;
         }
     }
 
@@ -187,7 +98,7 @@ public static class EnumerableExtension
         {
             case null:
                 break;
-            
+
             case IList<TSource> list:
             {
                 if (list.Count > 0)
@@ -198,7 +109,7 @@ public static class EnumerableExtension
 
                 break;
             }
-            
+
             default:
             {
                 using IEnumerator<TSource?> e = source.GetEnumerator();
@@ -237,7 +148,7 @@ public static class EnumerableExtension
         return false;
     }
 
-    public static bool TryGetLast<K>(this IEnumerable<K?> enumerable, Func<K?, bool> predicate, out K? value)
+    public static bool TryGetLast<TK>(this IEnumerable<TK?> enumerable, Func<TK?, bool> predicate, out TK? value)
     {
         try
         {
@@ -251,96 +162,255 @@ public static class EnumerableExtension
         }
     }
 
-    public static void Swap<T>(this IList<T> list, int index1, int index2)
-    {
-        if (index1 < 0 || index1 >= list.Count || index2 < 0 || index2 >= list.Count)
-            throw new IndexOutOfRangeException("无法交换元素, 因为其中一个索引无效");
+    #endregion
 
-        (list[index1], list[index2]) = (list[index2], list[index1]);
-    }
+    #region ICollection<T>
 
-    public static bool TryDequeue<T>(this IList<T> List, out T? result)
+    extension<T>(ICollection<T> collection)
     {
-        if (List.Count > 0)
+        public void AddRange(params T[] values)
         {
-            result = List[0];
-            List.RemoveAt(0);
-            return true;
+            foreach (var x in values)
+                collection.Add(x);
         }
 
-        result = default;
-        return false;
-    }
-
-    public static T? Dequeue<T>(this IList<T> List)
-    {
-        if (List.TryDequeue(out var ret)) return ret;
-
-        throw new InvalidOperationException("Sequence contains no elements");
-    }
-
-    public static void AddRange<T>(this ICollection<T> collection, params T[] values)
-    {
-        foreach (var x in values)
-            collection.Add(x);
-    }
-
-    public static void RemoveRange<T>(this ICollection<T> collection, params T[] values)
-    {
-        foreach (var x in values)
-            collection.Remove(x);
-    }
-    
-    public static void Add<T>(this ICollection<T> collection, params T[] values) => 
-        collection.AddRange(values);
-
-    public static void Remove<T>(this ICollection<T> collection, params T[] values) => 
-        collection.RemoveRange(values);
-    
-    public static bool TryDequeueLast<T>(this IList<T> List, out T? result)
-    {
-        if (List.Count > 0)
+        public void RemoveRange(params T[] values)
         {
-            result = List[^1];
-            List.RemoveAt(List.Count - 1);
-            return true;
+            foreach (var x in values)
+                collection.Remove(x);
         }
 
-        result = default;
-        return false;
-    }
+        public void Add(params T[] values) =>
+            collection.AddRange(values);
 
-    public static T? DequeueLast<T>(this IList<T> List)
-    {
-        if (List.TryDequeueLast(out var ret)) 
-            return ret;
+        public void Remove(params T[] values) =>
+            collection.RemoveRange(values);
 
-        throw new InvalidOperationException("序列中未包含任何有效元素");
-    }
-
-    public static T? DequeueOrDefault<T>(this IList<T> List)
-    {
-        if (List.Count <= 0) return default;
-
-        var ret = List[0];
-        List.RemoveAt(0);
-        return ret;
-    }
-
-    public static T? DequeueOrDefault<T>(this Queue<T?> Queue) => Queue.Count > 0 ? Queue.Dequeue() : default;
-
-    public static int IndexOf<T>(this IEnumerable<T> values, Predicate<T> predicate)
-    {
-        var ret = -1;
-        foreach (var v in values)
+        public void AddRange(IEnumerable<T> items)
         {
-            ret++;
-            if (predicate(v))
+            foreach (var item in items)
+                collection.Add(item);
+        }
+    }
+
+    #endregion
+
+    #region IList<T>
+
+    extension<T>(IList<T> list)
+    {
+        public void Swap(int index1, int index2)
+        {
+            if (index1 < 0 || index1 >= list.Count || index2 < 0 || index2 >= list.Count)
+                throw new IndexOutOfRangeException("无法交换元素, 因为其中一个索引无效");
+
+            (list[index1], list[index2]) = (list[index2], list[index1]);
+        }
+
+        public bool TryDequeue(out T? result)
+        {
+            if (list.Count > 0)
+            {
+                result = list[0];
+                list.RemoveAt(0);
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
+
+        public T? Dequeue()
+        {
+            if (list.TryDequeue(out var ret)) return ret;
+
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        public bool TryDequeueLast(out T? result)
+        {
+            if (list.Count > 0)
+            {
+                result = list[^1];
+                list.RemoveAt(list.Count - 1);
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
+
+        public T? DequeueLast()
+        {
+            if (list.TryDequeueLast(out var ret))
                 return ret;
+
+            throw new InvalidOperationException("序列中未包含任何有效元素");
         }
 
-        return -1;
+        public T? DequeueOrDefault()
+        {
+            if (list.Count <= 0) return default;
+
+            var ret = list[0];
+            list.RemoveAt(0);
+            return ret;
+        }
     }
+
+    public static bool Toggle<T>(this List<T> list, T value)
+    {
+        if (list.Contains(value))
+        {
+            list.RemoveAll(x => x != null && x.Equals(value));
+            return false;
+        }
+
+        list.Add(value);
+        return true;
+    }
+
+    #endregion
+
+    #region IDictionary / ConcurrentDictionary
+
+    extension<TKey, TValue>(ConcurrentDictionary<TKey, TValue> dictionary) where TKey : notnull
+    {
+        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            if (dictionary == null)
+                throw new ArgumentNullException(nameof(dictionary));
+            if (items == null)
+                throw new ArgumentNullException(nameof(items));
+
+            foreach (var item in items)
+                dictionary.TryAdd(item.Key, item.Value);
+        }
+
+        public void ForEach(Action<TKey, TValue> action)
+        {
+            if (dictionary == null)
+                throw new ArgumentNullException(nameof(dictionary));
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
+            foreach (var kvp in dictionary)
+                action(kvp.Key, kvp.Value);
+        }
+    }
+
+    extension<TK, TV>(IDictionary<TK, TV> dictionary)
+    {
+        public IEnumerable<TK> FindKeysByValue(TV value) =>
+            from x in dictionary where value != null && value.Equals(x.Value) select x.Key;
+
+        public bool TryGetFirst(Func<KeyValuePair<TK, TV>, bool> predicate, out KeyValuePair<TK, TV> keyValuePair)
+        {
+            try
+            {
+                keyValuePair = dictionary.First(predicate);
+                return true;
+            }
+            catch
+            {
+                keyValuePair = default;
+                return false;
+            }
+        }
+
+        public TV? GetOrDefault(TK key) =>
+            dictionary.TryGetValue(key, out var value) ? value : default;
+
+        public TV GetOrAdd(TK key, Func<TK, TV> valueFactory)
+        {
+            if (dictionary.TryGetValue(key, out var value)) return value;
+            value           = valueFactory(key);
+            dictionary[key] = value;
+            return value;
+            // Note: This implementation is not thread-safe for standard Dictionary, unlike ConcurrentDictionary.GetOrAdd
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int IncrementOrSet<TK>(this IDictionary<TK, int> dic, TK key, int increment = 1)
+    {
+        if (!dic.TryAdd(key, increment))
+            dic[key] += increment;
+
+        return dic[key];
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TV? GetSafe<TK, TV>(this IDictionary<TK, TV>? dic, TK key, TV? defaultValue = default) =>
+        dic?.TryGetValue(key, out var value) == true ? value : defaultValue;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TV GetOrCreate<TK, TV>(this IDictionary<TK, TV> dictionary, TK key) where TV : new()
+    {
+        if (dictionary.TryGetValue(key, out var result)) return result;
+
+        var newValue = new TV();
+        dictionary.Add(key, newValue);
+        return newValue;
+    }
+
+    #endregion
+
+    #region ConcurrentBag
+
+    extension<T>(ConcurrentBag<T> bag)
+    {
+        public void AddRange(IEnumerable<T> items)
+        {
+            if (bag == null)
+                throw new ArgumentNullException(nameof(bag));
+            if (items == null)
+                throw new ArgumentNullException(nameof(items));
+
+            foreach (var item in items)
+                bag.Add(item);
+        }
+
+        public void ForEach(Action<T> action)
+        {
+            if (bag == null)
+                throw new ArgumentNullException(nameof(bag));
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
+            foreach (var item in bag)
+                action(item);
+        }
+    }
+
+    #endregion
+
+    #region Queue
+
+    public static T? DequeueOrDefault<T>(this Queue<T?> queue) => queue.Count > 0 ? queue.Dequeue() : default;
+
+    #endregion
+
+    #region HashSet
+
+    public static bool Toggle<T>(this HashSet<T> hashSet, T value)
+    {
+        if (!hashSet.Add(value))
+        {
+            hashSet.Remove(value);
+            return false;
+        }
+
+        return true;
+    }
+
+    #endregion
+
+    #region Object / Array
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool EqualsAny<T>(this T obj, IEnumerable<T> values) =>
+        values.Any(x => x != null && x.Equals(obj));
 
     public static T[] Together<T>(this T[] array, params T[] additionalValues) => array.Union(additionalValues).ToArray();
 
@@ -354,29 +424,5 @@ public static class EnumerableExtension
         return arr;
     }
 
-    public static V? GetOrDefault<K, V>(this IDictionary<K, V> dic, K key) =>
-        dic.TryGetValue(key, out var value) ? value : default;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int IncrementOrSet<K>(this IDictionary<K, int> dic, K key, int increment = 1)
-    {
-        if (!dic.TryAdd(key, increment)) 
-            dic[key] += increment;
-
-        return dic[key];
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static V? GetSafe<K, V>(this IDictionary<K, V>? dic, K key, V? Default = default) => 
-        dic?.TryGetValue(key, out var value) == true ? value : Default;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static V GetOrCreate<K, V>(this IDictionary<K, V> dictionary, K key) where V : new()
-    {
-        if (dictionary.TryGetValue(key, out var result)) return result;
-
-        var newValue = new V();
-        dictionary.Add(key, newValue);
-        return newValue;
-    }
+    #endregion
 }

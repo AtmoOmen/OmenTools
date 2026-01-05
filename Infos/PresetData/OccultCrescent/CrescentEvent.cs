@@ -142,7 +142,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
             
             if (TryGetCEData(out var ceData))
             {
-                Name        = ceData.Name.ExtractText();
+                Name        = ceData.Name.ToString();
                 NameDisplay = Name;
                 IconID      = ceData.EventType.Value.IconObjective0;
                 Radius      = ceData.Unknown4;
@@ -155,7 +155,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
             
             if (TryGetFateData(out var fateData))
             {
-                Name        = fateData.Name.ExtractText();
+                Name        = fateData.Name.ToString();
                 NameDisplay = Name;
                 IconID      = fateData.MapIcon;
             }

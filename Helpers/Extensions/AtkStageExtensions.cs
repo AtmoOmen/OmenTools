@@ -8,7 +8,7 @@ namespace OmenTools.Helpers;
 
 public static unsafe class AtkStageExtensions
 {
-    extension(ref AtkStage atkStage)
+    extension(scoped ref AtkStage atkStage)
     {
         public void ClearNodeFocus(AtkResNode* targetNode)
         {

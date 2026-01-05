@@ -8,7 +8,7 @@ namespace OmenTools.Helpers;
 
 public static class ActionManagerExtensions
 {
-    extension(ref ActionManager manager)
+    extension(scoped ref ActionManager manager)
     {
         public static uint GetAdjustSprintActionID()
         {
