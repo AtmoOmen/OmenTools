@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net.Http;
+using System.Threading.Channels;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
 using Lumina.Data;
@@ -11,59 +12,84 @@ namespace OmenTools.Helpers;
 
 public class ImageHelper : OmenServiceBase
 {
-    private static readonly ConcurrentDictionary<string, ImageLoadingResult>                                CachedTextures      = [];
-    private static readonly ConcurrentDictionary<(uint ID, bool HQ, Language Language), ImageLoadingResult> CachedIcons         = [];
-    private static readonly List<Func<byte[], byte[]>>                                                      ConversionsToBitmap = [b => b];
+    private static readonly Channel<string> DownloadChannel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
+    {
+        SingleReader = true,
+        SingleWriter = false
+    });
 
-    private static HttpClient?              HttpClient;
-    private static CancellationTokenSource? CancelSource;
+    private static readonly ConcurrentDictionary<string, ImageLoadingResult>                                CachedTextures = [];
+    private static readonly ConcurrentDictionary<(uint ID, bool HQ, Language Language), ImageLoadingResult> CachedIcons    = [];
 
-    internal override void Init() => 
-        HttpClient ??= new() { Timeout = TimeSpan.FromSeconds(30) };
-    
+    private static readonly List<Func<byte[], byte[]>> ConversionsToBitmap = [b => b];
+
+    private static readonly HttpClient HttpClient = new()
+    {
+        Timeout               = TimeSpan.FromSeconds(30),
+        DefaultRequestHeaders = { { "User-Agent", "OmenTools/1.0" } }
+    };
+
+    private static readonly CancellationTokenSource GlobalCts = new();
+
+    private static readonly TimeSpan CacheTTL        = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan CleanupInterval = TimeSpan.FromSeconds(5);
+
+    internal override void Init()
+    {
+        _ = ProcessDownloadsAsync(GlobalCts.Token);
+        _ = CleanupLoopAsync(GlobalCts.Token);
+    }
+
     internal override void Uninit()
     {
+        GlobalCts.Cancel();
         ClearAll();
-
-        CancelSource?.Cancel();
-        CancelSource?.Dispose();
-        CancelSource = null;
-        
-        HttpClient?.Dispose();
-        HttpClient = null;
+        GlobalCts.Dispose();
+        HttpClient.Dispose();
     }
 
     public static IDalamudTextureWrap? GetGameLangIcon(uint iconID, bool isHQ = false) =>
         TryGetGameLangIcon(iconID, out var texture, isHQ) ? texture : null;
-    
-    public static IDalamudTextureWrap? GetGameIcon(uint iconID, bool isHQ = false) => 
+
+    public static IDalamudTextureWrap? GetGameIcon(uint iconID, bool isHQ = false) =>
         TryGetGameIcon(iconID, out var texture, isHQ) ? texture : null;
 
-    public static IDalamudTextureWrap? GetImage(string urlOrPath) => 
+    public static IDalamudTextureWrap? GetImage(string urlOrPath) =>
         TryGetImage(urlOrPath, out var texture) ? texture : null;
-    
+
     public static bool TryGetGameLangIcon(uint icon, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
     {
-        var result = CachedIcons.GetOrAdd((icon, isHQ, GameState.ClientLanguge), _ => new ImageLoadingResult
+        var key = (icon, isHQ, GameState.ClientLanguge);
+
+        if (CachedIcons.TryGetValue(key, out var result))
+        {
+            result.RefreshAccess();
+            texture = result.Texture;
+            return texture != null;
+        }
+
+        result = new ImageLoadingResult
         {
             ImmediateTexture = DService.Texture.GetFromGame(GetIconTexturePath(icon, GameState.ClientLanguge)),
             IsCompleted      = true
-        });
+        };
 
+        result.CompletionSource.TrySetResult(result.Texture);
+
+        CachedIcons.TryAdd(key, result);
         texture = result.Texture;
         return texture != null;
     }
-    
-    public static bool TryGetGameIcon(uint icon, out IDalamudTextureWrap texture, bool isHQ = false)
+
+    public static bool TryGetGameIcon(uint icon, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
     {
-        texture = null;
-        
         if (DService.Texture.TryGetFromGameIcon(new(icon, isHQ), out var immediateTexture))
         {
             texture = immediateTexture.GetWrapOrEmpty();
             return true;
         }
-        
+
+        texture = null;
         return false;
     }
 
@@ -72,75 +98,161 @@ public class ImageHelper : OmenServiceBase
         texture = null;
         if (string.IsNullOrWhiteSpace(url)) return false;
 
-        var result = CachedTextures.GetOrAdd(url, _ =>
+        if (CachedTextures.TryGetValue(url, out var result))
         {
-            CancelSource ??= new();
-            
-            Task.Run(LoadPendingTexturesAsync, CancelSource.Token);
-            return new ImageLoadingResult();
-        });
+            result.RefreshAccess();
+            texture = result.Texture;
+            return texture != null;
+        }
 
-        texture = result.Texture;
-        return texture != null;
+        var newResult = new ImageLoadingResult();
+
+        if (CachedTextures.TryAdd(url, newResult))
+            DownloadChannel.Writer.TryWrite(url);
+        else
+        {
+            if (CachedTextures.TryGetValue(url, out result))
+            {
+                result.RefreshAccess();
+                texture = result.Texture;
+                return texture != null;
+            }
+        }
+
+        return false;
     }
 
-    public static async Task<IDalamudTextureWrap> GetImageAsync(string urlOrPath)
+    public static async Task<IDalamudTextureWrap?> GetImageAsync(string urlOrPath)
     {
-        IDalamudTextureWrap? texture;
-        while (!TryGetImage(urlOrPath, out texture))
-            await Task.Delay(100);
+        if (string.IsNullOrWhiteSpace(urlOrPath)) return null;
 
-        return texture;
-    }
-    
-    private static async Task LoadPendingTexturesAsync()
-    {
-        while (await LoadNextPendingTextureAsync()) 
-        { }
-    }
 
-    private static async Task<bool> LoadNextPendingTextureAsync()
-    {
-        if (!CachedTextures.TryGetFirst(x => !x.Value.IsCompleted, out var kvp)) return false;
+        if (!CachedTextures.TryGetValue(urlOrPath, out var result))
+        {
+            TryGetImage(urlOrPath, out _);
 
-        var (key, value)  = kvp;
-        value.IsCompleted = true;
+            if (!CachedTextures.TryGetValue(urlOrPath, out result)) return null;
+        }
+
+        result.RefreshAccess();
+
+
+        if (result.IsCompleted) return result.Texture;
+
 
         try
         {
-            if (Uri.TryCreate(key, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
+            return await result.CompletionSource.Task;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static async Task ProcessDownloadsAsync(CancellationToken ct)
+    {
+        var reader = DownloadChannel.Reader;
+        
+        try 
+        {
+            await Parallel.ForEachAsync(reader.ReadAllAsync(ct), new ParallelOptions
             {
-                while (HttpClient == null)
-                    await Task.Delay(100);
-                
-                var content = await HttpClient.GetByteArrayAsync(uri);
-                foreach (var conversion in ConversionsToBitmap)
+                MaxDegreeOfParallelism = 8,
+                CancellationToken = ct
+            }, async (url, token) =>
+            {
+                if (!CachedTextures.TryGetValue(url, out var result) || result.IsCompleted) 
+                    return;
+
+                try
                 {
-                    try
+                    if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
                     {
-                        value.TextureWrap = await DService.Texture.CreateFromImageAsync(conversion(content));
-                        return true;
+                        var content = await HttpClient.GetByteArrayAsync(uri, token);
+                        
+                        foreach (var conversion in ConversionsToBitmap)
+                        {
+                            try
+                            {
+                                content = conversion(content);
+                            }
+                            catch (Exception ex)
+                            {
+                                Error($"[ImageHelper] 图像预处理失败: {url}", ex);
+                            }
+                        }
+
+                        result.TextureWrap = await DService.Texture.CreateFromImageAsync(content, debugName: url, cancellationToken: token);
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Error("尝试转换图片资源时失败", ex);
+                        result.ImmediateTexture = File.Exists(url) 
+                            ? DService.Texture.GetFromFile(url) 
+                            : DService.Texture.GetFromGame(url);
+                    }
+                    
+                    result.CompletionSource.TrySetResult(result.Texture);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    Error($"[ImageHelper] 加载资源失败: {url}", ex);
+                    result.CompletionSource.TrySetResult(null);
+                }
+                finally
+                {
+                    result.IsCompleted = true;
+                }
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            // 正常退出
+        }
+    }
+
+    private static async Task CleanupLoopAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(CleanupInterval, ct);
+
+                var now = DateTime.UtcNow;
+
+                foreach (var kvp in CachedTextures)
+                {
+                    if (now - kvp.Value.LastAccessTime > CacheTTL)
+                    {
+                        if (CachedTextures.TryRemove(kvp.Key, out var removedItem))
+                            removedItem.Dispose();
+                    }
+                }
+
+                foreach (var kvp in CachedIcons)
+                {
+                    if (now - kvp.Value.LastAccessTime > CacheTTL)
+                    {
+                        if (CachedIcons.TryRemove(kvp.Key, out var removedItem))
+                            removedItem.Dispose();
                     }
                 }
             }
-            else
-                value.ImmediateTexture = File.Exists(key) ? DService.Texture.GetFromFile(key) : DService.Texture.GetFromGame(key);
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                Error("[ImageHelper] 缓存清理任务异常", ex);
+            }
         }
-        catch (Exception ex)
-        {
-            Error("尝试加载图片资源时失败", ex);
-        }
-
-        return true;
     }
 
     private static string GetIconTexturePath(uint iconID, Language language)
     {
-        var varient = language switch
+        var variant = language switch
         {
             Language.Japanese           => "ja",
             Language.English            => "en",
@@ -150,53 +262,62 @@ public class ImageHelper : OmenServiceBase
             Language.ChineseTraditional => "cht",
             Language.Korean             => "ko",
             Language.TraditionalChinese => "tc",
-            _                           => string.Empty
+            _                           => ""
         };
-        
-        if (string.IsNullOrEmpty(varient))
-            return string.Empty;
 
-        return $"ui/icon/{iconID / 1000 * 1000:D6}/{varient}/{iconID:D6}_hr1.tex";
+        if (variant.Length == 0) return string.Empty;
+
+        return $"ui/icon/{iconID / 1000 * 1000:D6}/{variant}/{iconID:D6}_hr1.tex";
     }
 
     public static void ClearAll()
     {
-        foreach (var (_, value) in CachedTextures)
-        {
-            try
-            {
-                value.TextureWrap?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                Error("尝试回收图片资源时失败", ex);
-            }
-        }
-
+        foreach (var value in CachedTextures.Values)
+            value.Dispose();
         CachedTextures.Clear();
 
-        foreach (var (_, value) in CachedIcons)
+        foreach (var value in CachedIcons.Values)
+            value.Dispose();
+        CachedIcons.Clear();
+    }
+
+    private class ImageLoadingResult : IDisposable
+    {
+        public          ISharedImmediateTexture? ImmediateTexture { get; set; }
+        public          IDalamudTextureWrap?     TextureWrap      { get; set; }
+        public volatile bool                     IsCompleted;
+
+        public readonly TaskCompletionSource<IDalamudTextureWrap?> CompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private long     lastAccessTimeTicks = DateTime.UtcNow.Ticks;
+        public  DateTime LastAccessTime => new(lastAccessTimeTicks);
+
+        public void RefreshAccess() => Interlocked.Exchange(ref lastAccessTimeTicks, DateTime.UtcNow.Ticks);
+
+        public IDalamudTextureWrap? Texture
         {
-            try
+            get
             {
-                value.TextureWrap?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                Error("尝试回收图标资源时失败", ex);
+                if (TextureWrap != null) return TextureWrap;
+                return ImmediateTexture?.GetWrapOrEmpty();
             }
         }
 
-        CachedIcons.Clear();
-    }
-    
-    private record ImageLoadingResult
-    {
-        public ISharedImmediateTexture? ImmediateTexture { get; set; }
-        public IDalamudTextureWrap?     TextureWrap      { get; set; }
-        public bool                     IsCompleted      { get; set; }
+        public void Dispose()
+        {
+            CompletionSource.TrySetCanceled();
 
-        public IDalamudTextureWrap? Texture =>
-            DService.Framework.RunOnFrameworkThread(() => ImmediateTexture?.GetWrapOrEmpty() ?? TextureWrap).Result;
+            try
+            {
+                TextureWrap?.Dispose();
+            }
+            catch
+            {
+                // ignored
+            }
+
+            ImmediateTexture = null;
+            TextureWrap      = null;
+        }
     }
 }
