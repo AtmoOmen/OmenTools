@@ -55,7 +55,7 @@ public class DatePicker
         DrawNavigationButton("LastMonth", ImGuiDir.Left, -1, false);
 
         ImGui.SameLine();
-        ImGui.Text($"{viewDate:yyyy.MM}");
+        ImGui.TextUnformatted($"{viewDate:yyyy.MM}");
 
         ImGui.SameLine();
         DrawNavigationButton("NextMonth", ImGuiDir.Right, 1, false);

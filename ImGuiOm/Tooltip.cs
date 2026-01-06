@@ -11,6 +11,6 @@ public static partial class ImGuiOm
         
         using (ImRaii.Tooltip())
         using (ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos))
-            ImGui.Text(text);
+            ImGui.TextUnformatted(text);
     }
 }

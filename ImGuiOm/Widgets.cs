@@ -9,7 +9,7 @@ public static partial class ImGuiOm
         using (ImRaii.Group())
         {
             ImGui.AlignTextToFramePadding();
-            ImGui.Text(label);
+            ImGui.TextUnformatted(label);
 
             ImGui.SameLine();
             return origInputFunc();
@@ -21,7 +21,7 @@ public static partial class ImGuiOm
         using (ImRaii.Group())
         {
             ImGui.AlignTextToFramePadding();
-            ImGui.Text(label);
+            ImGui.TextUnformatted(label);
 
             ImGui.SameLine();
             ImGui.SetNextItemWidth(width);
@@ -34,7 +34,7 @@ public static partial class ImGuiOm
         using (ImRaii.Group())
         {
             ImGui.AlignTextToFramePadding();
-            ImGui.Text(label);
+            ImGui.TextUnformatted(label);
 
             ImGui.SameLine();
             origInputFunc();
@@ -46,7 +46,7 @@ public static partial class ImGuiOm
         using (ImRaii.Group())
         {
             ImGui.AlignTextToFramePadding();
-            ImGui.Text(label);
+            ImGui.TextUnformatted(label);
 
             ImGui.SameLine();
             ImGui.SetNextItemWidth(width);

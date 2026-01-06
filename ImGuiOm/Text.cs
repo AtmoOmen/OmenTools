@@ -9,7 +9,7 @@ public static partial class ImGuiOm
     public static void Text(string text)
     {
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.X);
-        ImGui.Text(text);
+        ImGui.TextUnformatted(text);
     }
 
     public static void TextImage(string text, nint imageHandle, Vector2 imageSize) =>
