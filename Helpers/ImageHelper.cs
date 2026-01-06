@@ -4,24 +4,37 @@ using System.IO;
 using System.Net.Http;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Textures.TextureWraps;
+using Lumina.Data;
 using OmenTools.Abstracts;
 
 namespace OmenTools.Helpers;
 
 public class ImageHelper : OmenServiceBase
 {
-    private static readonly ConcurrentDictionary<string, ImageLoadingResult>                                      CachedTextures      = [];
-    private static readonly ConcurrentDictionary<(uint ID, bool HQ, ClientLanguage Language), ImageLoadingResult> CachedIcons         = [];
-    private static readonly List<Func<byte[], byte[]>>                                                            ConversionsToBitmap = [b => b];
+    private static readonly ConcurrentDictionary<string, ImageLoadingResult>                                CachedTextures      = [];
+    private static readonly ConcurrentDictionary<(uint ID, bool HQ, Language Language), ImageLoadingResult> CachedIcons         = [];
+    private static readonly List<Func<byte[], byte[]>>                                                      ConversionsToBitmap = [b => b];
 
     private static HttpClient?              HttpClient;
     private static CancellationTokenSource? CancelSource;
 
     internal override void Init() => 
         HttpClient ??= new() { Timeout = TimeSpan.FromSeconds(30) };
+    
+    internal override void Uninit()
+    {
+        ClearAll();
 
-    public static IDalamudTextureWrap? GetGameLangIcon(uint iconID, ClientLanguage language, bool isHQ = false) =>
-        TryGetGameLangIcon(iconID, language, out var texture, isHQ) ? texture : null;
+        CancelSource?.Cancel();
+        CancelSource?.Dispose();
+        CancelSource = null;
+        
+        HttpClient?.Dispose();
+        HttpClient = null;
+    }
+
+    public static IDalamudTextureWrap? GetGameLangIcon(uint iconID, bool isHQ = false) =>
+        TryGetGameLangIcon(iconID, out var texture, isHQ) ? texture : null;
     
     public static IDalamudTextureWrap? GetGameIcon(uint iconID, bool isHQ = false) => 
         TryGetGameIcon(iconID, out var texture, isHQ) ? texture : null;
@@ -29,11 +42,11 @@ public class ImageHelper : OmenServiceBase
     public static IDalamudTextureWrap? GetImage(string urlOrPath) => 
         TryGetImage(urlOrPath, out var texture) ? texture : null;
     
-    public static bool TryGetGameLangIcon(uint icon, ClientLanguage language, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
+    public static bool TryGetGameLangIcon(uint icon, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
     {
-        var result = CachedIcons.GetOrAdd((icon, isHQ, language), _ => new ImageLoadingResult
+        var result = CachedIcons.GetOrAdd((icon, isHQ, GameState.ClientLanguge), _ => new ImageLoadingResult
         {
-            ImmediateTexture = DService.Texture.GetFromGame(GetIconTexturePath(icon, language)),
+            ImmediateTexture = DService.Texture.GetFromGame(GetIconTexturePath(icon, GameState.ClientLanguge)),
             IsCompleted      = true
         });
 
@@ -79,7 +92,7 @@ public class ImageHelper : OmenServiceBase
 
         return texture;
     }
-
+    
     private static async Task LoadPendingTexturesAsync()
     {
         while (await LoadNextPendingTextureAsync()) 
@@ -125,23 +138,25 @@ public class ImageHelper : OmenServiceBase
         return true;
     }
 
-    private static string GetIconTexturePath(uint iconID, ClientLanguage language)
+    private static string GetIconTexturePath(uint iconID, Language language)
     {
         var varient = language switch
         {
-            ClientLanguage.Japanese => "ja",
-            ClientLanguage.English  => "en",
-            ClientLanguage.German   => "de",
-            ClientLanguage.French   => "fr",
-            (ClientLanguage)4       => "chs",
-            (ClientLanguage)5       => "kr",
-            _                       => string.Empty
+            Language.Japanese           => "ja",
+            Language.English            => "en",
+            Language.German             => "de",
+            Language.French             => "fr",
+            Language.ChineseSimplified  => "chs",
+            Language.ChineseTraditional => "cht",
+            Language.Korean             => "ko",
+            Language.TraditionalChinese => "tc",
+            _                           => string.Empty
         };
         
         if (string.IsNullOrEmpty(varient))
             return string.Empty;
 
-        return $"ui/icon/{iconID / 1000 * 1000:D6}/chs/{iconID:D6}_hr1.tex";
+        return $"ui/icon/{iconID / 1000 * 1000:D6}/{varient}/{iconID:D6}_hr1.tex";
     }
 
     public static void ClearAll()
@@ -173,18 +188,6 @@ public class ImageHelper : OmenServiceBase
         }
 
         CachedIcons.Clear();
-    }
-
-    internal override void Uninit()
-    {
-        ClearAll();
-
-        CancelSource?.Cancel();
-        CancelSource?.Dispose();
-        CancelSource = null;
-        
-        HttpClient?.Dispose();
-        HttpClient = null;
     }
     
     private record ImageLoadingResult
