@@ -198,7 +198,7 @@ public static unsafe class AtkUnitBaseExtensions
         }
     }
     
-    extension(AtkUnitBasePtr addon)
+    extension(scoped in AtkUnitBasePtr addon)
     {
         public AtkUnitBase* ToStruct() =>
             (AtkUnitBase*)addon.Address;

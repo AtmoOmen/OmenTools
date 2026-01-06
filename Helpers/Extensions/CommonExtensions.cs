@@ -1,17 +1,28 @@
 ﻿using System.Globalization;
-using Dalamud.Hooking;
-using Timer = System.Timers.Timer;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace OmenTools.Helpers;
 
 public static class CommonExtensions
 {
-    extension(Timer timer)
+    extension<T>(T config) where T : class
     {
-        public void Restart()
+        public string ToJsonBase64()
         {
-            timer.Stop();
-            timer.Start();
+            var json = JsonConvert.SerializeObject(config, JsonSettings);
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+        }
+    }
+
+    extension(string textData)
+    {
+        public T? FromJsonBase64<T>() where T : class
+        {
+            if (string.IsNullOrEmpty(textData)) return null;
+
+            var json = Encoding.UTF8.GetString(Convert.FromBase64String(textData));
+            return JsonConvert.DeserializeObject<T>(json, JsonSettings);
         }
     }
 

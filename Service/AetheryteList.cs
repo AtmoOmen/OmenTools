@@ -141,7 +141,7 @@ internal readonly struct AetheryteEntry(TeleportInfo data) : IAetheryteEntry
 
     public bool IsApartment => data.IsApartment;
 
-    public RowRef<Aetheryte> AetheryteData => LuminaCreateRef<Aetheryte>(this.AetheryteID);
+    public RowRef<Aetheryte> AetheryteData => AetheryteID.ToLuminaRowRef<Aetheryte>();
 }
 
 #endregion

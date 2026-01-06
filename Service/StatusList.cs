@@ -188,7 +188,7 @@ internal readonly unsafe struct Status(CSStatus* ptr) : IStatus
     
     public uint StatusID => ptr->StatusId;
     
-    public RowRef<LuminaStatus> GameData => LuminaCreateRef<LuminaStatus>(ptr->StatusId);
+    public RowRef<LuminaStatus> GameData => ptr->StatusId.ToLuminaRowRef<LuminaStatus>();
     
     public ushort Param => ptr->Param;
     

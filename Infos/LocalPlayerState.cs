@@ -2,8 +2,8 @@
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.Sheets;
 using OmenTools.Abstracts;
@@ -31,7 +31,7 @@ public class LocalPlayerState : OmenServiceBase
     
     internal override unsafe void Init()
     {
-        AgentMapUpdateHook ??= DService.Hook.HookFromAddress<AgentUpdateDelegate>(GetVFuncByName(AgentMap.Instance()->VirtualTable, "Update"), AgentMapUpdateDetour);
+        AgentMapUpdateHook ??= DService.Hook.HookFromAddress<AgentUpdateDelegate>(AgentMap.Instance()->VirtualTable->GetVFuncByName("Update"), AgentMapUpdateDetour);
         AgentMapUpdateHook.Enable();
     }
 
@@ -70,6 +70,12 @@ public class LocalPlayerState : OmenServiceBase
     public static bool IsMoving => 
         IsPlayerMoving;
 
+    /// <summary>
+    /// 当前玩家是否在小队中
+    /// </summary>
+    public static bool IsInAnyParty => 
+        InfoProxyCrossRealm.IsCrossRealmParty() || DService.PartyList.Length >= 2;
+    
     /// <summary>
     /// 当前玩家是否正处于步行模式
     /// </summary>
@@ -310,7 +316,7 @@ public class LocalPlayerState : OmenServiceBase
         if (Object == null)
             return float.MaxValue;
         
-        return Vector2.Distance(VectorExtensions.ToVector2(Object.Position), target);
+        return Vector2.Distance(Object.Position.ToVector2(), target);
     }
     
     public static float DistanceToObject2D(IGameObject? target, bool ignoreRadius = true)
@@ -321,16 +327,16 @@ public class LocalPlayerState : OmenServiceBase
         // 考虑在里面
         if (!ignoreRadius)
         {
-            if (DistanceTo2D(VectorExtensions.ToVector2(target.Position)) <= target.HitboxRadius)
+            if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
                 return 0f;
             
             if (!(GetNearestPointToObject(target) is var nearestPoint) || nearestPoint == Vector3.Zero)
                 return 0f;
             
-            return DistanceTo2D(VectorExtensions.ToVector2(nearestPoint));
+            return DistanceTo2D(nearestPoint.ToVector2());
         }
 
-        return DistanceTo2D(VectorExtensions.ToVector2(target.Position));
+        return DistanceTo2D(target.Position.ToVector2());
     }
     
     public static float DistanceToObject3D(IGameObject? target, bool ignoreRadius = true)
@@ -341,7 +347,7 @@ public class LocalPlayerState : OmenServiceBase
         // 考虑在里面
         if (!ignoreRadius)
         {
-            if (DistanceTo2D(VectorExtensions.ToVector2(target.Position)) <= target.HitboxRadius)
+            if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
                 return 0f;
             
             if (!(GetNearestPointToObject(target) is var nearestPoint) || nearestPoint == Vector3.Zero)
@@ -359,7 +365,7 @@ public class LocalPlayerState : OmenServiceBase
             return Vector3.One;
         
         // 现在就在里面
-        if (DistanceTo2D(VectorExtensions.ToVector2(target.Position)) <= target.HitboxRadius)
+        if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
             return Object.Position;
 
         return target.Position + (Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius);

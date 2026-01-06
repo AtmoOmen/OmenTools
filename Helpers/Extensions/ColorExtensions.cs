@@ -77,7 +77,7 @@ public static unsafe class ColorExtensions
             ImGui.ColorConvertFloat4ToU32(color);
     }
 
-    extension(scoped in ByteColor color)
+    extension(ByteColor color)
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 ToVector4()

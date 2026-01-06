@@ -100,7 +100,7 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
     public byte                 ENPCMap             => Struct->CharacterData.Map;
     public BattalionFlags       Battalion           => (BattalionFlags)Struct->CharacterData.Battalion;
     public byte                 ShieldPercentage    => Struct->CharacterData.ShieldValue;
-    public RowRef<ClassJob>     ClassJob            => LuminaCreateRef<ClassJob>(Struct->CharacterData.ClassJob);
+    public RowRef<ClassJob>     ClassJob            => Struct->CharacterData.ClassJob.ToLuminaRowRef<ClassJob>();
     public byte                 Level               => Struct->CharacterData.Level;
     public byte[]               Customize           => Struct->DrawData.CustomizeData.Data.ToArray();
     public SeString             CompanyTag          => SeString.Parse(Struct->FreeCompanyTag);
@@ -110,14 +110,14 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
     public ulong                ContentID           => Struct->ContentId;
     public CharacterModes       Mode                => Struct->Mode;
     public byte                 ModeParam           => Struct->ModeParam;
-    public RowRef<OnlineStatus> OnlineStatus        => LuminaCreateRef<OnlineStatus>(Struct->CharacterData.OnlineStatus);
+    public RowRef<OnlineStatus> OnlineStatus        => Struct->CharacterData.OnlineStatus.ToLuminaRowRef<OnlineStatus>();
     public ulong                EmoteTargetObjectID => Struct->EmoteController.Target;
     public IGameObject?         EmoteTargetObject   => DService.ObjectTable.SearchByID(EmoteTargetObjectID);
     public bool                 IsWanderer          => Struct->IsWanderer();
     public bool                 IsTraveler          => Struct->IsTraveler();
     public bool                 IsVoyager           => Struct->IsVoyager();
-    public RowRef<World>        CurrentWorld        => LuminaCreateRef<World>(Struct->CurrentWorld);
-    public RowRef<World>        HomeWorld           => LuminaCreateRef<World>(Struct->HomeWorld);
+    public RowRef<World>        CurrentWorld        => Struct->CurrentWorld.ToLuminaRowRef<World>();
+    public RowRef<World>        HomeWorld           => Struct->HomeWorld.ToLuminaRowRef<World>();
 
     public override ulong TargetObjectID => Struct->TargetId;
 
@@ -136,7 +136,7 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
         get
         {
             var emoteID = Struct->EmoteController.EmoteId;
-            return emoteID == 0 ? null : LuminaCreateRef<Emote>(emoteID);
+            return emoteID == 0 ? null : emoteID.ToLuminaRowRef<Emote>();
         }
     }
 
@@ -147,7 +147,7 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
             if (Struct->IsNotMounted()) return null;
 
             var mountID = Struct->Mount.MountId;
-            return mountID == 0 ? null : LuminaCreateRef<Mount>(mountID);
+            return mountID == 0 ? null : mountID.ToLuminaRowRef<Mount>();
         }
     }
 
@@ -156,7 +156,7 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
         get
         {
             var ornamentID = Struct->OrnamentData.OrnamentId;
-            return ornamentID == 0 ? null : LuminaCreateRef<Ornament>(ornamentID);
+            return ornamentID == 0 ? null : ornamentID.ToLuminaRowRef<Ornament>();
         }
     }
 
@@ -165,10 +165,10 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
         get
         {
             if (Struct->CompanionObject != null)
-                return LuminaCreateRef<Companion>(Struct->CompanionObject->BaseId);
+                return Struct->CompanionObject->BaseId.ToLuminaRowRef<Companion>();
 
             var hiddenCompanionID = Struct->CompanionData.CompanionId;
-            return hiddenCompanionID == 0 ? null : LuminaCreateRef<Companion>(hiddenCompanionID);
+            return hiddenCompanionID == 0 ? null : hiddenCompanionID.ToLuminaRowRef<Companion>();
         }
     }
 

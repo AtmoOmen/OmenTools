@@ -14,7 +14,7 @@ public static class HookExtensions
         public unsafe Hook<T> HookFromVirtualTable<T, TVTable>(TVTable* vTable, string name, T detour) 
             where T : Delegate
             where TVTable : unmanaged => 
-            hook.HookFromAddress(GetVFuncByName(vTable, name), detour);
+            hook.HookFromAddress(vTable->GetVFuncByName(name), detour);
     }
     
     extension<T>(Hook<T>? hook) where T : Delegate

@@ -3,12 +3,38 @@ using System.Runtime.CompilerServices;
 using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Excel;
 using Lumina.Excel.Sheets;
 
 namespace OmenTools.Helpers;
 
 public static unsafe class LuminaSheetExtensions
 {
+    #region RowRef<T>
+
+    private static RowRef<T> ToLuminaRowRefInternal<T>(uint id) where T : struct, IExcelRow<T> => 
+        new(DService.Data.Excel, id);
+
+    extension(uint id)
+    {
+        public RowRef<T> ToLuminaRowRef<T>() where T : struct, IExcelRow<T> => 
+            ToLuminaRowRefInternal<T>(id);
+    }
+
+    extension(ushort id)
+    {
+        public RowRef<T> ToLuminaRowRef<T>() where T : struct, IExcelRow<T> => 
+            ToLuminaRowRefInternal<T>(id);
+    }
+
+    extension(byte id)
+    {
+        public RowRef<T> ToLuminaRowRef<T>() where T : struct, IExcelRow<T> => 
+            ToLuminaRowRefInternal<T>(id);
+    }
+
+        #endregion
+    
     extension(scoped in Map map)
     {
         public string GetTexturePath() 
@@ -107,7 +133,7 @@ public static unsafe class LuminaSheetExtensions
         public bool IsClassJobIn(uint classJobID) => 
             ClassJobCategory.IsClassJobInCategory(classJobID, category.RowId);
         
-        public static unsafe bool IsClassJobInCategory(uint classJobID, uint classJobCategoryID)
+        public static bool IsClassJobInCategory(uint classJobID, uint classJobCategoryID)
         {
             if (classJobCategoryID == 0) return false;
         

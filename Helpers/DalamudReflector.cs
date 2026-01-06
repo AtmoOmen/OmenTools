@@ -9,10 +9,15 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    private const BindingFlags BindingAllFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-    private const BindingFlags BindingStaticFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-    private const BindingFlags BindingInstanceFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+    private const BindingFlags ALL_FLAGS = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
+    /// <summary>
+    /// 直接调用过不了混淆, 所以反射
+    /// </summary>
+    public static nint GetMemberFuncByName(Type staticType, string propertyName) =>
+        (nint)(staticType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ??
+               throw new MissingMemberException(staticType.FullName, propertyName));
+    
     public static object GetPluginManager() =>
         DService.PI.GetType().Assembly.
                  GetType("Dalamud.Service`1", true)
@@ -77,7 +82,7 @@ public static partial class HelpersOm
                 if (plugin == instance)
                 {
                     localPlugin = t;
-                    context = type.GetField("loader", BindingAllFlags)
+                    context = type.GetField("loader", ALL_FLAGS)
                                   ?.GetValue(t)
                                   ?.GetFieldOrProperty<AssemblyLoadContext>("context");
                     return true;
