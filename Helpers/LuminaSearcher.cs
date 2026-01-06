@@ -14,7 +14,7 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
         Func<T, string>[]                          searchFuncs,
         Func<IQueryable<T>, IOrderedQueryable<T>>? orderFunc        = null,
         int                                        resultLimit      = 100,
-        int                                        throttleInterval = 100,
+        uint                                       throttleInterval = 100,
         int                                        retryInterval    = 50,
         int                                        maxRetries       = 3)
     {
@@ -49,7 +49,7 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
     public List<T>          SearchResult { get; private set; }
 
     private readonly int                                     resultLimit;
-    private readonly int                                     throttleInterval;
+    private readonly uint                                    throttleInterval;
     private readonly int                                     retryInterval;
     private readonly int                                     maxRetries;
     private readonly List<List<string>>                      preprocessedData;
@@ -143,7 +143,7 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
         Func<T, string>[]                          searchFuncs,
         Func<IQueryable<T>, IOrderedQueryable<T>>? orderFunc        = null,
         int                                        resultLimit      = 100,
-        int                                        throttleInterval = 100,
+        uint                                       throttleInterval = 100,
         int                                        retryInterval    = 50,
         int                                        maxRetries       = 3)
     {
@@ -178,7 +178,7 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
     public List<T>          SearchResult { get; private set; }
 
     private readonly int                                     resultLimit;
-    private readonly int                                     throttleInterval;
+    private readonly uint                                    throttleInterval;
     private readonly int                                     retryInterval;
     private readonly int                                     maxRetries;
     private readonly List<List<string>>                      preprocessedData;

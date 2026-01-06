@@ -9,8 +9,8 @@ public class FrameworkManager : OmenServiceBase
 {
     private static CancellationTokenSource? CancelSource = new();
 
-    private static readonly ConcurrentDictionary<string, (int Throttle, IFramework.OnUpdateDelegate Method)> methodsInfoSync  = [];
-    private static readonly ConcurrentDictionary<string, (int Throttle, IFramework.OnUpdateDelegate Method)> methodsInfoAsync = [];
+    private static readonly ConcurrentDictionary<string, (uint Throttle, IFramework.OnUpdateDelegate Method)> methodsInfoSync  = [];
+    private static readonly ConcurrentDictionary<string, (uint Throttle, IFramework.OnUpdateDelegate Method)> methodsInfoAsync = [];
 
     internal override void Init()
     {
@@ -21,7 +21,7 @@ public class FrameworkManager : OmenServiceBase
         DService.Framework.Update +=  DailyRoutines_OnUpdate;
     }
 
-    public static bool Reg(IFramework.OnUpdateDelegate method, bool isSync = false, int throttleMS = 0)
+    public static bool Reg(IFramework.OnUpdateDelegate method, bool isSync = false, uint throttleMS = 0)
     {
         var state      = true;
         var uniqueName = GetUniqueName(method);
