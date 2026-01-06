@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Utility;
 using Lumina.Data;
 using Lumina.Text.ReadOnly;
@@ -64,7 +65,7 @@ public static class NumericExtensions
             if (isNegative)
             {
                 if (minusColor != null)
-                    builder.AddUiForeground((ushort)minusColor);
+                    builder.AddUiForeground(minusColor.Value);
                 builder.AddText("-");
                 if (minusColor != null)
                     builder.AddUiForegroundOff();
@@ -76,25 +77,26 @@ public static class NumericExtensions
             if (zhao > 0)
             {
                 builder.AddText(zhao.ToString());
+                
                 if (unitColor != null)
-                    builder.AddUiForeground((ushort)unitColor);
-                builder.AddText(strZhao);
-                if (unitColor != null)
-                    builder.AddUiForegroundOff();
+                    builder.AddUiForeground(strZhao, unitColor.Value);
+                else
+                    builder.AddText(strZhao);
+                
                 hasPrinted = true;
             }
             
             if (yi > 0)
             {
-                if (pendingZero || (hasPrinted && yi < valQian))
+                if (pendingZero || hasPrinted && yi < valQian)
                     builder.AddText(strZero);
 
                 builder.AddText(yi.ToString());
+
                 if (unitColor != null)
-                    builder.AddUiForeground((ushort)unitColor);
-                builder.AddText(strYi);
-                if (unitColor != null)
-                    builder.AddUiForegroundOff();
+                    builder.AddUiForeground(strYi, unitColor.Value);
+                else
+                    builder.AddText(strYi);
 
                 hasPrinted  = true;
                 pendingZero = false;
@@ -104,15 +106,15 @@ public static class NumericExtensions
             
             if (wan > 0)
             {
-                if (pendingZero || (hasPrinted && wan < valQian))
+                if (pendingZero || hasPrinted && wan < valQian)
                     builder.AddText(strZero);
 
                 builder.AddText(wan.ToString());
+                
                 if (unitColor != null)
-                    builder.AddUiForeground((ushort)unitColor);
-                builder.AddText(strWan);
-                if (unitColor != null)
-                    builder.AddUiForegroundOff();
+                    builder.AddUiForeground(strWan, unitColor.Value);
+                else
+                    builder.AddText(strWan);
 
                 hasPrinted  = true;
                 pendingZero = false;
@@ -122,14 +124,13 @@ public static class NumericExtensions
             
             if (ge > 0)
             {
-                if (pendingZero || (hasPrinted && ge < valQian))
+                if (pendingZero || hasPrinted && ge < valQian)
                     builder.AddText(strZero);
 
                 builder.AddText(ge.ToString());
             }
 
-            using var rented = new RentedSeStringBuilder();
-            return rented.Builder.Append(builder.Encode()).GetViewAsSpan();
+            return builder.Build().Encode();
         }
         
         public string ToChineseString()
@@ -345,7 +346,7 @@ public static class NumericExtensions
 
                 if (i == s.Length) return 0;
 
-                return Int128.Parse(s[i..], NumberStyles.Integer, CultureInfo.InvariantCulture);
+                return Int128.TryParse(s[i..], NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ? result : Int128.Zero;
             }
         }
     }
