@@ -66,16 +66,17 @@ resharper_can_use_global_alias = false
 resharper_csharp_align_multiline_parameter = true
 resharper_csharp_align_multiple_declaration = true
 resharper_csharp_blank_lines_around_single_line_invocable = 1
-resharper_csharp_empty_block_style = together_same_line
+resharper_csharp_empty_block_style = multiline
 resharper_csharp_int_align_comments = true
 resharper_csharp_new_line_before_while = true
+resharper_csharp_remove_blank_lines_near_braces_in_code = false
 resharper_csharp_use_indent_from_vs = true
 resharper_csharp_wrap_after_declaration_lpar = true
 resharper_enforce_line_ending_style = true
 resharper_instance_members_qualify_declared_in = 
 resharper_member_can_be_private_global_highlighting = none
 resharper_member_can_be_private_local_highlighting = none
-resharper_new_line_before_finally = false
+resharper_new_line_before_finally = true
 resharper_place_accessorholder_attribute_on_same_line = false
 resharper_place_expr_method_on_single_line = true
 resharper_place_field_attribute_on_same_line = false
@@ -107,6 +108,11 @@ csharp_style_deconstructed_variable_declaration = true:silent
 csharp_style_expression_bodied_methods = when_on_single_line:suggestion
 csharp_style_expression_bodied_properties = when_on_single_line:suggestion
 csharp_style_expression_bodied_constructors = when_on_single_line:suggestion
+
+# 禁止将简单的 try 块放在一行
+csharp_preserve_static_keyword_spacing = true
+csharp_style_allow_blank_lines_between_consecutive_braces_rule_export = true
+resharper_simple_try_statement_on_single_line = false
 
 [*.{appxmanifest,asax,ascx,aspx,axaml,axml,build,c,c++,cc,cginc,compute,config,cp,cpp,cs,cshtml,csproj,css,cu,cuh,cxx,dbml,discomap,dtd,h,hh,hlsl,hlsli,hlslinc,hpp,htm,html,hxx,inc,inl,ino,ipp,js,json,jsproj,jsx,lsproj,master,mpp,mq4,mq5,mqh,njsproj,nuspec,paml,proj,props,proto,razor,resjson,resw,resx,skin,StyleCop,targets,tasks,tpp,ts,tsx,usf,ush,vb,vbproj,xaml,xamlx,xml,xoml,xsd}]
 indent_style = space
