@@ -22,6 +22,10 @@ public class ImageHelper : OmenServiceBase
     private static readonly ConcurrentDictionary<(uint ID, bool HQ, Language Language), ImageLoadingResult> CachedIcons    = [];
 
     private static readonly List<Func<byte[], byte[]>> ConversionsToBitmap = [b => b];
+    
+    private static readonly PriorityQueue<object, long> ExpirationQueue = new();
+    private static readonly Lock                        QueueLock       = new();
+    private static readonly SemaphoreSlim               QueueSignal     = new(0);
 
     private static readonly HttpClient HttpClient = new()
     {
@@ -29,22 +33,21 @@ public class ImageHelper : OmenServiceBase
         DefaultRequestHeaders = { { "User-Agent", "OmenTools/1.0" } }
     };
 
-    private static readonly CancellationTokenSource GlobalCts = new();
+    private static readonly CancellationTokenSource GlobalCancelSource = new();
 
-    private static readonly TimeSpan CacheTTL        = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan CleanupInterval = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan CacheTTL = TimeSpan.FromSeconds(30);
 
     internal override void Init()
     {
-        _ = ProcessDownloadsAsync(GlobalCts.Token);
-        _ = CleanupLoopAsync(GlobalCts.Token);
+        _ = ProcessDownloadsAsync(GlobalCancelSource.Token);
+        _ = CleanupLoopAsync(GlobalCancelSource.Token);
     }
 
     internal override void Uninit()
     {
-        GlobalCts.Cancel();
+        GlobalCancelSource.Cancel();
         ClearAll();
-        GlobalCts.Dispose();
+        GlobalCancelSource.Dispose();
         HttpClient.Dispose();
     }
 
@@ -76,7 +79,9 @@ public class ImageHelper : OmenServiceBase
 
         result.CompletionSource.TrySetResult(result.Texture);
 
-        CachedIcons.TryAdd(key, result);
+        if (CachedIcons.TryAdd(key, result))
+            AddToExpirationQueue(key);
+
         texture = result.Texture;
         return texture != null;
     }
@@ -108,7 +113,10 @@ public class ImageHelper : OmenServiceBase
         var newResult = new ImageLoadingResult();
 
         if (CachedTextures.TryAdd(url, newResult))
+        {
+            AddToExpirationQueue(url);
             DownloadChannel.Writer.TryWrite(url);
+        }
         else
         {
             if (CachedTextures.TryGetValue(url, out result))
@@ -150,19 +158,30 @@ public class ImageHelper : OmenServiceBase
         }
     }
 
+    private static void AddToExpirationQueue(object key)
+    {
+        lock (QueueLock)
+        {
+            var wasEmpty = ExpirationQueue.Count == 0;
+            ExpirationQueue.Enqueue(key, DateTime.UtcNow.Ticks + CacheTTL.Ticks);
+            if (wasEmpty) 
+                QueueSignal.Release();
+        }
+    }
+
     private static async Task ProcessDownloadsAsync(CancellationToken ct)
     {
         var reader = DownloadChannel.Reader;
-        
-        try 
+
+        try
         {
             await Parallel.ForEachAsync(reader.ReadAllAsync(ct), new ParallelOptions
             {
                 MaxDegreeOfParallelism = 8,
-                CancellationToken = ct
+                CancellationToken      = ct
             }, async (url, token) =>
             {
-                if (!CachedTextures.TryGetValue(url, out var result) || result.IsCompleted) 
+                if (!CachedTextures.TryGetValue(url, out var result) || result.IsCompleted)
                     return;
 
                 try
@@ -170,7 +189,7 @@ public class ImageHelper : OmenServiceBase
                     if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
                     {
                         var content = await HttpClient.GetByteArrayAsync(uri, token);
-                        
+
                         foreach (var conversion in ConversionsToBitmap)
                         {
                             try
@@ -183,15 +202,15 @@ public class ImageHelper : OmenServiceBase
                             }
                         }
 
-                        result.TextureWrap = await DService.Texture.CreateFromImageAsync(content, debugName: url, cancellationToken: token);
+                        result.TextureWrap = await DService.Texture.CreateFromImageAsync(content, url, token);
                     }
                     else
                     {
-                        result.ImmediateTexture = File.Exists(url) 
-                            ? DService.Texture.GetFromFile(url) 
-                            : DService.Texture.GetFromGame(url);
+                        result.ImmediateTexture = File.Exists(url)
+                                                      ? DService.Texture.GetFromFile(url)
+                                                      : DService.Texture.GetFromGame(url);
                     }
-                    
+
                     result.CompletionSource.TrySetResult(result.Texture);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
@@ -207,7 +226,7 @@ public class ImageHelper : OmenServiceBase
         }
         catch (OperationCanceledException)
         {
-            // 正常退出
+
         }
     }
 
@@ -217,26 +236,49 @@ public class ImageHelper : OmenServiceBase
         {
             try
             {
-                await Task.Delay(CleanupInterval, ct);
+                long wakeUpTicks = 0;
+                var  shouldWait  = false;
 
-                var now = DateTime.UtcNow;
-
-                foreach (var kvp in CachedTextures)
+                lock (QueueLock)
                 {
-                    if (now - kvp.Value.LastAccessTime > CacheTTL)
-                    {
-                        if (CachedTextures.TryRemove(kvp.Key, out var removedItem))
-                            removedItem.Dispose();
-                    }
+                    if (ExpirationQueue.Count == 0)
+                        shouldWait = true;
+                    else if (ExpirationQueue.TryPeek(out _, out var ticks))
+                        wakeUpTicks = ticks;
                 }
 
-                foreach (var kvp in CachedIcons)
+                if (shouldWait)
                 {
-                    if (now - kvp.Value.LastAccessTime > CacheTTL)
+                    await QueueSignal.WaitAsync(ct);
+                    continue;
+                }
+
+                var delayTicks = wakeUpTicks - DateTime.UtcNow.Ticks;
+                if (delayTicks > 0)
+                    await Task.Delay(TimeSpan.FromTicks(delayTicks), ct);
+
+                while (!ct.IsCancellationRequested)
+                {
+                    object? keyToProcess = null;
+
+                    lock (QueueLock)
                     {
-                        if (CachedIcons.TryRemove(kvp.Key, out var removedItem))
-                            removedItem.Dispose();
+                        if (ExpirationQueue.TryPeek(out var key, out var ticks))
+                        {
+                            if (ticks <= DateTime.UtcNow.Ticks)
+                            {
+                                ExpirationQueue.Dequeue();
+                                keyToProcess = key;
+                            }
+                            else
+                                break;
+                        }
+                        else
+                            break;
                     }
+
+                    if (keyToProcess != null)
+                        CheckAndProcessItem(keyToProcess);
                 }
             }
             catch (OperationCanceledException)
@@ -246,6 +288,52 @@ public class ImageHelper : OmenServiceBase
             catch (Exception ex)
             {
                 Error("[ImageHelper] 缓存清理任务异常", ex);
+            }
+        }
+    }
+
+    private static void CheckAndProcessItem(object key)
+    {
+        ImageLoadingResult? result  = null;
+        var                 removed = false;
+
+        if (key is string urlKey)
+        {
+            if (CachedTextures.TryGetValue(urlKey, out result))
+            {
+                if (DateTime.UtcNow - result.LastAccessTime > CacheTTL)
+                {
+                    if (CachedTextures.TryRemove(urlKey, out var removedItem))
+                    {
+                        removedItem.Dispose();
+                        removed = true;
+                    }
+                }
+            }
+        }
+        else if (key is ValueTuple<uint, bool, Language> iconKey)
+        {
+            if (CachedIcons.TryGetValue(iconKey, out result))
+            {
+                if (DateTime.UtcNow - result.LastAccessTime > CacheTTL)
+                {
+                    if (CachedIcons.TryRemove(iconKey, out var removedItem))
+                    {
+                        removedItem.Dispose();
+                        removed = true;
+                    }
+                }
+            }
+        }
+
+        if (!removed && result != null)
+        {
+            lock (QueueLock)
+            {
+                var wasEmpty = ExpirationQueue.Count == 0;
+                ExpirationQueue.Enqueue(key, result.LastAccessTime.Ticks + CacheTTL.Ticks);
+                if (wasEmpty) 
+                    QueueSignal.Release();
             }
         }
     }
@@ -272,6 +360,9 @@ public class ImageHelper : OmenServiceBase
 
     public static void ClearAll()
     {
+        lock (QueueLock)
+            ExpirationQueue.Clear();
+
         foreach (var value in CachedTextures.Values)
             value.Dispose();
         CachedTextures.Clear();
