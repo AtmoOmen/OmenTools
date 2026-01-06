@@ -8,9 +8,6 @@ public partial class TaskHelper : IDisposable
     
     public TaskHelper()
     {
-        FrameThrottler = new(() => (long)DService.UIBuilder.FrameCount);
-        Throttler      = new();
-        
         DService.Framework.Update += Tick;
         Instances.Add(this);
     }
@@ -28,9 +25,6 @@ public partial class TaskHelper : IDisposable
     public  int                        TimeLimitMS     { get; set; } = 10000;
     
     private readonly ConcurrentDictionary<TaskHelperTask, Task<bool?>> RunningAsyncTasks = new();
-    
-    private readonly FrameThrottler<string> FrameThrottler;
-    private readonly Throttler<string>      Throttler;
 
     private void Tick(object? _)
     {

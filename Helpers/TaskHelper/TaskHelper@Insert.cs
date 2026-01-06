@@ -15,10 +15,10 @@ public partial class TaskHelper
         InsertAsync(async ct => { await asyncTask(ct); return true; }, name, timeLimitMs, abortOnTimeout, weight);
 
     public void InsertAsync(Func<Task<bool?>> asyncTask, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
-        InsertAsync(ct => asyncTask(), name, timeLimitMs, abortOnTimeout, weight);
+        InsertAsync(_ => asyncTask(), name, timeLimitMs, abortOnTimeout, weight);
 
     public void InsertAsync(Func<Task> asyncTask, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
-        InsertAsync(async ct => { await asyncTask(); return true; }, name, timeLimitMs, abortOnTimeout, weight);
+        InsertAsync(async _ => { await asyncTask(); return true; }, name, timeLimitMs, abortOnTimeout, weight);
 
     private void InsertQueueTask(TaskHelperTask task, int weight)
     {
@@ -34,12 +34,18 @@ public partial class TaskHelper
         return newQueue;
     }
 
-    public void InsertDelayNext(int delayMS, string uniqueName = "DelayNextInsert", bool useFrameThrottler = false, int weight = 0)
+    public void InsertDelayNext(int delayMS, string uniqueName = "DelayNextInsert", int weight = 0)
     {
-        IThrottler<string> throttler = useFrameThrottler ? FrameThrottler : Throttler;
-
-        Insert(() => throttler.Check(uniqueName),             $"{uniqueName} (DelayCheck)", weight: weight);
-        Insert(() => throttler.Throttle(uniqueName, delayMS), $"{uniqueName} (Delay)", weight: weight);
+        long startTick = 0;
+        Insert(() => 
+               {
+                   if (startTick == 0)
+                   {
+                       startTick = System.Diagnostics.Stopwatch.GetTimestamp();
+                       return false;
+                   }
+                   return System.Diagnostics.Stopwatch.GetElapsedTime(startTick).TotalMilliseconds >= delayMS;
+               }, $"{uniqueName} (Delay {delayMS}ms)", weight: weight);
 
         HasPendingTask = true;
     }

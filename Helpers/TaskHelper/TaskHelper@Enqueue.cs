@@ -25,10 +25,10 @@ public partial class TaskHelper
         EnqueueAsync(async ct => { await asyncTask(ct); return true; }, name, timeLimitMs, abortOnTimeout, weight);
 
     public void EnqueueAsync(Func<Task<bool?>> asyncTask, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
-        EnqueueAsync(ct => asyncTask(), name, timeLimitMs, abortOnTimeout, weight);
+        EnqueueAsync(_ => asyncTask(), name, timeLimitMs, abortOnTimeout, weight);
 
     public void EnqueueAsync(Func<Task> asyncTask, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
-        EnqueueAsync(async ct => { await asyncTask(); return true; }, name, timeLimitMs, abortOnTimeout, weight);
+        EnqueueAsync(async _ => { await asyncTask(); return true; }, name, timeLimitMs, abortOnTimeout, weight);
 
     private void EnsureQueueExists(int weight)
     {
@@ -36,16 +36,18 @@ public partial class TaskHelper
         Queues.Add(new(weight));
     }
 
-    public void DelayNext(int delayMS, string uniqueName = "DelayNextEnqueue", bool useFrameThrottler = false, int weight = 0)
+    public void DelayNext(int delayMS, string uniqueName = "DelayNextEnqueue", int weight = 0)
     {
-        IThrottler<string> throttler = useFrameThrottler ? FrameThrottler : Throttler;
-
-        Enqueue(() => throttler.Throttle(uniqueName, delayMS),
-            $"{uniqueName} (Delay)",
-            weight: weight);
-        Enqueue(() => throttler.Check(uniqueName),
-            $"{uniqueName} (DelayCheck)",
-            weight: weight);
+        long startTick = 0;
+        Enqueue(() => 
+                {
+                    if (startTick == 0)
+                    {
+                        startTick = System.Diagnostics.Stopwatch.GetTimestamp();
+                        return false;
+                    }
+                    return System.Diagnostics.Stopwatch.GetElapsedTime(startTick).TotalMilliseconds >= delayMS;
+                }, $"{uniqueName} (Delay {delayMS}ms)", weight: weight);
 
         HasPendingTask = true;
     }
