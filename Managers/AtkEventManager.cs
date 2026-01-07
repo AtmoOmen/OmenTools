@@ -7,7 +7,7 @@ namespace OmenTools.Managers;
 
 internal unsafe class AtkEventManager : OmenServiceBase
 {
-    private static readonly CompSig ReceiveGlobalEventSig = new("48 89 5C 24 ?? 55 57 41 57 48 83 EC 50 48 8B D9 0F B7 EA");
+    private static readonly CompSig ReceiveGlobalEventSig = new("48 89 5C 24 ?? 55 57 41 57 48 83 EC 50 48 8B D9");
     private delegate        void ReceiveGlobalEventDelegate(AtkUnitBase* addon, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* data);
     private static          Hook<ReceiveGlobalEventDelegate>? ReceiveGlobalEventHook;
 
@@ -121,23 +121,19 @@ public unsafe class AtkEventWrapper : IDisposable
         if (isDisposed) return;
         isDisposed = true;
 
-        lock (dataLock)
+        if (registeredData is { Count: > 0 })
         {
-            if (registeredData is { Count: > 0 })
+            foreach (var (addonPtr, nodePtr, type) in registeredData.ToList())
             {
-                foreach (var (addonPtr, nodePtr, type) in registeredData)
-                {
-                    var addon = (AtkUnitBase*)addonPtr;
-                    var node  = (AtkResNode*)nodePtr;
-                    if (!addon->IsAddonAndNodesReady() || node == null) continue;
+                var addon = (AtkUnitBase*)addonPtr;
+                var node  = (AtkResNode*)nodePtr;
+                if (!addon->IsAddonAndNodesReady() || node == null) continue;
 
-                    Remove(addon, node, type);
-                }
+                Remove(addon, node, type);
             }
-
-            AtkEventManager.UnregisterEvent(ParamKey);
         }
-        
+
+        AtkEventManager.UnregisterEvent(ParamKey);
         GC.SuppressFinalize(this);
     }
     
