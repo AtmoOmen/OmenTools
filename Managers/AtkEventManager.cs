@@ -7,9 +7,9 @@ namespace OmenTools.Managers;
 
 internal unsafe class AtkEventManager : OmenServiceBase
 {
-    private static readonly CompSig GlobalEventSig = new("48 89 5C 24 ?? 55 57 41 57 48 83 EC 50 48 8B D9 0F B7 EA");
-    private delegate        void* GlobalEventDelegate(AtkUnitBase* addon, AtkEventType eventType, uint eventParam, AtkResNode** eventData, uint* a5);
-    private static          Hook<GlobalEventDelegate>? GlobalEventHook;
+    private static readonly CompSig ReceiveGlobalEventSig = new("48 89 5C 24 ?? 55 57 41 57 48 83 EC 50 48 8B D9 0F B7 EA");
+    private delegate        void ReceiveGlobalEventDelegate(AtkUnitBase* addon, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* data);
+    private static          Hook<ReceiveGlobalEventDelegate>? ReceiveGlobalEventHook;
 
     private static readonly ConcurrentDictionary<uint, AtkEventWrapper> EventHandlers      = [];
     private static readonly ConcurrentStack<uint>                       AvailableParamKeys = [];
@@ -21,14 +21,14 @@ internal unsafe class AtkEventManager : OmenServiceBase
     
     internal override void Init()
     {
-        GlobalEventHook ??= GlobalEventSig.GetHook<GlobalEventDelegate>(GlobalEventDetour);
-        GlobalEventHook.Enable();
+        ReceiveGlobalEventHook ??= ReceiveGlobalEventSig.GetHook<ReceiveGlobalEventDelegate>(ReceiveGlobalEventDetour);
+        ReceiveGlobalEventHook.Enable();
     }
 
     internal override void Uninit()
     {
-        GlobalEventHook?.Dispose();
-        GlobalEventHook = null;
+        ReceiveGlobalEventHook?.Dispose();
+        ReceiveGlobalEventHook = null;
 
         foreach (var (_, atkEvent) in EventHandlers)
             atkEvent.Dispose();
@@ -37,14 +37,20 @@ internal unsafe class AtkEventManager : OmenServiceBase
         AvailableParamKeys.Clear();
     }
 
-    private static void* GlobalEventDetour(AtkUnitBase* atkUnitBase, AtkEventType eventType, uint eventParam, AtkResNode** eventData, uint* a5)
+    private static void ReceiveGlobalEventDetour(AtkUnitBase* addon, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* data)
     {
-        if (EventHandlers.TryGetValue(eventParam, out var simpleEvent))
+        if (addon    == null ||
+            atkEvent == null ||
+            data     == null)
+            return;
+        
+        if (EventHandlers.TryGetValue((uint)eventParam, out var simpleEvent))
         {
             try
             {
-                simpleEvent.Action(eventType, atkUnitBase, eventData[0]);
-                return null;
+                simpleEvent.Action(eventType, addon, atkEvent, data);
+                atkEvent->SetEventIsHandled();
+                return;
             }
             catch (Exception ex)
             {
@@ -52,7 +58,7 @@ internal unsafe class AtkEventManager : OmenServiceBase
             }
         }
 
-        return GlobalEventHook.Original(atkUnitBase, eventType, eventParam, eventData, a5);
+        ReceiveGlobalEventHook.Original(addon, eventType, eventParam, atkEvent, data);
     }
 
     internal static uint RegisterEvent(AtkEventWrapper simpleEvent)
@@ -86,7 +92,7 @@ internal unsafe class AtkEventManager : OmenServiceBase
 
 public unsafe class AtkEventWrapper : IDisposable
 {
-    public delegate void AtkEventActionDelegate(AtkEventType eventType, AtkUnitBase* addon, AtkResNode* node);
+    public delegate void AtkEventActionDelegate(AtkEventType eventType, AtkUnitBase* addon, AtkEvent* atkEvent, AtkEventData* data);
     
     /// <summary>
     /// 事件触发时要执行的回调。
@@ -100,6 +106,8 @@ public unsafe class AtkEventWrapper : IDisposable
     
     private readonly List<(nint AddonPtr, nint NodePtr, AtkEventType Type)> registeredData = [];
 
+    private readonly Lock dataLock = new();
+    
     private bool isDisposed;
 
     public AtkEventWrapper(AtkEventActionDelegate action)
@@ -112,35 +120,44 @@ public unsafe class AtkEventWrapper : IDisposable
     {
         if (isDisposed) return;
         isDisposed = true;
-        
-        if (registeredData is { Count: > 0 })
+
+        lock (dataLock)
         {
-            foreach (var (addonPtr, nodePtr, type) in registeredData)
+            if (registeredData is { Count: > 0 })
             {
-                var addon = (AtkUnitBase*)addonPtr;
-                var node  = (AtkResNode*)nodePtr;
-                if (addon == null || node == null) continue;
+                foreach (var (addonPtr, nodePtr, type) in registeredData)
+                {
+                    var addon = (AtkUnitBase*)addonPtr;
+                    var node  = (AtkResNode*)nodePtr;
+                    if (!addon->IsAddonAndNodesReady() || node == null) continue;
 
-                Remove(addon, node, type);
+                    Remove(addon, node, type);
+                }
             }
-        }
 
-        AtkEventManager.UnregisterEvent(ParamKey);
+            AtkEventManager.UnregisterEvent(ParamKey);
+        }
+        
         GC.SuppressFinalize(this);
     }
     
     public void Add(AtkUnitBase* addon, AtkResNode* node, AtkEventType eventType)
     {
         if (isDisposed) return;
-        node->AddEvent(eventType, ParamKey, (AtkEventListener*)addon, node, true);
-        
-        registeredData.Add(((nint)addon, (nint)node, eventType));
+
+        lock (dataLock)
+        {
+            node->AddEvent(eventType, ParamKey, (AtkEventListener*)addon, node, true);
+            registeredData.Add(((nint)addon, (nint)node, eventType));
+        }
     }
 
     public void Remove(AtkUnitBase* addon, AtkResNode* node, AtkEventType eventType)
     {
-        node->RemoveEvent(eventType, ParamKey, (AtkEventListener*)addon, true);
-        
-        registeredData.Remove(((nint)addon, (nint)node, eventType));
+        lock (dataLock)
+        {
+            node->RemoveEvent(eventType, ParamKey, (AtkEventListener*)addon, true);
+            registeredData.Remove(((nint)addon, (nint)node, eventType));
+        }
     }
 }
