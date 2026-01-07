@@ -1,6 +1,6 @@
 namespace OmenTools.Helpers;
 
-public class TaskHelperQueue(int weight) : IEquatable<TaskHelperQueue>, IComparable<TaskHelperQueue>
+internal class TaskHelperQueue(int weight) : IEquatable<TaskHelperQueue>, IComparable<TaskHelperQueue>
 {
     public int                  Weight { get; } = weight;
     public List<TaskHelperTask> Tasks  { get; } = [];
@@ -12,7 +12,7 @@ public class TaskHelperQueue(int weight) : IEquatable<TaskHelperQueue>, ICompara
         obj is TaskHelperQueue other && Equals(other);
 
     public override int GetHashCode() => 
-        (int)Weight;
+        Weight;
 
     public int CompareTo(TaskHelperQueue? other) => 
         other is null ? 1 : other.Weight.CompareTo(Weight);

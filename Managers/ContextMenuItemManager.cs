@@ -106,7 +106,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
 
     internal override void Init()
     {
-        TaskHelper ??= new() { TimeLimitMS = 5_000 };
+        TaskHelper ??= new() { TimeoutMS = 5_000 };
 
         DService.ContextMenu.OnMenuOpened += OnMenuOpened;
         DService.Gui.HoveredItemChanged   += OnHoveredItemChanged;

@@ -307,11 +307,11 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// <summary>
     /// 更换至该辅助职业
     /// </summary>
-    /// <returns>null - 不在新月岛副本区域内; false - 当前就为该职业; true - 发送请求成功</returns>
-    public unsafe bool? ChangeTo()
+    /// <returns>false - 当前就为该职业 / 不在新月岛副本区域内; true - 发送请求成功</returns>
+    public unsafe bool ChangeTo()
     {
         var state = PublicContentOccultCrescent.GetState();
-        if (state == null) return null;
+        if (state == null) return false;
 
         if (state->CurrentSupportJob == DataID) return false;
 

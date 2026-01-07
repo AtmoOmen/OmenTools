@@ -5,7 +5,7 @@ using ContentsFinder = FFXIVClientStructs.FFXIV.Client.Game.UI.ContentsFinder;
 
 namespace OmenTools.Helpers;
 
-public class ContentsFinderHelper
+public static class ContentsFinderHelper
 {
     private static readonly CompSig RequestContentsFinderSig = new("E8 ?? ?? ?? ?? 33 C0 E9 ?? ?? ?? ?? FE C8");
     private delegate        bool RequestContentsFinderDelegate(uint[] contentsID, uint contentsCount, uint a3, ref ContentsFinderOption option);

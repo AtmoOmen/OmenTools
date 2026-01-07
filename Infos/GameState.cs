@@ -24,7 +24,7 @@ public unsafe class GameState : OmenServiceBase
     
     internal override void Init()
     {
-        TaskHelper ??= new() { TimeLimitMS = int.MaxValue };
+        TaskHelper ??= new() { TimeoutMS = int.MaxValue };
         
         DService.ClientState.Login  += OnDalamudLogin;
         DService.ClientState.Logout += OnDalamudLogout;

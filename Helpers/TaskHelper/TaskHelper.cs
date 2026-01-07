@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Threading.Channels;
 using Dalamud.Plugin.Services;
 
 namespace OmenTools.Helpers;
@@ -6,76 +8,144 @@ namespace OmenTools.Helpers;
 public partial class TaskHelper : IDisposable
 {
     private static readonly List<TaskHelper> Instances = [];
-    
+
+    internal static void DisposeAll()
+    {
+        var disposedCount = 0;
+
+        foreach (var instance in Instances)
+        {
+            DService.Framework.Update -= instance.Tick;
+            disposedCount++;
+        }
+
+        if (disposedCount > 0)
+            Debug($"[TaskHelper] 已自动清理了 {disposedCount} 个队列管理器");
+
+        Instances.Clear();
+    }
+
+    private static Channel<(TaskHelperTask Task, int Weight)> CreateTaskChannel() =>
+        Channel.CreateUnbounded<(TaskHelperTask, int)>(new() { SingleReader = true });
+
     public TaskHelper()
     {
-        DService.Framework.Update += Tick;
         Instances.Add(this);
     }
-    
+
     public void Dispose()
     {
         DService.Framework.Update -= Tick;
-        
+        TaskChannel.Writer.TryComplete();
+
         foreach (var kvp in RunningAsyncTasks)
         {
-            kvp.Key.CancellationTokenSource?.Cancel();
-            kvp.Key.CancellationTokenSource?.Dispose();
+            kvp.Key.CancelToken?.Cancel();
+            kvp.Key.CancelToken?.Dispose();
         }
-        
+
         RunningAsyncTasks.Clear();
-        
+
         foreach (var queue in Queues)
         {
             foreach (var task in queue.Tasks.Where(t => t.IsAsync))
             {
-                task.CancellationTokenSource?.Cancel();
-                task.CancellationTokenSource?.Dispose();
+                task.CancelToken?.Cancel();
+                task.CancelToken?.Dispose();
             }
         }
-        
+
         Instances.Remove(this);
     }
 
-    public  string CurrentTaskName => CurrentTask?.Name ?? string.Empty;
-    public  int    QueuedTaskCount => Queues.Sum(q => q.Tasks.Count) + (CurrentTask == null ? 0 : 1);
-    public  bool   IsBusy          => CurrentTask != null || Queues.Any(q => q.Tasks.Count > 0) || !RunningAsyncTasks.IsEmpty;
-    
-    public  bool   AbortOnTimeout  { get; set; } = true;
-    public  long   AbortAt         { get; private set; }
-    public  bool   ShowDebug       { get; set; }
-    public  int    TimeLimitMS     { get; set; } = 10_000;
+    /// <summary>
+    ///     当前正在进行的任务名称
+    /// </summary>
+    public string CurrentTaskName => CurrentTask?.GetName() ?? string.Empty;
 
-    private TaskHelperTask?                                   CurrentTask       { get; set; }
-    private SortedSet<TaskHelperQueue>                        Queues            { get; }      = [new(1), new(0)];
-    private ConcurrentDictionary<TaskHelperTask, Task<bool?>> RunningAsyncTasks { get; set; } = [];
-    private bool                                              HasPendingTask    { get; set; }
-    
+    /// <summary>
+    ///     当前所有正在处理任务数量 (队列中 + 正在执行)
+    /// </summary>
+    public int CurrentTasksCount => queueTaskCount + (CurrentTask == null ? 0 : 1) + pendingTaskCount;
+
+    /// <summary>
+    ///     当前是否正在处理任一任务
+    /// </summary>
+    public bool IsBusy => CurrentTasksCount > 0;
+
+    /// <summary>
+    ///     当单一任务超时时的全局控制逻辑
+    ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.TimeoutBehaviour" />) 则以任务的为判断标准
+    /// </summary>
+    public TaskAbortBehaviour TimeoutBehaviour { get; set; } = TaskAbortBehaviour.AbortAll;
+
+    /// <summary>
+    ///     当单一任务执行出现异常时的全局控制逻辑
+    ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.ExceptionBehaviour" />) 则以任务的为判断标准 <br />
+    ///     注: 异步任务被取消将被视为发生异常
+    /// </summary>
+    public TaskAbortBehaviour ExceptionBehaviour { get; set; } = TaskAbortBehaviour.AbortAll;
+
+    /// <summary>
+    ///     是否显示调试信息
+    /// </summary>
+    public bool ShowDebug { get; set; }
+
+    /// <summary>
+    ///     全局任务超时时间 <br />
+    ///     默认为 10 秒; 设置为 ≤ 0 以默认不超时 <br />
+    ///     若任务本身设置了 ＞ 0 的过期时间 (<see cref="TaskHelperTask.TimeoutMS" />) 则以任务的为判断标准 <br />
+    ///     <seealso cref="TimeoutBehaviour" />
+    /// </summary>
+    public int TimeoutMS { get; set; } = 10_000;
+
+    private TaskHelperTask?                                  CurrentTask       { get; set; }
+    private ConcurrentDictionary<TaskHelperTask, Task<bool>> RunningAsyncTasks { get; set; } = [];
+    private SortedSet<TaskHelperQueue>                       Queues            { get; }      = [new(1), new(0)];
+    private Channel<(TaskHelperTask Task, int Weight)>       TaskChannel       { get; }      = CreateTaskChannel();
+
+    private volatile int pendingTaskCount;
+    private volatile int queueTaskCount;
+    private volatile int isScanning;
+
     private void Tick(IFramework framework)
     {
+        while (TaskChannel.Reader.TryRead(out var item))
+        {
+            Interlocked.Decrement(ref pendingTaskCount);
+            var queue = Queues.FirstOrDefault(q => q.Weight == item.Weight);
+
+            if (queue == null)
+            {
+                queue = new TaskHelperQueue(item.Weight);
+                Queues.Add(queue);
+            }
+
+            queue.Tasks.Add(item.Task);
+            Interlocked.Increment(ref queueTaskCount);
+        }
+
         if (CurrentTask == null)
             ProcessNextTask();
         else
             ExecuteCurrentTask(framework);
+
+        TryUnregisterTick();
     }
 
     private void ProcessNextTask()
     {
-        if (!HasPendingTask) return;
-        
         foreach (var queue in Queues)
         {
             if (!queue.Tasks.TryDequeue(out var task)) continue;
-            
-            CurrentTask = task;
-            Log($"开始执行任务: {CurrentTask?.Name ?? "(无名称)"}");
+            Interlocked.Decrement(ref queueTaskCount);
 
-            AbortAt = Environment.TickCount64 + CurrentTask?.TimeLimitMS ?? 0;
+            CurrentTask           = task;
+            CurrentTask.StartTime = Stopwatch.GetTimestamp();
+
+            Log($"开始执行任务 {CurrentTask.GetName()}");
             break;
         }
-
-        if (CurrentTask == null) 
-            HasPendingTask = false;
     }
 
     private void ExecuteCurrentTask(IFramework framework)
@@ -84,117 +154,146 @@ public partial class TaskHelper : IDisposable
         {
             if (CurrentTask == null) return;
 
-            bool? result;
-            
             if (CurrentTask.IsAsync)
             {
                 if (!RunningAsyncTasks.TryGetValue(CurrentTask, out var task))
                 {
-                    var asyncTask = framework.Run(async () => await CurrentTask.AsyncAction(CurrentTask.CancellationTokenSource.Token),
-                                                  CurrentTask.CancellationTokenSource.Token);
+                    var asyncTask = framework.Run(async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token),
+                                                  CurrentTask.CancelToken.Token);
                     RunningAsyncTasks[CurrentTask] = asyncTask;
-                    
-                    Log($"启动异步任务: {CurrentTask.Name}");
-                    
+
+                    Log($"启动异步任务 {CurrentTask.GetName()}");
                     return;
                 }
-                
-                if (!task.IsCompleted)
-                {
-                    CheckForTimeout();
-                    return;
-                }
-                
-                RunningAsyncTasks.TryRemove(CurrentTask, out _);
-                
-                if (task.IsFaulted)
-                {
-                    HandleError(CurrentTask.Name, task.Exception?.GetBaseException() ?? new Exception("异步任务失败"));
-                    return;
-                }
-                
-                if (task.IsCanceled)
-                {
-                    Log($"异步任务已取消: {CurrentTask.Name}");
-                    
-                    CurrentTask = null;
-                    return;
-                }
-                
-                result = task.Result;
+
+                if (task.IsCompletedSuccessfully)
+                    HandleTaskCompletion();
+                else if (task.IsCanceled)
+                    throw new OperationCanceledException($"异步任务 {CurrentTask.GetName()} 已取消");
+                else if (task.IsFaulted)
+                    throw task.Exception?.GetBaseException() ?? new Exception($"异步任务 {CurrentTask.GetName()} 已失败");
+                else
+                    HandleTaskTimeout();
             }
             else
-                result = CurrentTask.Action!();
-            
-            switch (result)
             {
-                case true:
-                    CompleteTask();
-                    break;
-                case false:
-                    CheckForTimeout();
-                    break;
-                default:
-                    AbortAllTasks();
-                    break;
+                switch (CurrentTask.Action())
+                {
+                    case true:
+                        HandleTaskCompletion();
+                        break;
+                    case false:
+                        HandleTaskTimeout();
+                        break;
+                }
+            }
+
+
+        }
+        catch (Exception ex)
+        {
+            HandleTaskError(ex);
+        }
+    }
+
+    private void HandleTaskCompletion()
+    {
+        if (CurrentTask == null) return;
+
+        Log($"已完成任务: {CurrentTask.GetName()}");
+        CurrentTask = null;
+        RunningAsyncTasks.TryRemove(CurrentTask, out _);
+    }
+
+    private void HandleTaskTimeout()
+    {
+        if (CurrentTask == null) return;
+
+        var timeoutMS = CurrentTask.TimeoutMS <= 0 ? TimeoutMS : CurrentTask.TimeoutMS;
+        if (timeoutMS <= 0) return;
+
+        if (Stopwatch.GetElapsedTime(CurrentTask.StartTime).TotalMilliseconds <= timeoutMS) return;
+
+        var timeoutBehaviour = CurrentTask.TimeoutBehaviour ?? TimeoutBehaviour;
+        var reason           = $"任务 {CurrentTask.GetName()} 执行时间过长";
+
+        ExecuteTaskAbortBehaviour(timeoutBehaviour, reason, CurrentTask);
+    }
+
+    private void HandleTaskError(Exception? ex = null)
+    {
+        if (CurrentTask == null) return;
+
+        var exceptionBehaviour = CurrentTask.ExceptionBehaviour ?? ExceptionBehaviour;
+        var reason             = $"执行任务 {CurrentTask.GetName()} 过程中出现错误";
+
+        if (ex != null)
+            Error(reason, ex);
+        else
+            Error(reason);
+
+        ExecuteTaskAbortBehaviour(exceptionBehaviour, reason, CurrentTask);
+    }
+
+    private void ExecuteTaskAbortBehaviour(TaskAbortBehaviour behaviour, string reason, TaskHelperTask task)
+    {
+        if (task == null) return;
+
+        switch (behaviour)
+        {
+            case TaskAbortBehaviour.AbortAll:
+                LogWarning($"放弃了所有任务 (原因: {reason})");
+
+                Abort();
+                break;
+            case TaskAbortBehaviour.AbortCurrent:
+                LogWarning($"放弃了当前任务 (原因: {reason})");
+
+                if (CurrentTask is { IsAsync: true, CancelToken: not null })
+                {
+                    CurrentTask.CancelToken.Cancel();
+                    RunningAsyncTasks.TryRemove(CurrentTask, out _);
+                }
+
+                CurrentTask = null;
+                RunningAsyncTasks.TryRemove(CurrentTask, out _);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(behaviour));
+        }
+    }
+
+    private void TryRegisterTick()
+    {
+        if (Interlocked.CompareExchange(ref isScanning, 1, 0) == 0)
+        {
+            DService.Framework.Update -= Tick;
+            DService.Framework.Update += Tick;
+        }
+    }
+
+    private void TryUnregisterTick()
+    {
+        if (CurrentTask == null && pendingTaskCount == 0 && queueTaskCount == 0 && RunningAsyncTasks.IsEmpty)
+        {
+            DService.Framework.Update -= Tick;
+            Interlocked.Exchange(ref isScanning, 0);
+
+            if (CurrentTask != null || pendingTaskCount > 0 || queueTaskCount > 0 || !RunningAsyncTasks.IsEmpty)
+            {
+                if (Interlocked.CompareExchange(ref isScanning, 1, 0) == 0)
+                    DService.Framework.Update += Tick;
             }
         }
-        catch (Exception e)
-        {
-            HandleError(CurrentTask?.Name ?? "(无名称)", e);
-        }
     }
-
-    private void CompleteTask()
-    {
-        Log($"已完成任务: {CurrentTask?.Name ?? "(无名称)"}");
-        
-        CurrentTask = null;
-    }
-
-    private void CheckForTimeout()
-    {
-        if (Environment.TickCount64 <= AbortAt) return;
-
-        var reason = $"任务 {CurrentTask?.Name ?? "(无名称)"} 执行时间过长";
-        
-        if (CurrentTask is { IsAsync: true, CancellationTokenSource: not null })
-        {
-            CurrentTask.CancellationTokenSource.Cancel();
-            RunningAsyncTasks.TryRemove(CurrentTask, out _);
-        }
-        
-        if (CurrentTask?.AbortOnTimeout ?? true)
-            AbortAllTasks(reason);
-        else
-            HandleTimeout(reason);
-    }
-
-    private void AbortAllTasks(string reason = "无")
-    {
-        LogWarning($"放弃了所有剩余任务 (原因: {reason})");
-        Abort();
-    }
-
-    private void HandleError(string name, Exception e)
-    {
-        Error($"执行任务 {name} 过程中出现错误", e);
-        CurrentTask = null;
-    }
-
-    private void HandleTimeout(string reason)
-    {
-        LogWarning($"放弃了当前任务 (原因: {reason})");
-        CurrentTask = null;
-    }
-
+    
     #region 内部日志
 
     private void Log(string message)
     {
-        if (ShowDebug) 
+        if (ShowDebug)
             Debug(message);
-        else 
+        else
             Verbose(message);
     }
 
@@ -207,22 +306,24 @@ public partial class TaskHelper : IDisposable
     }
 
     #endregion
-    
+
     #region 队列与任务
 
     public void Abort()
     {
         foreach (var queue in Queues)
             queue.Tasks.Clear();
-        
+
+        queueTaskCount = 0;
+
         foreach (var kvp in RunningAsyncTasks)
-            kvp.Key.CancellationTokenSource?.Cancel();
-        
+            kvp.Key.CancelToken?.Cancel();
+
         RunningAsyncTasks.Clear();
-        
+
         CurrentTask = null;
     }
-    
+
     public bool AddQueue(int weight)
     {
         if (Queues.Any(q => q.Weight == weight)) return false;
@@ -233,63 +334,66 @@ public partial class TaskHelper : IDisposable
     public bool RemoveQueue(int weight)
     {
         LogWarning($"移除了权重 {weight} 队列");
-        return Queues.RemoveWhere(q => q.Weight == weight) > 0;
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+        if (queue == null) return false;
+
+        Interlocked.Add(ref queueTaskCount, -queue.Tasks.Count);
+        return Queues.Remove(queue);
     }
 
     public void RemoveQueueTasks(int weight)
     {
         LogWarning($"清除了权重 {weight} 队列中的所有任务");
-        (Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks ?? []).Clear();
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+        if (queue != null)
+        {
+            Interlocked.Add(ref queueTaskCount, -queue.Tasks.Count);
+            queue.Tasks.Clear();
+        }
     }
 
     public bool RemoveQueueFirstTask(int weight)
     {
         LogWarning($"移除了权重 {weight} 队列中的第一个任务");
-        return (Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks ?? []).TryDequeue(out _);
-    }
-
-    public bool RemoveQueueLastTask(int weight)
-    {
-        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
-        if (!((queue?.Tasks ?? []).Count > 0)) return false;
-        
-        LogWarning($"清除了权重 {weight} 队列中的最后一个任务");
-        queue.Tasks.RemoveAt(queue.Tasks.Count - 1);
-        return true;
-    }
-
-    public bool RemoveQueueFirstNTasks(int weight, int count)
-    {
-        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
-        if ((queue?.Tasks ?? []).Count > 0)
+        if ((Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks ?? []).TryDequeue(out _))
         {
-            LogWarning($"清除了权重 {weight} 队列中的起始 {count} 个任务");
-            
-            var actualCountToRemove = Math.Min(count, queue.Tasks.Count);
-            queue.Tasks.RemoveRange(0, actualCountToRemove);
+            Interlocked.Decrement(ref queueTaskCount);
             return true;
         }
 
         return false;
     }
 
-    public int GetQueueTaskCount(int weight) => 
+    public bool RemoveQueueLastTask(int weight)
+    {
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+        if (!((queue?.Tasks ?? []).Count > 0)) return false;
+
+        LogWarning($"清除了权重 {weight} 队列中的最后一个任务");
+        queue.Tasks.RemoveAt(queue.Tasks.Count - 1);
+        Interlocked.Decrement(ref queueTaskCount);
+        return true;
+    }
+
+    public bool RemoveQueueFirstNTasks(int weight, int count)
+    {
+        var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+
+        if ((queue?.Tasks ?? []).Count > 0)
+        {
+            LogWarning($"清除了权重 {weight} 队列中的起始 {count} 个任务");
+
+            var actualCountToRemove = Math.Min(count, queue.Tasks.Count);
+            queue.Tasks.RemoveRange(0, actualCountToRemove);
+            Interlocked.Add(ref queueTaskCount, -actualCountToRemove);
+            return true;
+        }
+
+        return false;
+    }
+
+    public int GetQueueTaskCount(int weight) =>
         Queues.Count(x => x.Weight == weight);
 
     #endregion
-    
-    public static void DisposeAll()
-    {
-        var disposedCount = 0;
-        foreach (var instance in Instances)
-        {
-            DService.Framework.Update -= instance.Tick;
-            disposedCount++;
-        }
-
-        if (disposedCount > 0)
-            Debug($"已自动清理了 {disposedCount} 个队列管理器");
-
-        Instances.Clear();
-    }
 }
