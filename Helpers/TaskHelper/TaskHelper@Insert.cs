@@ -1,8 +1,12 @@
+using System.Diagnostics;
+
 namespace OmenTools.Helpers;
 
 public partial class TaskHelper
 {
-    public void Insert(Func<bool?> task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
+    public void Insert(TaskHelperTask task, int weight = 0) => InsertQueueTask(task, weight);
+
+    public void Insert(Func<bool?> task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) =>  
         InsertQueueTask(new TaskHelperTask(task, timeLimitMs ?? TimeLimitMS, abortOnTimeout ?? AbortOnTimeout, name), weight);
 
     public void Insert(Action task, string? name = null, int? timeLimitMs = null, bool? abortOnTimeout = null, int weight = 0) => 
@@ -41,10 +45,10 @@ public partial class TaskHelper
                {
                    if (startTick == 0)
                    {
-                       startTick = System.Diagnostics.Stopwatch.GetTimestamp();
+                       startTick = Stopwatch.GetTimestamp();
                        return false;
                    }
-                   return System.Diagnostics.Stopwatch.GetElapsedTime(startTick).TotalMilliseconds >= delayMS;
+                   return Stopwatch.GetElapsedTime(startTick).TotalMilliseconds >= delayMS;
                }, $"{uniqueName} (Delay {delayMS}ms)", weight: weight);
 
         HasPendingTask = true;

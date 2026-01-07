@@ -2,15 +2,15 @@ namespace OmenTools.Helpers;
 
 public record TaskHelperTask
 {
-    public Func<bool?>?                           Action         { get; }
-    public Func<CancellationToken, Task<bool?>>? AsyncAction    { get; }
-    public int                                   TimeLimitMS    { get; }
-    public bool                                  AbortOnTimeout { get; }
-    public string                                Name           { get; }
-    public bool                                  IsAsync        => AsyncAction != null;
-    public CancellationTokenSource?             CancellationTokenSource { get; }
+    public Func<bool?>?                          Action                  { get; }
+    public Func<CancellationToken, Task<bool?>>? AsyncAction             { get; }
+    public int                                   TimeLimitMS             { get; }
+    public bool                                  AbortOnTimeout          { get; }
+    public string                                Name                    { get; }
+    public CancellationTokenSource?              CancellationTokenSource { get; }
 
-    // 同步任务构造函数（保持向后兼容）
+    public bool IsAsync => AsyncAction != null;
+
     public TaskHelperTask(Func<bool?> action, int timeLimitMS, bool abortOnTimeout, string? name)
     {
         Action         = action;
