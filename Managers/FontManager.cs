@@ -203,13 +203,15 @@ public class FontManager : OmenServiceBase<FontManager>
                         e.OnPreBuild
                         (tk =>
                             {
+                                var defualtFontPtr = tk.AddDalamudDefaultFont(size, DefaultFontRange);
+                                
                                 var mixedFontPtr0 = tk.AddGameSymbol
                                 (
                                     new()
                                     {
                                         SizePx     = size,
                                         PixelSnapH = true,
-                                        MergeFont  = DService.Instance().UIBuilder.FontDefault
+                                        MergeFont  = defualtFontPtr
                                     }
                                 );
 
@@ -302,7 +304,7 @@ public class FontManager : OmenServiceBase<FontManager>
         var errors              = new ConcurrentBag<Exception>();
 
         var       errorCounter = 0;
-        const int maxErrors    = 100;
+        const int MAX_ERRORS    = 100;
 
         try
         {
@@ -333,7 +335,7 @@ public class FontManager : OmenServiceBase<FontManager>
                 () => new PrivateFontCollection(),
                 (file, loopState, _, threadLocalPfc) =>
                 {
-                    if (Volatile.Read(ref errorCounter) >= maxErrors)
+                    if (Volatile.Read(ref errorCounter) >= MAX_ERRORS)
                     {
                         loopState.Stop();
                         return threadLocalPfc;
@@ -351,7 +353,7 @@ public class FontManager : OmenServiceBase<FontManager>
                     }
                     catch (Exception ex) when (ex is IOException or SecurityException or UnauthorizedAccessException or ExternalException)
                     {
-                        if (Interlocked.Increment(ref errorCounter) <= maxErrors)
+                        if (Interlocked.Increment(ref errorCounter) <= MAX_ERRORS)
                             errors.Add(ex);
 
                         threadLocalPfc.Dispose();
@@ -372,7 +374,7 @@ public class FontManager : OmenServiceBase<FontManager>
         finally
         {
             InstalledFonts = localInstalledFonts;
-
+            
             foreach (var error in errors)
                 Error("尝试获取本机安装字体时出错", error);
         }
