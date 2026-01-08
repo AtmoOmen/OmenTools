@@ -136,7 +136,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
         knowledgeCrystal = null;
         if (GameState.TerritoryIntendedUse != TerritoryIntendedUse.OccultCrescent) return false;
         
-        knowledgeCrystal = DService.ObjectTable.FirstOrDefault(x => x is { ObjectKind: ObjectKind.EventObj, DataID: 2007457 } &&
+        knowledgeCrystal = DService.Instance().ObjectTable.FirstOrDefault(x => x is { ObjectKind: ObjectKind.EventObj, DataID: 2007457 } &&
                                                                     string.IsNullOrEmpty(x.Name.TextValue)                    &&
                                                                     LocalPlayerState.DistanceTo2D(x.Position.ToVector2()) <= 3);
         return knowledgeCrystal != null;

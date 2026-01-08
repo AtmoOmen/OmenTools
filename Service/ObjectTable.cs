@@ -80,7 +80,7 @@ internal sealed partial class ObjectTable : IObjectTable
         if (address == nint.Zero)
             return null;
 
-        if (!DService.PlayerState.IsLoaded)
+        if (!DService.Instance().PlayerState.IsLoaded)
             return null;
 
         var obj = (CSGameObject*)address;

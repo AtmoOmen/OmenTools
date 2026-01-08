@@ -111,7 +111,7 @@ public class IPCSubscriber<T> : IPCSubscriberBase<ICallGateSubscriber<T>>
     public IPCSubscriber(string ipcName, Func<T>? defaultValueFactory = null) : base(ipcName) => 
         DefaultValueFactory = defaultValueFactory ?? (() => default!);
 
-    protected override ICallGateSubscriber<T> CreateSubscriber() => DService.PI.GetIpcSubscriber<T>(ipcName);
+    protected override ICallGateSubscriber<T> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T>(ipcName);
 
     /// <summary>
     ///     获取IPC值，如果未初始化则返回默认值
@@ -365,7 +365,7 @@ public class IPCSubscriber<T1, TResult>(string ipcName, Func<TResult>? defaultVa
 {
     private readonly Func<TResult> defaultValueFactory = defaultValueFactory ?? (() => default!);
 
-    protected override ICallGateSubscriber<T1, TResult> CreateSubscriber() => DService.PI.GetIpcSubscriber<T1, TResult>(ipcName);
+    protected override ICallGateSubscriber<T1, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, TResult>(ipcName);
 
     public TResult InvokeFunc(T1 arg1)
     {
@@ -446,7 +446,7 @@ public class IPCSubscriber<T1, T2, TResult>(string ipcName, Func<TResult>? defau
 {
     private readonly Func<TResult> defaultValueFactory = defaultValueFactory ?? (() => default!);
 
-    protected override ICallGateSubscriber<T1, T2, TResult> CreateSubscriber() => DService.PI.GetIpcSubscriber<T1, T2, TResult>(ipcName);
+    protected override ICallGateSubscriber<T1, T2, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, TResult>(ipcName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2)
     {
@@ -526,7 +526,7 @@ public class IPCSubscriber<T1, T2, T3, TResult>(string ipcName, Func<TResult>? d
 {
     private readonly Func<TResult> defaultValueFactory = defaultValueFactory ?? (() => default!);
 
-    protected override ICallGateSubscriber<T1, T2, T3, TResult> CreateSubscriber() => DService.PI.GetIpcSubscriber<T1, T2, T3, TResult>(ipcName);
+    protected override ICallGateSubscriber<T1, T2, T3, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, TResult>(ipcName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3)
     {
@@ -606,7 +606,7 @@ public class IPCSubscriber<T1, T2, T3, T4, TResult>(string ipcName, Func<TResult
 {
     private readonly Func<TResult> defaultValueFactory = defaultValueFactory ?? (() => default!);
 
-    protected override ICallGateSubscriber<T1, T2, T3, T4, TResult> CreateSubscriber() => DService.PI.GetIpcSubscriber<T1, T2, T3, T4, TResult>(ipcName);
+    protected override ICallGateSubscriber<T1, T2, T3, T4, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, TResult>(ipcName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4)
     {
@@ -686,7 +686,7 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, TResult>(string ipcName, Func<TRe
 {
     private readonly Func<TResult> defaultValueFactory = defaultValueFactory ?? (() => default!);
 
-    protected override ICallGateSubscriber<T1, T2, T3, T4, T5, TResult> CreateSubscriber() => DService.PI.GetIpcSubscriber<T1, T2, T3, T4, T5, TResult>(ipcName);
+    protected override ICallGateSubscriber<T1, T2, T3, T4, T5, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, T5, TResult>(ipcName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
     {
@@ -766,7 +766,7 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, TResult>(string ipcName, Func
 {
     private readonly Func<TResult> defaultValueFactory = defaultValueFactory ?? (() => default!);
 
-    protected override ICallGateSubscriber<T1, T2, T3, T4, T5, T6, TResult> CreateSubscriber() => DService.PI.GetIpcSubscriber<T1, T2, T3, T4, T5, T6, TResult>(ipcName);
+    protected override ICallGateSubscriber<T1, T2, T3, T4, T5, T6, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, T5, T6, TResult>(ipcName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
     {
@@ -846,7 +846,7 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult>(string ipcName, 
 {
     private readonly Func<TResult> defaultValueFactory = defaultValueFactory ?? (() => default!);
 
-    protected override ICallGateSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult> CreateSubscriber() => DService.PI.GetIpcSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult>(ipcName);
+    protected override ICallGateSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult>(ipcName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
     {
@@ -926,7 +926,7 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(string ipcNa
 {
     private readonly Func<TResult> defaultValueFactory = defaultValueFactory ?? (() => default!);
 
-    protected override ICallGateSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult> CreateSubscriber() => DService.PI.GetIpcSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(ipcName);
+    protected override ICallGateSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(ipcName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
     {

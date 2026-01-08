@@ -13,5 +13,5 @@ public struct MJIInteractPacket(uint layoutID, uint dataID = 2012985) : IGamePac
     public string Log() => $"MJIInteractPacket 包体 ({Opcode} / 长度: {Length})\n" +
                            $"Layout ID: {LayoutID} | Data ID: {DataID}";
 
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }

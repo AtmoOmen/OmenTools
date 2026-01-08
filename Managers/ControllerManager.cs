@@ -5,15 +5,51 @@ using OmenTools.Abstracts;
 
 namespace OmenTools.Managers;
 
-public class ControllerManager : OmenServiceBase
+public unsafe class ControllerManager : OmenServiceBase<ControllerManager>
 {
-    private static readonly CompSig                 WriteHidSig = new("E8 ?? ?? ?? ?? 8B 4B 1C 8B F8");
-    private delegate        byte                    WriteHIDDelegate(int device, nuint report, ushort length);
-    private static          Hook<WriteHIDDelegate>? WriteHidHook;
+    /// <summary>
+    ///     使用 RGB 值设置光条颜色。
+    /// </summary>
+    /// <param name="rgb">包含 R、G、B 值的 Vector3 (0.0 到 1.0)</param>
+    public void SetColor(Vector3 rgb) => 
+        Color = rgb;
 
+    /// <summary>
+    ///     设置左右电机的振动强度。
+    /// </summary>
+    /// <param name="motor">包含左右电机强度的 Vector2 (0.0 到 1.0)</param>
+    public void SetMotor(Vector2 motor) => 
+        MotorCustom = motor;
+
+    /// <summary>
+    ///     启动电机强度值队列，按顺序处理 (频率为 0.5 秒)。
+    /// </summary>
+    /// <param name="motors">包含左右电机强度的 Vector2 列表 (0.0 到 1.0)</param>
+    public void StartMotorQueue(List<Vector2> motors)
+    {
+        MotorQueue.Clear();
+        foreach (var motor in motors)
+            MotorQueue.Enqueue(motor);
+    }
+
+    /// <summary>
+    ///     中止当前电机队列，停止所有正在进行的振动效果。
+    /// </summary>
+    public void AbortMotorQueue() => 
+        MotorQueue.Clear();
+    
+    
+    private readonly CompSig                 WriteHidSig = new("E8 ?? ?? ?? ?? 8B 4B 1C 8B F8");
+    private delegate byte                    WriteHIDDelegate(int device, void* report, ushort length);
+    private          Hook<WriteHIDDelegate>? WriteHidHook;
+
+    private readonly Queue<Vector2> MotorQueue = [];
+    private          Vector3        Color;
+    private          Vector2        MotorCustom;
+    
     internal override void Init()
     {
-        WriteHidHook ??= WriteHidSig.GetHook<WriteHIDDelegate>(WriteHidDetour);
+        WriteHidHook ??= WriteHidSig.GetHook<WriteHIDDelegate>(WriteHIDDetour);
         WriteHidHook.Enable();
     }
 
@@ -23,14 +59,10 @@ public class ControllerManager : OmenServiceBase
         WriteHidHook = null;
     }
 
-    private static readonly Queue<Vector2> MotorQueue = [];
-    private static          Vector3        Color;
-    private static          Vector2        MotorCustom;
-
-    private static unsafe byte WriteHidDetour(int device, nuint reportPtr, ushort length)
+    private byte WriteHIDDetour(int device, void* reportPtr, ushort length)
     {
         if (length != 0x2F + 0x01)
-            return WriteHidHook!.Original(device, reportPtr, length);
+            return WriteHidHook.Original(device, reportPtr, length);
 
         var report = (Report*)reportPtr;
 
@@ -61,41 +93,10 @@ public class ControllerManager : OmenServiceBase
         }
 
         // original
-        return WriteHidHook!.Original(device, (nuint)report, length);
+        return WriteHidHook.Original(device, report, length);
     }
-
-    /// <summary>
-    ///     使用 RGB 值设置光条颜色。
-    /// </summary>
-    /// <param name="rgb">包含 R、G、B 值的 Vector3 (0.0 到 1.0)</param>
-    public static void SetColor(Vector3 rgb) => 
-        Color = rgb;
-
-    /// <summary>
-    ///     设置左右电机的振动强度。
-    /// </summary>
-    /// <param name="motor">包含左右电机强度的 Vector2 (0.0 到 1.0)</param>
-    public static void SetMotor(Vector2 motor) => 
-        MotorCustom = motor;
-
-    /// <summary>
-    ///     启动电机强度值队列，按顺序处理 (频率为 0.5 秒)。
-    /// </summary>
-    /// <param name="motors">包含左右电机强度的 Vector2 列表 (0.0 到 1.0)</param>
-    public static void StartMotorQueue(List<Vector2> motors)
-    {
-        MotorQueue.Clear();
-        foreach (var motor in motors)
-            MotorQueue.Enqueue(motor);
-    }
-
-    /// <summary>
-    ///     中止当前电机队列，停止所有正在进行的振动效果。
-    /// </summary>
-    public static void AbortMotorQueue() => 
-        MotorQueue.Clear();
     
-    public static class Presets
+    public class Presets
     {
         /// <summary>
         ///     在指定持续时间内创建脉冲膨胀效果。
@@ -103,7 +104,7 @@ public class ControllerManager : OmenServiceBase
         /// <param name="duration">达到最大强度所需的秒数</param>
         /// <param name="maxIntensity">0.0 到 1.0</param>
         /// <returns>随时间变化的电机强度值列表</returns>
-        public static List<Vector2> Pulsing(float duration, float maxIntensity = 1.0f)
+        public List<Vector2> Pulsing(float duration, float maxIntensity = 1.0f)
         {
             var list = new List<Vector2>();
             if (duration <= 0)
@@ -136,7 +137,7 @@ public class ControllerManager : OmenServiceBase
         /// <param name="maxIntensity">0.0 到 1.0</param>
         /// <param name="power">进度提升的幂次，影响增加曲线的形状 (默认为 2.0，表示二次曲线)</param>
         /// <returns>随时间变化的电机强度值列表</returns>
-        public static List<Vector2> SmoothUp(float duration, float maxIntensity = 1.0f, float power = 2.0f)
+        public List<Vector2> SmoothUp(float duration, float maxIntensity = 1.0f, float power = 2.0f)
         {
             var list = new List<Vector2>();
             if (duration <= 0)
@@ -173,7 +174,7 @@ public class ControllerManager : OmenServiceBase
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 0x2F)]
-    private unsafe struct Context
+    private struct Context
     {
         [FieldOffset(0x00)]
         public byte Flag0;

@@ -8,21 +8,27 @@ namespace OmenTools.Helpers;
 public static class ContentsFinderHelper
 {
     private static readonly CompSig RequestContentsFinderSig = new("E8 ?? ?? ?? ?? 33 C0 E9 ?? ?? ?? ?? FE C8");
-    private delegate        bool RequestContentsFinderDelegate(uint[] contentsID, uint contentsCount, uint a3, ref ContentsFinderOption option);
+
+    private delegate bool RequestContentsFinderDelegate(uint[] contentsID, uint contentsCount, uint a3, ref ContentsFinderOption option);
+
     private static readonly RequestContentsFinderDelegate RequestContentsFinder;
 
     private static readonly CompSig RequestContentsFinderRouletteSig =
         new("48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 0F B6 F9 48 8B DA");
+
     private delegate void RequestContentsFinderRouletteDelegate(ushort contentRouletteID, ref ContentsFinderOption option);
+
     private static readonly RequestContentsFinderRouletteDelegate RequestContentsFinderRoulette;
 
     private static readonly CompSig CancelContentsFinderSig =
         new("E8 ?? ?? ?? ?? C6 43 ?? ?? E8 ?? ?? ?? ?? 83 C0 ?? 89 43 ?? 48 83 C4 ?? 5B C3 C6 43");
+
     private delegate void CancelContentsFinderDelegate(byte a1);
+
     private static readonly CancelContentsFinderDelegate CancelContentsFinder;
 
     /// <summary>
-    /// 默认任务搜索器设置, 仅 Config817to820 这一项被设置为 true
+    ///     默认任务搜索器设置, 仅 Config817to820 这一项被设置为 true
     /// </summary>
     public static ContentsFinderOption DefaultOption => new() { Config817to820 = true };
 
@@ -41,7 +47,7 @@ public static class ContentsFinderHelper
     }
 
     /// <remarks>
-    /// 单人进入多变迷宫需要在副本设置中设置为解除限制
+    ///     单人进入多变迷宫需要在副本设置中设置为解除限制
     /// </remarks>
     public static bool RequestDutyNormal(uint[] rowIDs, ContentsFinderOption option)
     {
@@ -57,13 +63,13 @@ public static class ContentsFinderHelper
         RequestContentsFinderRoulette(rowID, ref optionFinal);
     }
 
-    public static void CancelDutyApply() => 
+    public static void CancelDutyApply() =>
         CancelContentsFinder(0);
 
     public static void RequestDutySupport(uint dawnContentID)
     {
-        ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestDutySupport);
-        if (DService.ObjectTable.LocalPlayer is not { } localPlayer) return;
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestDutySupport);
+        if (DService.Instance().ObjectTable.LocalPlayer is not { } localPlayer) return;
         var localRole = localPlayer.ClassJob.Value.Role;
 
         if (!LuminaGetter.TryGetRow<DawnContent>(dawnContentID, out var content)) return;
@@ -82,7 +88,7 @@ public static class ContentsFinderHelper
         {
             Tanks   = localRole == 1 ? 1 : 0,
             Healers = localRole == 4 ? 1 : 0,
-            DPS     = localRole is (2 or 3) ? 1 : 0
+            DPS     = localRole is 2 or 3 ? 1 : 0
         };
 
         var members = LuminaGetter.GetSub<DawnContentParticipable>()
@@ -98,7 +104,7 @@ public static class ContentsFinderHelper
                                   .Select(x => new
                                   {
                                       QuestMember = x.QuestMember.GetValueOrDefault(),
-                                      JobInfo     = x.JobInfo.GetValueOrDefault(),
+                                      JobInfo     = x.JobInfo.GetValueOrDefault()
                                   })
                                   .Select(x => new
                                   {
@@ -127,6 +133,7 @@ public static class ContentsFinderHelper
             var data = member.Data.FirstOrDefault(job =>
             {
                 var role = job.ClassJob.GetValueOrDefault().Role;
+
                 switch (role)
                 {
                     case 1 when roleCount.Tanks < partyComposition.Tanks:
@@ -135,7 +142,7 @@ public static class ContentsFinderHelper
                     case 4 when roleCount.Healers < partyComposition.Healers:
                         roleCount = roleCount with { Healers = roleCount.Healers + 1 };
                         return true;
-                    case (2 or 3) when roleCount.DPS < partyComposition.DPS:
+                    case 2 or 3 when roleCount.DPS < partyComposition.DPS:
                         roleCount = roleCount with { DPS = roleCount.DPS + 1 };
                         return true;
                     default:
@@ -148,6 +155,7 @@ public static class ContentsFinderHelper
             finalTeam.Add(data.ID);
 
             var jobName = string.Empty;
+
             try
             {
                 jobName = data.ClassJob.Value.Name.ToString() ?? string.Empty;
@@ -174,7 +182,7 @@ public static class ContentsFinderHelper
                                                        ? acc with { Param2 = acc.Param2 + curr.Value }
                                                        : acc with { Param3 = acc.Param3 + curr.Value });
 
-        ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.SendDutySupport, dawnContentID, (uint)parameters.Param2, (uint)parameters.Param3);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SendDutySupport, dawnContentID, (uint)parameters.Param2, (uint)parameters.Param3);
     }
 }
 
@@ -182,69 +190,69 @@ public static class ContentsFinderHelper
 public struct ContentsFinderOption : IEquatable<ContentsFinderOption>
 {
     /// <summary>
-    /// 中途加入
+    ///     中途加入
     /// </summary>
     [FieldOffset(0)]
     public bool Supply;
 
     /// <summary>
-    /// 通常为 true
+    ///     通常为 true
     /// </summary>
     /// <remarks>
-    /// 其代表的四个配置分别为:
-    /// <para><c>817</c>: HotbarDispSetNum</para>
-    /// <para><c>818</c>: HotbarDispSetChangeType</para>
-    /// <para><c>819</c>: HotbarDispSetDragType</para>
-    /// <para><c>820</c>: MainCommandType</para>
-    /// <para>这四个配置只要有一个为 true, 则该项为 true</para>
+    ///     其代表的四个配置分别为:
+    ///     <para><c>817</c>: HotbarDispSetNum</para>
+    ///     <para><c>818</c>: HotbarDispSetChangeType</para>
+    ///     <para><c>819</c>: HotbarDispSetDragType</para>
+    ///     <para><c>820</c>: MainCommandType</para>
+    ///     <para>这四个配置只要有一个为 true, 则该项为 true</para>
     /// </remarks>
     [FieldOffset(1)]
     public bool Config817to820;
 
     /// <summary>
-    /// 解除限制
+    ///     解除限制
     /// </summary>
     [FieldOffset(2)]
     public bool UnrestrictedParty;
 
     /// <summary>
-    /// 最低装等同步
+    ///     最低装等同步
     /// </summary>
     [FieldOffset(3)]
     public bool MinimalIL;
 
     /// <summary>
-    /// 等级同步
+    ///     等级同步
     /// </summary>
     [FieldOffset(4)]
     public bool LevelSync;
 
     /// <summary>
-    /// 禁用超越之力
+    ///     禁用超越之力
     /// </summary>
     [FieldOffset(5)]
     public bool SilenceEcho;
 
     /// <summary>
-    /// 自由探索
+    ///     自由探索
     /// </summary>
     [FieldOffset(6)]
     public bool ExplorerMode;
 
     /// <summary>
-    /// 分配方式
+    ///     分配方式
     /// </summary>
     [FieldOffset(7)]
     public ContentsFinder.LootRule LootRules;
 
     /// <summary>
-    /// 限制“随机任务：练级”的随机目标
+    ///     限制“随机任务：练级”的随机目标
     /// </summary>
     [FieldOffset(8)]
     public bool IsLimitedLevelingRoulette;
 
     /// <summary>
-    /// 通常为 false
+    ///     通常为 false
     /// </summary>
     /// <remarks>源数据来源: *(bool*)((nint)AgentContentsFinder.Instance() + 7346)</remarks>
     [FieldOffset(9)]
@@ -277,7 +285,7 @@ public struct ContentsFinderOption : IEquatable<ContentsFinderOption>
             LootRules                 = finder.LootRules,
             MinimalIL                 = finder.IsMinimalIL,
             SilenceEcho               = finder.IsSilenceEcho,
-            UnrestrictedParty         = finder.IsUnrestrictedParty,
+            UnrestrictedParty         = finder.IsUnrestrictedParty
         };
     }
 
@@ -293,7 +301,7 @@ public struct ContentsFinderOption : IEquatable<ContentsFinderOption>
         IsLimitedLevelingRoulette == other.IsLimitedLevelingRoulette &&
         Unknown9                  == other.Unknown9;
 
-    public override bool Equals(object? obj) => 
+    public override bool Equals(object? obj) =>
         obj is ContentsFinderOption other && Equals(other);
 
     public override int GetHashCode()
@@ -309,13 +317,13 @@ public struct ContentsFinderOption : IEquatable<ContentsFinderOption>
         hashCode.Add((int)LootRules);
         hashCode.Add(IsLimitedLevelingRoulette);
         hashCode.Add(Unknown9);
-        
+
         return hashCode.ToHashCode();
     }
 
-    public static bool operator ==(ContentsFinderOption left, ContentsFinderOption right) => 
+    public static bool operator ==(ContentsFinderOption left, ContentsFinderOption right) =>
         left.Equals(right);
 
-    public static bool operator !=(ContentsFinderOption left, ContentsFinderOption right) => 
+    public static bool operator !=(ContentsFinderOption left, ContentsFinderOption right) =>
         !left.Equals(right);
 }

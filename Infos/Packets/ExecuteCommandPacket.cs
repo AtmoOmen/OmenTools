@@ -18,5 +18,5 @@ public struct ExecuteCommandPacket(ExecuteCommandFlag flag, int param1 = 0, int 
         $"Flag: {Flag}\n"                                       +
         $"P1: {Param1} | P2: {Param2} | P3: {Param3} | P4: {Param4}";
 
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }

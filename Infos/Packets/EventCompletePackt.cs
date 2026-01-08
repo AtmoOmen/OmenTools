@@ -19,5 +19,5 @@ public struct EventCompletePackt(uint eventID, uint category, uint param0 = 0, u
         $"Event ID: {EventID} | Category: {Category} \n" +
         $"Param0: {Param0} | Param1: {Param1} | Param2: {Param2}";
     
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }

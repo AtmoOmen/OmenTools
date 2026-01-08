@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Dalamud.Game.Text.SeStringHandling;
@@ -15,7 +16,7 @@ using RowStatus = Lumina.Excel.Sheets.Status;
 
 namespace OmenTools.Managers;
 
-public unsafe class GameTooltipManager : OmenServiceBase
+public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
 {
     #region 外部委托
 
@@ -25,46 +26,55 @@ public unsafe class GameTooltipManager : OmenServiceBase
 
     public delegate void GenerateActionTooltipModifierDelegate(AtkUnitBase* addon, NumberArrayData* numberArray, StringArrayData* stringArray);
 
-    public delegate void TooltipShowModifierDelegate(
+    public delegate void TooltipShowModifierDelegate
+    (
         AtkTooltipManager*                manager,
         AtkTooltipManager.AtkTooltipType  type,
         ushort                            parentID,
         AtkResNode*                       targetNode,
-        AtkTooltipManager.AtkTooltipArgs* args);
+        AtkTooltipManager.AtkTooltipArgs* args
+    );
 
     #endregion
 
     #region 私有字段
 
     private static readonly CompSig GenerateItemTooltipSig = new("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 83 EC ?? 48 8B 42 ?? 4C 8B EA");
-    private delegate void* GenerateItemTooltipDelegate(
+    private delegate void* GenerateItemTooltipDelegate
+    (
         AtkUnitBase*     addon,
         NumberArrayData* numberArrayData,
-        StringArrayData* stringArrayData);
-    private static Hook<GenerateItemTooltipDelegate>? GenerateItemTooltipHook;
+        StringArrayData* stringArrayData
+    );
+    private Hook<GenerateItemTooltipDelegate>? GenerateItemTooltipHook;
 
     private static readonly CompSig GenerateActionTooltipSig = new("48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 83 EC ?? 48 8B 42 ?? 4C 8B FA");
-    private delegate void* GenerateActionTooltipDelegate(
+    private delegate void* GenerateActionTooltipDelegate
+    (
         AtkUnitBase*     addon,
         NumberArrayData* numberArrayData,
-        StringArrayData* stringArrayData);
-    private static Hook<GenerateActionTooltipDelegate>? GenerateActionTooltipHook;
+        StringArrayData* stringArrayData
+    );
+    private Hook<GenerateActionTooltipDelegate>? GenerateActionTooltipHook;
 
-    private static readonly CompSig                      ActionTooltipSig = new("48 89 5C 24 ?? 55 56 57 41 54 41 56 48 83 EC ?? 48 8B 9A");
-    private delegate        nint                         ActionTooltipDelegate(AtkUnitBase* addon, void* a2, ulong a3);
-    private static          Hook<ActionTooltipDelegate>? ActionTooltipHook;
+    private readonly CompSig                      ActionTooltipSig = new("48 89 5C 24 ?? 55 56 57 41 54 41 56 48 83 EC ?? 48 8B 9A");
+    private delegate nint                         ActionTooltipDelegate(AtkUnitBase* addon, void* a2, ulong a3);
+    private          Hook<ActionTooltipDelegate>? ActionTooltipHook;
 
     private static readonly CompSig ActionHoveredSig = new("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 41 54 41 55 41 56 41 57 48 83 EC ?? 45 8B F1 41 8B D8");
-    private delegate void ActionHoveredDelegate(
+    private delegate void ActionHoveredDelegate
+    (
         AgentActionDetail* agent,
         ActionKind         actionKind,
         uint               actionID,
         int                flag,
-        byte               isLovmActionDetail);
-    private static Hook<ActionHoveredDelegate>? ActionHoveredHook;
+        byte               isLovmActionDetail
+    );
+    private Hook<ActionHoveredDelegate>? ActionHoveredHook;
 
     private static readonly CompSig TooltipShowSig = new("66 44 89 44 24 ?? 55 53 41 54");
-    private delegate void TooltipShowDelegate(
+    private delegate void TooltipShowDelegate
+    (
         AtkTooltipManager*                atkTooltipManager,
         AtkTooltipManager.AtkTooltipType  type,
         ushort                            parentID,
@@ -72,14 +82,15 @@ public unsafe class GameTooltipManager : OmenServiceBase
         AtkTooltipManager.AtkTooltipArgs* tooltipArgs,
         long                              unkDelegate,
         byte                              unk7,
-        byte                              unk8);
-    private static Hook<TooltipShowDelegate>? TooltipShowHook;
+        byte                              unk8
+    );
+    private Hook<TooltipShowDelegate>? TooltipShowHook;
 
-    private static readonly ConcurrentDictionary<Type, ConcurrentBag<Delegate>>                         Modifiers            = [];
-    private static readonly ConcurrentDictionary<TooltipModifyType, ConcurrentBag<TooltipModification>> TooltipModifications = [];
+    private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>>                         modifiers            = [];
+    private readonly ConcurrentDictionary<TooltipModifyType, ImmutableList<TooltipModification>> tooltipModifications = [];
 
-    private static readonly TooltipActionDetail HoveredActionDetail = new();
-    private static SeString WeatherTooltipText = SeString.Empty;
+    private readonly TooltipActionDetail hoveredActionDetail = new();
+    private          SeString            weatherTooltipText  = SeString.Empty;
 
     #endregion
 
@@ -107,114 +118,40 @@ public unsafe class GameTooltipManager : OmenServiceBase
         RegTooltipShowModifier(ModifyStatuTooltip);
     }
 
+    internal override void Uninit()
+    {
+        GenerateItemTooltipHook?.Dispose();
+        GenerateItemTooltipHook = null;
+
+        GenerateActionTooltipHook?.Dispose();
+        GenerateActionTooltipHook = null;
+
+        ActionTooltipHook?.Dispose();
+        ActionTooltipHook = null;
+
+        ActionHoveredHook?.Dispose();
+        ActionHoveredHook = null;
+
+        TooltipShowHook?.Dispose();
+        TooltipShowHook = null;
+
+        modifiers.Clear();
+        tooltipModifications.Clear();
+    }
+
     #region 公共接口
 
-    public static Guid AddItemDetailTooltipModify(
-        uint              itemID,
-        TooltipItemType   type,
-        SeString          text,
-        TooltipModifyMode mode = TooltipModifyMode.Overwrite)
-    {
-        var modification = new TooltipModification
-        {
-            ItemID    = itemID,
-            ItemField = type,
-            Mode      = mode,
-            Text      = text,
-        };
-
-        var bag = TooltipModifications.GetOrAdd(TooltipModifyType.ItemDetail, _ => []);
-        bag.Add(modification);
-        return modification.ID;
-    }
-
-    public static bool RemoveItemDetailTooltipModify(Guid id) => 
-        RemoveTooltipModify(id);
-
-    public static Guid AddActionDetailTooltipModify(
-        uint              actionID,
-        TooltipActionType type,
-        SeString          text,
-        TooltipModifyMode mode = TooltipModifyMode.Overwrite)
-    {
-        var modification = new TooltipModification
-        {
-            ActionID    = actionID,
-            ActionField = type,
-            Mode        = mode,
-            Text        = text,
-        };
-
-        var bag = TooltipModifications.GetOrAdd(TooltipModifyType.ActionDetail, _ => []);
-        bag.Add(modification);
-        return modification.ID;
-    }
-
-    public static bool RemoveActionDetailTooltipModify(Guid id) => 
-        RemoveTooltipModify(id);
-
-    public static Guid AddWeatherTooltipModify(SeString text, TooltipModifyMode mode = TooltipModifyMode.Overwrite, string regexPattern = null)
-    {
-        var modification = new TooltipModification
-        {
-            Mode = mode,
-            Text = text,
-            RegexPattern = regexPattern
-        };
-
-        var bag = TooltipModifications.GetOrAdd(TooltipModifyType.Weather, _ => []);
-        bag.Add(modification);
-        return modification.ID;
-    }
-
-    public static bool RemoveWeatherTooltipModify(Guid id) => 
-        RemoveTooltipModify(id);
-
-    public static Guid AddstatuTooltipModify(uint statuID, SeString text, TooltipModifyMode mode = TooltipModifyMode.Overwrite, string regexPattern = null)
-    {
-        var modification = new TooltipModification
-        {
-            StatuID = statuID,
-            Mode = mode,
-            Text = text,
-            RegexPattern = regexPattern
-        };
-
-        var bag = TooltipModifications.GetOrAdd(TooltipModifyType.Status, _ => []);
-        bag.Add(modification);
-        return modification.ID;
-    }
-
-    public static bool RemovestatuTooltipModify(Guid id) => 
-        RemoveTooltipModify(id);
-
-    public static SeString GetShowenWeatherTooltip() => 
-        WeatherTooltipText;
+    public SeString GetShowenWeatherTooltip() =>
+        weatherTooltipText;
 
     #endregion
 
     #region 工具方法
 
-    private static bool RemoveTooltipModify(Guid id)
-    {
-        foreach (var (type, bag) in TooltipModifications)
-        {
-            var modification = bag.FirstOrDefault(m => m.ID == id);
-            if (modification != null)
-            {
-                var newBag = new ConcurrentBag<TooltipModification>(bag.Where(m => m.ID != id));
-                TooltipModifications[type] = newBag;
-                return true;
-            }
-        }
-        
-        return false;
-    }
-
     private static void SetSeStringToCStringPointer(ref CStringPointer text, SeString seString)
     {
         var bytes = seString.EncodeWithNullTerminator();
-        var ptr = (byte*)Marshal.AllocHGlobal(bytes.Length);
+        var ptr   = (byte*)Marshal.AllocHGlobal(bytes.Length);
 
         for (var i = 0; i < bytes.Length; i++)
             ptr[i] = bytes[i];
@@ -222,7 +159,7 @@ public unsafe class GameTooltipManager : OmenServiceBase
         text = ptr;
     }
 
-    private static SeString GetSeStringFromCStringPointer(CStringPointer cStringPointer) => 
+    private static SeString GetSeStringFromCStringPointer(CStringPointer cStringPointer) =>
         MemoryHelper.ReadSeStringNullTerminated((nint)cStringPointer.Value);
 
     private static void SetItemTooltipString(StringArrayData* stringArrayData, TooltipItemType type, SeString seString)
@@ -239,10 +176,12 @@ public unsafe class GameTooltipManager : OmenServiceBase
         stringArrayData->SetValue((int)type, bytes, false);
     }
 
-    private static SeString ApplyModifications(
+    private static SeString ApplyModifications
+    (
         SeString                         currentText,
         IEnumerable<TooltipModification> modifications,
-        Func<TooltipModification, bool>? extraCondition = null)
+        Func<TooltipModification, bool>? extraCondition = null
+    )
     {
         var finalText = currentText;
 
@@ -308,45 +247,209 @@ public unsafe class GameTooltipManager : OmenServiceBase
 
     #region 注册/注销接口
 
-    private static bool RegisterModifier<T>(params T[] methods) where T : Delegate
+    private void AddGeneric(TooltipModifyType type, TooltipModification modification) =>
+        tooltipModifications.AddOrUpdate
+        (
+            type,
+            _ => ImmutableList.Create(modification),
+            (_, currentList) => currentList.Add(modification)
+        );
+
+    private bool RemoveGeneric(TooltipModifyType type, params TooltipModification[] modifications)
     {
-        var bag = Modifiers.GetOrAdd(typeof(T), _ => []);
-        foreach (var method in methods) 
-            bag.Add(method);
+        if (modifications is not { Length: > 0 }) return false;
+
+        while (tooltipModifications.TryGetValue(type, out var currentList))
+        {
+            var newList = currentList.RemoveRange(modifications);
+
+            if (newList == currentList)
+                return false;
+
+            if (newList.IsEmpty)
+            {
+                var kvp = new KeyValuePair<TooltipModifyType, ImmutableList<TooltipModification>>(type, currentList);
+                if (((ICollection<KeyValuePair<TooltipModifyType, ImmutableList<TooltipModification>>>)tooltipModifications).Remove(kvp))
+                    return true;
+            }
+            else
+            {
+                if (tooltipModifications.TryUpdate(type, newList, currentList))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    public TooltipModification AddItemDetail
+    (
+        uint              itemID,
+        TooltipItemType   type,
+        SeString          text,
+        TooltipModifyMode mode = TooltipModifyMode.Overwrite
+    )
+    {
+        var modification = new TooltipModification
+        {
+            ItemID    = itemID,
+            ItemField = type,
+            Mode      = mode,
+            Text      = text
+        };
+
+        AddGeneric(TooltipModifyType.ItemDetail, modification);
+        return modification;
+    }
+
+    public TooltipModification AddActionDetail
+    (
+        uint              actionID,
+        TooltipActionType type,
+        SeString          text,
+        TooltipModifyMode mode = TooltipModifyMode.Overwrite
+    )
+    {
+        var modification = new TooltipModification
+        {
+            ActionID    = actionID,
+            ActionField = type,
+            Mode        = mode,
+            Text        = text
+        };
+
+        AddGeneric(TooltipModifyType.ActionDetail, modification);
+        return modification;
+    }
+
+    public TooltipModification AddWeatherTooltipModify
+    (
+        SeString          text,
+        TooltipModifyMode mode         = TooltipModifyMode.Overwrite,
+        string            regexPattern = null
+    )
+    {
+        var modification = new TooltipModification
+        {
+            Mode         = mode,
+            Text         = text,
+            RegexPattern = regexPattern
+        };
+
+        AddGeneric(TooltipModifyType.Weather, modification);
+        return modification;
+    }
+
+    public TooltipModification AddStatus
+    (
+        uint              statuID,
+        SeString          text,
+        TooltipModifyMode mode         = TooltipModifyMode.Overwrite,
+        string            regexPattern = null
+    )
+    {
+        var modification = new TooltipModification
+        {
+            StatuID      = statuID,
+            Mode         = mode,
+            Text         = text,
+            RegexPattern = regexPattern
+        };
+
+        AddGeneric(TooltipModifyType.Status, modification);
+        return modification;
+    }
+
+    public bool RemoveStatus(params TooltipModification[] modification) =>
+        RemoveGeneric(TooltipModifyType.Status, modification);
+
+    public bool RemoveWeather(params TooltipModification[] modification) =>
+        RemoveGeneric(TooltipModifyType.Weather, modification);
+
+    public bool RemoveActionDetail(params TooltipModification[] modification) =>
+        RemoveGeneric(TooltipModifyType.ActionDetail, modification);
+
+    public bool RemoveItemDetail(params TooltipModification[] modification) =>
+        RemoveGeneric(TooltipModifyType.ItemDetail, modification);
+
+
+    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
+    {
+        var type = typeof(T);
+
+        modifiers.AddOrUpdate
+        (
+            type,
+            _ =>
+            {
+                var list = ImmutableList.Create<Delegate>(method);
+                return methods.Length > 0 ? list.AddRange(methods) : list;
+            },
+            (_, currentList) =>
+            {
+                var newList = currentList.Add(method);
+                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+            }
+        );
+
         return true;
     }
 
-    private static bool UnregisterModifier<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
     {
-        if (Modifiers.TryGetValue(typeof(T), out var bag))
+        if (methods is not { Length: > 0 }) return false;
+
+        var type = typeof(T);
+
+        while (modifiers.TryGetValue(type, out var currentList))
         {
-            var newBag = new ConcurrentBag<Delegate>(bag.Where(d => !methods.Contains(d)));
-            Modifiers[typeof(T)] = newBag;
-            return true;
+            var newList = currentList.RemoveRange(methods);
+
+            if (newList == currentList)
+                return false;
+
+            if (newList.IsEmpty)
+            {
+                var kvp = new KeyValuePair<Type, ImmutableList<Delegate>>(type, currentList);
+                if (((ICollection<KeyValuePair<Type, ImmutableList<Delegate>>>)modifiers).Remove(kvp))
+                    return true;
+            }
+            else
+            {
+                if (modifiers.TryUpdate(type, newList, currentList))
+                    return true;
+            }
         }
+
         return false;
     }
 
 
-    public static bool RegTooltipShowModifier(params TooltipShowModifierDelegate[]                     modifiers) => RegisterModifier(modifiers);
-    public static bool RegGenerateItemTooltipModifier(GenerateItemTooltipModifierDelegate              modifier)  => RegisterModifier(modifier);    
-    public static bool RegGenerateActionTooltipModifier(GenerateActionTooltipModifierDelegate          modifier)  => RegisterModifier(modifier);
-    public static bool RegGenerateItemTooltipModifier(params GenerateItemTooltipModifierDelegate[]     modifiers) => RegisterModifier(modifiers);
-    public static bool RegActionTooltipModifier(ActionTooltipModifierDelegate                          modifier)  => RegisterModifier(modifier);
-    public static bool RegGenerateActionTooltipModifier(params GenerateActionTooltipModifierDelegate[] modifiers) => RegisterModifier(modifiers);
-    public static bool RegTooltipShowModifier(TooltipShowModifierDelegate                              modifier)  => RegisterModifier(modifier);
-    public static bool RegActionTooltipModifier(params ActionTooltipModifierDelegate[]                 modifiers) => RegisterModifier(modifiers);
-    
-    public static bool Unreg(params TooltipShowModifierDelegate[]           itemModifiers)           => UnregisterModifier(itemModifiers);
-    public static bool Unreg(params GenerateItemTooltipModifierDelegate[]   generateItemModifiers)   => UnregisterModifier(generateItemModifiers);
-    public static bool Unreg(params GenerateActionTooltipModifierDelegate[] generateActionModifiers) => UnregisterModifier(generateActionModifiers);
-    public static bool Unreg(params ActionTooltipModifierDelegate[]         actionModifiers)         => UnregisterModifier(actionModifiers);
+    public bool RegTooltipShowModifier(TooltipShowModifierDelegate method, params TooltipShowModifierDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegGenerateItemTooltipModifier(GenerateItemTooltipModifierDelegate method, params GenerateItemTooltipModifierDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegGenerateActionTooltipModifier(GenerateActionTooltipModifierDelegate method, params GenerateActionTooltipModifierDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegActionTooltipModifier(ActionTooltipModifierDelegate method, params ActionTooltipModifierDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool Unreg(params TooltipShowModifierDelegate[] itemModifiers) => UnregisterGeneric(itemModifiers);
+
+    public bool Unreg(params GenerateItemTooltipModifierDelegate[] generateItemModifiers) => UnregisterGeneric(generateItemModifiers);
+
+    public bool Unreg(params GenerateActionTooltipModifierDelegate[] generateActionModifiers) => UnregisterGeneric(generateActionModifiers);
+
+    public bool Unreg(params ActionTooltipModifierDelegate[] actionModifiers) => UnregisterGeneric(actionModifiers);
 
     #endregion
 
     #region 事件处理
 
-    private static void ModifyItemTooltip(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
+    private void ModifyItemTooltip(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
     {
         try
         {
@@ -354,7 +457,7 @@ public unsafe class GameTooltipManager : OmenServiceBase
             if (itemID < 2000000)
                 itemID %= 500000;
 
-            var modifications = TooltipModifications.GetValueOrDefault(TooltipModifyType.ItemDetail, [])
+            var modifications = tooltipModifications.GetValueOrDefault(TooltipModifyType.ItemDetail, [])
                                                     .Where(m => m.ItemID == itemID)
                                                     .ToList();
             if (modifications.Count == 0) return;
@@ -364,7 +467,7 @@ public unsafe class GameTooltipManager : OmenServiceBase
 
             foreach (var group in modificationsByField)
             {
-                var field = group.Key;
+                var field      = group.Key;
                 var fieldIndex = (byte)field;
                 if (fieldIndex >= stringArrayData->Size) continue;
 
@@ -381,13 +484,13 @@ public unsafe class GameTooltipManager : OmenServiceBase
         }
     }
 
-    private static void ModifyActionTooltip(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
+    private void ModifyActionTooltip(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
     {
         try
         {
             var actionID = AgentActionDetail.Instance()->ActionId;
 
-            var modifications = TooltipModifications.GetValueOrDefault(TooltipModifyType.ActionDetail, [])
+            var modifications = tooltipModifications.GetValueOrDefault(TooltipModifyType.ActionDetail, [])
                                                     .Where(m => m.ActionID == actionID)
                                                     .ToList();
             if (modifications.Count == 0) return;
@@ -396,7 +499,7 @@ public unsafe class GameTooltipManager : OmenServiceBase
 
             foreach (var group in modificationsByField)
             {
-                var field = group.Key;
+                var field      = group.Key;
                 var fieldIndex = (byte)field;
                 if (fieldIndex >= stringArrayData->Size) continue;
 
@@ -413,12 +516,14 @@ public unsafe class GameTooltipManager : OmenServiceBase
         }
     }
 
-    private static void ModifyWeatherTooltip(
+    private void ModifyWeatherTooltip
+    (
         AtkTooltipManager*                manager,
         AtkTooltipManager.AtkTooltipType  type,
         ushort                            parentID,
         AtkResNode*                       targetNode,
-        AtkTooltipManager.AtkTooltipArgs* args)
+        AtkTooltipManager.AtkTooltipArgs* args
+    )
     {
         if (targetNode == null || NaviMap == null || parentID != NaviMap->Id) return;
 
@@ -437,23 +542,25 @@ public unsafe class GameTooltipManager : OmenServiceBase
 
             var currentText = GetSeStringFromCStringPointer(args->TextArgs.Text);
 
-            var finalText = ApplyModifications(currentText, TooltipModifications.GetValueOrDefault(TooltipModifyType.Weather, []));
+            var finalText = ApplyModifications(currentText, tooltipModifications.GetValueOrDefault(TooltipModifyType.Weather, []));
 
             SetSeStringToCStringPointer(ref args->TextArgs.Text, finalText);
-            WeatherTooltipText = finalText;
+            weatherTooltipText = finalText;
         }
     }
 
-    private static void ModifyStatuTooltip(
+    private void ModifyStatuTooltip
+    (
         AtkTooltipManager*                manager,
         AtkTooltipManager.AtkTooltipType  type,
         ushort                            parentID,
         AtkResNode*                       targetNode,
-        AtkTooltipManager.AtkTooltipArgs* args)
+        AtkTooltipManager.AtkTooltipArgs* args
+    )
     {
         Dictionary<uint, uint> IconStatusIDMap = [];
 
-        var localPlayer = DService.ObjectTable.LocalPlayer;
+        var localPlayer = DService.Instance().ObjectTable.LocalPlayer;
         if (localPlayer == null || targetNode == null) return;
 
         var imageNode = targetNode->GetAsAtkImageNode();
@@ -473,6 +580,7 @@ public unsafe class GameTooltipManager : OmenServiceBase
             AddStatusesToMap(focusTarget.ToBCStruct()->StatusManager, ref IconStatusIDMap);
 
         var partyList = AgentHUD.Instance()->PartyMembers;
+
         foreach (var member in partyList.ToArray().Where(m => m.Index != 0))
         {
             if (member.Object != null)
@@ -483,27 +591,28 @@ public unsafe class GameTooltipManager : OmenServiceBase
 
         var currentText = GetSeStringFromCStringPointer(args->TextArgs.Text);
 
-        var finalText = ApplyModifications(
+        var finalText = ApplyModifications
+        (
             currentText,
-            TooltipModifications.GetValueOrDefault(TooltipModifyType.Status, []),
+            tooltipModifications.GetValueOrDefault(TooltipModifyType.Status, []),
             mod => IconStatusIDMap.TryGetValue(iconID, out var statuId) && statuId == mod.StatuID
         );
 
         SetSeStringToCStringPointer(ref args->TextArgs.Text, finalText);
     }
 
-    private static void OnActionHoveredDetour(AgentActionDetail* agent, ActionKind actionKind, uint actionID, int flag, byte isLovmActionDetail)
+    private void OnActionHoveredDetour(AgentActionDetail* agent, ActionKind actionKind, uint actionID, int flag, byte isLovmActionDetail)
     {
-        HoveredActionDetail.Category = actionKind;
-        HoveredActionDetail.ID = actionID;
-        HoveredActionDetail.Flag = flag;
-        HoveredActionDetail.IsLovmActionDetail = isLovmActionDetail != 0;
+        hoveredActionDetail.Category           = actionKind;
+        hoveredActionDetail.ID                 = actionID;
+        hoveredActionDetail.Flag               = flag;
+        hoveredActionDetail.IsLovmActionDetail = isLovmActionDetail != 0;
         ActionHoveredHook?.Original(agent, actionKind, actionID, flag, isLovmActionDetail);
     }
 
-    private static void* OnGenerateItemTooltipDetour(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
+    private void* OnGenerateItemTooltipDetour(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
     {
-        if (Modifiers.TryGetValue(typeof(GenerateItemTooltipModifierDelegate), out var bag))
+        if (modifiers.TryGetValue(typeof(GenerateItemTooltipModifierDelegate), out var bag))
         {
             foreach (var modifier in bag.Cast<GenerateItemTooltipModifierDelegate>())
             {
@@ -521,9 +630,9 @@ public unsafe class GameTooltipManager : OmenServiceBase
         return GenerateItemTooltipHook.Original(addon, numberArrayData, stringArrayData);
     }
 
-    private static void* OnGenerateActionTooltipDetour(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
+    private void* OnGenerateActionTooltipDetour(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
     {
-        if (Modifiers.TryGetValue(typeof(GenerateActionTooltipModifierDelegate), out var bag))
+        if (modifiers.TryGetValue(typeof(GenerateActionTooltipModifierDelegate), out var bag))
         {
             foreach (var modifier in bag.Cast<GenerateActionTooltipModifierDelegate>())
             {
@@ -541,9 +650,9 @@ public unsafe class GameTooltipManager : OmenServiceBase
         return GenerateActionTooltipHook.Original(addon, numberArrayData, stringArrayData);
     }
 
-    private static nint OnActionTooltipDetour(AtkUnitBase* addon, void* a2, ulong a3)
+    private nint OnActionTooltipDetour(AtkUnitBase* addon, void* a2, ulong a3)
     {
-        if (Modifiers.TryGetValue(typeof(ActionTooltipModifierDelegate), out var bag))
+        if (modifiers.TryGetValue(typeof(ActionTooltipModifierDelegate), out var bag))
         {
             foreach (var modifier in bag.Cast<ActionTooltipModifierDelegate>())
             {
@@ -561,7 +670,8 @@ public unsafe class GameTooltipManager : OmenServiceBase
         return ActionTooltipHook.Original(addon, a2, a3);
     }
 
-    private static void OnTooltipShowDetour(
+    private void OnTooltipShowDetour
+    (
         AtkTooltipManager*                manager,
         AtkTooltipManager.AtkTooltipType  type,
         ushort                            parentID,
@@ -569,9 +679,10 @@ public unsafe class GameTooltipManager : OmenServiceBase
         AtkTooltipManager.AtkTooltipArgs* tooltipArgs,
         long                              unkDelegate,
         byte                              unk7,
-        byte                              unk8)
+        byte                              unk8
+    )
     {
-        if (Modifiers.TryGetValue(typeof(TooltipShowModifierDelegate), out var bag))
+        if (modifiers.TryGetValue(typeof(TooltipShowModifierDelegate), out var bag))
         {
             foreach (var modifier in bag.Cast<TooltipShowModifierDelegate>())
             {
@@ -590,49 +701,21 @@ public unsafe class GameTooltipManager : OmenServiceBase
     }
 
     #endregion
-
-    internal override void Uninit()
-    {
-        GenerateItemTooltipHook.Disable();
-        GenerateItemTooltipHook.Dispose();
-        GenerateItemTooltipHook = null;
-        
-        GenerateActionTooltipHook.Disable();
-        GenerateActionTooltipHook.Dispose();
-        GenerateActionTooltipHook = null;
-        
-        ActionTooltipHook.Disable();
-        ActionTooltipHook.Dispose();
-        ActionTooltipHook = null;
-        
-        ActionHoveredHook.Disable();
-        ActionHoveredHook.Dispose();
-        ActionHoveredHook = null;
-        
-        TooltipShowHook.Disable();
-        TooltipShowHook.Dispose();
-        TooltipShowHook = null;
-        
-        Modifiers.Clear();
-        TooltipModifications.Clear();
-    }
-
 }
 
 #region 自定义类
 
 public class TooltipModification
 {
-    public Guid              ID                 { get; set; } = Guid.NewGuid();
-    public uint              ItemID             { get; set; }
-    public uint              ActionID           { get; set; }
-    public uint              StatuID            { get; set; }
-    public TooltipItemType   ItemField          { get; set; }
-    public TooltipActionType ActionField        { get; set; }
-    public TooltipModifyMode Mode               { get; set; }
-    public SeString          Text               { get; set; }
-    public string            RegexPattern       { get; set; }
-    public string            ReplacementPattern { get; set; }
+    public uint              ItemID             { get; init; }
+    public uint              ActionID           { get; init; }
+    public uint              StatuID            { get; init; }
+    public TooltipItemType   ItemField          { get; init; }
+    public TooltipActionType ActionField        { get; init; }
+    public TooltipModifyMode Mode               { get; init; }
+    public SeString          Text               { get; init; }
+    public string            RegexPattern       { get; init; }
+    public string            ReplacementPattern { get; init; }
 }
 
 public class TooltipActionDetail
@@ -676,7 +759,7 @@ public enum TooltipItemType : byte
     Param3                                = 40,
     Param4                                = 41,
     Param5                                = 42,
-    ControlsDisplay                       = 64,
+    ControlsDisplay                       = 64
 }
 
 public enum TooltipActionType
@@ -696,7 +779,7 @@ public enum TooltipActionType
     CastValue,
     Description,
     Level,
-    ClassJobAbbr,
+    ClassJobAbbr
 }
 
 #endregion

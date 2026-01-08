@@ -813,7 +813,7 @@ public class ItemShopInfo
         if (itemID == 0)
             return;
 
-        if (DService.ClientState.ClientLanguage != ClientLanguage.Japanese && shopName == "アイテムの購入")
+        if (DService.Instance().ClientState.ClientLanguage != ClientLanguage.Japanese && shopName == "アイテムの購入")
             shopName = string.Empty;
 
         if (!ItemToItemShopInfos.ContainsKey(itemID))
@@ -889,7 +889,7 @@ public class ItemShopInfo
     }
 
     private static LgbFile? GetLgbFileFromBg(string bg) => 
-        DService.Data.GetFile<LgbFile>("bg/" + bg[..(bg.IndexOf("/level/", StringComparison.Ordinal) + 1)] + "level/planevent.lgb");
+        DService.Instance().Data.GetFile<LgbFile>("bg/" + bg[..(bg.IndexOf("/level/", StringComparison.Ordinal) + 1)] + "level/planevent.lgb");
 
     private static bool MatchEventHandlerType(uint data, EventHandlerType type) =>
         data >> 16 == (uint)type;

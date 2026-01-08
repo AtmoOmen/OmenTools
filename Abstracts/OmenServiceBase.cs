@@ -3,6 +3,13 @@ using Newtonsoft.Json;
 
 namespace OmenTools.Abstracts;
 
+public abstract class OmenServiceBase<T> : OmenServiceBase where T : OmenServiceBase<T>
+{
+    public static T Instance() =>
+        DService.Instance().GetOmenService<T>() ??
+        throw new InvalidOperationException($"服务 {typeof(T).Name} 尚未注册或初始化");
+}
+
 public abstract class OmenServiceBase
 {
     internal bool IsDisposed { get; private set; }
@@ -11,7 +18,7 @@ public abstract class OmenServiceBase
     {
         get
         {
-            var directory0 = Path.Join(DService.PI.GetPluginConfigDirectory(), "OmenTools");
+            var directory0 = Path.Join(DService.Instance().PI.GetPluginConfigDirectory(), "OmenTools");
             Directory.CreateDirectory(directory0);
 
             var directory1 = Path.Join(directory0, "Service");
@@ -20,21 +27,21 @@ public abstract class OmenServiceBase
             return Path.Join(directory1, $"{GetType().Name}.json");
         }
     }
-
+    
     internal virtual void Init() { }
     
     internal virtual void Uninit() { }
     
-    protected T LoadConfig<T>() where T : OmenServiceConfiguration => 
-        LoadConfig<T>(GetType().Name);
+    protected TConfig LoadConfig<TConfig>() where TConfig : OmenServiceConfiguration => 
+        LoadConfig<TConfig>(GetType().Name);
 
-    protected T LoadConfig<T>(string key) where T : OmenServiceConfiguration
+    protected TConfig LoadConfig<TConfig>(string key) where TConfig : OmenServiceConfiguration
     {
         try
         {
             if (!File.Exists(ConfigFilePath)) return null;
             var jsonString = File.ReadAllText(ConfigFilePath);
-            return JsonConvert.DeserializeObject<T>(jsonString);
+            return JsonConvert.DeserializeObject<TConfig>(jsonString);
         }
         catch (Exception ex)
         {
@@ -61,7 +68,7 @@ public abstract class OmenServiceBase
         }
     }
 
-    protected void SaveConfig<T>(T config) where T : OmenServiceConfiguration
+    protected void SaveConfig<TConfig>(TConfig config) where TConfig : OmenServiceConfiguration
     {
         try
         {

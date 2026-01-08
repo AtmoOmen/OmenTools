@@ -23,5 +23,5 @@ public struct UseActionLocationPacket(ActionType type, uint actionID, float rota
                            $"Location: {Location:F2}\n" +
                            $"Cast Buff: {CastBuff} | Action Sequence: {LastUsedActionSequence}";
     
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }

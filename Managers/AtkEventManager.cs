@@ -5,19 +5,48 @@ using OmenTools.Abstracts;
 
 namespace OmenTools.Managers;
 
-internal unsafe class AtkEventManager : OmenServiceBase
+internal unsafe class AtkEventManager : OmenServiceBase<AtkEventManager>
 {
+    internal uint RegisterEvent(AtkEventWrapper eventWrapper)
+    {
+        if (!availableParamKeys.TryPop(out var newParam))
+        {
+            newParam = Interlocked.Increment(ref nextParamKey);
+            if (newParam >= BASE_PARAM_KEY + MAX_HANDLERS)
+            {
+                Interlocked.Decrement(ref nextParamKey);
+                throw new Exception("事件处理器过多 (≥ 100 万)");
+            }
+        }
+
+        if (!eventHandlers.TryAdd(newParam, eventWrapper))
+        {
+            availableParamKeys.Push(newParam);
+            throw new Exception($"注册事件失败, 回收的 ID 发生重复碰撞: {newParam}");
+        }
+
+        return newParam;
+    }
+
+    internal void UnregisterEvent(uint paramKey)
+    {
+        if (!eventHandlers.TryRemove(paramKey, out _)) return;
+        
+        availableParamKeys.Push(paramKey);
+    }
+    
+    
     private static readonly CompSig ReceiveGlobalEventSig = new("48 89 5C 24 ?? 55 57 41 57 48 83 EC 50 48 8B D9");
     private delegate        void ReceiveGlobalEventDelegate(AtkUnitBase* addon, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* data);
-    private static          Hook<ReceiveGlobalEventDelegate>? ReceiveGlobalEventHook;
+    private                 Hook<ReceiveGlobalEventDelegate>? ReceiveGlobalEventHook;
 
-    private static readonly ConcurrentDictionary<uint, AtkEventWrapper> EventHandlers      = [];
-    private static readonly ConcurrentStack<uint>                       AvailableParamKeys = [];
+    private readonly ConcurrentDictionary<uint, AtkEventWrapper> eventHandlers      = [];
+    private readonly ConcurrentStack<uint>                       availableParamKeys = [];
     
     private const uint BASE_PARAM_KEY = 0x53540000U;
     private const uint MAX_HANDLERS   = 1000000;
     
-    private static uint NextParamKey = BASE_PARAM_KEY - 1;
+    private uint nextParamKey = BASE_PARAM_KEY - 1;
     
     internal override void Init()
     {
@@ -30,21 +59,21 @@ internal unsafe class AtkEventManager : OmenServiceBase
         ReceiveGlobalEventHook?.Dispose();
         ReceiveGlobalEventHook = null;
 
-        foreach (var (_, atkEvent) in EventHandlers)
+        foreach (var (_, atkEvent) in eventHandlers)
             atkEvent.Dispose();
         
-        EventHandlers.Clear();
-        AvailableParamKeys.Clear();
+        eventHandlers.Clear();
+        availableParamKeys.Clear();
     }
 
-    private static void ReceiveGlobalEventDetour(AtkUnitBase* addon, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* data)
+    private void ReceiveGlobalEventDetour(AtkUnitBase* addon, AtkEventType eventType, int eventParam, AtkEvent* atkEvent, AtkEventData* data)
     {
         if (addon    == null ||
             atkEvent == null ||
             data     == null)
             return;
         
-        if (EventHandlers.TryGetValue((uint)eventParam, out var simpleEvent))
+        if (eventHandlers.TryGetValue((uint)eventParam, out var simpleEvent))
         {
             try
             {
@@ -59,34 +88,6 @@ internal unsafe class AtkEventManager : OmenServiceBase
         }
 
         ReceiveGlobalEventHook.Original(addon, eventType, eventParam, atkEvent, data);
-    }
-
-    internal static uint RegisterEvent(AtkEventWrapper simpleEvent)
-    {
-        if (!AvailableParamKeys.TryPop(out var newParam))
-        {
-            newParam = Interlocked.Increment(ref NextParamKey);
-            if (newParam >= BASE_PARAM_KEY + MAX_HANDLERS)
-            {
-                Interlocked.Decrement(ref NextParamKey);
-                throw new Exception("事件处理器过多 (≥ 100 万)");
-            }
-        }
-
-        if (!EventHandlers.TryAdd(newParam, simpleEvent))
-        {
-            AvailableParamKeys.Push(newParam);
-            throw new Exception($"注册事件失败, 回收的 ID 发生重复碰撞: {newParam}");
-        }
-
-        return newParam;
-    }
-
-    internal static void UnregisterEvent(uint paramKey)
-    {
-        if (!EventHandlers.TryRemove(paramKey, out _)) return;
-        
-        AvailableParamKeys.Push(paramKey);
     }
 }
 
@@ -113,7 +114,7 @@ public unsafe class AtkEventWrapper : IDisposable
     public AtkEventWrapper(AtkEventActionDelegate action)
     {
         this.Action   = action;
-        this.ParamKey = AtkEventManager.RegisterEvent(this);
+        this.ParamKey = AtkEventManager.Instance().RegisterEvent(this);
     }
     
     public void Dispose()
@@ -133,7 +134,7 @@ public unsafe class AtkEventWrapper : IDisposable
             }
         }
 
-        AtkEventManager.UnregisterEvent(ParamKey);
+        AtkEventManager.Instance().UnregisterEvent(ParamKey);
         GC.SuppressFinalize(this);
     }
     

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
@@ -8,53 +9,54 @@ using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using FFXIVClientStructs.FFXIV.Component.Shell;
-using InteropGenerator.Runtime;
 using Lumina.Text.ReadOnly;
 using OmenTools.Abstracts;
 
 namespace OmenTools.Managers;
 
-public unsafe class ChatManager : OmenServiceBase
+public unsafe class ChatManager : OmenServiceBase<ChatManager>
 {
-    public static ChatManagerConfig Config { get; private set; } = null!;
+    public ChatManagerConfig Config { get; private set; } = null!;
 
     private delegate void ProcessChatBoxEntryDelegate(
         UIModule*                          module,
         Utf8String*                        message,
         nint                               a3,
         [MarshalAs(UnmanagedType.U1)] bool saveToHistory);
-    private static          Hook<ProcessChatBoxEntryDelegate> ProcessChatBoxEntryHook;
-    
+    private Hook<ProcessChatBoxEntryDelegate> ProcessChatBoxEntryHook;
+
     private delegate void                              ExecuteCommandInnerDelegate(ShellCommandModule* module, Utf8String* message, UIModule* uiModule);
-    private static   Hook<ExecuteCommandInnerDelegate> ExecuteCommandInnerHook;
-    
-    private static readonly ConcurrentDictionary<Type, ConcurrentBag<Delegate>> MethodsCollection = [];
+    private          Hook<ExecuteCommandInnerDelegate> ExecuteCommandInnerHook;
+
+    private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
 
     #region 事件
 
-    public delegate void PreProcessChatBoxEntryDelagte(ref bool          isPrevented, ref ReadOnlySeString message, ref bool saveToHistory);
-    public delegate void PostProcessChatBoxEntryDelagte(ReadOnlySeString message,     bool                 saveToHistory);
-    
-    public delegate void PreExecuteCommandInnerDelagte(ref bool          isPrevented, ref ReadOnlySeString message);
+    public delegate void PreProcessChatBoxEntryDelagte(ref bool isPrevented, ref ReadOnlySeString message, ref bool saveToHistory);
+
+    public delegate void PostProcessChatBoxEntryDelagte(ReadOnlySeString message, bool saveToHistory);
+
+    public delegate void PreExecuteCommandInnerDelagte(ref bool isPrevented, ref ReadOnlySeString message);
+
     public delegate void PostExecuteCommandInnerDelagte(ReadOnlySeString message);
 
     #endregion
-    
+
     internal override void Init()
     {
         Config = LoadConfig<ChatManagerConfig>() ?? new();
 
-        ProcessChatBoxEntryHook = DService.Hook.HookFromAddress<ProcessChatBoxEntryDelegate>(
+        ProcessChatBoxEntryHook = DService.Instance().Hook.HookFromAddress<ProcessChatBoxEntryDelegate>(
             GetMemberFuncByName(typeof(UIModule.MemberFunctionPointers), "ProcessChatBoxEntry"),
             ProcessChatBoxEntryDetour);
         ProcessChatBoxEntryHook.Enable();
 
-        ExecuteCommandInnerHook = DService.Hook.HookFromAddress<ExecuteCommandInnerDelegate>(
+        ExecuteCommandInnerHook = DService.Instance().Hook.HookFromAddress<ExecuteCommandInnerDelegate>(
             GetMemberFuncByName(typeof(ShellCommandModule.MemberFunctionPointers), "ExecuteCommandInner"),
             ExecuteCommandInnerDetour);
         ExecuteCommandInnerHook.Enable();
     }
-    
+
     internal override void Uninit()
     {
         ProcessChatBoxEntryHook?.Dispose();
@@ -63,73 +65,98 @@ public unsafe class ChatManager : OmenServiceBase
         ExecuteCommandInnerHook?.Dispose();
         ExecuteCommandInnerHook = null;
 
-        MethodsCollection.Clear();
+        methodsCollection.Clear();
     }
 
     #region 注册
 
-    private static bool RegisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
     {
         var type = typeof(T);
-        var bag  = MethodsCollection.GetOrAdd(type, _ => []);
-        foreach (var method in methods)
-            bag.Add(method);
+
+        methodsCollection.AddOrUpdate
+        (
+            type,
+            _ =>
+            {
+                var list = ImmutableList.Create<Delegate>(method);
+                return methods.Length > 0 ? list.AddRange(methods) : list;
+            },
+            (_, currentList) =>
+            {
+                var newList = currentList.Add(method);
+                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+            }
+        );
 
         return true;
     }
 
-    private static bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
     {
+        if (methods is not { Length: > 0 }) return false;
+
         var type = typeof(T);
-        if (MethodsCollection.TryGetValue(type, out var bag))
+        
+        while (methodsCollection.TryGetValue(type, out var currentList))
         {
-            foreach (var method in methods)
+            var newList = currentList.RemoveRange(methods);
+            
+            if (newList == currentList)
+                return false;
+            
+            if (newList.IsEmpty)
             {
-                var newBag = new ConcurrentBag<Delegate>(bag.Where(d => d != method));
-                MethodsCollection[type] = newBag;
+                var kvp = new KeyValuePair<Type, ImmutableList<Delegate>>(type, currentList);
+                if (((ICollection<KeyValuePair<Type, ImmutableList<Delegate>>>)methodsCollection).Remove(kvp))
+                    return true;
             }
-            return true;
+            else
+            {
+                if (methodsCollection.TryUpdate(type, newList, currentList))
+                    return true;
+            }
         }
 
         return false;
     }
-    
-    public static bool RegPreProcessChatBoxEntry(PreProcessChatBoxEntryDelagte            methods) => RegisterGeneric(methods);
-    public static bool RegPreProcessChatBoxEntry(params PreProcessChatBoxEntryDelagte[]   methods) => RegisterGeneric(methods);
-    public static bool RegPostProcessChatBoxEntryDelagte(PostProcessChatBoxEntryDelagte   methods) => RegisterGeneric(methods);
-    public static bool RegPostProcessChatBoxEntry(params PostProcessChatBoxEntryDelagte[] methods) => RegisterGeneric(methods);
-    public static bool RegPreExecuteCommandInner(PreExecuteCommandInnerDelagte            methods) => RegisterGeneric(methods);
-    public static bool RegPreExecuteCommandInner(params PreExecuteCommandInnerDelagte[]   methods) => RegisterGeneric(methods);
-    public static bool RegPostExecuteCommandInner(PostExecuteCommandInnerDelagte          methods) => RegisterGeneric(methods);
-    public static bool RegPostExecuteCommandInner(params PostExecuteCommandInnerDelagte[] methods) => RegisterGeneric(methods);
-    
-    public static bool Unreg(params PreProcessChatBoxEntryDelagte[]  methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PostProcessChatBoxEntryDelagte[] methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PreExecuteCommandInnerDelagte[]  methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PostExecuteCommandInnerDelagte[] methods) => UnregisterGeneric(methods);
+
+    public bool RegPreProcessChatBoxEntry(PreProcessChatBoxEntryDelagte method, params PreProcessChatBoxEntryDelagte[] methods) =>
+        RegisterGeneric(method, methods);
+    public bool RegPostProcessChatBoxEntry(PostProcessChatBoxEntryDelagte method, params PostProcessChatBoxEntryDelagte[] methods) =>
+        RegisterGeneric(method, methods);
+    public bool RegPreExecuteCommandInner(PreExecuteCommandInnerDelagte method, params PreExecuteCommandInnerDelagte[] methods) => 
+        RegisterGeneric(method, methods);
+    public bool RegPostExecuteCommandInner(PostExecuteCommandInnerDelagte method, params PostExecuteCommandInnerDelagte[] methods) =>
+        RegisterGeneric(method, methods);
+
+    public bool Unreg(params PreProcessChatBoxEntryDelagte[]  methods) => UnregisterGeneric(methods);
+    public bool Unreg(params PostProcessChatBoxEntryDelagte[] methods) => UnregisterGeneric(methods);
+    public bool Unreg(params PreExecuteCommandInnerDelagte[]  methods) => UnregisterGeneric(methods);
+    public bool Unreg(params PostExecuteCommandInnerDelagte[] methods) => UnregisterGeneric(methods);
 
     #endregion
 
     #region Invokes
-    
-    private static void ProcessChatBoxEntryDetour(UIModule* module, Utf8String* message, nint a3, [MarshalAs(UnmanagedType.U1)] bool saveToHistory)
+
+    private void ProcessChatBoxEntryDetour(UIModule* module, Utf8String* message, nint a3, [MarshalAs(UnmanagedType.U1)] bool saveToHistory)
     {
         if (message == null || !message->StringPtr.HasValue)
         {
             ProcessChatBoxEntryHook.Original(module, message, a3, saveToHistory);
             return;
         }
-        
+
         var isPrevented    = false;
         var stringOriginal = message->StringPtr.AsReadOnlySeString();
         var stringToModify = message->StringPtr.AsReadOnlySeString();
-        
+
         if (Config.ShowProcessChatBoxEntryLog)
             Debug($"[Chat Manager] Process Chat Box Entry\n" +
                   $"消息: {stringToModify}\n"                  +
                   $"存储至历史记录: {saveToHistory}");
 
-        if (MethodsCollection.TryGetValue(typeof(PreProcessChatBoxEntryDelagte), out var preDelegates))
+        if (methodsCollection.TryGetValue(typeof(PreProcessChatBoxEntryDelagte), out var preDelegates))
         {
             foreach (var postDelegate in preDelegates)
             {
@@ -142,10 +169,10 @@ public unsafe class ChatManager : OmenServiceBase
 
         if (stringOriginal != stringToModify)
             message->SetString(stringToModify.ToDalamudString().EncodeWithNullTerminator());
-        
+
         ProcessChatBoxEntryHook.Original(module, message, a3, saveToHistory);
 
-        if (MethodsCollection.TryGetValue(typeof(PostProcessChatBoxEntryDelagte), out var postDelegates))
+        if (methodsCollection.TryGetValue(typeof(PostProcessChatBoxEntryDelagte), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -155,7 +182,7 @@ public unsafe class ChatManager : OmenServiceBase
         }
     }
 
-    private static void ExecuteCommandInnerDetour(ShellCommandModule* module, Utf8String* message, UIModule* uiModule)
+    private void ExecuteCommandInnerDetour(ShellCommandModule* module, Utf8String* message, UIModule* uiModule)
     {
         if (message == null || !message->StringPtr.HasValue)
         {
@@ -171,7 +198,7 @@ public unsafe class ChatManager : OmenServiceBase
             Debug($"[Chat Manager] Execute Command Inner\n" +
                   $"消息: {stringToModify}");
 
-        if (MethodsCollection.TryGetValue(typeof(PreExecuteCommandInnerDelagte), out var preDelegates))
+        if (methodsCollection.TryGetValue(typeof(PreExecuteCommandInnerDelagte), out var preDelegates))
         {
             foreach (var postDelegate in preDelegates)
             {
@@ -187,7 +214,7 @@ public unsafe class ChatManager : OmenServiceBase
 
         ExecuteCommandInnerHook.Original(module, message, uiModule);
 
-        if (MethodsCollection.TryGetValue(typeof(PostExecuteCommandInnerDelagte), out var postDelegates))
+        if (methodsCollection.TryGetValue(typeof(PostExecuteCommandInnerDelagte), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -201,23 +228,24 @@ public unsafe class ChatManager : OmenServiceBase
 
     #region 调用
 
-    public static void SendMessage(string message, bool saveToHistory = false)
+    public void SendMessage(string message, bool saveToHistory = false)
     {
         var bytes = Encoding.UTF8.GetBytes(message);
         SendMessage(bytes, saveToHistory);
     }
-    
-    public static void SendMessage(SeString message, bool saveToHistory = false) => 
+
+    public void SendMessage(SeString message, bool saveToHistory = false) =>
         SendMessage(message.Encode(), saveToHistory);
 
-    public static void SendMessage(ReadOnlySpan<byte> message, bool saveToHistory = false)
+    public void SendMessage(ReadOnlySpan<byte> message, bool saveToHistory = false)
     {
         if (message.Length == 0) return;
 
-        using var builder    = new RentedSeStringBuilder();
+        using var builder = new RentedSeStringBuilder();
         message = builder.Builder.Append(message).ToReadOnlySeString().ToDalamudString().EncodeWithNullTerminator();
 
         var utf8String = Utf8String.FromSequence(message);
+
         try
         {
             ProcessChatBoxEntryDetour(UIModule.Instance(), utf8String, (nint)utf8String, saveToHistory);
@@ -229,23 +257,24 @@ public unsafe class ChatManager : OmenServiceBase
         }
     }
 
-    public static void SendCommand(string command)
+    public void SendCommand(string command)
     {
         var bytes = Encoding.UTF8.GetBytes(command);
         SendCommand(bytes);
     }
-    
-    public static void SendCommand(SeString command) => 
+
+    public void SendCommand(SeString command) =>
         SendCommand(command.Encode());
 
-    public static void SendCommand(ReadOnlySpan<byte> command)
+    public void SendCommand(ReadOnlySpan<byte> command)
     {
         if (command.Length == 0) return;
-        
-        using var builder    = new RentedSeStringBuilder();
+
+        using var builder = new RentedSeStringBuilder();
         command = builder.Builder.Append(command).ToReadOnlySeString().ToDalamudString().EncodeWithNullTerminator();
-        
+
         var utf8String = Utf8String.FromSequence(command);
+
         try
         {
             ExecuteCommandInnerDetour((ShellCommandModule*)RaptureShellModule.Instance(), utf8String, UIModule.Instance());
@@ -267,13 +296,13 @@ public unsafe class ChatManager : OmenServiceBase
     }
 
     #endregion
-    
+
     public class ChatManagerConfig : OmenServiceConfiguration
     {
         public bool ShowProcessChatBoxEntryLog;
         public bool ShowExecuteCommandInnerLog;
 
-        public void Save() => 
-            this.Save(DService.GetOmenService<ChatManager>());
+        public void Save() =>
+            this.Save(DService.Instance().GetOmenService<ChatManager>());
     }
 }

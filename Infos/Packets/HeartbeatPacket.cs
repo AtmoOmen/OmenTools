@@ -10,5 +10,5 @@ public struct HeartbeatPacket() : IGamePacket
     
     public string Log() => $"Heartbeat 包体 ({Opcode} / 长度: {Length})";
 
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }

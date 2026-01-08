@@ -20,5 +20,5 @@ public struct HandOverItemPacket(uint eventID, uint category = 0, uint itemID = 
                            $"Item ID: {ItemID} / Item Count: {ItemCount}\n" +
                            $"Param0: {Param0} / Leve ID: {LeveID}";
 
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }

@@ -13,5 +13,5 @@ public struct TreasureOpenPacket(ulong gameObjectID) : IGamePacket
         => $"Treasure Open 包体 ({Opcode} / 长度: {Length})\n" +
            $"Game Object ID: {GameObjectID}";
 
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }

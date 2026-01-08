@@ -24,7 +24,7 @@ public struct PositionUpdateInstancePacket(
            $"位置: {Position:F2} | 新位置: {PositionNew:F2}\n"             +
            $"移动类型: {Move}";
 
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
     
     private static readonly ConcurrentDictionary<string, MoveType[]> MoveTypeCache = new();
     

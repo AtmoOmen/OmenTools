@@ -23,7 +23,7 @@ public readonly struct Angle(float radians)
     {
         direction = default;
     
-        if (DService.ObjectTable.LocalPlayer is not { } localPlayer) 
+        if (DService.Instance().ObjectTable.LocalPlayer is not { } localPlayer) 
             return false;
 
         var dist = desiredPosition - localPlayer.Position;
@@ -35,7 +35,7 @@ public readonly struct Angle(float radians)
                        ? FromDirection(new(dist.Y, new Vector2(dist.X, dist.Z).Length()))
                        : default;
 
-        var refDir = DService.GameConfig.UiControl.TryGetUInt("MoveMode", out var mode) && mode == 1
+        var refDir = DService.Instance().GameConfig.UiControl.TryGetUInt("MoveMode", out var mode) && mode == 1
                          ? new Angle(((CameraEx*)CameraManager.Instance()->GetActiveCamera())->DirH) + new Angle(180 * DEG_TO_RAD)
                          : new Angle(localPlayer.Rotation);
 

@@ -137,8 +137,8 @@ public static class TrayNotify
 
     private readonly struct BalloonTipMessage(string title, string message, ToolTipIcon icon)
     {
-        public string Title { get; } = title;
-        public string Message { get; } = message;
-        public ToolTipIcon Icon { get; } = icon;
+        public string      Title   { get; } = title;
+        public string      Message { get; } = message;
+        public ToolTipIcon Icon    { get; } = icon;
     }
 }

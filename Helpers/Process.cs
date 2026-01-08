@@ -84,7 +84,7 @@ public static partial class HelpersOm
     {
         if(!TryFindGameWindow(out var h))
         {
-            DService.Log.Error("未能找到游戏窗口, 按键发送失败");
+            DService.Instance().Log.Error("未能找到游戏窗口, 按键发送失败");
             return false;
         }
 
@@ -97,7 +97,7 @@ public static partial class HelpersOm
     {
         if (!TryFindGameWindow(out var h))
         {
-            DService.Log.Error("未能找到游戏窗口, 鼠标点击发送失败");
+            DService.Instance().Log.Error("未能找到游戏窗口, 鼠标点击发送失败");
             return;
         }
 
@@ -120,7 +120,7 @@ public static partial class HelpersOm
                 break;
             }
             default:
-                DService.Log.Error($"尝试发送非法按键 {key}, 已阻止");
+                DService.Instance().Log.Error($"尝试发送非法按键 {key}, 已阻止");
                 break;
         }
     }
@@ -133,7 +133,7 @@ public static partial class HelpersOm
     {
         if (!TryFindGameWindow(out var h))
         {
-            DService.Log.Error("未能找到游戏窗口, 按键按下发送失败");
+            DService.Instance().Log.Error("未能找到游戏窗口, 按键按下发送失败");
             return;
         }
 
@@ -144,7 +144,7 @@ public static partial class HelpersOm
     {
         if (!TryFindGameWindow(out var h))
         {
-            DService.Log.Error("未能找到游戏窗口, 按键释放发送失败");
+            DService.Instance().Log.Error("未能找到游戏窗口, 按键释放发送失败");
             return;
         }
 
@@ -155,7 +155,7 @@ public static partial class HelpersOm
     {
         if (!TryFindGameWindow(out var h))
         {
-            DService.Log.Error("未能找到游戏窗口, 按键发送失败");
+            DService.Instance().Log.Error("未能找到游戏窗口, 按键发送失败");
             return false;
         }
 

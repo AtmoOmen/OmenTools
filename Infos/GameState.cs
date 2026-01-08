@@ -9,25 +9,26 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Data;
 using Lumina.Excel.Sheets;
 using OmenTools.Abstracts;
+using OmenTools.Extensions;
 using Action = System.Action;
 using Map = Lumina.Excel.Sheets.Map;
 
 namespace OmenTools.Infos;
 
-public unsafe class GameState : OmenServiceBase
+public unsafe class GameState : OmenServiceBase<GameState>
 {
-    private static TaskHelper TaskHelper = null!;
-    
     private static readonly CompSig                          FateDirectorSetupSig = new("E8 ?? ?? ?? ?? 48 39 37");
     private delegate        nint                             FateDirectorSetupDelegate(uint rowID, nint a2, nint a3);
-    private static          Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
+    private                 Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
+    
+    private TaskHelper TaskHelper = null!;
     
     internal override void Init()
     {
-        TaskHelper ??= new() { TimeoutMS = int.MaxValue };
+        TaskHelper = new() { TimeoutMS = int.MaxValue };
         
-        DService.ClientState.Login  += OnDalamudLogin;
-        DService.ClientState.Logout += OnDalamudLogout;
+        DService.Instance().ClientState.Login  += OnDalamudLogin;
+        DService.Instance().ClientState.Logout += OnDalamudLogout;
 
         FateDirectorSetupHook ??= FateDirectorSetupSig.GetHook<FateDirectorSetupDelegate>(FateDirectorSetupDetour);
         FateDirectorSetupHook.Enable();
@@ -35,8 +36,8 @@ public unsafe class GameState : OmenServiceBase
 
     internal override void Uninit()
     {
-        DService.ClientState.Login  -= OnDalamudLogin;
-        DService.ClientState.Logout -= OnDalamudLogout;
+        DService.Instance().ClientState.Login  -= OnDalamudLogin;
+        DService.Instance().ClientState.Logout -= OnDalamudLogout;
         
         TaskHelper.Abort();
         TaskHelper = null;
@@ -45,26 +46,26 @@ public unsafe class GameState : OmenServiceBase
         FateDirectorSetupHook = null;
     }
     
-    private static void OnDalamudLogin()
+    private void OnDalamudLogin()
     {
         TaskHelper.Abort();
         
         TaskHelper.Enqueue(() =>
         {
             var agentLobby = AgentLobby.Instance();
-            return agentLobby != null && agentLobby->IsLoggedIn && DService.ObjectTable.LocalPlayer != null && UIModule.IsScreenReady();
+            return agentLobby != null              &&
+                   agentLobby->IsLoggedIn          &&
+                   LocalPlayerState.Object != null &&
+                   UIModule.IsScreenReady();
         });
         
-        TaskHelper.Enqueue(() =>
-        {
-            Login?.Invoke();
-        });
+        TaskHelper.Enqueue(() => Login?.Invoke());
     }
     
-    private static void OnDalamudLogout(int type, int code) => 
+    private void OnDalamudLogout(int type, int code) => 
         Logout?.Invoke();
 
-    private static nint FateDirectorSetupDetour(uint rowID, nint a2, nint a3)
+    private nint FateDirectorSetupDetour(uint rowID, nint a2, nint a3)
     {
         var original = FateDirectorSetupHook.Original(rowID, a2, a3);
         
@@ -131,17 +132,17 @@ public unsafe class GameState : OmenServiceBase
     /// <summary>
     /// 进入临危受命范围时
     /// </summary>
-    public static event Action<uint>? EnterFate;
+    public event Action<uint>? EnterFate;
     
     /// <summary>
     /// 登录且玩家可用时
     /// </summary>
-    public static event Action? Login;
+    public event Action? Login;
     
     /// <summary>
     /// 登出时
     /// </summary>
-    public static event Action? Logout;
+    public event Action? Logout;
 
     /// <summary>
     /// 是否已经安全登录且玩家可用
@@ -207,7 +208,7 @@ public unsafe class GameState : OmenServiceBase
     /// 原始 World
     /// </summary>
     public static uint HomeWorld =>
-        DService.ClientState.IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.HomeWorldId : 0;
+        DService.Instance().ClientState.IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.HomeWorldId : 0;
     
     /// <summary>
     /// 原始 World 表数据
@@ -219,7 +220,7 @@ public unsafe class GameState : OmenServiceBase
     /// 当前 World
     /// </summary>
     public static uint CurrentWorld =>
-        DService.ClientState.IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.CurrentWorldId : 0;
+        DService.Instance().ClientState.IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.CurrentWorldId : 0;
     
     /// <summary>
     /// 当前 World 表数据

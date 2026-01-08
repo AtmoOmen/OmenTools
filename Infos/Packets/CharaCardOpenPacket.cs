@@ -26,7 +26,7 @@ public struct CharaCardOpenPacket(ulong entityID) : IGamePacket
         var agent = AgentCharaCard.Instance();
             
         PrepareCharaPortraitData(agent);
-        GamePacketManager.SendPackt(this);
+        GamePacketManager.Instance().SendPackt(this);
         MemoryHelper.Write((nint)((byte*)agent + 0x30), (byte)1);
     }
 }

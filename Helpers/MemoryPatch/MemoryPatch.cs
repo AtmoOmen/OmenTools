@@ -75,10 +75,10 @@ public class MemoryPatch : IDisposable
 
     private static nint Scan(string sig)
     {
-        if (DService.SigScanner.TryScanModule(sig, out var address))
+        if (DService.Instance().SigScanner.TryScanModule(sig, out var address))
             return address;
 
-        DService.Log.Warning($"未能为 MemoryPatch 搜寻到签名 {sig}");
+        DService.Instance().Log.Warning($"未能为 MemoryPatch 搜寻到签名 {sig}");
         return nint.Zero;
     }
 

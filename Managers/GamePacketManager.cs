@@ -1,36 +1,62 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Network;
 using OmenTools.Abstracts;
 
 namespace OmenTools.Managers;
 
-public unsafe class GamePacketManager : OmenServiceBase
+public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 {
-    public static GamePacketManagerConfig Config { get; private set; } = null!;
+    #region 事件定义
+
+    public delegate void PreSendPacketDelegate(ref bool isPrevented, int   opcode, ref byte* packet, ref ushort priority);
+    public delegate void PostSendPacketDelegate(int     opcode,      byte* packet, ushort    priority);
+
+    public delegate void PreReceivePacketDelegate(ref bool isPrevented, int   opcode, ref byte* packet);
+    public delegate void PostReceivePacketDelegate(int     opcode,      byte* packet);
+
+    #endregion
     
-    private static readonly CompSig SendPacketInternalSig =
-        new("48 83 EC ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 44 89 44 24 ?? 4C 8D 44 24 ?? 44 89 4C 24 ?? 44 0F B6 4C 24");
-    private delegate void* SendPacketInternalDelegate(NetworkModuleProxy* module, byte* packet, int a3, int a4, ushort priority);
-    private static Hook<SendPacketInternalDelegate>? SendPacketInternalHook;
+    public GamePacketManagerConfig Config { get; private set; } = null!;
     
-    private delegate void                                 ReceivePacketInternalDelegate(PacketDispatcher* dispatcher, uint targetID, byte* packet);
-    private static   Hook<ReceivePacketInternalDelegate>? ReceivePacketInternalHook;
+    public void SendPackt<T>(T data) where T : unmanaged, IGamePacket => 
+        SendPacket(Framework.Instance()->NetworkModuleProxy, (byte*)&data, 0, 0x9876543); // 打个标记
+
+    #region 注册
+
+    public bool RegPreSendPacket(PreSendPacketDelegate         method, params PreSendPacketDelegate[]     methods) => RegisterGeneric(method, methods);
+    public bool RegPostSendPacket(PostSendPacketDelegate       method, params PostSendPacketDelegate[]    methods) => RegisterGeneric(method, methods);
+    public bool RegPreReceivePacket(PreReceivePacketDelegate   method, params PreReceivePacketDelegate[]  methods) => RegisterGeneric(method, methods);
+    public bool RegPostReceivePacket(PostReceivePacketDelegate method, params PostReceivePacketDelegate[] methods) => RegisterGeneric(method, methods);
     
-    private delegate bool SendPacketDelegate(NetworkModuleProxy* module, byte* packet, uint a3, uint a4);
+    public bool Unreg(params PreSendPacketDelegate[]     methods) => UnregisterGeneric(methods);
+    public bool Unreg(params PostSendPacketDelegate[]    methods) => UnregisterGeneric(methods);
+    public bool Unreg(params PreReceivePacketDelegate[]  methods) => UnregisterGeneric(methods);
+    public bool Unreg(params PostReceivePacketDelegate[] methods) => UnregisterGeneric(methods);
+
+    #endregion
+    
+    
+    private delegate void* SendPacketDelegate(NetworkModuleProxy* module, byte* packet, uint a3, uint a4);
     private static readonly SendPacketDelegate? SendPacket =
         new CompSig("E8 ?? ?? ?? ?? 48 8B D6 48 8B CF E8 ?? ?? ?? ?? 48 8B 8C 24").GetDelegate<SendPacketDelegate>();
     
-    public delegate void PreSendPacketDelegate(ref bool isPrevented, int   opcode, ref byte* packet, ref ushort priority);
-    public delegate void PostSendPacketDelegate(int opcode, byte* packet, ushort priority);
+    private static readonly CompSig SendPacketInternalSig =
+        new("48 83 EC ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 44 89 44 24 ?? 4C 8D 44 24 ?? 44 89 4C 24 ?? 44 0F B6 4C 24");
+    private delegate void*                             SendPacketInternalDelegate(NetworkModuleProxy* module, byte* packet, int a3, int a4, ushort priority);
+    private          Hook<SendPacketInternalDelegate>? SendPacketInternalHook;
     
-    public delegate void PreReceivePacketDelegate(ref bool isPrevented, int   opcode, ref byte* packet);
-    public delegate void PostReceivePacketDelegate(int opcode, byte* packet);
+    private delegate void                                 ReceivePacketInternalDelegate(PacketDispatcher* dispatcher, uint targetID, byte* packet);
+    private          Hook<ReceivePacketInternalDelegate>? ReceivePacketInternalHook;
+    
+    private delegate void PacketLogger(byte* packet);
 
-    private static readonly ConcurrentDictionary<Type, ConcurrentBag<Delegate>> MethodsCollection = [];
+    private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
     
     internal override void Init()
     {
@@ -38,39 +64,46 @@ public unsafe class GamePacketManager : OmenServiceBase
         
         SendPacketInternalHook ??= SendPacketInternalSig.GetHook<SendPacketInternalDelegate>(SendPacketInternalDetour);
         ReceivePacketInternalHook ??=
-            DService.Hook.HookFromVirtualTable<ReceivePacketInternalDelegate, PacketDispatcher.PacketDispatcherVirtualTable>(
+            DService.Instance().Hook.HookFromVirtualTable<ReceivePacketInternalDelegate, PacketDispatcher.PacketDispatcherVirtualTable>(
                 PacketDispatcher.StaticVirtualTablePointer, 
                 "OnReceivePacket",
                 ReceivePacketInternalDetour);
         
-        GameState.Login  += OnLogin;
-        GameState.Logout += OnLogout;
-        if (DService.ClientState.IsLoggedIn)
-            Toggle(true);
+        GameState.Instance().Login  += OnLogin;
+        GameState.Instance().Logout += OnLogout;
+        if (DService.Instance().ClientState.IsLoggedIn)
+            ToggleHooks(true);
     }
-
-    private static void OnLogin() => 
-        Toggle(true);
     
-    private static void OnLogout() => 
-        Toggle(false);
-    
-    public static void Toggle(bool isEnabled)
+    internal override void Uninit()
     {
-        SendPacketInternalHook?.Toggle(isEnabled);
-        ReceivePacketInternalHook?.Toggle(isEnabled);
+        GameState.Instance().Login  -= OnLogin;
+        GameState.Instance().Logout -= OnLogout;
+        
+        SendPacketInternalHook?.Dispose();
+        SendPacketInternalHook = null;
+        
+        ReceivePacketInternalHook?.Dispose();
+        ReceivePacketInternalHook = null;
+        
+        methodsCollection.Clear();
     }
 
-    public static void SendPackt<T>(T data) where T : unmanaged, IGamePacket => 
-        SendPacket(Framework.Instance()->NetworkModuleProxy, (byte*)&data, 0, 0x9876543); // 打个标记
+    #region Hook 与事件
 
-    private static void* SendPacketInternalDetour(NetworkModuleProxy* module, byte* packet, int a3, int a4, ushort priority)
+    private void OnLogin() => 
+        ToggleHooks(true);
+    
+    private void OnLogout() => 
+        ToggleHooks(false);
+    
+    private void* SendPacketInternalDetour(NetworkModuleProxy* module, byte* packet, int a3, int a4, ushort priority)
     {
         var opcode = *(ushort*)packet;
         LogKnownGamePacket(*(ushort*)packet, packet, priority);
         
         var isPrevented = false;
-        if (a4 != 0x9876543 && MethodsCollection.TryGetValue(typeof(PreSendPacketDelegate), out var preDelegates))
+        if (a4 != 0x9876543 && methodsCollection.TryGetValue(typeof(PreSendPacketDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -92,7 +125,7 @@ public unsafe class GamePacketManager : OmenServiceBase
         
         var original = SendPacketInternalHook.Original(module, packet, a3, a4 == 0x9876543 ? 0 : a4, priority);
 
-        if (a4 != 0x9876543 && MethodsCollection.TryGetValue(typeof(PostSendPacketDelegate), out var postDelegates))
+        if (a4 != 0x9876543 && methodsCollection.TryGetValue(typeof(PostSendPacketDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -104,7 +137,7 @@ public unsafe class GamePacketManager : OmenServiceBase
         return original;
     }
     
-    private static void ReceivePacketInternalDetour(PacketDispatcher* dispatcher, uint targetID, byte* packet)
+    private void ReceivePacketInternalDetour(PacketDispatcher* dispatcher, uint targetID, byte* packet)
     {
         packet -= 16;
 
@@ -112,7 +145,7 @@ public unsafe class GamePacketManager : OmenServiceBase
         LogKnownReceivedPacket(opcode, targetID);
         
         var isPrevented = false;
-        if (MethodsCollection.TryGetValue(typeof(PreReceivePacketDelegate), out var preDelegates))
+        if (methodsCollection.TryGetValue(typeof(PreReceivePacketDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -126,7 +159,7 @@ public unsafe class GamePacketManager : OmenServiceBase
         
         ReceivePacketInternalHook.Original(dispatcher, targetID, packet + 16);
         
-        if (MethodsCollection.TryGetValue(typeof(PostReceivePacketDelegate), out var postDelegates))
+        if (methodsCollection.TryGetValue(typeof(PostReceivePacketDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -136,13 +169,15 @@ public unsafe class GamePacketManager : OmenServiceBase
         }
     }
 
-    private static void LogKnownReceivedPacket(int opcode, uint targetID)
+    #endregion
+
+    private void LogKnownReceivedPacket(int opcode, uint targetID)
     {
         if (Config.ShowReceivedPacketOpcodeLog)
             Debug($"[Game Packet Manager] [下行] 操作码: {opcode} / 目标: 0x{targetID:X8}");
     }
 
-    private static void LogKnownGamePacket(int opcode, byte* packet, ushort priority)
+    private void LogKnownGamePacket(int opcode, byte* packet, ushort priority)
     {
         if (Config.ShowGamePacketOpcodeLog)
             Debug($"[Game Packet Manager] [上行] 操作码: {opcode} / 长度: {*(uint*)(packet + 8)} / 优先级: {priority}");
@@ -154,55 +189,71 @@ public unsafe class GamePacketManager : OmenServiceBase
     private static void LogPacket<T>(byte* packet) where T : unmanaged, IGamePacket =>
         Debug($"[Game Packet Manager] {((T*)packet)->Log()}");
 
+    private void ToggleHooks(bool isEnabled)
+    {
+        SendPacketInternalHook?.Toggle(isEnabled);
+        ReceivePacketInternalHook?.Toggle(isEnabled);
+    }
+    
     private static void HandlePacketPriority(ref ushort priority)
     {
         if (priority > 0) return;
         // 采集状态或副本内
-        if (DService.Condition.Any(ConditionFlag.Gathering, ConditionFlag.BoundByDuty)) return;
+        if (Conditions.Instance()->Gathering || GameState.ContentFinderCondition != 0) return;
         // 部队储物柜
         if (FreeCompanyChest != null) return;
 
         priority = 1;
     }
 
-    #region Event
-    
-    public static bool RegPreSendPacket(PreSendPacketDelegate            method)  => RegisterGeneric(method);
-    public static bool RegPreSendPacket(params PreSendPacketDelegate[]   methods) => RegisterGeneric(methods);
-    public static bool RegPostSendPacket(PostSendPacketDelegate          method)  => RegisterGeneric(method);
-    public static bool RegPostSendPacket(params PostSendPacketDelegate[] methods) => RegisterGeneric(methods);
-    
-    public static bool RegPreReceivePacket(PreReceivePacketDelegate            method)  => RegisterGeneric(method);
-    public static bool RegPreReceivePacket(params PreReceivePacketDelegate[]   methods) => RegisterGeneric(methods);
-    public static bool RegPostReceivePacket(PostReceivePacketDelegate          method)  => RegisterGeneric(method);
-    public static bool RegPostReceivePacket(params PostReceivePacketDelegate[] methods) => RegisterGeneric(methods);
-    
-    public static bool Unreg(params PreSendPacketDelegate[]     methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PostSendPacketDelegate[]    methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PreReceivePacketDelegate[]  methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PostReceivePacketDelegate[] methods) => UnregisterGeneric(methods);
-    
-    private static bool RegisterGeneric<T>(params T[] methods) where T : Delegate
+    #region 注册 (私有)
+
+    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
     {
         var type = typeof(T);
-        var bag  = MethodsCollection.GetOrAdd(type, _ => []);
-        foreach (var method in methods)
-            bag.Add(method);
+
+        methodsCollection.AddOrUpdate
+        (
+            type,
+            _ =>
+            {
+                var list = ImmutableList.Create<Delegate>(method);
+                return methods.Length > 0 ? list.AddRange(methods) : list;
+            },
+            (_, currentList) =>
+            {
+                var newList = currentList.Add(method);
+                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+            }
+        );
 
         return true;
     }
 
-    private static bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
     {
+        if (methods is not { Length: > 0 }) return false;
+
         var type = typeof(T);
-        if (MethodsCollection.TryGetValue(type, out var bag))
+        
+        while (methodsCollection.TryGetValue(type, out var currentList))
         {
-            foreach (var method in methods)
+            var newList = currentList.RemoveRange(methods);
+            
+            if (newList == currentList)
+                return false;
+            
+            if (newList.IsEmpty)
             {
-                var newBag = new ConcurrentBag<Delegate>(bag.Where(d => d != method));
-                MethodsCollection[type] = newBag;
+                var kvp = new KeyValuePair<Type, ImmutableList<Delegate>>(type, currentList);
+                if (((ICollection<KeyValuePair<Type, ImmutableList<Delegate>>>)methodsCollection).Remove(kvp))
+                    return true;
             }
-            return true;
+            else
+            {
+                if (methodsCollection.TryUpdate(type, newList, currentList))
+                    return true;
+            }
         }
 
         return false;
@@ -210,19 +261,106 @@ public unsafe class GamePacketManager : OmenServiceBase
 
     #endregion
     
-    internal override void Uninit()
+    private static readonly Dictionary<int, PacketHandler> PacketHandlers = new()
     {
-        GameState.Login  -= OnLogin;
-        GameState.Logout -= OnLogout;
-        
-        SendPacketInternalHook?.Dispose();
-        SendPacketInternalHook = null;
-        
-        ReceivePacketInternalHook?.Dispose();
-        ReceivePacketInternalHook = null;
-        
-        MethodsCollection.Clear();
-    }
+        [GamePacketOpcodes.EventCompleteOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketEventCompleteLog,
+                LogPacket<EventCompletePackt>
+            ),
+
+        [GamePacketOpcodes.EventStartOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketEventStartLog,
+                LogPacket<EventStartPackt>
+            ),
+
+        [GamePacketOpcodes.EventActionOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketEventActionLog,
+                LogPacket<EventActionPacket>
+            ),
+
+        [GamePacketOpcodes.DiveStartOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketDiveStartLog,
+                LogPacket<DiveStartPacket>
+            ),
+
+        [GamePacketOpcodes.PositionUpdateOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketPositionUpdateLog,
+                LogPacket<PositionUpdatePacket>
+            ),
+
+        [GamePacketOpcodes.PositionUpdateInstanceOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketPositionUpdateLog,
+                LogPacket<PositionUpdateInstancePacket>
+            ),
+
+        [GamePacketOpcodes.TreasureOpenOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketTreasureOpenLog,
+                LogPacket<TreasureOpenPacket>
+            ),
+
+        [GamePacketOpcodes.HeartbeatOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketHeartbeatLog,
+                LogPacket<HeartbeatPacket>
+            ),
+
+        [GamePacketOpcodes.UseActionOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketUseActionLog,
+                LogPacket<UseActionPacket>
+            ),
+
+        [GamePacketOpcodes.UseActionLocationOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketUseActionLocationLog,
+                LogPacket<UseActionLocationPacket>
+            ),
+
+        [GamePacketOpcodes.MJIInteractOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketMJIInteractLog,
+                LogPacket<MJIInteractPacket>
+            ),
+
+        [GamePacketOpcodes.ExecuteCommandOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketExecuteCommandLog,
+                LogPacket<ExecuteCommandPacket>
+            ),
+
+        [GamePacketOpcodes.CharaCardOpenOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketCharaCardOpenLog,
+                LogPacket<CharaCardOpenPacket>
+            ),
+
+        [GamePacketOpcodes.HandOverItemOpcode] =
+            new
+            (
+                () => Instance().Config.ShowGamePacketHandOverItemLog,
+                LogPacket<HandOverItemPacket>
+            )
+    };
     
     private class PacketHandler(Func<bool> shouldLog, PacketLogger log)
     {
@@ -230,81 +368,6 @@ public unsafe class GamePacketManager : OmenServiceBase
         public PacketLogger Log       { get; } = log;
     }
     
-    private delegate void PacketLogger(byte* packet);
-    private static readonly Dictionary<int, PacketHandler> PacketHandlers = new()
-    {
-        {
-            GamePacketOpcodes.EventCompleteOpcode,
-            new(() => Config.ShowGamePacketEventCompleteLog,
-                LogPacket<EventCompletePackt>)
-        },
-        {
-            GamePacketOpcodes.EventStartOpcode,
-            new(() => Config.ShowGamePacketEventStartLog,
-                LogPacket<EventStartPackt>)
-        },
-        {
-            GamePacketOpcodes.EventActionOpcode,
-            new(() => Config.ShowGamePacketEventActionLog,
-                LogPacket<EventActionPacket>)
-        },
-        {
-            GamePacketOpcodes.DiveStartOpcode,
-            new(() => Config.ShowGamePacketDiveStartLog,
-                LogPacket<DiveStartPacket>)
-        },
-        {
-            GamePacketOpcodes.PositionUpdateOpcode,
-            new(() => Config.ShowGamePacketPositionUpdateLog,
-                LogPacket<PositionUpdatePacket>)
-        },
-        {
-            GamePacketOpcodes.PositionUpdateInstanceOpcode,
-            new(() => Config.ShowGamePacketPositionUpdateLog,
-                LogPacket<PositionUpdateInstancePacket>)
-        },
-        {
-            GamePacketOpcodes.TreasureOpenOpcode,
-            new(() => Config.ShowGamePacketTreasureOpenLog,
-                LogPacket<TreasureOpenPacket>)
-        },
-        {
-            GamePacketOpcodes.HeartbeatOpcode,
-            new(() => Config.ShowGamePacketHeartbeatLog,
-                LogPacket<HeartbeatPacket>)
-        },
-        {
-            GamePacketOpcodes.UseActionOpcode,
-            new(() => Config.ShowGamePacketUseActionLog,
-                LogPacket<UseActionPacket>)
-        },
-        {
-            GamePacketOpcodes.UseActionLocationOpcode,
-            new(() => Config.ShowGamePacketUseActionLocationLog,
-                LogPacket<UseActionLocationPacket>)
-        },
-        {
-            GamePacketOpcodes.MJIInteractOpcode,
-            new(() => Config.ShowGamePacketMJIInteractLog,
-                LogPacket<MJIInteractPacket>)
-        },
-        {
-            GamePacketOpcodes.ExecuteCommandOpcode,
-            new(() => Config.ShowGamePacketExecuteCommandLog,
-                LogPacket<ExecuteCommandPacket>)
-        },
-        {
-            GamePacketOpcodes.CharaCardOpenOpcode,
-            new(() => Config.ShowGamePacketCharaCardOpenLog,
-                LogPacket<CharaCardOpenPacket>)
-        },
-        {
-            GamePacketOpcodes.HandOverItemOpcode,
-            new(() => Config.ShowGamePacketHandOverItemLog,
-                LogPacket<HandOverItemPacket>)
-        }
-    };
-
     public class GamePacketManagerConfig : OmenServiceConfiguration
     {
         public bool ShowGamePacketOpcodeLog;
@@ -325,6 +388,6 @@ public unsafe class GamePacketManager : OmenServiceBase
         public bool ShowReceivedPacketOpcodeLog;
 
         public void Save() => 
-            this.Save(DService.GetOmenService<GamePacketManager>());
+            this.Save(DService.Instance().GetOmenService<GamePacketManager>());
     }
 }

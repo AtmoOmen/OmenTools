@@ -47,7 +47,7 @@ internal unsafe class GameObject(nint address) : IGameObject
     public bool                  IsTargetable     => Struct->GetIsTargetable();
     
     public virtual ulong        TargetObjectID => 0;
-    public virtual IGameObject? TargetObject   => DService.ObjectTable.SearchByID(TargetObjectID);
+    public virtual IGameObject? TargetObject   => DService.Instance().ObjectTable.SearchByID(TargetObjectID);
     
     public bool           IsValid()    => IsValid(this);
     public CSGameObject*  ToStruct()   => Struct;
@@ -112,7 +112,7 @@ internal unsafe class Character(nint address) : GameObject(address), ICharacter
     public byte                 ModeParam           => Struct->ModeParam;
     public RowRef<OnlineStatus> OnlineStatus        => Struct->CharacterData.OnlineStatus.ToLuminaRowRef<OnlineStatus>();
     public ulong                EmoteTargetObjectID => Struct->EmoteController.Target;
-    public IGameObject?         EmoteTargetObject   => DService.ObjectTable.SearchByID(EmoteTargetObjectID);
+    public IGameObject?         EmoteTargetObject   => DService.Instance().ObjectTable.SearchByID(EmoteTargetObjectID);
     public bool                 IsWanderer          => Struct->IsWanderer();
     public bool                 IsTraveler          => Struct->IsTraveler();
     public bool                 IsVoyager           => Struct->IsVoyager();
@@ -185,7 +185,7 @@ internal unsafe class BattleChara(nint address) : Character(address), IBattleCha
     public ActionType   CastActionType      => (ActionType)CastInfo.ActionType;
     public uint         CastActionID        => CastInfo.ActionId;
     public ulong        CastTargetObjectID  => CastInfo.TargetId;
-    public IGameObject? CastTargetObject    => DService.ObjectTable.SearchByID(CastTargetObjectID);
+    public IGameObject? CastTargetObject    => DService.Instance().ObjectTable.SearchByID(CastTargetObjectID);
     public float        CurrentCastTime     => CastInfo.CurrentCastTime != 0 ? CastInfo.CurrentCastTime : -1;
     public float        BaseCastTime        => CastInfo.BaseCastTime    != 0 ? CastInfo.BaseCastTime : -1;
     public float        TotalCastTime       => CastInfo.TotalCastTime   != 0 ? CastInfo.TotalCastTime : -1;

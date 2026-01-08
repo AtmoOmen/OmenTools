@@ -1,113 +1,97 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Dalamud.Plugin.Services;
 using OmenTools.Abstracts;
 
 namespace OmenTools.Managers;
 
-public class FrameworkManager : OmenServiceBase
+public class FrameworkManager : OmenServiceBase<FrameworkManager>
 {
-    private static CancellationTokenSource? CancelSource = new();
+    private readonly CancellationTokenSource cancelSource = new();
 
-    private static readonly ConcurrentDictionary<string, (uint Throttle, IFramework.OnUpdateDelegate Method)> methodsInfoSync  = [];
-    private static readonly ConcurrentDictionary<string, (uint Throttle, IFramework.OnUpdateDelegate Method)> methodsInfoAsync = [];
+    private readonly ConcurrentDictionary<IFramework.OnUpdateDelegate, (uint Throttle, string HashCode)> methodsCollectionSync  = [];
+    private readonly ConcurrentDictionary<IFramework.OnUpdateDelegate, (uint Throttle, string HashCode)> methodsCollectionAsync = [];
 
-    internal override void Init()
+    private int isLastAsyncUpdating;
+
+    internal override void Init() =>
+        DService.Instance().Framework.Update += DailyRoutines_OnUpdate;
+
+    internal override void Uninit()
     {
-        CancelSource?.Cancel();
-        CancelSource?.Dispose();
-        CancelSource = new();
-        
-        DService.Framework.Update +=  DailyRoutines_OnUpdate;
+        DService.Instance().Framework.Update -= DailyRoutines_OnUpdate;
+
+        cancelSource.Cancel();
+        cancelSource.Dispose();
+
+        methodsCollectionSync.Clear();
+        methodsCollectionAsync.Clear();
     }
 
-    public static bool Reg(IFramework.OnUpdateDelegate method, bool isSync = false, uint throttleMS = 0)
+    public bool Reg(IFramework.OnUpdateDelegate method, bool isSync = false, uint throttleMS = 0)
     {
-        var state      = true;
-        var uniqueName = GetUniqueName(method);
+        var state = false;
         switch (isSync)
         {
             case false:
-                if (!methodsInfoAsync.TryAdd(uniqueName, (throttleMS, method))) 
-                    state = false;
+                if (methodsCollectionAsync.TryAdd(method, (throttleMS, $"{RuntimeHelpers.GetHashCode(method)}_{method.Method.MethodHandle.Value}")))
+                    state = true;
                 break;
             case true:
-                if (!methodsInfoSync.TryAdd(uniqueName, (throttleMS, method))) 
-                    state = false;
+                if (methodsCollectionSync.TryAdd(method, (throttleMS, $"{RuntimeHelpers.GetHashCode(method)}_{method.Method.MethodHandle.Value}")))
+                    state = true;
                 break;
         }
-
+        
         return state;
     }
 
-    public static bool Unreg(params IFramework.OnUpdateDelegate[] methods)
+    public bool Unreg(params IFramework.OnUpdateDelegate[] methods)
     {
         var state = true;
         foreach (var method in methods)
         {
-            var uniqueName = GetUniqueName(method);
-            if (!methodsInfoAsync.TryRemove(uniqueName, out _) &&
-                !methodsInfoSync.TryRemove(uniqueName, out _)) 
+            if (!methodsCollectionAsync.TryRemove(method, out _) &&
+                !methodsCollectionSync.TryRemove(method, out _)) 
                 state = false;
         }
 
         return state;
     }
 
-    public static bool Unreg(params MethodInfo[] methods)
+    private void DailyRoutines_OnUpdate(IFramework framework)
     {
-        var state = true;
-        foreach (var method in methods)
-        {
-            var uniqueName = GetUniqueName(method);
-            if (!methodsInfoAsync.TryRemove(uniqueName, out _) &&
-                !methodsInfoSync.TryRemove(uniqueName, out _))
-                state = false;
-        }
-
-        return state;
-    }
-
-    private static string GetUniqueName(IFramework.OnUpdateDelegate method)
-    {
-        var methodInfo = method.Method;
-        var target = method.Target;
-        return $"{methodInfo.DeclaringType.FullName}_{methodInfo.Name}_{target?.GetHashCode() ?? 0}";
-    }
-
-    private static string GetUniqueName(MemberInfo methodInfo) => 
-        $"{methodInfo.DeclaringType.FullName}_{methodInfo.Name}_{methodInfo.GetHashCode()}";
-
-    private static void DailyRoutines_OnUpdate(IFramework framework)
-    {
-        var copiedAsync = methodsInfoAsync;
         framework.RunOnTick(() =>
         {
-            foreach (var (name, methodInfo) in copiedAsync)
+            if (Interlocked.Exchange(ref isLastAsyncUpdating, 1) != 0)
+                return;
+
+            try
             {
-                if (methodInfo.Throttle > 0 && !Throttler.Throttle($"FrameworkManager-OnUpdate-{name}", methodInfo.Throttle))
-                    continue;
-                
-                try
+                foreach (var (method, (throttle, key)) in methodsCollectionAsync)
                 {
-                    methodInfo.Method(framework);
-                }
-                catch (Exception ex)
-                {
-                    Error("在 Framework 异步更新过程中发生错误", ex);
+                    if (throttle > 0 && !Throttler.Throttle($"FrameworkManager-OnUpdate-{key}", throttle))
+                        continue;
+
+                    try { method(framework); }
+                    catch (Exception ex) { Error("在 Framework 异步更新过程中发生错误", ex); }
                 }
             }
-        }, TimeSpan.Zero, 0, CancelSource.Token).ConfigureAwait(false);
+            finally
+            {
+                Interlocked.Exchange(ref isLastAsyncUpdating, 0);
+            }
+        }, cancellationToken: cancelSource.Token).ConfigureAwait(false);
         
-        var copiedSync = methodsInfoSync;
-        foreach (var (name, methodInfo) in copiedSync)
+        foreach (var (method, (throttle, hashCode)) in methodsCollectionSync)
         {
-            if (methodInfo.Throttle > 0 && !Throttler.Throttle($"FrameworkManager-OnUpdate-{name}", methodInfo.Throttle))
+            if (throttle > 0 && !Throttler.Throttle($"FrameworkManager-OnUpdate-{hashCode}", throttle))
                 continue;
                 
             try
             {
-                methodInfo.Method(framework);
+                method(framework);
             }
             catch (Exception ex)
             {
@@ -116,11 +100,11 @@ public class FrameworkManager : OmenServiceBase
         }
     }
     
-    public static void SetCurrentThreadMainDalamud()
+    public void SetCurrentThreadMainDalamud()
     {
         try
         {
-            var type = DService.PI.GetType().Assembly.GetType("Dalamud.Utility.ThreadSafety");
+            var type = DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Utility.ThreadSafety");
             if (type == null) return;
 
             var field = type.GetField("threadStaticIsMainThread", BindingFlags.NonPublic | BindingFlags.Static);
@@ -132,17 +116,5 @@ public class FrameworkManager : OmenServiceBase
         {
             // ignored
         }
-    }
-
-    internal override void Uninit()
-    {
-        DService.Framework.Update -= DailyRoutines_OnUpdate;
-
-        CancelSource?.Cancel();
-        CancelSource?.Dispose();
-        CancelSource = null;
-
-        methodsInfoAsync.Clear();
-        methodsInfoSync.Clear();
     }
 }

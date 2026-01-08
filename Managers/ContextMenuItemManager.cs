@@ -13,49 +13,47 @@ using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace OmenTools.Managers;
 
-public unsafe class ContextMenuItemManager : OmenServiceBase
+public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemManager>
 {
     #region 公共接口
 
     /// <summary>
     ///     当前右键菜单关联的物品ID
     /// </summary>
-    public static uint CurrentItemID { get; private set; }
+    public uint CurrentItemID { get; private set; }
 
     /// <summary>
     ///     当前幻化物品ID（如果有）
     /// </summary>
-    public static uint CurrentGlamourID { get; private set; }
+    public uint CurrentGlamourID { get; private set; }
 
     /// <summary>
     ///     当前是否有有效的物品ID
     /// </summary>
-    public static bool IsValidItem => CurrentItemID > 0;
+    public bool IsValidItem => CurrentItemID > 0;
 
     /// <summary>
     ///     获取当前物品的Item对象
     /// </summary>
-    public static Item? CurrentItem =>
+    public Item? CurrentItem =>
         CurrentItemID > 0 && LuminaGetter.TryGetRow<Item>(CurrentItemID, out var item) ? item : null;
 
     /// <summary>
     ///     获取当前幻化物品的Item对象
     /// </summary>
-    public static Item? CurrentGlamourItem =>
+    public Item? CurrentGlamourItem =>
         CurrentGlamourID > 0 && LuminaGetter.TryGetRow<Item>(CurrentGlamourID, out var item) ? item : null;
 
     /// <summary>
     ///     获取在MiragePrismPrismBoxCrystallize场景下扫描到的特殊物品
     /// </summary>
-    public static Item? GetPrismBoxItem(IMenuOpenedArgs args)
+    public Item? GetPrismBoxItem(IMenuOpenedArgs args)
     {
         if (args.AddonName != "MiragePrismPrismBoxCrystallize") return null;
 
-        var addon = ContextMenuXIV;
-        if (addon == null || !addon->IsAddonAndNodesReady()) return null;
+        if (!ContextMenuXIV->IsAddonAndNodesReady()) return null;
 
-        var searchText = LuminaWrapper.GetAddonText(11900);
-        return TryScanContextMenuText(searchText, out _) ? LastPrismBoxItem : null;
+        return TryScanContextMenuText(LuminaWrapper.GetAddonText(11900), out _) ? LastPrismBoxItem : null;
     }
 
     #endregion
@@ -64,26 +62,26 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
 
     private static readonly string[] Addons =
     [
-        "CabinetWithdraw", "Shop", "InclusionShop", "CollectablesShop", "FreeCompanyExchange", "FreeCompanyCreditShop",
-        "ShopExchangeCurrency", "ShopExchangeItem", "SkyIslandExchange", "TripleTriadCoinExchange", "FreeCompanyChest",
-        "MJIDisposeShop", "GrandCompanyExchange", "ReconstructionBuyback", "ShopExchangeCoin",
-        "MiragePrismPrismBoxCrystallize", "ItemSearch", "GrandCompanySupplyList"
+        "CabinetWithdraw",
+        "Shop",
+        "InclusionShop",
+        "CollectablesShop",
+        "FreeCompanyExchange",
+        "FreeCompanyCreditShop",
+        "ShopExchangeCurrency",
+        "ShopExchangeItem",
+        "SkyIslandExchange",
+        "TripleTriadCoinExchange",
+        "FreeCompanyChest",
+        "MJIDisposeShop",
+        "GrandCompanyExchange",
+        "ReconstructionBuyback",
+        "ShopExchangeCoin",
+        "MiragePrismPrismBoxCrystallize",
+        "ItemSearch",
+        "GrandCompanySupplyList"
     ];
-
-    private static Item? LastItem;
-    private static Item? LastPrismBoxItem;
-    private static Item? LastGlamourItem;
-    private static uint  LastHoveredItemID;
-    private static uint  LastDetailItemID;
-
-    private static bool IsOnItemHover;
-    private static bool IsOnItemDetail;
-
-    private static readonly HashSet<InventoryItem> CharacterInspectItems = [];
-
-    private static TaskHelper? TaskHelper;
-
-    private readonly CompSig MiragePrismBoxReceiveEventSig = new("40 53 48 83 EC ?? 48 8B 44 24 ?? 48 8B DA 48 85 C0 74 ?? 48 89 44 24");
+    
     private delegate AtkValue* MiragePrismBoxReceiveEventDelegate(
         AgentMiragePrismPrismBox* agent,
         AtkValue*                 returnValue,
@@ -91,16 +89,25 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         uint                      valueCount,
         ulong                     eventKind);
     private Hook<MiragePrismBoxReceiveEventDelegate>? MiragePrismBoxReceiveEventHook;
-    
-    private readonly CompSig AchievementReceiveEventSig =
-        new("40 53 55 56 57 41 54 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 48 8B 84 24 ?? ?? ?? ?? 49 8B F8");
+
     private delegate AtkValue* AchievementReceiveEventDelegate(AgentAchievement* a1, AtkValue* returnValue, AtkValue* values, uint valueCount, ulong eventKind);
     private Hook<AchievementReceiveEventDelegate>? AchievementReceiveEventHook;
-    
-    private readonly CompSig MateriaAttachReceiveEventSig =
-        new("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 41 54 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 63 BC 24");
+
     private delegate AtkValue* MateriaAttachReceiveEventDelegate(AgentMateriaAttach* a1, AtkValue* returnValue, AtkValue* values, uint valueCount, ulong eventKind);
     private Hook<MateriaAttachReceiveEventDelegate>? MateriaAttachReceiveEventHook;
+    
+    private TaskHelper? TaskHelper;
+    
+    private Item? LastItem;
+    private Item? LastPrismBoxItem;
+    private Item? LastGlamourItem;
+    private uint  LastHoveredItemID;
+    private uint  LastDetailItemID;
+
+    private bool IsOnItemHover;
+    private bool IsOnItemDetail;
+
+    private readonly HashSet<InventoryItem> CharacterInspectItems = [];
 
     #endregion
 
@@ -108,24 +115,30 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
     {
         TaskHelper ??= new() { TimeoutMS = 5_000 };
 
-        DService.ContextMenu.OnMenuOpened += OnMenuOpened;
-        DService.Gui.HoveredItemChanged   += OnHoveredItemChanged;
-        FrameworkManager.Reg(OnUpdate);
+        DService.Instance().ContextMenu.OnMenuOpened += OnMenuOpened;
+        DService.Instance().Gui.HoveredItemChanged   += OnHoveredItemChanged;
+        FrameworkManager.Instance().Reg(OnUpdate);
 
-        DService.AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
+        DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
 
-        DService.AddonLifecycle.RegisterListener(AddonEvent.PostSetup,   Addons, OnAddon);
-        DService.AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, Addons, OnAddon);
+        DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PostSetup,   Addons, OnAddon);
+        DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, Addons, OnAddon);
 
         CharacterInspectItems.Clear();
-
-        MiragePrismBoxReceiveEventHook ??= MiragePrismBoxReceiveEventSig.GetHook<MiragePrismBoxReceiveEventDelegate>(MiragePrismBoxReceiveEventDetour);
+        
+        MiragePrismBoxReceiveEventHook ??= AgentMiragePrismPrismBox.Instance()->VirtualTable->HookVFuncFromName(
+            "ReceiveEvent",
+            (MiragePrismBoxReceiveEventDelegate)MiragePrismBoxReceiveEventDetour);
         MiragePrismBoxReceiveEventHook.Enable();
 
-        AchievementReceiveEventHook ??= AchievementReceiveEventSig.GetHook<AchievementReceiveEventDelegate>(AchievementReceiveEventDetour);
+        AchievementReceiveEventHook ??= AgentAchievement.Instance()->VirtualTable->HookVFuncFromName(
+            "ReceiveEvent",
+            (AchievementReceiveEventDelegate)AchievementReceiveEventDetour);
         AchievementReceiveEventHook.Enable();
 
-        MateriaAttachReceiveEventHook ??= MateriaAttachReceiveEventSig.GetHook<MateriaAttachReceiveEventDelegate>(AgentMateriaAttachReceiveEventDetour);
+        MateriaAttachReceiveEventHook ??= AgentMateriaAttach.Instance()->VirtualTable->HookVFuncFromName(
+            "ReceiveEvent",
+            (MateriaAttachReceiveEventDelegate)AgentMateriaAttachReceiveEventDetour);
         MateriaAttachReceiveEventHook.Enable();
     }
 
@@ -140,12 +153,13 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         MateriaAttachReceiveEventHook?.Dispose();
         MateriaAttachReceiveEventHook = null;
 
-        DService.AddonLifecycle.UnregisterListener(OnAddon);
+        DService.Instance().AddonLifecycle.UnregisterListener(OnAddon);
         
-        DService.Gui.HoveredItemChanged   -= OnHoveredItemChanged;
-        DService.ContextMenu.OnMenuOpened -= OnMenuOpened;
+        DService.Instance().Gui.HoveredItemChanged   -= OnHoveredItemChanged;
+        DService.Instance().ContextMenu.OnMenuOpened -= OnMenuOpened;
 
         TaskHelper?.Abort();
+        TaskHelper?.Dispose();
         TaskHelper = null;
         
         CharacterInspectItems.Clear();
@@ -228,7 +242,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
 
     #region 事件处理
 
-    private static void OnAddon(AddonEvent type, AddonArgs? args)
+    private void OnAddon(AddonEvent type, AddonArgs? args)
     {
         switch (type)
         {
@@ -291,7 +305,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         }
     }
 
-    private static void OnHoveredItemChanged(object? sender, ulong id)
+    private void OnHoveredItemChanged(object? sender, ulong id)
     {
         if (!IsOnItemHover) return;
         if (ContextMenuXIV->IsAddonAndNodesReady()) return;
@@ -301,7 +315,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
             LastHoveredItemID = processedID;
     }
 
-    private static void OnUpdate(IFramework framework)
+    private void OnUpdate(IFramework framework)
     {
         if (!IsOnItemDetail) return;
 
@@ -314,7 +328,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
             LastDetailItemID = processedID;
     }
 
-    private static void OnMenuOpened(IMenuOpenedArgs args)
+    private void OnMenuOpened(IMenuOpenedArgs args)
     {
         ResetLastItems();
 
@@ -329,14 +343,14 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
 
     #region 处理逻辑
 
-    private static void ResetLastItems()
+    private void ResetLastItems()
     {
         LastItem         = null;
         LastGlamourItem  = null;
         LastPrismBoxItem = null;
     }
 
-    private static void ResetAll()
+    private void ResetAll()
     {
         ResetLastItems();
         CurrentItemID     = 0;
@@ -347,7 +361,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         IsOnItemDetail    = false;
     }
 
-    private static void UpdateCurrentItemInfo()
+    private void UpdateCurrentItemInfo()
     {
         // 重置当前物品信息
         CurrentItemID    = 0;
@@ -360,7 +374,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
             CurrentGlamourID = LastGlamourItem.Value.RowId;
     }
 
-    private static uint ProcessRawItemID(ulong rawID)
+    private uint ProcessRawItemID(ulong rawID)
     {
         if (rawID > 1_000_000)
             rawID %= 1_000_000;
@@ -369,7 +383,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return (uint)rawID;
     }
 
-    private static bool HandleInventoryTarget(IMenuOpenedArgs args)
+    private bool HandleInventoryTarget(IMenuOpenedArgs args)
     {
         if (args.Target is not MenuTargetInventory { TargetItem: not null } inventoryTarget) return false;
 
@@ -380,7 +394,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return ProcessItem(itemID, glamourID);
     }
 
-    private static bool HandleSpecificAddons(IMenuOpenedArgs args) =>
+    private bool HandleSpecificAddons(IMenuOpenedArgs args) =>
         args.AddonName switch
         {
             "ChatLog"                        => HandleChatLog(),
@@ -402,7 +416,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
             _                                => false
         };
 
-    private static bool HandleSpecificShops(IMenuOpenedArgs args)
+    private bool HandleSpecificShops(IMenuOpenedArgs args)
     {
         var specificShops = new[]
         {
@@ -415,7 +429,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return specificShops.Contains(args.AddonName) && HandleGenericShopItem();
     }
 
-    private static bool HandleGenericShopItem()
+    private bool HandleGenericShopItem()
     {
         if (LastDetailItemID <= 0) return false;
 
@@ -427,7 +441,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool ProcessItem(uint itemID, uint glamourID)
+    private bool ProcessItem(uint itemID, uint glamourID)
     {
         if (itemID == 0) return false;
         if (!LuminaGetter.TryGetRow<Item>(itemID, out var item)) return false;
@@ -444,7 +458,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleChatLog()
+    private bool HandleChatLog()
     {
         var agent = AgentChatLog.Instance();
         if (agent == null || agent->ContextItemId == 0) return false;
@@ -453,7 +467,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return ProcessItem(itemID, 0);
     }
 
-    private static bool HandleMiragePrismMiragePlate()
+    private bool HandleMiragePrismMiragePlate()
     {
         var agent = AgentMiragePrismPrismItemDetail.Instance();
         if (agent == null) return false;
@@ -464,7 +478,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleColorantColoring(IMenuOpenedArgs args)
+    private bool HandleColorantColoring(IMenuOpenedArgs args)
     {
         var agentColoring = AgentColorant.Instance();
         if (agentColoring == null) return false;
@@ -486,7 +500,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleCabinetWithdraw()
+    private bool HandleCabinetWithdraw()
     {
         if (LastDetailItemID <= 0) return false;
 
@@ -496,7 +510,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleCharacterInspect()
+    private bool HandleCharacterInspect()
     {
         if (!PresetSheet.Gears.TryGetValue(LastHoveredItemID, out var inspectItem)) return false;
         var glamourID = CharacterInspectItems.FirstOrDefault(x => x.ItemId == LastHoveredItemID).GlamourId;
@@ -507,7 +521,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleMiragePrismPrismBoxCrystallize()
+    private bool HandleMiragePrismPrismBoxCrystallize()
     {
         var agent = AgentMiragePrismPrismBox.Instance();
         if (agent == null) return false;
@@ -534,7 +548,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleRecipeNote()
+    private bool HandleRecipeNote()
     {
         var itemID = AgentRecipeNote.Instance()->ContextMenuResultItemId;
 
@@ -545,7 +559,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleJournalAccept()
+    private bool HandleJournalAccept()
     {
         var agent = AgentJournalAccept.Instance();
         if (agent == null) return false;
@@ -559,7 +573,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleGuildLeve()
+    private bool HandleGuildLeve()
     {
         var agent = AgentLeveQuest.Instance();
         if (agent == null) return false;
@@ -573,7 +587,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleJournalRewardItem()
+    private bool HandleJournalRewardItem()
     {
         var agent = AgentRecipeItemContext.Instance();
         if (agent == null) return false;
@@ -585,7 +599,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleGathering()
+    private bool HandleGathering()
     {
         var agent = AgentRecipeItemContext.Instance();
         if (agent == null) return false;
@@ -597,7 +611,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleNeedGreed()
+    private bool HandleNeedGreed()
     {
         var selectedIndex = AgentLoot.Instance()->SelectedSlotIndex;
 
@@ -611,7 +625,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleContentsFinder()
+    private bool HandleContentsFinder()
     {
         var agent = AgentContentsFinder.Instance();
         if (agent == null) return false;
@@ -626,7 +640,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleJournal()
+    private bool HandleJournal()
     {
         var agent = AgentQuestJournal.Instance();
         if (agent == null) return false;
@@ -638,7 +652,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleAchievement()
+    private bool HandleAchievement()
     {
         var agent = AgentAchievement.Instance();
         if (agent == null) return false;
@@ -650,7 +664,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase
         return true;
     }
 
-    private static bool HandleMateriaAttach()
+    private bool HandleMateriaAttach()
     {
         var agent = AgentMateriaAttach.Instance();
         if (agent == null) return false;

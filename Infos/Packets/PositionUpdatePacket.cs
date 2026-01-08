@@ -18,7 +18,7 @@ public struct PositionUpdatePacket(float rotation, Vector3 position,
         => $"Position Update 包体 ({Opcode} / 长度: {Length})\n" +
            $"面向: {Rotation} | 位置: {Position:F2} | 跳跃类型: {Move}";
 
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 
     private static readonly ConcurrentDictionary<string, MoveType[]> MoveTypeCache = new();
     

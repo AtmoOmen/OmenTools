@@ -196,7 +196,7 @@ internal readonly unsafe struct Status(CSStatus* ptr) : IStatus
     
     public uint SourceID => ptr->SourceObject.ObjectId;
     
-    public IGameObject? SourceObject => DService.ObjectTable.SearchByID(SourceID);
+    public IGameObject? SourceObject => DService.Instance().ObjectTable.SearchByID(SourceID);
     
     public static bool operator ==(Status x, Status y) => x.Equals(y);
 

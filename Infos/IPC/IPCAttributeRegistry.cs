@@ -189,7 +189,7 @@ public static class IPCAttributeRegistry
 
             if (parameters.Length == 0)
             {
-                provider = DService.PI.GetIpcProvider<object>(ipcName);
+                provider = DService.Instance().PI.GetIpcProvider<object>(ipcName);
                 if (instance == null)
                     actionDelegate = (Action)(() => method.Invoke(null, null));
                 else
@@ -205,7 +205,7 @@ public static class IPCAttributeRegistry
                 if (getProviderMethod == null) return null;
 
                 var genericMethod = getProviderMethod.MakeGenericMethod(paramType, typeof(object));
-                provider = genericMethod.Invoke(DService.PI, [ipcName]);
+                provider = genericMethod.Invoke(DService.Instance().PI, [ipcName]);
 
                 if (instance == null)
                 {
@@ -244,7 +244,7 @@ public static class IPCAttributeRegistry
 
                 var allGenericTypes = paramTypes.Append(typeof(object)).ToArray();
                 var genericMethod   = getProviderMethod.MakeGenericMethod(allGenericTypes);
-                provider = genericMethod.Invoke(DService.PI, [ipcName]);
+                provider = genericMethod.Invoke(DService.Instance().PI, [ipcName]);
 
                 actionDelegate = CreateMultiParamAction(method, paramTypes, instance);
             }
@@ -285,7 +285,7 @@ public static class IPCAttributeRegistry
             }
 
             var genericMethod = getProviderMethod.MakeGenericMethod(allGenericTypes);
-            var provider = genericMethod.Invoke(DService.PI, [ipcName]);
+            var provider = genericMethod.Invoke(DService.Instance().PI, [ipcName]);
             if (provider == null) return null;
 
             var funcDelegate = CreateMultiParamFunc(method, paramTypes, returnType, instance);
@@ -366,21 +366,21 @@ public static class IPCAttributeRegistry
 
         if (propertyType == typeof(bool))
         {
-            var provider = DService.PI.GetIpcProvider<bool>(attr.IPCName);
+            var provider = DService.Instance().PI.GetIpcProvider<bool>(attr.IPCName);
             provider.RegisterFunc(() => (bool)property.GetValue(instance)!);
             return provider;
         }
 
         if (propertyType == typeof(string))
         {
-            var provider = DService.PI.GetIpcProvider<string>(attr.IPCName);
+            var provider = DService.Instance().PI.GetIpcProvider<string>(attr.IPCName);
             provider.RegisterFunc(() => (string)property.GetValue(instance)!);
             return provider;
         }
 
         if (propertyType == typeof(float))
         {
-            var provider = DService.PI.GetIpcProvider<float>(attr.IPCName);
+            var provider = DService.Instance().PI.GetIpcProvider<float>(attr.IPCName);
             provider.RegisterFunc(() => (float)property.GetValue(instance)!);
             return provider;
         }
@@ -394,7 +394,7 @@ public static class IPCAttributeRegistry
 
         if (fieldType == typeof(bool))
         {
-            var provider = DService.PI.GetIpcProvider<bool>(attr.IPCName);
+            var provider = DService.Instance().PI.GetIpcProvider<bool>(attr.IPCName);
             provider.RegisterFunc(() => (bool)field.GetValue(instance)!);
             return provider;
         }

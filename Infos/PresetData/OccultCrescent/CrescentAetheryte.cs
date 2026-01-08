@@ -69,7 +69,7 @@ public class CrescentAetheryte(uint dataID, Vector3 position, CrescentAetheryteP
     {
         aetheryteTime = float.MaxValue;
             
-        if (DService.ObjectTable.LocalPlayer is not { } localPlayer)
+        if (DService.Instance().ObjectTable.LocalPlayer is not { } localPlayer)
             return false;
 
         if (Vector3.DistanceSquared(localPlayer.Position, finalPos) <= 1_0000f)

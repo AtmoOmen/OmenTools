@@ -14,5 +14,5 @@ public struct DiveStartPacket(Vector3 pos, float rotation) : IGamePacket
     public string Log() => $"Dive Start 包体 ({Opcode} / 长度: {Length})\n" +
                            $"面向: {Rotation} | 位置: {Position:F2}";
 
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }

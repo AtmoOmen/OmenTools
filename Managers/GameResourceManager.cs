@@ -1,84 +1,202 @@
+using System.Buffers.Binary;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Dalamud.Hooking;
-using FFXIVClientStructs.FFXIV.Client.System.String;
+using FFXIVClientStructs.FFXIV.Client.System.Resource;
+using InteropGenerator.Runtime;
 using OmenTools.Abstracts;
 
 namespace OmenTools.Managers;
 
-public unsafe class GameResourceManager : OmenServiceBase
+public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
 {
-    public static GameResourceManagerConfig Config { get; private set; } = null!;
-    
-    private static readonly CompSig GetResourceSyncSig = new("E8 ?? ?? ?? ?? 48 8B 8E ?? ?? ?? ?? 49 89 04 0E");
-    private delegate void* GetResourceSyncPrototype(
-        nint  pFileManager, 
-        uint* pCategoryID,
-        char* pResourceType, 
-        uint* pResourceHash,
-        byte* pPath, 
-        void* pUnknown);
-    private static Hook<GetResourceSyncPrototype>? GetResourceSyncHook;
+    public GameResourceManagerConfig Config { get; private set; } = null!;
 
-    private static readonly CompSig GetResourceAsyncSig = new("E8 ?? ?? ?? ?? 48 8B 5C 24 ?? 48 83 C4 68");
-    private delegate void* GetResourceAsyncPrototype(
+    public void AddToBlacklist(Type source, params string[] paths)
+    {
+        registeredPaths.AddOrUpdate
+        (
+            source,
+            _ => ImmutableList.CreateRange(paths),
+            (_, currentList) => currentList.AddRange(paths)
+        );
+
+        RegeneratePaths();
+    }
+
+    public void AddToBlacklist(Type source, IEnumerable<string> paths)
+    {
+        var items = paths as string[] ?? paths.ToArray();
+        if (items.Length == 0) return;
+
+        registeredPaths.AddOrUpdate
+        (
+            source,
+            _ => ImmutableList.CreateRange(items),
+            (_, currentList) => currentList.AddRange(items)
+        );
+
+        RegeneratePaths();
+    }
+
+    public void RemoveFromBlacklist(Type source, params string[] paths)
+    {
+        if (paths is not { Length: > 0 }) return;
+
+        while (registeredPaths.TryGetValue(source, out var currentList))
+        {
+            var newList = currentList.RemoveRange(paths);
+
+            if (newList == currentList)
+                return;
+
+            if (newList.IsEmpty)
+            {
+                var kvp = new KeyValuePair<Type, ImmutableList<string>>(source, currentList);
+                if (((ICollection<KeyValuePair<Type, ImmutableList<string>>>)registeredPaths).Remove(kvp))
+                    return;
+            }
+            else
+            {
+                if (registeredPaths.TryUpdate(source, newList, currentList))
+                    return;
+            }
+        }
+
+        RegeneratePaths();
+    }
+
+    public void RemoveFromBlacklist(Type source, IEnumerable<string> paths)
+    {
+        var items = paths as string[] ?? paths.ToArray();
+        if (items.Length == 0) return;
+
+        while (registeredPaths.TryGetValue(source, out var currentList))
+        {
+            var newList = currentList.RemoveRange(items);
+
+            if (newList == currentList)
+                return;
+
+            if (newList.IsEmpty)
+            {
+                var kvp = new KeyValuePair<Type, ImmutableList<string>>(source, currentList);
+                if (((ICollection<KeyValuePair<Type, ImmutableList<string>>>)registeredPaths).Remove(kvp))
+                    break;
+            }
+            else
+            {
+                if (registeredPaths.TryUpdate(source, newList, currentList))
+                    break;
+            }
+        }
+
+        RegeneratePaths();
+    }
+
+
+    private delegate void* GetResourceSyncDelegate
+    (
         nint  pFileManager,
         uint* pCategoryID,
         char* pResourceType,
         uint* pResourceHash,
         byte* pPath,
-        void* pUnknown, 
-        bool isUnknown);
-    private static Hook<GetResourceAsyncPrototype>? GetResourceAsyncHook;
+        void* pUnknown
+    );
+    private Hook<GetResourceSyncDelegate>? GetResourceSyncHook;
 
-    private static readonly Crc32 HashGenerator = new();
-    
-    private static readonly Dictionary<Type, HashSet<string>> RegisteredPaths = [];
-    private static HashSet<string> BlacklistedPaths = new(StringComparer.OrdinalIgnoreCase);
+    private delegate void* GetResourceAsyncDelegate
+    (
+        nint  pFileManager,
+        uint* pCategoryID,
+        char* pResourceType,
+        uint* pResourceHash,
+        byte* pPath,
+        void* pUnknown,
+        bool  isUnknown
+    );
+    private Hook<GetResourceAsyncDelegate>? GetResourceAsyncHook;
+
+    private readonly CRC32 hashGenerator = new();
+
+    private readonly ConcurrentDictionary<Type, ImmutableList<string>> registeredPaths  = [];
+    private          ConcurrentDictionary<string, byte>                blacklistedPaths = new(StringComparer.OrdinalIgnoreCase);
 
     internal override void Init()
     {
         Config = LoadConfig<GameResourceManagerConfig>() ?? new();
-        
-        GetResourceSyncHook  ??= GetResourceSyncSig.GetHook<GetResourceSyncPrototype>(GetResourceSyncDetour);
-        GetResourceAsyncHook ??= GetResourceAsyncSig.GetHook<GetResourceAsyncPrototype>(GetResourceAsyncDetour);
-        
-        GameState.Login  += OnLogin;
-        GameState.Logout += OnLogout;
+
+        GetResourceSyncHook ??= DService.Instance().Hook.HookFromMemberFunction
+        (
+            typeof(ResourceManager.MemberFunctionPointers),
+            "GetResourceSync",
+            (GetResourceSyncDelegate)GetResourceSyncDetour
+        );
+        GetResourceAsyncHook ??= DService.Instance().Hook.HookFromMemberFunction
+        (
+            typeof(ResourceManager.MemberFunctionPointers),
+            "GetResourceAsync",
+            (GetResourceAsyncDelegate)GetResourceAsyncDetour
+        );
+
+        GameState.Instance().Login  += OnLogin;
+        GameState.Instance().Logout += OnLogout;
 
         if (GameState.IsLoggedIn)
             Toggle(true);
     }
 
-    private static void OnLogin() => Toggle(true);
-    
-    private static void OnLogout() => Toggle(false);
-    
-    public static void Toggle(bool isEnabled)
+    internal override void Uninit()
     {
-        GetResourceSyncHook?.Toggle(isEnabled);
-        GetResourceAsyncHook?.Toggle(isEnabled);
+        GameState.Instance().Login  -= OnLogin;
+        GameState.Instance().Logout -= OnLogout;
+
+        Toggle(false);
+
+        GetResourceSyncHook?.Dispose();
+        GetResourceSyncHook = null;
+
+        GetResourceAsyncHook?.Dispose();
+        GetResourceAsyncHook = null;
+
+        blacklistedPaths.Clear();
+        registeredPaths.Clear();
     }
 
-    private static void* GetResourceSyncDetour(
+    private void OnLogin() =>
+        Toggle(true);
+
+    private void OnLogout() =>
+        Toggle(false);
+
+    private void* GetResourceSyncDetour
+    (
         nint  pFileManager,
         uint* pCategoryID,
         char* pResourceType,
         uint* pResourceHash,
         byte* pPath,
-        void* pUnknown) => 
+        void* pUnknown
+    ) =>
         GetResourceHandler(true, pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown, false);
 
-    private static void* GetResourceAsyncDetour(
+    private void* GetResourceAsyncDetour
+    (
         nint  pFileManager,
         uint* pCategoryID,
         char* pResourceType,
         uint* pResourceHash,
         byte* pPath,
         void* pUnknown,
-        bool  isUnknown) =>
+        bool  isUnknown
+    ) =>
         GetResourceHandler(false, pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown, isUnknown);
 
-    private static void* GetResourceHandler(
+    private void* GetResourceHandler
+    (
         bool  isSync,
         nint  pFileManager,
         uint* pCategoryID,
@@ -86,139 +204,176 @@ public unsafe class GameResourceManager : OmenServiceBase
         uint* pResourceHash,
         byte* pPath,
         void* pUnknown,
-        bool  isUnknown)
+        bool  isUnknown
+    )
     {
-        var gamePath = Utf8String.FromSequence(pPath);
-        if (gamePath == null || gamePath->IsEmpty)
-        {
-            if (gamePath != null)
-                gamePath->Dtor(true);
-            return CallOriginalHandler(isSync, pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown, isUnknown);
-        }
+        var gamePath = new CStringPointer(pPath);
 
-        var gamePathString = gamePath->ToString();
-        gamePath->Dtor(true);
+        if (!gamePath.HasValue)
+            return InvokeOriginal();
+
+        var gamePathString = gamePath.ToString().Trim();
+        if (string.IsNullOrEmpty(gamePathString))
+            return InvokeOriginal();
+
         if (Config.ShowGameResourceManagerLog &&
             (string.IsNullOrWhiteSpace(Config.GameResourceManagerKeyword) ||
              gamePathString.Contains(Config.GameResourceManagerKeyword)))
             Debug($"[Game Resource Manager]\n资源路径:{gamePathString}");
 
-        var copy = BlacklistedPaths;
-        if (copy.Contains(gamePathString))
+        gamePathString = gamePathString.ToLowerInvariant();
+
+        if (blacklistedPaths.ContainsKey(gamePathString))
         {
             var        path  = "vfx/path/nothing.avfx"u8;
             Span<byte> bPath = stackalloc byte[path.Length + 1];
             path.CopyTo(bPath);
             pPath = (byte*)Unsafe.AsPointer(ref bPath.GetPinnableReference());
-            HashGenerator.Init();
-            HashGenerator.Update(path);
-            *pResourceHash = HashGenerator.Checksum;
+            hashGenerator.Init();
+            hashGenerator.Update(path);
+            *pResourceHash = hashGenerator.Checksum;
         }
 
-        return CallOriginalHandler(isSync, pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown, isUnknown);
+        return InvokeOriginal();
+
+        void* InvokeOriginal() =>
+            isSync
+                ? GetResourceSyncHook.Original(pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown)
+                : GetResourceAsyncHook.Original(pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown, isUnknown);
     }
 
-    private static void* CallOriginalHandler(
-        bool  isSync,
-        nint  pFileManager,
-        uint* pCategoryID,
-        char* pResourceType,
-        uint* pResourceHash,
-        byte* pPath,
-        void* pUnknown,
-        bool  isUnknown) =>
-        isSync
-            ? GetResourceSyncHook!.Original(pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown)
-            : GetResourceAsyncHook!.Original(pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown, isUnknown);
-    
-    public static void AddToBlacklist(Type source, params string[] path)
+    private void Toggle(bool isEnabled)
     {
-        RegisteredPaths.TryAdd(source, []);
-        RegisteredPaths[source].AddRange(path);
-        
-        BlacklistedPaths = RegisteredPaths
-                           .SelectMany(x => x.Value)
-                           .ToHashSet(StringComparer.OrdinalIgnoreCase);
-    }
-    
-    public static void AddToBlacklist(Type source, IEnumerable<string> paths)
-    {
-        RegisteredPaths.TryAdd(source, []);
-        paths.ForEach(x => RegisteredPaths[source].Add(x));
-        
-        BlacklistedPaths = RegisteredPaths
-                           .SelectMany(x => x.Value)
-                           .ToHashSet(StringComparer.OrdinalIgnoreCase);
-    }
-    
-    public static void RemoveFromBlacklist(Type source, params string[] paths)
-    {
-        RegisteredPaths.TryAdd(source, []);
-        RegisteredPaths[source].RemoveRange(paths);
-
-        BlacklistedPaths = RegisteredPaths
-                           .SelectMany(x => x.Value)
-                           .ToHashSet(StringComparer.OrdinalIgnoreCase);
-    }
-    
-    public static void RemoveFromBlacklist(Type source, IEnumerable<string> paths)
-    {
-        RegisteredPaths.TryAdd(source, []);
-        paths.ForEach(x => RegisteredPaths[source].Remove(x));
-
-        BlacklistedPaths = RegisteredPaths
-                           .SelectMany(x => x.Value)
-                           .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        GetResourceSyncHook?.Toggle(isEnabled);
+        GetResourceAsyncHook?.Toggle(isEnabled);
     }
 
-    internal override void Uninit()
-    {
-        GameState.Login  -= OnLogin;
-        GameState.Logout -= OnLogout;
-        
-        Toggle(false);
-        
-        GetResourceSyncHook?.Dispose();
-        GetResourceSyncHook = null;
-        
-        GetResourceAsyncHook?.Dispose();
-        GetResourceAsyncHook = null;
-        
-        BlacklistedPaths.Clear();
-        RegisteredPaths.Clear();
-    }
-    
+    private void RegeneratePaths() =>
+        blacklistedPaths = registeredPaths
+                           .SelectMany(x => x.Value)
+                           .Select(x => x.Trim().ToLowerInvariant())
+                           .ToConcurrentDictionary(x => x, _ => byte.MinValue);
+
+
     public class GameResourceManagerConfig : OmenServiceConfiguration
     {
         public bool   ShowGameResourceManagerLog;
         public string GameResourceManagerKeyword = string.Empty;
 
-        public void Save() => 
-            this.Save(DService.GetOmenService<GameResourceManager>());
+        public void Save() =>
+            this.Save(Instance());
     }
-    
-    private class Crc32
+
+    private class CRC32
     {
-        private const uint POLY = 0xEDB88320;
-        private static readonly uint[] CrcArray = Enumerable.Range(0, 256).Select(i =>
-        {
-            var k = (uint)i;
-            for (var j = 0; j < 8; j++)
-                k = (k & 1) != 0 ? (k >> 1) ^ POLY : k >> 1;
-            return k;
-        }).ToArray();
-
-        private uint CRC32 = 0xFFFFFFFF;
-        
-        public uint Checksum => ~CRC32;
-
-        public void Init() => CRC32 = 0xFFFFFFFF;
+        public uint Checksum => ~crc32;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Init() =>
+            crc32 = 0xFFFFFFFFu;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         public void Update(ReadOnlySpan<byte> data)
         {
+            var crc = crc32;
+
+
+            if (data.Length >= 8)
+            {
+                ref var src = ref MemoryMarshal.GetReference(data);
+                nint    i   = 0;
+                nint    len = data.Length;
+
+
+                const int T0 = 0 * 256;
+                const int T1 = 1 * 256;
+                const int T2 = 2 * 256;
+                const int T3 = 3 * 256;
+                const int T4 = 4 * 256;
+                const int T5 = 5 * 256;
+                const int T6 = 6 * 256;
+                const int T7 = 7 * 256;
+
+
+                var limit = len - 8;
+
+                while (i <= limit)
+                {
+
+                    var block = Unsafe.ReadUnaligned<ulong>(ref Unsafe.Add(ref src, i));
+
+
+                    if (!BitConverter.IsLittleEndian)
+                        block = BinaryPrimitives.ReverseEndianness(block);
+
+
+                    var low  = (uint)block ^ crc;
+                    var high = (uint)(block >> 32);
+
+
+                    crc =
+                        Table[T7 + (byte)(high >> 24)] ^
+                        Table[T6 + (byte)(high >> 16)] ^
+                        Table[T5 + (byte)(high >> 8)]  ^
+                        Table[T4 + (byte)high]         ^
+                        Table[T3 + (byte)(low >> 24)]  ^
+                        Table[T2 + (byte)(low >> 16)]  ^
+                        Table[T1 + (byte)(low >> 8)]   ^
+                        Table[T0 + (byte)low];
+
+                    i += 8;
+                }
+
+
+                for (; i < len; i++)
+                {
+                    var b = Unsafe.Add(ref src, i);
+                    crc = Table[(crc ^ b) & 0xFF] ^ crc >> 8;
+                }
+
+                crc32 = crc;
+                return;
+            }
+
+
             foreach (var b in data)
-                CRC32 = CrcArray[(CRC32 ^ b) & 0xFF] ^ ((CRC32 >> 8) & 0x00FFFFFF);
+                crc = Table[(crc ^ b) & 0xFF] ^ crc >> 8;
+
+            crc32 = crc;
+        }
+
+
+        private const uint POLY = 0xEDB88320u;
+
+        private static readonly uint[] Table = CreateSlicingBy8Tables();
+
+        private uint crc32 = 0xFFFFFFFF;
+
+        private static uint[] CreateSlicingBy8Tables()
+        {
+            var table = new uint[8 * 256];
+
+            for (uint i = 0; i < 256; i++)
+            {
+                var c = i;
+                for (var j = 0; j < 8; j++)
+                    c = (c & 1) != 0 ? c >> 1 ^ POLY : c >> 1;
+                table[i] = c;
+            }
+
+            for (var t = 1; t < 8; t++)
+            {
+                var prev = (t - 1) * 256;
+                var cur  = t       * 256;
+
+                for (var i = 0; i < 256; i++)
+                {
+                    var c = table[prev + i];
+                    table[cur + i] = table[c & 0xFF] ^ c >> 8;
+                }
+            }
+
+            return table;
         }
     }
 }

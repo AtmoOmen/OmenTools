@@ -19,9 +19,9 @@ public static partial class HelpersOm
                throw new MissingMemberException(staticType.FullName, propertyName));
     
     public static object GetPluginManager() =>
-        DService.PI.GetType().Assembly.
+        DService.Instance().PI.GetType().Assembly.
                  GetType("Dalamud.Service`1", true)
-                 ?.MakeGenericType(DService.PI.GetType().Assembly.GetType("Dalamud.Plugin.Internal.PluginManager", true)!).
+                 ?.MakeGenericType(DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Plugin.Internal.PluginManager", true)!).
                  GetMethod("Get")
                  ?.Invoke(null, BindingFlags.Default, null, [], null);
     
@@ -33,7 +33,7 @@ public static partial class HelpersOm
         {
             var happyHttpClient = GetService("Dalamud.Networking.Http.HappyHttpClient");
             var pluginRepository = Activator.CreateInstance(
-                DService.PI.GetType().Assembly
+                DService.Instance().PI.GetType().Assembly
                     .GetType("Dalamud.Plugin.Internal.Types.PluginRepository")!,
                 happyHttpClient, masterURL, true);
             await pluginRepository?.Call<Task>("ReloadPluginMasterAsync", [])!;
@@ -53,9 +53,9 @@ public static partial class HelpersOm
     }
 
     public static object GetService(string serviceFullName) =>
-        DService.PI.GetType().Assembly.
+        DService.Instance().PI.GetType().Assembly.
                  GetType("Dalamud.Service`1", true)
-                 ?.MakeGenericType(DService.PI.GetType().Assembly.GetType(serviceFullName, true)!).
+                 ?.MakeGenericType(DService.Instance().PI.GetType().Assembly.GetType(serviceFullName, true)!).
                  GetMethod("Get")
                  ?.Invoke(null, BindingFlags.Default, null, [], null);
 
@@ -129,7 +129,7 @@ public static partial class HelpersOm
             }
         }
 
-        var instance = Activator.CreateInstance(DService.PI.GetType().Assembly.GetType("Dalamud.Configuration.ThirdPartyRepoSettings")!);
+        var instance = Activator.CreateInstance(DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Configuration.ThirdPartyRepoSettings")!);
         if (instance == null) return;
         
         instance.SetFieldOrProperty("Url", repoURL);

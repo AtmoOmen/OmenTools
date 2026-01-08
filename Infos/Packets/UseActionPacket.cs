@@ -24,5 +24,5 @@ public struct UseActionPacket(ActionType type, uint actionID, ulong targetID, fl
                            $"Cast Buff: {CastBuff} | Action Sequence: {LastUsedActionSequence}\n" +
                            $"Charge: {Charge} | Extra Param: {ExtraParam}";
     
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }

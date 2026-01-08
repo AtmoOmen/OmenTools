@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Numerics;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -8,69 +9,82 @@ using BattleChara = FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara;
 
 namespace OmenTools.Managers;
 
-public unsafe class UseActionManager : OmenServiceBase
+public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
 {
-    public static UseActionManagerConfig Config { get; private set; } = null!;
-    
+    public UseActionManagerConfig Config { get; private set; } = null!;
+
     #region Delegates
 
-    public delegate void PreUseActionDelegate(
+    public delegate void PreUseActionDelegate
+    (
         ref bool                        isPrevented,
         ref ActionType                  actionType,
         ref uint                        actionID,
         ref ulong                       targetID,
         ref uint                        extraParam,
         ref ActionManager.UseActionMode queueState,
-        ref uint                        comboRouteID);
+        ref uint                        comboRouteID
+    );
 
-    public delegate void PostUseActionDelegate(
+    public delegate void PostUseActionDelegate
+    (
         bool                        result,
         ActionType                  actionType,
         uint                        actionID,
         ulong                       targetID,
         uint                        extraParam,
         ActionManager.UseActionMode queueState,
-        uint                        comboRouteID);
+        uint                        comboRouteID
+    );
 
-    public delegate void PreUseActionLocationDelegate(
+    public delegate void PreUseActionLocationDelegate
+    (
         ref bool       isPrevented,
         ref ActionType type,
         ref uint       actionID,
         ref ulong      targetID,
         ref Vector3    location,
         ref uint       extraParam,
-        ref byte       a7);
+        ref byte       a7
+    );
 
-    public delegate void PostUseActionLocationDelegate(
+    public delegate void PostUseActionLocationDelegate
+    (
         bool       result,
         ActionType actionType,
         uint       actionID,
         ulong      targetID,
         Vector3    location,
         uint       extraParam,
-        byte       a7);
+        byte       a7
+    );
 
-    public delegate void PreIsActionOffCooldownDelegate(
+    public delegate void PreIsActionOffCooldownDelegate
+    (
         ref bool   isPrevented,
         ActionType actionType,
         uint       actionID,
-        ref float  queueTime);
+        ref float  queueTime
+    );
 
-    public delegate void PreCharacterCompleteCastDelegate(
+    public delegate void PreCharacterCompleteCastDelegate
+    (
         ref bool         isPrevented,
         ref IBattleChara player,
         ref ActionType   type,
         ref uint         actionID,
         ref uint         spellID,
         ref GameObjectId animationTargetID,
-        ref Vector3     location,
+        ref Vector3      location,
         ref float        rotation,
         ref short        lastUsedActionSequence,
         ref int          animationVariation,
-        ref int          ballistaEntityID);
+        ref int          ballistaEntityID
+    );
 
-    public delegate void PostCharacterCompleteCastDelegate(
-        nint         result,
+    public delegate void PostCharacterCompleteCastDelegate
+    (
+        bool         result,
         IBattleChara player,
         ActionType   type,
         uint         actionID,
@@ -80,32 +94,37 @@ public unsafe class UseActionManager : OmenServiceBase
         float        rotation,
         short        lastUsedActionSequence,
         int          animationVariation,
-        int          ballistaEntityID);
+        int          ballistaEntityID
+    );
 
-    public delegate void PreCharacterStartCastDelegate(
+    public delegate void PreCharacterStartCastDelegate
+    (
         ref bool         isPrevented,
         ref IBattleChara player,
         ref ActionType   type,
         ref uint         actionID,
         ref nint         a4,
         ref float        rotation,
-        ref float        a6);
+        ref float        a6
+    );
 
-    public delegate void PostCharacterStartCastDelegate(
-        nint         result,
+    public delegate void PostCharacterStartCastDelegate
+    (
+        bool         result,
         IBattleChara player,
         ActionType   type,
         uint         actionID,
         nint         a4,
         float        rotation,
-        float        a6);
+        float        a6
+    );
 
     #endregion
 
     #region Hooks
 
-    internal static readonly CompSig UseActionSig = new("E8 ?? ?? ?? ?? B0 01 EB B6 ?? ?? ?? ?? ?? ?? ??");
-    internal delegate bool UseActionDelegate(
+    private delegate bool UseActionDelegate
+    (
         ActionManager*              actionManager,
         ActionType                  actionType,
         uint                        actionID,
@@ -113,30 +132,31 @@ public unsafe class UseActionManager : OmenServiceBase
         uint                        extraParam,
         ActionManager.UseActionMode queueState,
         uint                        comboRouteID,
-        bool*                       outOptAreaTargeted);
-    internal static Hook<UseActionDelegate>? UseActionHook;
-    
-    internal static readonly CompSig UseActionLocationSig = new("48 89 5C 24 ?? 44 89 44 24 ?? 89 54 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24");
-    internal delegate bool UseActionLocationDelegate(
+        bool*                       outOptAreaTargeted
+    );
+
+    private Hook<UseActionDelegate>? UseActionHook;
+
+    private delegate bool UseActionLocationDelegate
+    (
         ActionManager* manager,
         ActionType     type,
         uint           actionID,
         ulong          targetID,
         Vector3*       location,
         uint           extraParam,
-        byte           a7);
-    internal static Hook<UseActionLocationDelegate>? UseActionLocationHook;
-    
-    internal static readonly CompSig                     CanPlayerUseActionSig = new("48 89 5C 24 ?? 57 48 83 EC ?? 8B DA 48 8D 0D");
-    internal delegate        bool                        CanPlayerUseActionDelegate(ActionManager* manager, uint actionID);
-    internal static readonly CanPlayerUseActionDelegate? CanPlayerUseAction = CanPlayerUseActionSig.GetDelegate<CanPlayerUseActionDelegate>();
-    
-    internal static readonly CompSig                            IsActionOffCooldownSig = new("E8 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? F6 05 ?? ?? ?? ?? ?? 74");
-    internal delegate        bool                               IsActionOffCooldownDelegate(ActionManager* manager, ActionType actionType, uint actionID);
-    internal static          Hook<IsActionOffCooldownDelegate>? IsActionOffCooldownHook;
-    
-    internal static readonly CompSig CharacterCompleteCastSig = new("E8 ?? ?? ?? ?? 41 0F B6 56 ?? 44 0F 28 8C 24 ?? ?? ?? ??");
-    internal delegate nint CharacterCompleteCastDelegate(
+        byte           a7
+    );
+
+    private Hook<UseActionLocationDelegate>? UseActionLocationHook;
+
+    private delegate bool IsActionOffCooldownDelegate(ActionManager* manager, ActionType actionType, uint actionID);
+
+    private Hook<IsActionOffCooldownDelegate>? IsActionOffCooldownHook;
+
+    private static readonly CompSig CharacterCompleteCastSig = new("E8 ?? ?? ?? ?? 41 0F B6 56 ?? 44 0F 28 8C 24 ?? ?? ?? ??");
+    private delegate void* CharacterCompleteCastDelegate
+    (
         BattleChara* player,
         uint         type,
         uint         actionID,
@@ -146,102 +166,50 @@ public unsafe class UseActionManager : OmenServiceBase
         float        rotation,
         short        lastUsedActionSequence,
         int          animationVariation,
-        int          ballistaEntityID);
-    internal static Hook<CharacterCompleteCastDelegate>? CharacterCompleteCastHook;
-    
-    internal static readonly CompSig CharacterStartCastSig = new("E8 ?? ?? ?? ?? 80 7E 22 11");
-    internal delegate nint CharacterStartCastDelegate(BattleChara* player, ActionType type, uint actionID, nint a4, float rotation, float a6);
-    internal static Hook<CharacterStartCastDelegate>? CharacterStartCastHook;
+        int          ballistaEntityID
+    );
+    private Hook<CharacterCompleteCastDelegate>? CharacterCompleteCastHook;
+
+    private static readonly CompSig CharacterStartCastSig = new("E8 ?? ?? ?? ?? 80 7E 22 11");
+    private delegate        void* CharacterStartCastDelegate(BattleChara* player, ActionType type, uint actionID, nint a4, float rotation, float a6);
+    private                 Hook<CharacterStartCastDelegate>? CharacterStartCastHook;
+
+    private static readonly CompSig                     CanPlayerUseActionSig = new("48 89 5C 24 ?? 57 48 83 EC ?? 8B DA 48 8D 0D");
+    private delegate        bool                        CanPlayerUseActionDelegate(ActionManager* manager, uint actionID);
+    private readonly        CanPlayerUseActionDelegate? CanPlayerUseAction = CanPlayerUseActionSig.GetDelegate<CanPlayerUseActionDelegate>();
 
     #endregion
 
-    private static readonly ConcurrentDictionary<Type, ConcurrentBag<Delegate>> MethodsCollection = [];
+    private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
 
     internal override void Init()
     {
         Config = LoadConfig<UseActionManagerConfig>() ?? new();
-        
-        UseActionHook             ??= UseActionSig.GetHook<UseActionDelegate>(UseActionDetour);
-        UseActionLocationHook     ??= UseActionLocationSig.GetHook<UseActionLocationDelegate>(UseActionLocationDetour);
-        IsActionOffCooldownHook   ??= IsActionOffCooldownSig.GetHook<IsActionOffCooldownDelegate>(IsActionOffCooldownDetour);
+
+        UseActionHook ??= DService.Instance().Hook.HookFromMemberFunction
+        (
+            typeof(ActionManager.MemberFunctionPointers),
+            "UseAction",
+            (UseActionDelegate)UseActionDetour
+        );
+
+        UseActionLocationHook ??= DService.Instance().Hook.HookFromMemberFunction
+        (
+            typeof(ActionManager.MemberFunctionPointers),
+            "UseActionLocation",
+            (UseActionLocationDelegate)UseActionLocationDetour
+        );
+
+        IsActionOffCooldownHook ??= DService.Instance().Hook.HookFromMemberFunction
+        (
+            typeof(ActionManager.MemberFunctionPointers),
+            "IsActionOffCooldown",
+            (IsActionOffCooldownDelegate)IsActionOffCooldownDetour
+        );
+
         CharacterCompleteCastHook ??= CharacterCompleteCastSig.GetHook<CharacterCompleteCastDelegate>(CharacterCompleteCastDetour);
         CharacterStartCastHook    ??= CharacterStartCastSig.GetHook<CharacterStartCastDelegate>(CharacterStartCastDetour);
 
-        EnableHooks();
-    }
-
-    private static bool RegisterGeneric<T>(params T[] methods) where T : Delegate
-    {
-        var type = typeof(T);
-        var bag = MethodsCollection.GetOrAdd(type, _ => []);
-        foreach (var method in methods)
-            bag.Add(method);
-
-        EnableHooks();
-        return true;
-    }
-
-    private static bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
-    {
-        var type = typeof(T);
-        if (MethodsCollection.TryGetValue(type, out var bag))
-        {
-            foreach (var method in methods)
-            {
-                var newBag = new ConcurrentBag<Delegate>(bag.Where(d => d != method));
-                MethodsCollection[type] = newBag;
-            }
-            return true;
-        }
-
-        return false;
-    }
-
-    #region Register
-
-    public static bool RegPreUseAction(params PreUseActionDelegate[] methods) => RegisterGeneric(methods);
-    public static bool RegPreUseAction(PreUseActionDelegate          methods) => RegisterGeneric(methods);
-    
-    public static bool RegUseAction(params PostUseActionDelegate[] methods) => RegisterGeneric(methods);
-    public static bool RegUseAction(PostUseActionDelegate          methods) => RegisterGeneric(methods);
-    
-    public static bool RegPreUseActionLocation(params PreUseActionLocationDelegate[] methods) => RegisterGeneric(methods);
-    public static bool RegPreUseActionLocation(PreUseActionLocationDelegate          methods) => RegisterGeneric(methods);
-    
-    public static bool RegUseActionLocation(params PostUseActionLocationDelegate[] methods) => RegisterGeneric(methods);
-    public static bool RegUseActionLocation(PostUseActionLocationDelegate          methods) => RegisterGeneric(methods);
-    
-    public static bool RegPreIsActionOffCooldown(params PreIsActionOffCooldownDelegate[] methods) => RegisterGeneric(methods);
-    public static bool RegPreIsActionOffCooldown(PreIsActionOffCooldownDelegate          methods) => RegisterGeneric(methods);
-    
-    public static bool RegPreCharacterCompleteCast(params PreCharacterCompleteCastDelegate[] methods) => RegisterGeneric(methods);
-    public static bool RegPreCharacterCompleteCast(PreCharacterCompleteCastDelegate          methods) => RegisterGeneric(methods);
-    
-    public static bool RegCharacterCompleteCast(params PostCharacterCompleteCastDelegate[] methods) => RegisterGeneric(methods);
-    public static bool RegCharacterCompleteCast(PostCharacterCompleteCastDelegate          methods) => RegisterGeneric(methods);
-    
-    public static bool RegPreCharacterStartCast(params PreCharacterStartCastDelegate[] methods) => RegisterGeneric(methods);
-    public static bool RegPreCharacterStartCast(PreCharacterStartCastDelegate          methods) => RegisterGeneric(methods);
-    
-    public static bool RegCharacterStartCast(params PostCharacterStartCastDelegate[] methods) => RegisterGeneric(methods);
-    public static bool RegCharacterStartCast(PostCharacterStartCastDelegate          methods) => RegisterGeneric(methods);
-
-    public static bool Unreg(params PreUseActionDelegate[]              methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PostUseActionDelegate[]             methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PreUseActionLocationDelegate[]      methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PostUseActionLocationDelegate[]     methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PreIsActionOffCooldownDelegate[]    methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PreCharacterCompleteCastDelegate[]  methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PostCharacterCompleteCastDelegate[] methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PreCharacterStartCastDelegate[]     methods) => UnregisterGeneric(methods);
-    public static bool Unreg(params PostCharacterStartCastDelegate[]    methods) => UnregisterGeneric(methods);
-
-    #endregion
-
-    #region Hooks
-
-    public static void EnableHooks()
-    {
         UseActionHook?.Enable();
         UseActionLocationHook?.Enable();
         IsActionOffCooldownHook?.Enable();
@@ -249,44 +217,151 @@ public unsafe class UseActionManager : OmenServiceBase
         CharacterStartCastHook?.Enable();
     }
 
-    public static void DisableHooks()
+    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
     {
-        UseActionHook?.Disable();
-        UseActionLocationHook?.Disable();
-        IsActionOffCooldownHook?.Disable();
-        CharacterCompleteCastHook?.Disable();
-        CharacterStartCastHook?.Disable();
+        var type = typeof(T);
+
+        methodsCollection.AddOrUpdate
+        (
+            type,
+            _ =>
+            {
+                var list = ImmutableList.Create<Delegate>(method);
+                return methods.Length > 0 ? list.AddRange(methods) : list;
+            },
+            (_, currentList) =>
+            {
+                var newList = currentList.Add(method);
+                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+            }
+        );
+
+        return true;
     }
 
-    private static bool UseActionDetour(
-        ActionManager* actionManager, 
-        ActionType                  actionType, 
-        uint actionID,    
-        ulong targetID,
-        uint           extraParam,    
-        ActionManager.UseActionMode queueState, 
-        uint comboRouteID, 
-        bool* outOptAreaTargeted)
+    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    {
+        if (methods is not { Length: > 0 }) return false;
+
+        var type = typeof(T);
+
+        while (methodsCollection.TryGetValue(type, out var currentList))
+        {
+            var newList = currentList.RemoveRange(methods);
+
+            if (newList == currentList)
+                return false;
+
+            if (newList.IsEmpty)
+            {
+                var kvp = new KeyValuePair<Type, ImmutableList<Delegate>>(type, currentList);
+                if (((ICollection<KeyValuePair<Type, ImmutableList<Delegate>>>)methodsCollection).Remove(kvp))
+                    return true;
+            }
+            else
+            {
+                if (methodsCollection.TryUpdate(type, newList, currentList))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    #region Register
+
+    public bool RegPreUseAction(PreUseActionDelegate method, params PreUseActionDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegPostUseAction(PostUseActionDelegate method, params PostUseActionDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegPreUseActionLocation(PreUseActionLocationDelegate method, params PreUseActionLocationDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegPostUseActionLocation(PostUseActionLocationDelegate method, params PostUseActionLocationDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegPreIsActionOffCooldown(PreIsActionOffCooldownDelegate method, params PreIsActionOffCooldownDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegPreCharacterCompleteCast(PreCharacterCompleteCastDelegate method, params PreCharacterCompleteCastDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegPostCharacterCompleteCast(PostCharacterCompleteCastDelegate method, params PostCharacterCompleteCastDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegPreCharacterStartCast(PreCharacterStartCastDelegate method, params PreCharacterStartCastDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool RegPostCharacterStartCast(PostCharacterStartCastDelegate method, params PostCharacterStartCastDelegate[] methods)
+        => RegisterGeneric(method, methods);
+
+    public bool Unreg(params PreUseActionDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PostUseActionDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PreUseActionLocationDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PostUseActionLocationDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PreIsActionOffCooldownDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PreCharacterCompleteCastDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PostCharacterCompleteCastDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PreCharacterStartCastDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PostCharacterStartCastDelegate[] methods) => UnregisterGeneric(methods);
+
+    #endregion
+
+    #region Hooks
+
+    private bool UseActionDetour
+    (
+        ActionManager*              actionManager,
+        ActionType                  actionType,
+        uint                        actionID,
+        ulong                       targetID,
+        uint                        extraParam,
+        ActionManager.UseActionMode queueState,
+        uint                        comboRouteID,
+        bool*                       outOptAreaTargeted
+    )
     {
         if (Config.ShowUseActionLog)
-            Debug($"[Use Action Manager] 一般类技能\n类型:{actionType} | ID:{actionID} | 目标ID: {targetID}\n" +
-                  $"额外参数: {extraParam} | 队列状态: {queueState} | 连击路径ID: {comboRouteID}");
+            Debug
+            (
+                $"[Use Action Manager] 一般类技能\n类型:{actionType} | ID:{actionID} | 目标ID: {targetID}\n" +
+                $"额外参数: {extraParam} | 队列状态: {queueState} | 连击路径ID: {comboRouteID}"
+            );
 
         var isPrevented = false;
-        if (MethodsCollection.TryGetValue(typeof(PreUseActionDelegate), out var preDelegates))
+
+        if (methodsCollection.TryGetValue(typeof(PreUseActionDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
                 var preUseAction = (PreUseActionDelegate)preDelegate;
-                preUseAction(ref isPrevented, ref actionType, ref actionID, ref targetID, ref extraParam,
-                             ref queueState, ref comboRouteID);
+                preUseAction
+                (
+                    ref isPrevented,
+                    ref actionType,
+                    ref actionID,
+                    ref targetID,
+                    ref extraParam,
+                    ref queueState,
+                    ref comboRouteID
+                );
                 if (isPrevented) return false;
             }
         }
 
         var original = UseActionHook.Original(actionManager, actionType, actionID, targetID, extraParam, queueState, comboRouteID, outOptAreaTargeted);
 
-        if (MethodsCollection.TryGetValue(typeof(PostUseActionDelegate), out var postDelegates))
+        if (methodsCollection.TryGetValue(typeof(PostUseActionDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -298,16 +373,27 @@ public unsafe class UseActionManager : OmenServiceBase
         return original;
     }
 
-    private static bool UseActionLocationDetour(
-        ActionManager* manager, ActionType type, uint actionID, ulong targetID, Vector3* location, uint extraParam, byte a7)
+    private bool UseActionLocationDetour
+    (
+        ActionManager* manager,
+        ActionType     type,
+        uint           actionID,
+        ulong          targetID,
+        Vector3*       location,
+        uint           extraParam,
+        byte           a7
+    )
     {
         if (Config.ShowUseActionLocationLog)
-            Debug(
-                $"[Use Action Manager] 地面类技能\n类型:{type} | ID:{actionID} | 目标ID: {targetID} | 地点:{*location} | 额外参数:{extraParam}");
+            Debug
+            (
+                $"[Use Action Manager] 地面类技能\n类型:{type} | ID:{actionID} | 目标ID: {targetID} | 地点:{*location} | 额外参数:{extraParam}"
+            );
 
         var isPrevented = false;
-        var location0 = *location;
-        if (MethodsCollection.TryGetValue(typeof(PreUseActionLocationDelegate), out var preDelegates))
+        var location0   = *location;
+
+        if (methodsCollection.TryGetValue(typeof(PreUseActionLocationDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -318,8 +404,8 @@ public unsafe class UseActionManager : OmenServiceBase
         }
 
         var original = UseActionLocationHook.Original(manager, type, actionID, targetID, &location0, extraParam, a7);
-        
-        if (MethodsCollection.TryGetValue(typeof(PostUseActionLocationDelegate), out var postDelegates))
+
+        if (methodsCollection.TryGetValue(typeof(PostUseActionLocationDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
@@ -331,13 +417,14 @@ public unsafe class UseActionManager : OmenServiceBase
         return original;
     }
 
-    private static bool IsActionOffCooldownDetour(ActionManager* manager, ActionType actionType, uint actionID)
+    private bool IsActionOffCooldownDetour(ActionManager* manager, ActionType actionType, uint actionID)
     {
         if (manager == null) return false;
 
         var isPrevented = false;
-        var queueTime = 0.5f;
-        if (MethodsCollection.TryGetValue(typeof(PreIsActionOffCooldownDelegate), out var preDelegates))
+        var queueTime   = 0.5f;
+
+        if (methodsCollection.TryGetValue(typeof(PreIsActionOffCooldownDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -354,20 +441,20 @@ public unsafe class UseActionManager : OmenServiceBase
         if (recastDetail != null && recastDetail->IsActive && recastDetail->Total - recastDetail->Elapsed > queueTime)
             return false;
 
-        var spellID = ActionManager.GetSpellIdForAction(actionType, actionID);
+        var spellID    = ActionManager.GetSpellIdForAction(actionType, actionID);
         var maxCharges = ActionManager.GetMaxCharges(spellID, 100);
 
         var canPlayerUseAction = CanPlayerUseAction(manager, recastDetailForAction->ActionId);
-        var currentTotal = recastDetailForAction->Total;
-        var currentElapsed = recastDetailForAction->Elapsed;
+        var currentTotal       = recastDetailForAction->Total;
+        var currentElapsed     = recastDetailForAction->Elapsed;
 
         if (canPlayerUseAction)
-            return !((currentTotal / maxCharges) - currentElapsed > queueTime);
-        else
-            return !(currentTotal - currentElapsed > queueTime);
+            return !(currentTotal / maxCharges - currentElapsed > queueTime);
+        return !(currentTotal - currentElapsed > queueTime);
     }
 
-    private static nint CharacterCompleteCastDetour(
+    private void* CharacterCompleteCastDetour
+    (
         BattleChara* player,
         uint         type,
         uint         actionID,
@@ -377,25 +464,31 @@ public unsafe class UseActionManager : OmenServiceBase
         float        rotation,
         short        lastUsedActionSequence,
         int          animationVariation,
-        int          ballistaEntityID)
+        int          ballistaEntityID
+    )
     {
         var actionType   = (ActionType)type;
         var battlePlayer = IBattleChara.Create((nint)player);
         var location     = *locationPtr;
-        
+
         if (Config.ShowCharacterCompleteCastLog)
-            Debug($"[Use Action Manager] 技能释放完成\n"                                                                               +
-                  $"对象: {battlePlayer.Name} ({battlePlayer.GameObjectID}) | 类型: {type} | 技能 ID: {actionID} | 施法 ID: {spellID}\n" +
-                  $"动画目标 ID: {(ulong)animationTargetID} | 地点: {location} | 面向: {rotation}\n"                                     +
-                  $"技能序列: {lastUsedActionSequence} | 动画变化: {animationVariation} | 弩炮实体 ID: {ballistaEntityID}");
+            Debug
+            (
+                $"[Use Action Manager] 技能释放完成\n"                                                                               +
+                $"对象: {battlePlayer.Name} ({battlePlayer.GameObjectID}) | 类型: {type} | 技能 ID: {actionID} | 施法 ID: {spellID}\n" +
+                $"动画目标 ID: {(ulong)animationTargetID} | 地点: {location} | 面向: {rotation}\n"                                     +
+                $"技能序列: {lastUsedActionSequence} | 动画变化: {animationVariation} | 弩炮实体 ID: {ballistaEntityID}"
+            );
 
         var isPrevented = false;
-        if (MethodsCollection.TryGetValue(typeof(PreCharacterCompleteCastDelegate), out var preDelegates))
+
+        if (methodsCollection.TryGetValue(typeof(PreCharacterCompleteCastDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
                 var preCharacterCompleteCast = (PreCharacterCompleteCastDelegate)preDelegate;
-                preCharacterCompleteCast(
+                preCharacterCompleteCast
+                (
                     ref isPrevented,
                     ref battlePlayer,
                     ref actionType,
@@ -406,12 +499,14 @@ public unsafe class UseActionManager : OmenServiceBase
                     ref rotation,
                     ref lastUsedActionSequence,
                     ref animationVariation,
-                    ref ballistaEntityID);
-                if (isPrevented) return nint.Zero;
+                    ref ballistaEntityID
+                );
+                if (isPrevented) return null;
             }
         }
 
-        var original = CharacterCompleteCastHook.Original(
+        var original = CharacterCompleteCastHook.Original
+        (
             battlePlayer.ToStruct(),
             (uint)actionType,
             actionID,
@@ -421,15 +516,17 @@ public unsafe class UseActionManager : OmenServiceBase
             rotation,
             lastUsedActionSequence,
             animationVariation,
-            ballistaEntityID);
+            ballistaEntityID
+        );
 
-        if (MethodsCollection.TryGetValue(typeof(PostCharacterCompleteCastDelegate), out var postDelegates))
+        if (methodsCollection.TryGetValue(typeof(PostCharacterCompleteCastDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
                 var postCharacterCompleteCast = (PostCharacterCompleteCastDelegate)postDelegate;
-                postCharacterCompleteCast(
-                    original,
+                postCharacterCompleteCast
+                (
+                    original != null,
                     battlePlayer,
                     actionType,
                     actionID,
@@ -439,30 +536,37 @@ public unsafe class UseActionManager : OmenServiceBase
                     rotation,
                     lastUsedActionSequence,
                     animationVariation,
-                    ballistaEntityID);
+                    ballistaEntityID
+                );
             }
         }
 
         return original;
     }
 
-    private static nint CharacterStartCastDetour(
+    private void* CharacterStartCastDetour
+    (
         BattleChara* player,
         ActionType   type,
         uint         actionID,
         nint         a4,
         float        rotation,
-        float        a6)
+        float        a6
+    )
     {
         var battlePlayer = IBattleChara.Create((nint)player);
 
         if (Config.ShowCharacterStartCastLog)
-            Debug($"[Use Action Manager] 技能开始释放\n"                                                                          +
-                  $"对象: {battlePlayer.Name} ({battlePlayer.GameObjectID}) | 类型: {type} | ID: {actionID} | 面向: {rotation}\n" +
-                  $"P4: {a4} | P6: {a6}");
+            Debug
+            (
+                $"[Use Action Manager] 技能开始释放\n"                                                                          +
+                $"对象: {battlePlayer.Name} ({battlePlayer.GameObjectID}) | 类型: {type} | ID: {actionID} | 面向: {rotation}\n" +
+                $"P4: {a4} | P6: {a6}"
+            );
 
         var isPrevented = false;
-        if (MethodsCollection.TryGetValue(typeof(PreCharacterStartCastDelegate), out var preDelegates))
+
+        if (methodsCollection.TryGetValue(typeof(PreCharacterStartCastDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
             {
@@ -470,18 +574,18 @@ public unsafe class UseActionManager : OmenServiceBase
                 preCharacterStartCast(ref isPrevented, ref battlePlayer, ref type, ref actionID, ref a4, ref rotation, ref a6);
 
                 if (isPrevented)
-                    return nint.Zero;
+                    return null;
             }
         }
 
         var original = CharacterStartCastHook.Original(battlePlayer.ToStruct(), type, actionID, a4, rotation, a6);
 
-        if (MethodsCollection.TryGetValue(typeof(PostCharacterStartCastDelegate), out var postDelegates))
+        if (methodsCollection.TryGetValue(typeof(PostCharacterStartCastDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
                 var postCharacterStartCast = (PostCharacterStartCastDelegate)postDelegate;
-                postCharacterStartCast(original, battlePlayer, type, actionID, a4, rotation, a6);
+                postCharacterStartCast(original != null, battlePlayer, type, actionID, a4, rotation, a6);
             }
         }
 
@@ -492,121 +596,35 @@ public unsafe class UseActionManager : OmenServiceBase
 
     #region Invokes
 
-    public static bool UseAction(
+    public bool UseAction
+    (
         ActionType                  type,
         uint                        actionID,
         ulong                       targetID     = 0xE000_0000,
         uint                        extraParam   = 0,
         ActionManager.UseActionMode queueState   = 0,
-        uint                        comboRouteID = 0) =>
+        uint                        comboRouteID = 0
+    ) =>
         UseActionHook.Original(ActionManager.Instance(), type, actionID, targetID, extraParam, queueState, comboRouteID, null);
 
-    public static bool UseActionLocation(
+    public bool UseActionLocation
+    (
         ActionType type,
         uint       actionID,
         ulong      targetID   = 0xE000_0000,
         Vector3    location   = default,
         uint       extraParam = 0U,
-        byte       a7         = 0) =>
+        byte       a7         = 0
+    ) =>
         UseActionLocationHook.Original(ActionManager.Instance(), type, actionID, targetID, &location, extraParam, a7);
 
-    public static bool IsActionOffCooldown(ActionType actionType, uint actionID)
+    public bool IsActionOffCooldown(ActionType actionType, uint actionID)
         => IsActionOffCooldownHook.Original(ActionManager.Instance(), actionType, actionID);
-
-    public static nint CharacterCompleteCast(
-        IBattleChara player,
-        ActionType   type,
-        uint         actionID,
-        uint         spellID,
-        GameObjectId animationTargetID,
-        Vector3      location,
-        float        rotation,
-        short        lastUsedActionSequence,
-        int          animationVariation,
-        int          ballistaEntityID) =>
-        CharacterCompleteCastHook.Original(player.ToStruct(), 
-                                           (uint)type, 
-                                           actionID, 
-                                           spellID, 
-                                           animationTargetID, 
-                                           &location, 
-                                           rotation, 
-                                           lastUsedActionSequence, 
-                                           animationVariation, 
-                                           ballistaEntityID);
-
-    public static nint CharacterStartCast(
-        IBattleChara player,
-        ActionType   type,
-        uint         actionID,
-        nint         a4,
-        float        rotation,
-        float        a6) =>
-        CharacterStartCastHook.Original(player.ToStruct(), type, actionID, a4, rotation, a6);
-
-    public static bool UseActionCallDetour(
-        ActionType                  type,
-        uint                        actionID,
-        ulong                       targetID     = 0xE000_0000,
-        uint                        extraParam   = 0,
-        ActionManager.UseActionMode queueState   = 0,
-        uint                        comboRouteID = 0) =>
-        UseActionDetour(ActionManager.Instance(), type, actionID, targetID, extraParam, queueState, comboRouteID, null);
-
-    public static bool UseActionLocationCallDetour(
-        ActionType type,
-        uint       actionID,
-        ulong      targetID   = 0xE000_0000,
-        Vector3    location   = default,
-        uint       extraParam = 0U,
-        byte       a7         = 0) =>
-        UseActionLocationDetour(ActionManager.Instance(), type, actionID, targetID, &location, extraParam, a7);
-
-    public static bool IsActionOffCooldownCallDetour(ActionType actionType, uint actionID) => 
-        IsActionOffCooldownDetour(ActionManager.Instance(), actionType, actionID);
-
-    public static nint CharacterCompleteCastCallDetour(
-        IBattleChara player,
-        ActionType   type,
-        uint         actionID,
-        uint         spellID,
-        GameObjectId animationTargetID,
-        Vector3      location,
-        float        rotation,
-        short        lastUsedActionSequence,
-        int          animationVariation,
-        int          ballistaEntityID) =>
-        CharacterCompleteCastDetour(player.ToStruct(),
-                                    (uint)type,
-                                    actionID,
-                                    spellID,
-                                    animationTargetID,
-                                    &location,
-                                    rotation,
-                                    lastUsedActionSequence,
-                                    animationVariation,
-                                    ballistaEntityID);
-
-    public static nint CharacterStartCastCallDetour(
-        IBattleChara player,
-        ActionType   type,
-        uint         actionID,
-        nint         a4,
-        float        rotation,
-        float        a6) =>
-        CharacterStartCastDetour(player.ToStruct(),
-                                 type,
-                                 actionID,
-                                 a4,
-                                 rotation,
-                                 a6);
 
     #endregion
 
     internal override void Uninit()
     {
-        DisableHooks();
-
         UseActionHook?.Dispose();
         UseActionHook = null;
 
@@ -615,16 +633,16 @@ public unsafe class UseActionManager : OmenServiceBase
 
         IsActionOffCooldownHook?.Dispose();
         IsActionOffCooldownHook = null;
-        
+
         CharacterCompleteCastHook?.Dispose();
         CharacterCompleteCastHook = null;
-        
+
         CharacterStartCastHook?.Dispose();
         CharacterStartCastHook = null;
-        
-        MethodsCollection.Clear();
+
+        methodsCollection.Clear();
     }
-    
+
     public class UseActionManagerConfig : OmenServiceConfiguration
     {
         public bool ShowUseActionLog;
@@ -632,7 +650,7 @@ public unsafe class UseActionManager : OmenServiceBase
         public bool ShowCharacterCompleteCastLog;
         public bool ShowCharacterStartCastLog;
 
-        public void Save() => 
-            this.Save(DService.GetOmenService<UseActionManager>());
+        public void Save() =>
+            this.Save(DService.Instance().GetOmenService<UseActionManager>());
     }
 }

@@ -7,15 +7,17 @@ namespace OmenTools.Helpers;
 
 public partial class TaskHelper : IDisposable
 {
-    private static readonly List<TaskHelper> Instances = [];
+    private static readonly ConcurrentDictionary<TaskHelper, byte> Instances = [];
 
     internal static void DisposeAll()
     {
         var disposedCount = 0;
 
-        foreach (var instance in Instances)
+        foreach (var instance in Instances.Keys)
         {
-            DService.Framework.Update -= instance.Tick;
+            if (instance is not { IsDisposed: false }) continue;
+            
+            instance.Dispose();
             disposedCount++;
         }
 
@@ -28,14 +30,17 @@ public partial class TaskHelper : IDisposable
     private static Channel<(TaskHelperTask Task, int Weight)> CreateTaskChannel() =>
         Channel.CreateUnbounded<(TaskHelperTask, int)>(new() { SingleReader = true });
 
-    public TaskHelper()
-    {
-        Instances.Add(this);
-    }
+    public TaskHelper() =>
+        Instances.TryAdd(this, 0);
 
     public void Dispose()
     {
-        DService.Framework.Update -= Tick;
+        if (IsDisposed) return;
+        IsDisposed = true;
+        
+        Instances.TryRemove(this, out _);
+        
+        DService.Instance().Framework.Update -= Tick;
         TaskChannel.Writer.TryComplete();
 
         foreach (var kvp in RunningAsyncTasks)
@@ -54,8 +59,6 @@ public partial class TaskHelper : IDisposable
                 task.CancelToken?.Dispose();
             }
         }
-
-        Instances.Remove(this);
     }
 
     /// <summary>
@@ -98,6 +101,11 @@ public partial class TaskHelper : IDisposable
     ///     <seealso cref="TimeoutBehaviour" />
     /// </summary>
     public int TimeoutMS { get; set; } = 10_000;
+
+    /// <summary>
+    ///     是否已被销毁
+    /// </summary>
+    public bool IsDisposed { get; private set; }
 
     private TaskHelperTask?                                  CurrentTask       { get; set; }
     private ConcurrentDictionary<TaskHelperTask, Task<bool>> RunningAsyncTasks { get; set; } = [];
@@ -267,8 +275,8 @@ public partial class TaskHelper : IDisposable
     {
         if (Interlocked.CompareExchange(ref isScanning, 1, 0) == 0)
         {
-            DService.Framework.Update -= Tick;
-            DService.Framework.Update += Tick;
+            DService.Instance().Framework.Update -= Tick;
+            DService.Instance().Framework.Update += Tick;
         }
     }
 
@@ -276,13 +284,13 @@ public partial class TaskHelper : IDisposable
     {
         if (CurrentTask == null && pendingTaskCount == 0 && queueTaskCount == 0 && RunningAsyncTasks.IsEmpty)
         {
-            DService.Framework.Update -= Tick;
+            DService.Instance().Framework.Update -= Tick;
             Interlocked.Exchange(ref isScanning, 0);
 
             if (CurrentTask != null || pendingTaskCount > 0 || queueTaskCount > 0 || !RunningAsyncTasks.IsEmpty)
             {
                 if (Interlocked.CompareExchange(ref isScanning, 1, 0) == 0)
-                    DService.Framework.Update += Tick;
+                    DService.Instance().Framework.Update += Tick;
             }
         }
     }

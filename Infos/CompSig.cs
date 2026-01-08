@@ -1,5 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using Dalamud.Game;
+﻿using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using Dalamud.Hooking;
 
 namespace OmenTools.Infos;
@@ -9,13 +9,13 @@ namespace OmenTools.Infos;
 /// </summary>
 public record CompSig
 {
-    private static readonly List<IDalamudHook> Hooks = [];
+    private static readonly ConcurrentDictionary<IDalamudHook, byte> Hooks = [];
 
     public static void DisposeAllHooks()
     {
-        foreach (var hook in Hooks)
+        foreach (var hook in Hooks.Keys)
         {
-            if (hook == null || hook.IsDisposed) continue;
+            if (hook is not { IsDisposed: false }) continue;
             hook.Dispose();
         }
         
@@ -33,7 +33,7 @@ public record CompSig
     {
         try
         {
-            return DService.SigScanner.ScanText(Signature);
+            return DService.Instance().SigScanner.ScanText(Signature);
         }
         catch(Exception ex)
         {
@@ -50,7 +50,7 @@ public record CompSig
     {
         try
         {
-            return DService.SigScanner.GetStaticAddressFromSig(Signature, offset);
+            return DService.Instance().SigScanner.GetStaticAddressFromSig(Signature, offset);
         }
         catch(Exception ex)
         {
@@ -68,8 +68,8 @@ public record CompSig
 
     public Hook<T> GetHook<T>(T detour) where T : Delegate
     {
-        var hook = DService.Hook.HookFromSignature(Signature, detour);
-        Hooks.Add(hook);
+        var hook = DService.Instance().Hook.HookFromSignature(Signature, detour);
+        Hooks.TryAdd(hook, 0);
         return hook;
     }
 }

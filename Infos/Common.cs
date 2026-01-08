@@ -4,7 +4,7 @@ namespace OmenTools.Infos;
 
 public static partial class InfosOm
 {
-    public static float GlobalFontScale => FontManager.GlobalFontScale;
+    public static float GlobalFontScale => FontManager.Instance().GlobalFontScale;
     
     public static readonly List<InventoryType> PlayerInventories =
     [

@@ -19,7 +19,7 @@ public static partial class HelpersOm
 
     public static void NotificationSuccess(string message, string? title = null)
     {
-        DService.DNotice.AddNotification(new()
+        DService.Instance().Notify.AddNotification(new()
         {
             Title                              = title ?? message,
             Content                            = message,
@@ -36,7 +36,7 @@ public static partial class HelpersOm
 
     public static void NotificationWarning(string message, string? title = null)
     {
-        DService.DNotice.AddNotification(new()
+        DService.Instance().Notify.AddNotification(new()
         {
             Title                              = title ?? message,
             Content                            = message,
@@ -53,7 +53,7 @@ public static partial class HelpersOm
 
     public static void NotificationError(string message, string? title = null)
     {
-        DService.DNotice.AddNotification(new()
+        DService.Instance().Notify.AddNotification(new()
         {
             Title                              = title ?? message,
             Content                            = message,
@@ -70,7 +70,7 @@ public static partial class HelpersOm
 
     public static void NotificationInfo(string message, string? title = null)
     {
-        DService.DNotice.AddNotification(new()
+        DService.Instance().Notify.AddNotification(new()
         {
             Title                              = title ?? message,
             Content                            = message,
@@ -91,7 +91,7 @@ public static partial class HelpersOm
         if (prefix != null) 
             builder.Append(prefix).Append(" ");
         builder.AddUiForeground($"{message}", 518);
-        DService.Chat.PrintError(builder.Build());
+        DService.Instance().Chat.PrintError(builder.Build());
     }
 
     public static void ChatError(SeString message, SeString? prefix = null)
@@ -115,7 +115,7 @@ public static partial class HelpersOm
                 builder.Add(payload);
         }
         
-        DService.Chat.PrintError(builder.Build());
+        DService.Instance().Chat.PrintError(builder.Build());
     }
 
     public static void Chat(string message, SeString? prefix = null)
@@ -124,7 +124,7 @@ public static partial class HelpersOm
         if (prefix != null) 
             builder.Append(prefix).Append(" ");
         builder.Append($"{message}");
-        DService.Chat.Print(builder.Build());
+        DService.Instance().Chat.Print(builder.Build());
     }
 
     public static void Chat(SeString message, SeString? prefix = null)
@@ -145,32 +145,32 @@ public static partial class HelpersOm
             builder.Add(payload);
         }
         
-        DService.Chat.Print(builder.Build());
+        DService.Instance().Chat.Print(builder.Build());
     }
 
     public static void Verbose(string message) 
-        => DService.Log.Verbose(message);
+        => DService.Instance().Log.Verbose(message);
 
     public static void Verbose(string message, Exception ex) 
-        => DService.Log.Verbose(ex, message);
+        => DService.Instance().Log.Verbose(ex, message);
 
     public static void Debug(string message) 
-        => DService.Log.Debug(message);
+        => DService.Instance().Log.Debug(message);
 
     public static void Debug(string message, Exception ex) 
-        => DService.Log.Debug(ex, message);
+        => DService.Instance().Log.Debug(ex, message);
 
     public static void Warning(string message) 
-        => DService.Log.Warning(message);
+        => DService.Instance().Log.Warning(message);
 
     public static void Warning(string message, Exception ex) 
-        => DService.Log.Warning(ex, message);
+        => DService.Instance().Log.Warning(ex, message);
 
     public static void Error(string message) 
-        => DService.Log.Error(message);
+        => DService.Instance().Log.Error(message);
 
     public static void Error(string message, Exception ex) 
-        => DService.Log.Error(ex, message);
+        => DService.Instance().Log.Error(ex, message);
 
     public static void LogWarning(this Exception ex, string? message = null)
         => Warning(message ?? string.Empty, ex);

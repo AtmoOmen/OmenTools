@@ -1,29 +1,23 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Dalamud.Hooking;
 using Dalamud.Interface.Textures.TextureWraps;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using OmenTools.Abstracts;
+using Achievement = FFXIVClientStructs.FFXIV.Client.Game.UI.Achievement;
 using LuminaAchievement = Lumina.Excel.Sheets.Achievement;
 
 namespace OmenTools.Managers;
 
-public unsafe class AchievementManager : OmenServiceBase
+public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
 {
-    public static Dictionary<uint, AchievementInfo> Infos { get; private set; } = [];
+    public Dictionary<uint, AchievementInfo> Infos { get; private set; } = [];
     
-    private static readonly CompSig                                   ReceiveAchievementProgressSig = new("C7 81 ?? ?? ?? ?? ?? ?? ?? ?? 89 91 ?? ?? ?? ?? 44 89 81");
-    private delegate        void                                      ReceiveAchievementProgressDelegate(Achievement* achievement, uint id, uint current, uint max);
-    private static          Hook<ReceiveAchievementProgressDelegate>? ReceiveAchievementProgressHook;
-    
-    internal override void Init()
-    {
-        ReceiveAchievementProgressHook ??= ReceiveAchievementProgressSig.GetHook<ReceiveAchievementProgressDelegate>(ReceiveAchievementProgressDetour);
-        ReceiveAchievementProgressHook.Enable();
-    }
-
-    public static bool TryGetAchievement(uint id, [NotNullWhen(true)] out AchievementInfo? achievementInfo)
+    public bool TryGetAchievement(uint id, [NotNullWhen(true)] out AchievementInfo? achievementInfo)
     {
         achievementInfo = null;
+
+        // 没登录你请求个什么
+        if (!DService.Instance().ClientState.IsLoggedIn)
+            return false;
         
         // 有人传假情报
         if (!LuminaGetter.TryGetRow<LuminaAchievement>(id, out _)) 
@@ -38,42 +32,57 @@ public unsafe class AchievementManager : OmenServiceBase
         achievementInfo = info;
         return true;
     }
+    
+    
+    private delegate void                                      ReceiveAchievementProgressDelegate(Achievement* achievement, uint id, uint current, uint max);
+    private          Hook<ReceiveAchievementProgressDelegate>? ReceiveAchievementProgressHook;
+    
+    internal override void Init()
+    {
+        GameState.Instance().Logout += OnLogout;
+        
+        ReceiveAchievementProgressHook ??=
+            DService.Instance().Hook.HookFromMemberFunction<ReceiveAchievementProgressDelegate>(
+                typeof(Achievement.MemberFunctionPointers),
+                "ReceiveAchievementProgress",
+                ReceiveAchievementProgressDetour);
+        ReceiveAchievementProgressHook.Enable();
+    }
+    
+    internal override void Uninit()
+    {
+        GameState.Instance().Logout -= OnLogout;
+        
+        ReceiveAchievementProgressHook?.Dispose();
+        ReceiveAchievementProgressHook = null;
+        
+        Infos = [];
+    }
+
+    private void OnLogout() =>
+        Infos.Clear();
 
     private static void SendRequest(uint id)
     {
-        if (!Throttler.Throttle($"AchievementManager-Request{id}", 10_000)) return;
-        ExecuteCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestAchievement, id);
+        if (!Throttler.Throttle($"AchievementManager-Request-{id}", 10_000)) return;
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestAchievement, id);
     }
     
-    private static void ReceiveAchievementProgressDetour(Achievement* achievement, uint id, uint current, uint max)
+    private void ReceiveAchievementProgressDetour(Achievement* achievement, uint id, uint current, uint max)
     {
         ReceiveAchievementProgressHook.Original(achievement, id, current, max);
         Infos[id] = new(id, current, max);
     }
-
-    internal override void Uninit()
-    {
-        ReceiveAchievementProgressHook?.Dispose();
-        ReceiveAchievementProgressHook = null;
-
-        Infos = [];
-    }
 }
 
-public class AchievementInfo(uint id, uint current, uint max)
+public record AchievementInfo(uint ID, uint Current, uint Max)
 {
-    public uint     ID          { get; init; } = id;
-    public uint     Current     { get; init; } = current;
-    public uint     Max         { get; init; } = max;
-    public DateTime LastUpdated { get; init; } = DateTime.Now;
-    
     public string              Name        => GetData().Name.ToString()        ?? string.Empty;
     public string              Description => GetData().Description.ToString() ?? string.Empty;
     public uint                Icon        => GetData().Icon;
-    public IDalamudTextureWrap IconTexture => DService.Texture.GetFromGameIcon(new(Icon)).GetWrapOrEmpty();
+    public IDalamudTextureWrap IconTexture => DService.Instance().Texture.GetFromGameIcon(new(Icon)).GetWrapOrEmpty();
     public bool                IsFinished  => Current == Max;
     
-
     public LuminaAchievement GetData() =>
         LuminaGetter.GetRow<LuminaAchievement>(ID).GetValueOrDefault();
 }

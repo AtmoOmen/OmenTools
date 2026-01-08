@@ -13,7 +13,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace OmenTools.Infos;
 
-public class LocalPlayerState : OmenServiceBase
+public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 {
     private delegate nint GetAccountInfoInstanceDelegate();
     private static readonly GetAccountInfoInstanceDelegate GetAccountInfoInstance = 
@@ -21,17 +21,17 @@ public class LocalPlayerState : OmenServiceBase
     
     private delegate bool IsLocalPlayerInPartyDelegate();
     private static readonly IsLocalPlayerInPartyDelegate IsLocalPlayerInParty =
-        new CompSig("48 83 EC ?? 33 D2 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 80 B8").GetDelegate<IsLocalPlayerInPartyDelegate>();
+        new CompSig("E8 ?? ?? ?? ?? 84 C0 74 25 48 8B 8D ?? ?? ?? ??").GetDelegate<IsLocalPlayerInPartyDelegate>();
     
     private delegate bool IsLocalPlayerPartyLeaderDelegate();
     private static readonly IsLocalPlayerPartyLeaderDelegate IsLocalPlayerPartyLeader =
         new CompSig("48 83 EC ?? E8 ?? ?? ?? ?? 84 C0 74 ?? 48 83 C4").GetDelegate<IsLocalPlayerPartyLeaderDelegate>();
     
-    private static Hook<AgentUpdateDelegate>? AgentMapUpdateHook;
+    private Hook<AgentUpdateDelegate>? AgentMapUpdateHook;
     
     internal override unsafe void Init()
     {
-        AgentMapUpdateHook ??= DService.Hook.HookFromAddress<AgentUpdateDelegate>(AgentMap.Instance()->VirtualTable->GetVFuncByName("Update"), AgentMapUpdateDetour);
+        AgentMapUpdateHook ??= DService.Instance().Hook.HookFromAddress<AgentUpdateDelegate>(AgentMap.Instance()->VirtualTable->GetVFuncByName("Update"), AgentMapUpdateDetour);
         AgentMapUpdateHook.Enable();
     }
 
@@ -41,7 +41,7 @@ public class LocalPlayerState : OmenServiceBase
         AgentMapUpdateHook = null;
     }
     
-    private static unsafe void AgentMapUpdateDetour(AgentInterface* agent, uint frameCount)
+    private unsafe void AgentMapUpdateDetour(AgentInterface* agent, uint frameCount)
     {
         AgentMapUpdateHook.Original(agent, frameCount);
 
@@ -51,12 +51,12 @@ public class LocalPlayerState : OmenServiceBase
         IsPlayerMoving = isMovingNow;
     }
 
-    private static bool IsPlayerMoving;
+    private bool IsPlayerMoving;
 
     /// <summary>
     /// 玩家移动状态变更时
     /// </summary>
-    public static event Action<bool>? PlayerMoveStateChanged;
+    public event Action<bool>? PlayerMoveStateChanged;
 
     /// <summary>
     /// 当前玩家所属的大国防联军
@@ -67,14 +67,14 @@ public class LocalPlayerState : OmenServiceBase
     /// <summary>
     /// 当前玩家是否正在移动
     /// </summary>
-    public static bool IsMoving => 
+    public bool IsMoving => 
         IsPlayerMoving;
 
     /// <summary>
     /// 当前玩家是否在小队中
     /// </summary>
     public static bool IsInAnyParty => 
-        InfoProxyCrossRealm.IsCrossRealmParty() || DService.PartyList.Length >= 2;
+        InfoProxyCrossRealm.IsCrossRealmParty() || DService.Instance().PartyList.Length >= 2;
     
     /// <summary>
     /// 当前玩家是否正处于步行模式
@@ -158,7 +158,7 @@ public class LocalPlayerState : OmenServiceBase
     /// 当前玩家对象
     /// </summary>
     public static IPlayerCharacter? Object =>
-        DService.ObjectTable.LocalPlayer;
+        DService.Instance().ObjectTable.LocalPlayer;
 
     /// <summary>
     /// 获取当前玩家指定职业的等级
@@ -225,7 +225,7 @@ public class LocalPlayerState : OmenServiceBase
 
         if (TryFindClassJobGearset(classJob, out var gearsetID))
         {
-            ChatManager.SendMessage($"/gearset change {gearsetID + 1}");
+            ChatManager.Instance().SendMessage($"/gearset change {gearsetID + 1}");
             return true;
         }
 
@@ -284,7 +284,7 @@ public class LocalPlayerState : OmenServiceBase
             gearset->Flags.HasFlag(RaptureGearsetModule.GearsetFlag.MainHandMissing))
             return false;
         
-        ChatManager.SendMessage($"/gearset change {gearsetID + 1}");
+        ChatManager.Instance().SendMessage($"/gearset change {gearsetID + 1}");
         return true;
     }
 

@@ -5,51 +5,52 @@ using OmenTools.Abstracts;
 
 namespace OmenTools.Managers;
 
-public class LinkPayloadManager : OmenServiceBase
+public class LinkPayloadManager : OmenServiceBase<LinkPayloadManager>
 {
-    private static readonly ConcurrentDictionary<uint, DalamudLinkPayload> DistributedPayloads = new();
-
-    private static long lastID = -1;
-
-    internal override void Init()
-    {
-        DistributedPayloads.Clear();
-        Interlocked.Exchange(ref lastID, -1);
-    }
-
-    public static DalamudLinkPayload Register(Action<uint, SeString> commandAction, out uint id)
+    public DalamudLinkPayload Reg(Action<uint, SeString> commandAction, out uint id)
     {
         id = GetUniqueID();
 
-        var payload = DService.Chat.AddChatLinkHandler(id, commandAction);
-        DistributedPayloads.TryAdd(id, payload);
+        var payload = DService.Instance().Chat.AddChatLinkHandler(id, commandAction);
+        distributedPayloads.TryAdd(id, payload);
         return payload;
     }
 
-    public static bool Unregister(uint id)
+    public bool Unreg(uint id)
     {
-        if (!DistributedPayloads.TryRemove(id, out _)) return false;
+        if (!distributedPayloads.TryRemove(id, out _)) return false;
 
-        DService.Chat.RemoveChatLinkHandler(id);
+        DService.Instance().Chat.RemoveChatLinkHandler(id);
         return true;
     }
     
-    public static bool TryGetPayload(uint id, out DalamudLinkPayload? payload)
-        => DistributedPayloads.TryGetValue(id, out payload);
+    public bool TryGetPayload(uint id, out DalamudLinkPayload? payload)
+        => distributedPayloads.TryGetValue(id, out payload);
+    
+    
+    private readonly ConcurrentDictionary<uint, DalamudLinkPayload> distributedPayloads = [];
 
-    private static uint GetUniqueID()
+    private long lastID = -1;
+
+    internal override void Init()
+    {
+        distributedPayloads.Clear();
+        Interlocked.Exchange(ref lastID, -1);
+    }
+    
+    internal override void Uninit()
+    {
+        DService.Instance().Chat.RemoveChatLinkHandler();
+        distributedPayloads.Clear();
+    }
+
+    private uint GetUniqueID()
     {
         while (true)
         {
             var newID = (uint)Interlocked.Increment(ref lastID);
-            if (!DistributedPayloads.ContainsKey(newID))
+            if (!distributedPayloads.ContainsKey(newID))
                 return newID;
         }
-    }
-
-    internal override void Uninit()
-    {
-        DService.Chat.RemoveChatLinkHandler();
-        DistributedPayloads.Clear();
     }
 }

@@ -18,5 +18,5 @@ public struct EventStartPackt(ulong objectID, uint eventID, uint category = 0, u
         $"Event Object ID: {EventObjectID} | Event ID: {EventID} | Entry ID: {EntryID}\n" +
         $"Category: {Category} | Param: {Param}";
 
-    public void Send() => GamePacketManager.SendPackt(this);
+    public void Send() => GamePacketManager.Instance().SendPackt(this);
 }
