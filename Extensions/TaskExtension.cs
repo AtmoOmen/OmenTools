@@ -16,8 +16,10 @@ public static class TaskExtension
             try
             {
                 while (await timer.WaitForNextTickAsync(token))
+                {
                     if (condition())
                         return;
+                }
             }
             catch (OperationCanceledException)
             {

@@ -43,8 +43,10 @@ public static class CommonExtension
             {
                 var k = 0;
                 for (; k < len; k++)
+                {
                     if (needle[k] != haystack[i + k])
                         break;
+                }
 
                 if (k == len)
                 {
