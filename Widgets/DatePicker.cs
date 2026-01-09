@@ -1,127 +1,197 @@
-﻿using System.Numerics;
-using Dalamud.Interface;
+﻿using System.Globalization;
+using System.Numerics;
 using static OmenTools.ImGuiOm.ImGuiOm;
 
 namespace OmenTools.Widgets;
 
 public class DatePicker
 {
-    private float datePickerPagingWidth = 200f;
+    private CultureInfo cultureInfo;
+    private float       currentWidth = 200f;
+    private bool        isYearView;
+    private DateTime    viewDate = DateTime.Now;
 
-    private DateTime viewDate = DateTime.Now;
+    private string[] weekDays = [];
 
     /// <summary>
-    ///     Create a Date Picker
+    ///     初始化日期选择器。
     /// </summary>
-    /// <param name="localizedWeekDays">Localized week days string, should look like "Sun, Mon, Tue, Wed, Thu, Fri, Sat"</param>
-    public DatePicker(string localizedWeekDays = "Sun, Mon, Tue, Wed, Thu, Fri, Sat")
+    /// <param name="culture">特定的文化信息，默认为当前系统文化</param>
+    public DatePicker(CultureInfo? culture = null)
     {
-        WeekDays = localizedWeekDays.Split(',');
-        if (WeekDays.Length != 7)
-            throw new ArgumentException("Weekdays array must contain exactly 7 elements.");
+        cultureInfo = culture ?? CultureInfo.CurrentCulture;
+        UpdateLocalizedStrings();
     }
 
-    public Vector2  Size     { get; private set; }
-    public string[] WeekDays { get; }
+    public string DateFormat { get; set; } = "yyyy.MM";
 
-    public bool Draw(ref DateTime currentDate)
+    /// <summary>
+    ///     绘制日期选择器。
+    /// </summary>
+    /// <param name="label">组件标签/ID</param>
+    /// <param name="currentDate">当前选中的日期</param>
+    /// <param name="flags">可选的标志位</param>
+    /// <returns>如果日期发生改变返回 true</returns>
+    public bool Draw(string label, ref DateTime currentDate, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
-        var state = false;
-        ImGui.BeginGroup();
+        var changed = false;
+
+        using var group = ImRaii.Group();
+        using var id    = ImRaii.PushId(label);
+
         DrawHeader();
 
-        if (ImGui.BeginTable("DatePicker", 7, ImGuiTableFlags.NoBordersInBody))
+        ImGui.Spacing();
+
+        if (isYearView)
+            changed |= DrawYearPicker();
+        else
         {
-            DrawWeekDays();
-            state = DrawDays(ref currentDate);
-            ImGui.EndTable();
+            using var table = ImRaii.Table("CalendarBody", 7, ImGuiTableFlags.NoBordersInBody | ImGuiTableFlags.SizingStretchSame);
+
+            if (table)
+            {
+                DrawWeekDays();
+                changed |= DrawDays(ref currentDate, flags);
+            }
         }
 
-        ImGui.EndGroup();
-        Size = ImGui.GetItemRectSize();
+        currentWidth = ImGui.GetItemRectSize().X;
 
-        return state;
+        return changed;
     }
 
-    public void DrawHeader()
+    private void DrawHeader()
     {
-        CenterAlignFor(datePickerPagingWidth);
+        CenterAlignFor(currentWidth);
 
-        ImGui.BeginGroup();
+        using var group = ImRaii.Group();
 
-        DrawNavigationButton("LastYear", FontAwesomeIcon.Backward, -1, true);
+        var buttonSize = new Vector2(ImGui.GetFrameHeight());
 
-        ImGui.SameLine();
-        DrawNavigationButton("LastMonth", ImGuiDir.Left, -1, false);
-
-        ImGui.SameLine();
-        ImGui.TextUnformatted($"{viewDate:yyyy.MM}");
-
-        ImGui.SameLine();
-        DrawNavigationButton("NextMonth", ImGuiDir.Right, 1, false);
+        if (ButtonIcon("##PrevYear", FontAwesomeIcon.AngleDoubleLeft, buttonSize))
+            viewDate = viewDate.AddYears(-1);
+        ImGui.SameLine(0, 2);
+        if (ButtonIcon("##PrevMonth", FontAwesomeIcon.AngleLeft, buttonSize))
+            viewDate = viewDate.AddMonths(-1);
 
         ImGui.SameLine();
-        DrawNavigationButton("NextYear", FontAwesomeIcon.Forward, 1, true);
 
-        ImGui.EndGroup();
+        var title          = viewDate.ToString(DateFormat, cultureInfo);
+        var titleWidth     = ImGui.CalcTextSize(title).X;
+        var availableWidth = ImGui.GetContentRegionAvail().X - (buttonSize.X * 2 + 8);
 
-        datePickerPagingWidth = Math.Max(ImGui.GetItemRectSize().X, Size.X);
+        var spaceSides = (availableWidth - titleWidth) / 2;
+        if (spaceSides > 0)
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + spaceSides);
+
+        if (ImGui.Selectable(title, isYearView, ImGuiSelectableFlags.None, new Vector2(titleWidth, 0)))
+            isYearView = !isYearView;
+
+        ImGui.SameLine();
+
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + spaceSides);
+
+        if (ButtonIcon("##NextMonth", FontAwesomeIcon.AngleRight, buttonSize))
+            viewDate = viewDate.AddMonths(1);
+        ImGui.SameLine(0, 2);
+        if (ButtonIcon("##NextYear", FontAwesomeIcon.AngleDoubleRight, buttonSize))
+            viewDate = viewDate.AddYears(1);
     }
 
     private void DrawWeekDays()
     {
-        foreach (var day in WeekDays)
+        using var font = ImRaii.PushFont(UiBuilder.DefaultFont);
+
+        using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.TextDisabled]);
+
+        foreach (var day in weekDays)
         {
             ImGui.TableNextColumn();
             TextCentered(day);
         }
     }
 
-    private bool DrawDays(ref DateTime currentDate)
+    private bool DrawDays(ref DateTime currentDate, ImGuiSelectableFlags flags)
     {
-        var state = false;
+        var changed = false;
 
-        ImGui.TableNextRow(ImGuiTableRowFlags.None);
         var firstDayOfMonth = new DateTime(viewDate.Year, viewDate.Month, 1);
-        var firstDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
-        var daysInMonth = DateTime.DaysInMonth(viewDate.Year, viewDate.Month);
+        var daysInMonth     = DateTime.DaysInMonth(viewDate.Year, viewDate.Month);
 
-        for (var i = 0; i < firstDayOfWeek; i++)
-        {
+        var firstDayOfWeek   = (int)cultureInfo.DateTimeFormat.FirstDayOfWeek;
+        var currentDayOfWeek = (int)firstDayOfMonth.DayOfWeek;
+        var offset           = (currentDayOfWeek - firstDayOfWeek + 7) % 7;
+
+        for (var i = 0; i < offset; i++)
             ImGui.TableNextColumn();
-            TextCentered("");
-        }
 
         for (var day = 1; day <= daysInMonth; day++)
         {
             ImGui.TableNextColumn();
-            var isCurrentDate = currentDate.Year == viewDate.Year && currentDate.Month == viewDate.Month &&
-                                currentDate.Day == day;
 
-            if (isCurrentDate)
+            var date       = new DateTime(viewDate.Year, viewDate.Month, day);
+            var isSelected = date.Date == currentDate.Date;
+            var isToday    = date.Date == DateTime.Now.Date;
+            
+            using var colorStack = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.CheckMark], isToday && !isSelected);
+            
+            if (SelectableTextCentered(day.ToString(), isSelected, flags | ImGuiSelectableFlags.DontClosePopups))
             {
-                ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(0.2f, 0.6f, 1.0f, 1.0f));
-                if (SelectableTextCentered(day.ToString(), false, ImGuiSelectableFlags.DontClosePopups))
-                {
-                    currentDate = new DateTime(viewDate.Year, viewDate.Month, day);
-                    state = true;
-                }
-
-                ImGui.PopStyleColor();
-            }
-            else if (SelectableTextCentered(day.ToString(), false, ImGuiSelectableFlags.DontClosePopups))
-            {
-                currentDate = new DateTime(viewDate.Year, viewDate.Month, day);
-                state = true;
+                currentDate = date;
+                changed     = true;
             }
         }
 
-        return state;
+        return changed;
     }
 
-    public void DrawNavigationButton(string id, object icon, int value, bool isYear)
+    private bool DrawYearPicker()
     {
-        if (isYear ? ButtonIcon(id, (FontAwesomeIcon)icon) : ImGui.Button(icon.ToString()))
-            viewDate = isYear ? viewDate.AddYears(value) : viewDate.AddMonths(value);
+        var currentYear = viewDate.Year;
+
+        var startYear = currentYear - 5;
+
+        using var table = ImRaii.Table("YearPicker", 4, ImGuiTableFlags.NoBordersInBody);
+        if (!table) return false;
+
+        for (var i = 0; i < 12; i++)
+        {
+            ImGui.TableNextColumn();
+            var year       = startYear + i;
+            var isSelected = year == currentYear;
+
+            using var color = ImRaii.PushColor(ImGuiCol.Button, ImGui.GetStyle().Colors[(int)ImGuiCol.Header], isSelected);
+            if (ImGui.Button($"{year}", new(-1, 0)))
+            {
+                viewDate   = new DateTime(year, viewDate.Month, viewDate.Day);
+                isYearView = false;
+            }
+        }
+
+        ImGui.TableNextRow();
+        ImGui.TableSetColumnIndex(0);
+        if (ImGui.Button("<<", new Vector2(-1, 0)))
+            viewDate = viewDate.AddYears(-10);
+
+        ImGui.TableSetColumnIndex(3);
+        if (ImGui.Button(">>", new Vector2(-1, 0)))
+            viewDate = viewDate.AddYears(10);
+
+        return false;
+    }
+
+    private void UpdateLocalizedStrings()
+    {
+        weekDays = cultureInfo.DateTimeFormat.AbbreviatedDayNames;
+        var firstDay = (int)cultureInfo.DateTimeFormat.FirstDayOfWeek;
+
+        if (firstDay != 0)
+        {
+            var rotated = new string[7];
+            for (var i = 0; i < 7; i++)
+                rotated[i] = weekDays[(i + firstDay) % 7];
+            weekDays = rotated;
+        }
     }
 }
