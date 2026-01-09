@@ -9,8 +9,6 @@ namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    public static ISharedImmediateTexture? NotificationIcon { get; set; }
-    
     public static unsafe void ContentHintBlue(string message, int hundredMS = 30) =>
         RaptureAtkModule.Instance()->ShowTextGimmickHint(message, RaptureAtkModule.TextGimmickHintStyle.Info, hundredMS);
 
@@ -19,70 +17,70 @@ public static partial class HelpersOm
 
     public static void NotificationSuccess(string message, string? title = null)
     {
-        DService.Instance().Notify.AddNotification(new()
+        DService.Instance().DalamudNotification.AddNotification(new()
         {
             Title                              = title ?? message,
             Content                            = message,
             Type                               = NotificationType.Success,
             Minimized                          = false,
-            IconTexture                        = NotificationIcon,
+            IconTexture                        = DService.Instance().DalamudNotificationIcon,
             InitialDuration                    = TimeSpan.FromSeconds(3),
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (!GameState.IsForeground) 
-            TrayNotify.ShowBalloonTip(title ?? message, message);
+        if (!GameState.IsForeground && DService.Instance().TrayNotification is { } tray) 
+            tray.ShowBalloonTip(title ?? message, message);
     }
 
     public static void NotificationWarning(string message, string? title = null)
     {
-        DService.Instance().Notify.AddNotification(new()
+        DService.Instance().DalamudNotification.AddNotification(new()
         {
             Title                              = title ?? message,
             Content                            = message,
             Type                               = NotificationType.Warning,
             Minimized                          = false,
-            IconTexture                        = NotificationIcon,
+            IconTexture                        = DService.Instance().DalamudNotificationIcon,
             InitialDuration                    = TimeSpan.FromSeconds(3),
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (!GameState.IsForeground) 
-            TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Warning);
+        if (!GameState.IsForeground && DService.Instance().TrayNotification is { } tray) 
+            tray.ShowBalloonTip(title ?? message, message, ToolTipIcon.Warning);
     }
 
     public static void NotificationError(string message, string? title = null)
     {
-        DService.Instance().Notify.AddNotification(new()
+        DService.Instance().DalamudNotification.AddNotification(new()
         {
             Title                              = title ?? message,
             Content                            = message,
             Type                               = NotificationType.Error,
             Minimized                          = false,
-            IconTexture                        = NotificationIcon,
+            IconTexture                        = DService.Instance().DalamudNotificationIcon,
             InitialDuration                    = TimeSpan.FromSeconds(3),
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (!GameState.IsForeground) 
-            TrayNotify.ShowBalloonTip(title ?? message, message, ToolTipIcon.Error);
+        if (!GameState.IsForeground && DService.Instance().TrayNotification is { } tray) 
+            tray.ShowBalloonTip(title ?? message, message, ToolTipIcon.Error);
     }
 
     public static void NotificationInfo(string message, string? title = null)
     {
-        DService.Instance().Notify.AddNotification(new()
+        DService.Instance().DalamudNotification.AddNotification(new()
         {
             Title                              = title ?? message,
             Content                            = message,
             Type                               = NotificationType.Info,
             Minimized                          = false,
-            IconTexture                        = NotificationIcon,
+            IconTexture                        = DService.Instance().DalamudNotificationIcon,
             InitialDuration                    = TimeSpan.FromSeconds(3),
             ExtensionDurationSinceLastInterest = TimeSpan.FromSeconds(1),
         });
         
-        if (!GameState.IsForeground) 
-            TrayNotify.ShowBalloonTip(title ?? message, message);
+        if (!GameState.IsForeground && DService.Instance().TrayNotification is { } tray) 
+            tray.ShowBalloonTip(title ?? message, message);
     }
 
     public static void ChatError(string message, SeString? prefix = null)
@@ -171,10 +169,4 @@ public static partial class HelpersOm
 
     public static void Error(string message, Exception ex) 
         => DService.Instance().Log.Error(ex, message);
-
-    public static void LogWarning(this Exception ex, string? message = null)
-        => Warning(message ?? string.Empty, ex);
-    
-    public static void LogError(this Exception ex, string? message = null)
-        => Error(message ?? string.Empty, ex);
 }
