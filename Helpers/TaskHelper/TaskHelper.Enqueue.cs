@@ -253,16 +253,23 @@ public partial class TaskHelper
     public void DelayNext(int delayMS, string? uniqueName = null, int weight = 0)
     {
         if (delayMS <= 0) return;
-        
-        long startTick = 0;
-        Enqueue(() => 
-                {
-                    if (startTick == 0)
-                    {
-                        startTick = Stopwatch.GetTimestamp();
-                        return false;
-                    }
-                    return Stopwatch.GetElapsedTime(startTick).TotalMilliseconds >= delayMS;
-                }, $"{uniqueName} (延迟 {delayMS} 毫秒)", weight: weight);
+
+        EnqueueAsync
+        (
+            async ct => await Task.Run
+                        (() =>
+                            {
+                                var startTick = Stopwatch.GetTimestamp();
+
+                                while (Stopwatch.GetElapsedTime(startTick).TotalMilliseconds < delayMS)
+                                {
+                                    // ignored
+                                }
+                            },
+                            ct
+                        ),
+            $"{uniqueName} (延迟 {delayMS} 毫秒)",
+            weight: weight
+        );
     }
 }

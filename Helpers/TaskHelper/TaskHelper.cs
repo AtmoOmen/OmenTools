@@ -118,6 +118,18 @@ public partial class TaskHelper : IDisposable
 
     private void Tick(IFramework framework)
     {
+        SyncPendingTasks();
+
+        if (CurrentTask == null)
+            ProcessNextTask();
+        else
+            ExecuteCurrentTask(framework);
+
+        TryUnregisterTick();
+    }
+
+    private void SyncPendingTasks()
+    {
         while (TaskChannel.Reader.TryRead(out var item))
         {
             Interlocked.Decrement(ref pendingTaskCount);
@@ -132,13 +144,6 @@ public partial class TaskHelper : IDisposable
             queue.Tasks.Add(item.Task);
             Interlocked.Increment(ref queueTaskCount);
         }
-
-        if (CurrentTask == null)
-            ProcessNextTask();
-        else
-            ExecuteCurrentTask(framework);
-
-        TryUnregisterTick();
     }
 
     private void ProcessNextTask()
@@ -319,6 +324,7 @@ public partial class TaskHelper : IDisposable
 
     public void Abort()
     {
+        SyncPendingTasks();
         foreach (var queue in Queues)
             queue.Tasks.Clear();
 
@@ -341,6 +347,7 @@ public partial class TaskHelper : IDisposable
 
     public bool RemoveQueue(int weight)
     {
+        SyncPendingTasks();
         LogWarning($"移除了权重 {weight} 队列");
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
         if (queue == null) return false;
@@ -351,6 +358,7 @@ public partial class TaskHelper : IDisposable
 
     public void RemoveQueueTasks(int weight)
     {
+        SyncPendingTasks();
         LogWarning($"清除了权重 {weight} 队列中的所有任务");
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
         if (queue != null)
@@ -362,6 +370,7 @@ public partial class TaskHelper : IDisposable
 
     public bool RemoveQueueFirstTask(int weight)
     {
+        SyncPendingTasks();
         LogWarning($"移除了权重 {weight} 队列中的第一个任务");
         if ((Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks ?? []).TryDequeue(out _))
         {
@@ -374,6 +383,7 @@ public partial class TaskHelper : IDisposable
 
     public bool RemoveQueueLastTask(int weight)
     {
+        SyncPendingTasks();
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
         if (!((queue?.Tasks ?? []).Count > 0)) return false;
 
@@ -385,6 +395,7 @@ public partial class TaskHelper : IDisposable
 
     public bool RemoveQueueFirstNTasks(int weight, int count)
     {
+        SyncPendingTasks();
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
 
         if ((queue?.Tasks ?? []).Count > 0)
@@ -400,8 +411,11 @@ public partial class TaskHelper : IDisposable
         return false;
     }
 
-    public int GetQueueTaskCount(int weight) =>
-        Queues.Count(x => x.Weight == weight);
+    public int GetQueueTaskCount(int weight)
+    {
+        SyncPendingTasks();
+        return Queues.FirstOrDefault(x => x.Weight == weight)?.Tasks.Count ?? 0;
+    }
 
     #endregion
 }
