@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.Extensions;
 
-public static class LogExtensions
+public static class LogExtension
 {
     extension(Exception ex)
     {

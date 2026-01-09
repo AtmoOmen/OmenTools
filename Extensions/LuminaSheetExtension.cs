@@ -8,36 +8,11 @@ using Lumina.Excel.Sheets;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class LuminaSheetExtensions
+public static unsafe class LuminaSheetExtension
 {
-    #region RowRef<T>
-
-    private static RowRef<T> ToLuminaRowRefInternal<T>(uint id) where T : struct, IExcelRow<T> => 
-        new(DService.Instance().Data.Excel, id);
-
-    extension(uint id)
-    {
-        public RowRef<T> ToLuminaRowRef<T>() where T : struct, IExcelRow<T> => 
-            ToLuminaRowRefInternal<T>(id);
-    }
-
-    extension(ushort id)
-    {
-        public RowRef<T> ToLuminaRowRef<T>() where T : struct, IExcelRow<T> => 
-            ToLuminaRowRefInternal<T>(id);
-    }
-
-    extension(byte id)
-    {
-        public RowRef<T> ToLuminaRowRef<T>() where T : struct, IExcelRow<T> => 
-            ToLuminaRowRefInternal<T>(id);
-    }
-
-        #endregion
-    
     extension(scoped in Map map)
     {
-        public string GetTexturePath() 
+        public string GetTexturePath()
         {
             var mapKey = map.Id.ToString();
             var rawKey = mapKey.Replace("/", "");
@@ -72,7 +47,7 @@ public static unsafe class LuminaSheetExtensions
 
             var mapRow         = aetheryte.Territory.Value.Map.Value;
             var aetheryteRowID = aetheryte.RowId;
-            
+
             var result = LuminaGetter.GetSub<MapMarker>()
                                      .SelectMany(x => x)
                                      .Where(x => x.DataType == 3 && x.RowId == mapRow.MapMarkerRange && x.DataKey.RowId == aetheryteRowID)
@@ -94,7 +69,7 @@ public static unsafe class LuminaSheetExtensions
             return symbol.PlaceName.ValueNullable?.Name.ToString() ?? string.Empty;
         }
 
-        public string GetMarkerLabel() => 
+        public string GetMarkerLabel() =>
             marker.PlaceNameSubtext.ValueNullable?.Name.ToString() ?? string.Empty;
 
         public Vector2 GetPosition() => new(marker.X, marker.Y);
@@ -118,25 +93,25 @@ public static unsafe class LuminaSheetExtensions
 
     extension(scoped in TerritoryType row)
     {
-        public string ExtractPlaceName() => 
+        public string ExtractPlaceName() =>
             row.PlaceName.ValueNullable?.Name.ToString() ?? string.Empty;
     }
 
     extension(scoped in Level level)
     {
-        public Vector3 GetPosition() => 
+        public Vector3 GetPosition() =>
             new(level.X, level.Y, level.Z);
     }
-    
+
     extension(scoped in ClassJobCategory category)
     {
-        public bool IsClassJobIn(uint classJobID) => 
+        public bool IsClassJobIn(uint classJobID) =>
             ClassJobCategory.IsClassJobInCategory(classJobID, category.RowId);
-        
+
         public static bool IsClassJobInCategory(uint classJobID, uint classJobCategoryID)
         {
             if (classJobCategoryID == 0) return false;
-        
+
             var row = Framework.Instance()->ExcelModuleInterface->ExdModule->GetRowBySheetIndexAndRowIndex(60, classJobCategoryID);
             if (row == null) return false;
 
@@ -147,11 +122,36 @@ public static unsafe class LuminaSheetExtensions
     extension(scoped in UIColor color)
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4 ToVector4() => 
+        public Vector4 ToVector4() =>
             AtkStage.Instance()->AtkUIColorHolder->GetColor(true, color.RowId).ToVector4();
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint ToUInt() => 
+        public uint ToUInt() =>
             AtkStage.Instance()->AtkUIColorHolder->GetColor(true, color.RowId);
     }
+
+    #region RowRef<T>
+
+    private static RowRef<T> ToLuminaRowRefInternal<T>(uint id) where T : struct, IExcelRow<T> =>
+        new(DService.Instance().Data.Excel, id);
+
+    extension(uint id)
+    {
+        public RowRef<T> ToLuminaRowRef<T>() where T : struct, IExcelRow<T> =>
+            ToLuminaRowRefInternal<T>(id);
+    }
+
+    extension(ushort id)
+    {
+        public RowRef<T> ToLuminaRowRef<T>() where T : struct, IExcelRow<T> =>
+            ToLuminaRowRefInternal<T>(id);
+    }
+
+    extension(byte id)
+    {
+        public RowRef<T> ToLuminaRowRef<T>() where T : struct, IExcelRow<T> =>
+            ToLuminaRowRefInternal<T>(id);
+    }
+
+    #endregion
 }

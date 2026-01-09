@@ -2,7 +2,7 @@
 
 namespace OmenTools.Extensions;
 
-public static unsafe class AtkUldManagerExtensions
+public static unsafe class AtkUldManagerExtension
 {
     extension(scoped ref AtkUldManager manager)
     {
@@ -10,13 +10,14 @@ public static unsafe class AtkUldManagerExtensions
         {
             if ((int)type > 1000)
                 throw new ArgumentOutOfRangeException(nameof(type), "不支持非 SimpleNode 类型");
-            
+
             fixed (AtkUldManager* managerPtr = &manager)
             {
                 if (managerPtr == null)
                     return [];
-                
+
                 var result = new List<nint>();
+
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
@@ -33,12 +34,12 @@ public static unsafe class AtkUldManagerExtensions
         {
             if ((int)type > 1000)
                 throw new ArgumentOutOfRangeException(nameof(type), "不支持非 SimpleNode 类型");
-            
+
             fixed (AtkUldManager* managerPtr = &manager)
             {
                 if (managerPtr == null)
                     return null;
-                
+
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
@@ -55,12 +56,12 @@ public static unsafe class AtkUldManagerExtensions
         {
             if ((int)type > 1000)
                 throw new ArgumentOutOfRangeException(nameof(type), "不支持非 SimpleNode 类型");
-            
+
             fixed (AtkUldManager* managerPtr = &manager)
             {
                 if (managerPtr == null)
                     return null;
-                
+
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
@@ -79,8 +80,9 @@ public static unsafe class AtkUldManagerExtensions
             {
                 if (managerPtr == null)
                     return null;
-                
+
                 var result = new List<nint>();
+
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
@@ -104,7 +106,7 @@ public static unsafe class AtkUldManagerExtensions
             {
                 if (managerPtr == null)
                     return null;
-                
+
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
@@ -128,7 +130,7 @@ public static unsafe class AtkUldManagerExtensions
             {
                 if (managerPtr == null)
                     return null;
-                
+
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
@@ -145,15 +147,16 @@ public static unsafe class AtkUldManagerExtensions
                 return null;
             }
         }
-        
+
         public List<nint> SearchComponentNodesByType(ComponentType type)
         {
             fixed (AtkUldManager* managerPtr = &manager)
             {
                 if (managerPtr == null)
                     return null;
-                
+
                 var result = new List<nint>();
+
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
@@ -177,7 +180,7 @@ public static unsafe class AtkUldManagerExtensions
             {
                 if (managerPtr == null)
                     return null;
-                
+
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
@@ -201,7 +204,7 @@ public static unsafe class AtkUldManagerExtensions
             {
                 if (managerPtr == null)
                     return null;
-                
+
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
@@ -218,14 +221,16 @@ public static unsafe class AtkUldManagerExtensions
                 return null;
             }
         }
-        
+
         public bool IsUldManagerReady()
         {
             fixed (AtkUldManager* managerPtr = &manager)
+            {
                 return managerPtr                  != null &&
                        manager.RootNode            != null &&
                        manager.RootNode->ChildNode != null &&
                        manager.NodeList            != null;
+            }
         }
     }
 }

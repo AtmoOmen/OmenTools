@@ -2,20 +2,20 @@
 
 namespace OmenTools.Extensions;
 
-public static unsafe class UIModuleExtensions
+public static unsafe class UIModuleExtension
 {
     extension(scoped ref UIModule module)
     {
         public static bool IsScreenReady()
         {
-            if (NowLoading->IsAddonAndNodesReady()) 
+            if (NowLoading->IsAddonAndNodesReady())
                 return false;
-            if (FadeMiddle->IsAddonAndNodesReady()) 
+            if (FadeMiddle->IsAddonAndNodesReady())
                 return false;
             if (FadeBack->IsAddonAndNodesReady())
                 return false;
 
             return true;
         }
-    } 
+    }
 }

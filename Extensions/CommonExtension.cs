@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace OmenTools.Extensions;
 
-public static class CommonExtensions
+public static class CommonExtension
 {
     extension<T>(T config) where T : class
     {
@@ -23,11 +23,11 @@ public static class CommonExtensions
 
             return JsonConvert.DeserializeObject<T>(textData, JsonSettings);
         }
-        
+
         public T? FromJsonBase64<T>() where T : class
         {
             if (string.IsNullOrEmpty(textData)) return null;
-            
+
             return Encoding.UTF8.GetString(Convert.FromBase64String(textData)).FromJson<T>();
         }
     }
@@ -38,13 +38,13 @@ public static class CommonExtensions
         {
             var len   = needle.Length;
             var limit = haystack.Length - len;
+
             for (var i = 0; i <= limit; i++)
             {
                 var k = 0;
                 for (; k < len; k++)
-                {
-                    if (needle[k] != haystack[i + k]) break;
-                }
+                    if (needle[k] != haystack[i + k])
+                        break;
 
                 if (k == len)
                 {
@@ -57,7 +57,7 @@ public static class CommonExtensions
             return false;
         }
 
-        public bool TryFindBytes(string needle, out int pos) => 
+        public bool TryFindBytes(string needle, out int pos) =>
             haystack.TryFindBytes(needle.Split(" ").Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray(), out pos);
     }
 }

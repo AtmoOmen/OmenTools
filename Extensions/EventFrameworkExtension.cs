@@ -6,18 +6,18 @@ using LuminaAetheryte = Lumina.Excel.Sheets.Aetheryte;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class EventFrameworkExtensions
+public static unsafe class EventFrameworkExtension
 {
     extension(scoped ref EventFramework framework)
     {
         public bool TryGetAetheryteNearby(out uint eventID)
         {
             eventID = 0;
-            
+
             fixed (EventFramework* frameworkPtr = &framework)
             {
                 if (frameworkPtr == null) return false;
-                
+
                 foreach (var eve in frameworkPtr->EventHandlerModule.EventHandlerMap)
                 {
                     if (eve.Item2.Value->Info.EventId.ContentId != EventHandlerContent.Aetheryte) continue;
@@ -25,7 +25,7 @@ public static unsafe class EventFrameworkExtensions
                     foreach (var obj in eve.Item2.Value->EventObjects)
                     {
                         if (obj == null || obj.Value == null) continue;
-                        
+
                         if (obj.Value->NameString == LuminaGetter.GetRowOrDefault<LuminaAetheryte>(0).Singular.ToString())
                         {
                             eventID = eve.Item2.Value->Info.EventId;
@@ -37,13 +37,13 @@ public static unsafe class EventFrameworkExtensions
                 return false;
             }
         }
-        
+
         public bool IsEventIDNearby(EventId eventID)
         {
             fixed (EventFramework* frameworkPtr = &framework)
             {
                 if (frameworkPtr == null) return false;
-                
+
                 foreach (var eve in frameworkPtr->EventHandlerModule.EventHandlerMap)
                 {
                     if (eve.Item2.Value->Info.EventId == eventID && eve.Item2.Value->EventObjects.Count != 0)
@@ -54,22 +54,26 @@ public static unsafe class EventFrameworkExtensions
             }
         }
 
-        public bool TryGetNearestEventID(
+        public bool TryGetNearestEventID
+        (
             Predicate<EventHandlerInfo> conditionInfo,
             Predicate<GameObject>       conditionObj,
             Vector3                     source,
-            out EventId                 eventID)
+            out EventId                 eventID
+        )
         {
             fixed (EventFramework* frameworkPtr = &framework)
             {
                 eventID = 0;
-                
+
                 if (frameworkPtr == null) return false;
 
                 List<(Vector3 Position, uint EventId)> candidates = [];
+
                 foreach (var eve in frameworkPtr->EventHandlerModule.EventHandlerMap)
                 {
                     var value = eve.Item2.Value;
+
                     if (value->EventObjects.Count != 0 && conditionInfo(value->Info))
                     {
                         foreach (var obj in value->EventObjects)
@@ -88,24 +92,28 @@ public static unsafe class EventFrameworkExtensions
             }
         }
 
-        public bool TryGetNearestEvent(
+        public bool TryGetNearestEvent
+        (
             Predicate<EventHandlerInfo> conditionInfo,
             Predicate<GameObject>       conditionObj,
             Vector3                     source,
             out EventId                 eventID,
-            out GameObjectId            eventObjectID)
+            out GameObjectId            eventObjectID
+        )
         {
             fixed (EventFramework* frameworkPtr = &framework)
             {
                 eventID       = 0;
                 eventObjectID = 0;
-                
+
                 if (frameworkPtr == null) return false;
 
                 List<(Vector3 Position, uint EventId, ulong ObjectID)> candidates = [];
+
                 foreach (var eve in frameworkPtr->EventHandlerModule.EventHandlerMap)
                 {
                     var value = eve.Item2.Value;
+
                     if (value->EventObjects.Count != 0 && conditionInfo(value->Info))
                     {
                         foreach (var obj in value->EventObjects)
@@ -126,14 +134,16 @@ public static unsafe class EventFrameworkExtensions
             }
         }
 
-        public bool TryGetNearestEvent(
+        public bool TryGetNearestEvent
+        (
             Predicate<EventHandlerInfo> conditionInfo,
             Predicate<GameObject>       conditionObj,
             Vector3                     source,
             out EventId                 eventID,
             out GameObjectId            eventObjectID,
             out Vector3                 position,
-            out float                   distance3D)
+            out float                   distance3D
+        )
         {
             fixed (EventFramework* frameworkPtr = &framework)
             {
@@ -141,13 +151,15 @@ public static unsafe class EventFrameworkExtensions
                 eventObjectID = 0;
                 distance3D    = 0;
                 position      = default;
-                
+
                 if (frameworkPtr == null) return false;
 
                 List<(Vector3 Position, uint EventId, ulong ObjectID, float Distance3D)> candidates = [];
+
                 foreach (var eve in frameworkPtr->EventHandlerModule.EventHandlerMap)
                 {
                     var value = eve.Item2.Value;
+
                     if (value->EventObjects.Count != 0 && conditionInfo(value->Info))
                     {
                         foreach (var obj in value->EventObjects)
@@ -170,22 +182,26 @@ public static unsafe class EventFrameworkExtensions
             }
         }
 
-        public bool TryGetEvents(
+        public bool TryGetEvents
+        (
             Predicate<EventHandlerInfo>                                               conditionInfo,
             Predicate<GameObject>                                                     conditionObj,
             Vector3                                                                   source,
-            out List<(EventId EventID, GameObjectId EventObjectID, Vector3 Position)> result)
+            out List<(EventId EventID, GameObjectId EventObjectID, Vector3 Position)> result
+        )
         {
             fixed (EventFramework* frameworkPtr = &framework)
             {
                 result = [];
-                
+
                 if (frameworkPtr == null) return false;
 
                 List<(Vector3 Position, EventId EventId, GameObjectId ObjectID)> candidates = [];
+
                 foreach (var eve in frameworkPtr->EventHandlerModule.EventHandlerMap)
                 {
                     var value = eve.Item2.Value;
+
                     if (value->EventObjects.Count != 0 && conditionInfo(value->Info))
                     {
                         foreach (var obj in value->EventObjects)

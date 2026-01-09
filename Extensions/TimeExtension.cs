@@ -4,7 +4,7 @@ using Timer = System.Timers.Timer;
 
 namespace OmenTools.Extensions;
 
-public static class TimeExtensions
+public static class TimeExtension
 {
     extension(Timer timer)
     {
@@ -21,8 +21,8 @@ public static class TimeExtensions
         public DateTime ToUTCDateTimeFromUnixSeconds()
         {
             var seconds = long.CreateTruncating(unixTimestamp);
-            var ticks   = (seconds * 10000000L) + 621355968000000000L;
-        
+            var ticks   = seconds * 10000000L + 621355968000000000L;
+
             return new DateTime(ticks, DateTimeKind.Utc);
         }
     }

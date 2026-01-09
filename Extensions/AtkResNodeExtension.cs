@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class AtkResNodeExtensions
+public static unsafe class AtkResNodeExtension
 {
     extension(scoped ref AtkResNode node)
     {
@@ -14,19 +14,22 @@ public static unsafe class AtkResNodeExtensions
             fixed (AtkResNode* nodePtr = &node)
             {
                 if (nodePtr == null) return;
-                
+
                 var position = nodePtr->GetPosition();
                 var size     = nodePtr->GetSize();
 
                 var nodeVisible = nodePtr->GetVisibility();
                 position += ImGui.GetMainViewport().Pos;
                 ImGui.GetForegroundDrawList(ImGuiHelpers.MainViewport)
-                     .AddRect(position, 
-                              position + size, 
-                              nodeVisible ? KnownColor.Lime.ToUInt() : KnownColor.CadetBlue.ToUInt());
+                     .AddRect
+                     (
+                         position,
+                         position + size,
+                         nodeVisible ? KnownColor.Lime.ToUInt() : KnownColor.CadetBlue.ToUInt()
+                     );
             }
         }
-        
+
         public Vector2 GetPosition()
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -36,6 +39,7 @@ public static unsafe class AtkResNodeExtensions
                 var pos = new Vector2(nodePtr->X, nodePtr->Y);
                 pos -= new Vector2(nodePtr->OriginX * (nodePtr->ScaleX - 1), nodePtr->OriginY * (nodePtr->ScaleY - 1));
                 var par = nodePtr->ParentNode;
+
                 while (par != null)
                 {
                     pos *= new Vector2(par->ScaleX,                      par->ScaleY);
@@ -56,6 +60,7 @@ public static unsafe class AtkResNodeExtensions
                 var nodeToCheck = nodePtr;
 
                 var scale = new Vector2(nodeToCheck->ScaleX, nodeToCheck->ScaleY);
+
                 while (nodeToCheck->ParentNode != null)
                 {
                     nodeToCheck =  nodeToCheck->ParentNode;
@@ -71,7 +76,7 @@ public static unsafe class AtkResNodeExtensions
             fixed (AtkResNode* nodePtr = &node)
             {
                 if (nodePtr == null) return Vector2.One;
-                
+
                 return new Vector2(nodePtr->Width, nodePtr->Height) * nodePtr->GetScale();
             }
         }
@@ -83,13 +88,14 @@ public static unsafe class AtkResNodeExtensions
                 if (nodePtr == null) return false;
 
                 var nodeToCheck = nodePtr;
+
                 while (nodeToCheck != null)
                 {
                     if (!nodeToCheck->IsVisible()) return false;
                     nodeToCheck = nodeToCheck->ParentNode;
                 }
             }
-            
+
             return true;
         }
 
@@ -102,10 +108,10 @@ public static unsafe class AtkResNodeExtensions
             {
                 TopLeft = position,
                 Visible = node.GetVisibility(),
-                Size    = size,
+                Size    = size
             };
         }
-        
+
         public bool SetSize(scoped in Vector2 size)
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -113,16 +119,17 @@ public static unsafe class AtkResNodeExtensions
                 if (nodePtr == null) return false;
 
                 var isAnyUpdate = false;
+
                 if (NumericRange.UShortRange.Contains((ushort)size.X))
                 {
                     nodePtr->Width = (ushort)size.X;
-                    isAnyUpdate = true;
+                    isAnyUpdate    = true;
                 }
 
                 if (NumericRange.UShortRange.Contains((ushort)size.Y))
                 {
                     nodePtr->Height = (ushort)size.Y;
-                    isAnyUpdate = true;
+                    isAnyUpdate     = true;
                 }
 
                 if (isAnyUpdate)
@@ -131,7 +138,7 @@ public static unsafe class AtkResNodeExtensions
                 return isAnyUpdate;
             }
         }
-        
+
         public bool SetSize(scoped in float value)
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -139,6 +146,7 @@ public static unsafe class AtkResNodeExtensions
                 if (nodePtr == null) return false;
 
                 var isAnyUpdate = false;
+
                 if (NumericRange.UShortRange.Contains((ushort)value))
                 {
                     nodePtr->Width = (ushort)value;
@@ -157,7 +165,7 @@ public static unsafe class AtkResNodeExtensions
                 return isAnyUpdate;
             }
         }
-        
+
         public bool SetSize(scoped in float width, scoped in float height)
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -165,6 +173,7 @@ public static unsafe class AtkResNodeExtensions
                 if (nodePtr == null) return false;
 
                 var isAnyUpdate = false;
+
                 if (NumericRange.UShortRange.Contains((ushort)width))
                 {
                     nodePtr->Width = (ushort)width;
@@ -183,7 +192,7 @@ public static unsafe class AtkResNodeExtensions
                 return isAnyUpdate;
             }
         }
-        
+
         public bool SetWidth(scoped in float value)
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -191,6 +200,7 @@ public static unsafe class AtkResNodeExtensions
                 if (nodePtr == null) return false;
 
                 var isAnyUpdate = false;
+
                 if (NumericRange.UShortRange.Contains((ushort)value))
                 {
                     nodePtr->Width = (ushort)value;
@@ -203,7 +213,7 @@ public static unsafe class AtkResNodeExtensions
                 return isAnyUpdate;
             }
         }
-        
+
         public bool SetHeight(scoped in float value)
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -211,6 +221,7 @@ public static unsafe class AtkResNodeExtensions
                 if (nodePtr == null) return false;
 
                 var isAnyUpdate = false;
+
                 if (NumericRange.UShortRange.Contains((ushort)value))
                 {
                     nodePtr->Height = (ushort)value;
@@ -236,7 +247,7 @@ public static unsafe class AtkResNodeExtensions
                 nodePtr->DrawFlags |= 0x1;
             }
         }
-        
+
         public void SetPosition(scoped in float value)
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -249,7 +260,7 @@ public static unsafe class AtkResNodeExtensions
                 nodePtr->DrawFlags |= 0x1;
             }
         }
-        
+
         public void SetPosition(scoped in float x, scoped in float y)
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -262,7 +273,7 @@ public static unsafe class AtkResNodeExtensions
                 nodePtr->DrawFlags |= 0x1;
             }
         }
-        
+
         public void SetPositionX(scoped in float value)
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -274,7 +285,7 @@ public static unsafe class AtkResNodeExtensions
                 nodePtr->DrawFlags |= 0x1;
             }
         }
-        
+
         public void SetPositionY(scoped in float value)
         {
             fixed (AtkResNode* nodePtr = &node)
@@ -292,7 +303,7 @@ public static unsafe class AtkResNodeExtensions
             fixed (AtkResNode* nodePtr = &node)
             {
                 if (nodePtr == null) return null;
-                
+
                 return RaptureAtkUnitManager.Instance()->GetAddonByNode(nodePtr);
             }
         }

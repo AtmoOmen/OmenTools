@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class ColorExtensions
+public static unsafe class ColorExtension
 {
     private static readonly Dictionary<ImGuiCol, Vector4>   ImGuiColToVector4   = [];
     private static readonly Dictionary<ImGuiCol, uint>      ImGuiColToUInt      = [];
@@ -38,26 +38,26 @@ public static unsafe class ColorExtensions
     extension(uint color)
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4 ToVector4() => 
+        public Vector4 ToVector4() =>
             UIntToVector4.GetOrAdd(color, _ => ImGui.ColorConvertU32ToFloat4(color));
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4 GetVector4UIColor() => 
+        public Vector4 GetVector4UIColor() =>
             AtkStage.Instance()->AtkUIColorHolder->GetColor(true, color).ToVector4();
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint GetUIntUIColor() => 
+        public uint GetUIntUIColor() =>
             AtkStage.Instance()->AtkUIColorHolder->GetColor(true, color);
     }
-    
+
     extension(scoped in Vector4 color)
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3 ToVector3() => 
+        public Vector3 ToVector3() =>
             new(color.X, color.Y, color.Z);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4 Invert() => 
+        public Vector4 Invert() =>
             color with { X = 1f - color.X, Y = 1f - color.Y, Z = 1f - color.Z };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -72,7 +72,7 @@ public static unsafe class ColorExtensions
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint ToUInt() => 
+        public uint ToUInt() =>
             ImGui.ColorConvertFloat4ToU32(color);
     }
 

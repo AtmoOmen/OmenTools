@@ -3,7 +3,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class AgentExtensions
+public static unsafe class AgentExtension
 {
     extension(AgentId agentID)
     {

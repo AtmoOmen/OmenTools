@@ -8,7 +8,7 @@ using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Extensions;
 
-public static class NumericExtensions
+public static class NumericExtension
 {
     private static readonly HashSet<Language> ValidFormatLanguages =
     [
@@ -17,18 +17,21 @@ public static class NumericExtensions
         Language.Japanese,
         Language.TraditionalChinese
     ];
-    
+
     extension<T>(T number) where T : IBinaryInteger<T>
     {
-        public ReadOnlySeString ToChineseSeString(
+        public ReadOnlySeString ToChineseSeString
+        (
             ushort? minusColor = null,
-            ushort? unitColor  = null)
+            ushort? unitColor  = null
+        )
         {
             if (!ValidFormatLanguages.Contains(GameState.ClientLanguge) || T.IsZero(number))
                 return new ReadOnlySeString(number.ToString());
 
             const string strZhao = "兆";
             string       strYi   = "亿", strWan = "万", strZero = "零";
+
             switch (GameState.ClientLanguge)
             {
                 case Language.Japanese:
@@ -59,7 +62,7 @@ public static class NumericExtensions
             var ge   = remY          % valWan;
 
             var builder = new SeStringBuilder();
-            
+
             if (isNegative)
             {
                 if (minusColor != null)
@@ -75,15 +78,15 @@ public static class NumericExtensions
             if (zhao > 0)
             {
                 builder.AddText(zhao.ToString());
-                
+
                 if (unitColor != null)
                     builder.AddUiForeground(strZhao, unitColor.Value);
                 else
                     builder.AddText(strZhao);
-                
+
                 hasPrinted = true;
             }
-            
+
             if (yi > 0)
             {
                 if (pendingZero || hasPrinted && yi < valQian)
@@ -101,14 +104,14 @@ public static class NumericExtensions
             }
             else if (hasPrinted)
                 pendingZero = true;
-            
+
             if (wan > 0)
             {
                 if (pendingZero || hasPrinted && wan < valQian)
                     builder.AddText(strZero);
 
                 builder.AddText(wan.ToString());
-                
+
                 if (unitColor != null)
                     builder.AddUiForeground(strWan, unitColor.Value);
                 else
@@ -119,7 +122,7 @@ public static class NumericExtensions
             }
             else if (hasPrinted)
                 pendingZero = true;
-            
+
             if (ge > 0)
             {
                 if (pendingZero || hasPrinted && ge < valQian)
@@ -130,14 +133,14 @@ public static class NumericExtensions
 
             return builder.Build().Encode();
         }
-        
+
         public string ToChineseString()
         {
             if (T.IsZero(number))
                 return "0";
 
             const char cZhao = '兆';
-            char cYi = '亿', cWan = '万', cZero = '零';
+            char       cYi   = '亿', cWan = '万', cZero = '零';
 
             switch (GameState.ClientLanguge)
             {
@@ -170,7 +173,7 @@ public static class NumericExtensions
             var ge   = remY          % valWan;
 
             var builder = new StringBuilder(64);
-            
+
             if (isNegative)
                 builder.Append('-');
 
@@ -183,10 +186,10 @@ public static class NumericExtensions
                 builder.Append(cZhao);
                 hasPrinted = true;
             }
-            
+
             if (yi > 0)
             {
-                if (pendingZero || (hasPrinted && yi < valQian))
+                if (pendingZero || hasPrinted && yi < valQian)
                     builder.Append(cZero);
 
                 builder.Append(yi);
@@ -197,10 +200,10 @@ public static class NumericExtensions
             }
             else if (hasPrinted)
                 pendingZero = true;
-            
+
             if (wan > 0)
             {
-                if (pendingZero || (hasPrinted && wan < valQian))
+                if (pendingZero || hasPrinted && wan < valQian)
                     builder.Append(cZero);
 
                 builder.Append(wan);
@@ -211,10 +214,10 @@ public static class NumericExtensions
             }
             else if (hasPrinted)
                 pendingZero = true;
-            
+
             if (ge > 0)
             {
-                if (pendingZero || (hasPrinted && ge < valQian))
+                if (pendingZero || hasPrinted && ge < valQian)
                     builder.Append(cZero);
 
                 builder.Append(ge);
@@ -247,44 +250,51 @@ public static class NumericExtensions
             var separatorCount = integerLength > 0 ? (integerLength - 1) / groupSize : 0;
             var finalLength    = charsWritten + separatorCount;
 
-            return string.Create(finalLength, (number, charsWritten, isNegative, integerEndIndex), (span, state) =>
-            {
-                Span<char> innerBuffer = stackalloc char[128];
-
-                state.number.TryFormat(innerBuffer, out var innerWritten, null, CultureInfo.InvariantCulture);
-                ReadOnlySpan<char> src = innerBuffer[..innerWritten];
-
-                var sourceIndex = src.Length  - 1;
-                var destIndex   = span.Length - 1;
-                var intEnd      = state.integerEndIndex;
-                var negMarker   = state.isNegative;
-
-                if (intEnd < src.Length)
+            return string.Create
+            (
+                finalLength,
+                (number, charsWritten, isNegative, integerEndIndex),
+                (span, state) =>
                 {
-                    var decimalLength = src.Length - intEnd;
-                    src.Slice(intEnd, decimalLength).CopyTo(span[(destIndex - decimalLength + 1)..]);
-                    destIndex   -= decimalLength;
-                    sourceIndex -= decimalLength;
-                }
+                    Span<char> innerBuffer = stackalloc char[128];
 
-                var digitCounter = 0;
-                while (sourceIndex >= negMarker)
-                {
-                    span[destIndex--] = src[sourceIndex--];
-                    digitCounter++;
-                    if (digitCounter == 4 && sourceIndex >= negMarker)
+                    state.number.TryFormat(innerBuffer, out var innerWritten, null, CultureInfo.InvariantCulture);
+                    ReadOnlySpan<char> src = innerBuffer[..innerWritten];
+
+                    var sourceIndex = src.Length  - 1;
+                    var destIndex   = span.Length - 1;
+                    var intEnd      = state.integerEndIndex;
+                    var negMarker   = state.isNegative;
+
+                    if (intEnd < src.Length)
                     {
-                        span[destIndex--] = ',';
-                        digitCounter      = 0;
+                        var decimalLength = src.Length - intEnd;
+                        src.Slice(intEnd, decimalLength).CopyTo(span[(destIndex - decimalLength + 1)..]);
+                        destIndex   -= decimalLength;
+                        sourceIndex -= decimalLength;
                     }
-                }
 
-                if (negMarker > 0)
-                    span[destIndex] = '-';
-            });
+                    var digitCounter = 0;
+
+                    while (sourceIndex >= negMarker)
+                    {
+                        span[destIndex--] = src[sourceIndex--];
+                        digitCounter++;
+
+                        if (digitCounter == 4 && sourceIndex >= negMarker)
+                        {
+                            span[destIndex--] = ',';
+                            digitCounter      = 0;
+                        }
+                    }
+
+                    if (negMarker > 0)
+                        span[destIndex] = '-';
+                }
+            );
         }
     }
-    
+
     extension(string str)
     {
         public T FromChineseString<T>() where T : IBinaryInteger<T>
@@ -297,15 +307,17 @@ public static class NumericExtensions
                 return T.Zero;
 
             var isNegative = false;
+
             if (span[0] == '-')
             {
                 isNegative = true;
-                span = span[1..];
+                span       = span[1..];
             }
 
             Int128 result = 0;
 
             var idx = span.IndexOf('兆');
+
             if (idx >= 0)
             {
                 result += ParseSegment(span[..idx]) * 1_0000_0000_0000;
@@ -313,6 +325,7 @@ public static class NumericExtensions
             }
 
             idx = span.IndexOfAny('亿', '億');
+
             if (idx >= 0)
             {
                 result += ParseSegment(span[..idx]) * 1_0000_0000;
@@ -320,6 +333,7 @@ public static class NumericExtensions
             }
 
             idx = span.IndexOfAny('万', '萬');
+
             if (idx >= 0)
             {
                 result += ParseSegment(span[..idx]) * 1_0000;

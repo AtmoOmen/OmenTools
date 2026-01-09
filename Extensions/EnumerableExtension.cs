@@ -5,26 +5,109 @@ namespace OmenTools.Extensions;
 
 public static class EnumerableExtension
 {
+    #region Queue
+
+    public static T? DequeueOrDefault<T>(this Queue<T?> queue) => queue.Count > 0 ? queue.Dequeue() : default;
+
+    #endregion
+
+    #region HashSet
+
+    public static bool Toggle<T>(this HashSet<T> hashSet, T value)
+    {
+        if (!hashSet.Add(value))
+        {
+            hashSet.Remove(value);
+            return false;
+        }
+
+        return true;
+    }
+
+    #endregion
+
+    #region ICollection<T>
+
+    extension<T>(ICollection<T> collection)
+    {
+        public void AddRange(params T[] values)
+        {
+            foreach (var x in values)
+                collection.Add(x);
+        }
+
+        public void RemoveRange(params T[] values)
+        {
+            foreach (var x in values)
+                collection.Remove(x);
+        }
+
+        public void Add(params T[] values) =>
+            collection.AddRange(values);
+
+        public void Remove(params T[] values) =>
+            collection.RemoveRange(values);
+
+        public void AddRange(IEnumerable<T> items)
+        {
+            foreach (var item in items)
+                collection.Add(item);
+        }
+    }
+
+    #endregion
+
+    #region ConcurrentBag
+
+    extension<T>(ConcurrentBag<T> bag)
+    {
+        public void AddRange(IEnumerable<T> items)
+        {
+            if (bag == null)
+                throw new ArgumentNullException(nameof(bag));
+            if (items == null)
+                throw new ArgumentNullException(nameof(items));
+
+            foreach (var item in items)
+                bag.Add(item);
+        }
+
+        public void ForEach(Action<T> action)
+        {
+            if (bag == null)
+                throw new ArgumentNullException(nameof(bag));
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
+            foreach (var item in bag)
+                action(item);
+        }
+    }
+
+    #endregion
+
     #region IEnumerable<T>
 
     extension<T>(IEnumerable<T> source)
     {
         public ConcurrentBag<T> ToConcurrentBag()
         {
-            if (source == null) 
+            if (source == null)
                 throw new ArgumentNullException(nameof(source));
             return new ConcurrentBag<T>(source);
         }
 
-        public ConcurrentDictionary<TKey, TValue> ToConcurrentDictionary<TKey, TValue>(
+        public ConcurrentDictionary<TKey, TValue> ToConcurrentDictionary<TKey, TValue>
+        (
             Func<T, TKey>   keySelector,
-            Func<T, TValue> valueSelector) where TKey : notnull
+            Func<T, TValue> valueSelector
+        ) where TKey : notnull
         {
-            if (source        == null) 
+            if (source == null)
                 throw new ArgumentNullException(nameof(source));
-            if (keySelector   == null) 
+            if (keySelector == null)
                 throw new ArgumentNullException(nameof(keySelector));
-            if (valueSelector == null) 
+            if (valueSelector == null)
                 throw new ArgumentNullException(nameof(valueSelector));
 
             return new ConcurrentDictionary<TKey, TValue>(source.ToDictionary(keySelector, valueSelector));
@@ -35,9 +118,9 @@ public static class EnumerableExtension
 
         public void ForEach(Action<T> action)
         {
-            if (source == null) 
+            if (source == null)
                 throw new ArgumentNullException(nameof(source));
-            if (action == null) 
+            if (action == null)
                 throw new ArgumentNullException(nameof(action));
 
             foreach (var item in source)
@@ -47,6 +130,7 @@ public static class EnumerableExtension
         public T FirstOr0(Func<T, bool> predicate)
         {
             var enumerable = source as T[] ?? source.ToArray();
+
             foreach (var x in enumerable)
             {
                 if (predicate(x))
@@ -80,6 +164,7 @@ public static class EnumerableExtension
         public int IndexOf(Predicate<T> predicate)
         {
             var ret = -1;
+
             foreach (var v in source)
             {
                 ret++;
@@ -112,6 +197,7 @@ public static class EnumerableExtension
             default:
             {
                 using IEnumerator<TSource?> e = source.GetEnumerator();
+
                 if (e.MoveNext())
                 {
                     value = e.Current;
@@ -158,37 +244,6 @@ public static class EnumerableExtension
         {
             value = default;
             return false;
-        }
-    }
-
-    #endregion
-
-    #region ICollection<T>
-
-    extension<T>(ICollection<T> collection)
-    {
-        public void AddRange(params T[] values)
-        {
-            foreach (var x in values)
-                collection.Add(x);
-        }
-
-        public void RemoveRange(params T[] values)
-        {
-            foreach (var x in values)
-                collection.Remove(x);
-        }
-
-        public void Add(params T[] values) =>
-            collection.AddRange(values);
-
-        public void Remove(params T[] values) =>
-            collection.RemoveRange(values);
-
-        public void AddRange(IEnumerable<T> items)
-        {
-            foreach (var item in items)
-                collection.Add(item);
         }
     }
 
@@ -351,56 +406,6 @@ public static class EnumerableExtension
         var newValue = new TV();
         dictionary.Add(key, newValue);
         return newValue;
-    }
-
-    #endregion
-
-    #region ConcurrentBag
-
-    extension<T>(ConcurrentBag<T> bag)
-    {
-        public void AddRange(IEnumerable<T> items)
-        {
-            if (bag == null)
-                throw new ArgumentNullException(nameof(bag));
-            if (items == null)
-                throw new ArgumentNullException(nameof(items));
-
-            foreach (var item in items)
-                bag.Add(item);
-        }
-
-        public void ForEach(Action<T> action)
-        {
-            if (bag == null)
-                throw new ArgumentNullException(nameof(bag));
-            if (action == null)
-                throw new ArgumentNullException(nameof(action));
-
-            foreach (var item in bag)
-                action(item);
-        }
-    }
-
-    #endregion
-
-    #region Queue
-
-    public static T? DequeueOrDefault<T>(this Queue<T?> queue) => queue.Count > 0 ? queue.Dequeue() : default;
-
-    #endregion
-
-    #region HashSet
-
-    public static bool Toggle<T>(this HashSet<T> hashSet, T value)
-    {
-        if (!hashSet.Add(value))
-        {
-            hashSet.Remove(value);
-            return false;
-        }
-
-        return true;
     }
 
     #endregion

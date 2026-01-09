@@ -3,7 +3,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Extensions;
 
-public static class AtkEventDataExtensions
+public static class AtkEventDataExtension
 {
     extension(scoped in AtkEventData data)
     {

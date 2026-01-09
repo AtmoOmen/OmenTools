@@ -4,7 +4,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class AtkComponentExtensions
+public static unsafe class AtkComponentExtension
 {
     extension(scoped ref AtkComponentNode node)
     {
@@ -16,7 +16,7 @@ public static unsafe class AtkComponentExtensions
                 ((AtkResNode*)nodePtr)->OutlineNode();
             }
         }
-        
+
         public Vector2 GetPosition()
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -61,7 +61,7 @@ public static unsafe class AtkComponentExtensions
                 return ((AtkResNode*)nodePtr)->GetNodeState();
             }
         }
-        
+
         public bool SetSize(scoped in Vector2 size)
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -70,7 +70,7 @@ public static unsafe class AtkComponentExtensions
                 return ((AtkResNode*)nodePtr)->SetSize(size);
             }
         }
-        
+
         public bool SetSize(scoped in float value)
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -79,7 +79,7 @@ public static unsafe class AtkComponentExtensions
                 return ((AtkResNode*)nodePtr)->SetSize(value);
             }
         }
-        
+
         public bool SetSize(scoped in float width, scoped in float height)
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -88,7 +88,7 @@ public static unsafe class AtkComponentExtensions
                 return ((AtkResNode*)nodePtr)->SetSize(width, height);
             }
         }
-        
+
         public bool SetWidth(scoped in float value)
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -97,7 +97,7 @@ public static unsafe class AtkComponentExtensions
                 return ((AtkResNode*)nodePtr)->SetWidth(value);
             }
         }
-        
+
         public bool SetHeight(scoped in float value)
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -106,7 +106,7 @@ public static unsafe class AtkComponentExtensions
                 return ((AtkResNode*)nodePtr)->SetHeight(value);
             }
         }
-        
+
         public void SetPosition(scoped in Vector2 position)
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -115,7 +115,7 @@ public static unsafe class AtkComponentExtensions
                 ((AtkResNode*)nodePtr)->SetPosition(position);
             }
         }
-        
+
         public void SetPosition(scoped in float value)
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -124,7 +124,7 @@ public static unsafe class AtkComponentExtensions
                 ((AtkResNode*)nodePtr)->SetPosition(value);
             }
         }
-        
+
         public void SetPosition(scoped in float x, scoped in float y)
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -133,7 +133,7 @@ public static unsafe class AtkComponentExtensions
                 ((AtkResNode*)nodePtr)->SetPosition(x, y);
             }
         }
-        
+
         public void SetPositionX(scoped in float value)
         {
             fixed (AtkComponentNode* nodePtr = &node)
@@ -151,18 +151,18 @@ public static unsafe class AtkComponentExtensions
                 ((AtkResNode*)nodePtr)->SetPositionY(value);
             }
         }
-        
+
         public AtkUnitBase* GetOwnerAddon()
         {
             fixed (AtkComponentNode* nodePtr = &node)
             {
                 if (nodePtr == null) return null;
-                
+
                 return ((AtkResNode*)nodePtr)->GetOwnerAddon();
             }
         }
     }
-    
+
     extension(scoped ref AtkComponentTextInput textInput)
     {
         public static bool TryGetActive(out AtkComponentTextInput* component, out AtkUnitBase* addon)
@@ -198,9 +198,8 @@ public static unsafe class AtkComponentExtensions
 
             return addon != null;
         }
-
     }
-    
+
     extension(scoped ref AtkComponentRadioButton target)
     {
         public void Click(int which, AtkEventType type = AtkEventType.ButtonClick)
@@ -218,7 +217,7 @@ public static unsafe class AtkComponentExtensions
             {
                 if (button == null) return;
 
-                var addon = button->OwnerNode->GetOwnerAddon();
+                var addon  = button->OwnerNode->GetOwnerAddon();
                 var btnRes = button->OwnerNode->AtkResNode;
                 var evt    = btnRes.AtkEventManager.Event;
 
@@ -267,7 +266,7 @@ public static unsafe class AtkComponentExtensions
             fixed (AtkComponentButton* ptr = &target)
             {
                 if (ptr == null) return;
-                
+
                 var ownerNode = ptr->OwnerNode;
                 var evt       = ownerNode->AtkResNode.AtkEventManager.Event;
 
@@ -278,17 +277,19 @@ public static unsafe class AtkComponentExtensions
 
     extension(scoped ref AtkComponentBase component)
     {
-        public void Click(
+        public void Click
+        (
             AtkComponentNode*    target,
             int                  which,
             AtkEventType         type,
             ManagedAtkEvent?     eventData = null,
-            ManagedAtkInputData? inputData = null)
+            ManagedAtkInputData? inputData = null
+        )
         {
             fixed (AtkComponentBase* ptr = &component)
             {
                 if (ptr == null) return;
-                
+
                 eventData ??= ManagedAtkEvent.ForNormalTarget(target, ptr);
                 inputData ??= ManagedAtkInputData.Empty();
 

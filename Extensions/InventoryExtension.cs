@@ -3,13 +3,15 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class InventoryExtensions
+public static unsafe class InventoryExtension
 {
     extension(IEnumerable<InventoryType> inventories)
     {
-        public bool TryGetItems(
+        public bool TryGetItems
+        (
             Predicate<InventoryItem> predicateFunc,
-            out List<InventoryItem>  itemResult)
+            out List<InventoryItem>  itemResult
+        )
         {
             itemResult = [];
 
@@ -20,6 +22,7 @@ public static unsafe class InventoryExtensions
             {
                 var container = manager->GetInventoryContainer(type);
                 if (container == null || !container->IsLoaded) return false;
+
                 for (var i = 0; i < container->Size; i++)
                 {
                     var slot = container->GetInventorySlot(i);
@@ -32,9 +35,11 @@ public static unsafe class InventoryExtensions
             return itemResult.Count > 0;
         }
 
-        public bool TryGetFirstItem(
+        public bool TryGetFirstItem
+        (
             Predicate<InventoryItem> predicateFunc,
-            out InventoryItem*       itemResult)
+            out InventoryItem*       itemResult
+        )
         {
             itemResult = null;
 
@@ -45,6 +50,7 @@ public static unsafe class InventoryExtensions
             {
                 var container = manager->GetInventoryContainer(type);
                 if (container == null || !container->IsLoaded) return false;
+
                 for (var i = 0; i < container->Size; i++)
                 {
                     var slot = container->GetInventorySlot(i);
@@ -58,7 +64,7 @@ public static unsafe class InventoryExtensions
 
             return false;
         }
-        
+
         public bool IsFull(uint threshold = 0)
         {
             var manager = InventoryManager.Instance();
@@ -74,6 +80,7 @@ public static unsafe class InventoryExtensions
                 for (var index = 0; index < container->Size; index++)
                 {
                     var slot = container->GetInventorySlot(index);
+
                     if (slot->ItemId == 0)
                     {
                         emptySlotsCount++;
@@ -94,25 +101,29 @@ public static unsafe class InventoryExtensions
         {
             var agent = AgentInventoryContext.Instance();
             if (agent == null) return false;
-            
+
             agent->OpenForItemSlot(inventoryType, slot, 0, AgentInventory.Instance()->GetActiveAddonID());
             return true;
         }
-        
-        public bool TryGetItems(
+
+        public bool TryGetItems
+        (
             Predicate<InventoryItem> predicateFunc,
-            out List<InventoryItem>  itemResult) => 
+            out List<InventoryItem>  itemResult
+        ) =>
             new List<InventoryType> { inventoryType }.TryGetItems(predicateFunc, out itemResult);
 
-        public bool TryGetFirstItem(
+        public bool TryGetFirstItem
+        (
             Predicate<InventoryItem> predicateFunc,
-            out InventoryItem*       itemResult) => 
+            out InventoryItem*       itemResult
+        ) =>
             new List<InventoryType> { inventoryType }.TryGetFirstItem(predicateFunc, out itemResult);
     }
 
     extension(scoped in InventoryItem item)
     {
-        public bool OpenContext() => 
+        public bool OpenContext() =>
             item.Container.OpenSlotContext((ushort)item.Slot);
     }
 }

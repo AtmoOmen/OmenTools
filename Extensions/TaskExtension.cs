@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.Extensions;
 
-public static class TaskExtensions
+public static class TaskExtension
 {
     extension(Task task)
     {
@@ -13,12 +13,11 @@ public static class TaskExtensions
 
             using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
 
-            try 
+            try
             {
                 while (await timer.WaitForNextTickAsync(token))
-                {
-                    if (condition()) return;
-                }
+                    if (condition())
+                        return;
             }
             catch (OperationCanceledException)
             {

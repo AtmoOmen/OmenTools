@@ -6,15 +6,15 @@ using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryInte
 
 namespace OmenTools.Extensions;
 
-public static class ActionManagerExtensions
+public static class ActionManagerExtension
 {
     extension(scoped ref ActionManager manager)
     {
         public static uint GetAdjustSprintActionID()
         {
             if (!LuminaGetter.TryGetRow<GeneralAction>(4, out var row)) return 3;
-        
-            if (LocalPlayerState.ClassJob == 0) 
+
+            if (LocalPlayerState.ClassJob == 0)
                 return row.Action.RowId;
 
             return GameState.TerritoryIntendedUse switch

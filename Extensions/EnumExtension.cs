@@ -4,19 +4,23 @@ using System.Runtime.CompilerServices;
 
 namespace OmenTools.Extensions;
 
-public static class EnumExtensions
+public static class EnumExtension
 {
     private static readonly ConcurrentDictionary<Enum, string> DescriptionAttributeCache = [];
 
     public static string GetDescription(this Enum value) =>
-        DescriptionAttributeCache.GetOrAdd(value, v =>
-        {
-            var field = v.GetType().GetField(v.ToString());
-            if (field == null) return v.ToString();
+        DescriptionAttributeCache.GetOrAdd
+        (
+            value,
+            v =>
+            {
+                var field = v.GetType().GetField(v.ToString());
+                if (field == null) return v.ToString();
 
-            var attribute = (DescriptionAttribute?)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
-            return attribute?.Description ?? v.ToString();
-        });
+                var attribute = (DescriptionAttribute?)Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute));
+                return attribute?.Description ?? v.ToString();
+            }
+        );
 
     extension<T>(T value) where T : struct, Enum
     {
@@ -50,12 +54,12 @@ public static class EnumExtensions
             var   v    = ToUInt64(value);
             ulong mask = 0;
 
-            foreach (var flag in flags) 
+            foreach (var flag in flags)
                 mask |= ToUInt64(flag);
 
             return (v & mask) == mask;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong ToUInt64(T origValue)
         {

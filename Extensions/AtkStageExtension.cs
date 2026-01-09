@@ -6,7 +6,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class AtkStageExtensions
+public static unsafe class AtkStageExtension
 {
     extension(scoped ref AtkStage atkStage)
     {
@@ -17,16 +17,17 @@ public static unsafe class AtkStageExtensions
             foreach (ref var focusEntry in atkStage.AtkInputManager->FocusList)
             {
                 if (focusEntry.AtkEventListener is null) continue;
-                
+
                 if (focusEntry.AtkEventTarget == targetNode)
                 {
                     focusEntry.AtkEventTarget = null;
                     focusEntry.FocusParam     = 0;
-                    
+
                     atkStage.AtkInputManager->FocusedNode                   = null;
                     atkStage.AtkCollisionManager->IntersectingCollisionNode = null;
-                    
+
                     var addon = (AtkUnitBase*)focusEntry.AtkEventListener;
+
                     foreach (ref var node in addon->AdditionalFocusableNodes)
                     {
                         if (node.Value == targetNode)
@@ -58,7 +59,8 @@ public static unsafe class AtkStageExtensions
             var addon = RaptureAtkUnitManager.Instance()->GetAddonByNode(node);
             if (addon is null) return;
 
-            atkStage.TooltipManager.ShowTooltip(
+            atkStage.TooltipManager.ShowTooltip
+            (
                 tooltipType,
                 addon->Id,
                 node,
@@ -76,7 +78,8 @@ public static unsafe class AtkStageExtensions
             var addon = RaptureAtkUnitManager.Instance()->GetAddonByNode(node);
             if (addon is null) return;
 
-            atkStage.TooltipManager.ShowTooltip(
+            atkStage.TooltipManager.ShowTooltip
+            (
                 AtkTooltipManager.AtkTooltipType.Item,
                 addon->Id,
                 node,
@@ -97,7 +100,8 @@ public static unsafe class AtkStageExtensions
             var addon = RaptureAtkUnitManager.Instance()->GetAddonByNode(node);
             if (addon is null) return;
 
-            atkStage.TooltipManager.ShowTooltip(
+            atkStage.TooltipManager.ShowTooltip
+            (
                 AtkTooltipManager.AtkTooltipType.Item,
                 addon->Id,
                 node,
@@ -105,7 +109,7 @@ public static unsafe class AtkStageExtensions
             );
         }
 
-        public void HideTooltip(ushort addonID) => 
+        public void HideTooltip(ushort addonID) =>
             atkStage.TooltipManager.HideTooltip(addonID);
     }
 }

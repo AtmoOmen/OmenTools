@@ -3,7 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class AgentInventoryExtensions
+public static unsafe class AgentInventoryExtension
 {
     extension(scoped ref AgentInventory agent)
     {
@@ -14,7 +14,7 @@ public static unsafe class AgentInventoryExtensions
             var addonID = (ushort)agent.AddonId;
             var addon   = RaptureAtkUnitManager.Instance()->GetAddonById(addonID);
             if (!addon->IsAddonAndNodesReady()) return 0;
-            
+
             return addonID;
         }
     }

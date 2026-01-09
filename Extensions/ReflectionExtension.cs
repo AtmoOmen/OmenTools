@@ -4,22 +4,22 @@ using Dalamud.Hooking;
 
 namespace OmenTools.Extensions;
 
-public static class ReflectionExtensions
+public static class ReflectionExtension
 {
     private const BindingFlags ALL_FLAGS    = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
     private const BindingFlags STATIC_FLAGS = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-    
+
     extension<T>(scoped ref T vtable) where T : unmanaged
     {
         /// <summary>
-        /// 直接调用过不了混淆, 所以反射
+        ///     直接调用过不了混淆, 所以反射
         /// </summary>
         public unsafe nint GetVFuncByName(string fieldName)
         {
-            fixed(T* vtablePtr = &vtable)
+            fixed (T* vtablePtr = &vtable)
             {
                 ArgumentNullException.ThrowIfNull(vtablePtr);
-                
+
                 var vtType = typeof(T);
                 var fi     = vtType.GetField(fieldName, BindingFlags.Public | BindingFlags.Instance);
                 if (fi == null)
@@ -34,17 +34,17 @@ public static class ReflectionExtensions
                 return *(nint*)((byte*)vtablePtr + offset);
             }
         }
-        
+
         public unsafe Hook<TDetour> HookVFuncFromName<TDetour>(string fieldName, TDetour detour) where TDetour : Delegate
         {
-            fixed(T* vtablePtr = &vtable)
+            fixed (T* vtablePtr = &vtable)
             {
                 ArgumentNullException.ThrowIfNull(vtablePtr);
                 return DService.Instance().Hook.HookFromAddress(vtablePtr->GetVFuncByName(fieldName), detour);
             }
         }
     }
-    
+
     extension(nint luaSetupFunctionStartAddress)
     {
         public nint GetLuaFunctionByName(string functionName, int scanSize = 8192)
@@ -53,6 +53,7 @@ public static class ReflectionExtensions
                 return nint.Zero;
 
             var functionBytes = new byte[scanSize];
+
             try
             {
                 Marshal.Copy(luaSetupFunctionStartAddress, functionBytes, 0, scanSize);
@@ -73,7 +74,6 @@ public static class ReflectionExtensions
             var stringLeaIndex = -1;
 
             for (var i = 0; i <= functionBytes.Length - 7; i++)
-            {
                 if (functionBytes[i]     == leaStringPattern[0] &&
                     functionBytes[i + 1] == leaStringPattern[1] &&
                     functionBytes[i + 2] == leaStringPattern[2])
@@ -84,21 +84,21 @@ public static class ReflectionExtensions
                     var stringAddress             = nextInstructionAddress             + displacement;
 
                     var referencedString = Marshal.PtrToStringAnsi((nint)stringAddress);
+
                     if (referencedString == functionName)
                     {
                         stringLeaIndex = i;
                         break;
                     }
                 }
-            }
 
             if (stringLeaIndex == -1)
                 return nint.Zero;
-        
+
             var searchLimit = Math.Max(0, stringLeaIndex - 100);
+
             for (var i = stringLeaIndex - 1; i >= searchLimit; i--)
                 // lea r9, [rip + ...]
-            {
                 if (i + 7                < functionBytes.Length   &&
                     functionBytes[i]     == leaFunctionPattern[0] &&
                     functionBytes[i + 1] == leaFunctionPattern[1] &&
@@ -111,19 +111,18 @@ public static class ReflectionExtensions
 
                     return (nint)targetFunctionAddress;
                 }
-            }
 
             return nint.Zero;
         }
     }
-    
+
     extension(object obj)
     {
         public object? GetFieldOrProperty(string name) =>
             obj.GetType().GetField(name, ALL_FLAGS)?.GetValue(obj) ??
             obj.GetType().GetProperty(name, ALL_FLAGS)?.GetValue(obj);
 
-        public T? GetFieldOrProperty<T>(string name) => 
+        public T? GetFieldOrProperty<T>(string name) =>
             (T?)obj.GetFieldOrProperty(name);
 
         public void SetFieldOrProperty(string name, object value)
@@ -139,7 +138,7 @@ public static class ReflectionExtensions
             obj.GetType().Assembly.GetType(type)?.GetField(name, STATIC_FLAGS)?.GetValue(null) ??
             obj.GetType().Assembly.GetType(type)?.GetProperty(name, STATIC_FLAGS)?.GetValue(null);
 
-        public T? GetStaticFieldOrProperty<T>(string type, string name) => 
+        public T? GetStaticFieldOrProperty<T>(string type, string name) =>
             (T?)obj.GetStaticFieldOrProperty(type, name);
 
         public void SetStaticFieldOrProperty(string type, string name, object value)
@@ -159,7 +158,7 @@ public static class ReflectionExtensions
             return info?.Invoke(obj, @params);
         }
 
-        public T? Call<T>(string name, object[] @params, bool matchExactArgumentTypes = false) => 
+        public T? Call<T>(string name, object[] @params, bool matchExactArgumentTypes = false) =>
             (T?)obj.Call(name, @params, matchExactArgumentTypes);
     }
 }
