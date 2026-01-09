@@ -37,9 +37,9 @@ public static class SeStringExtension
 
     extension<T>(T value) where T : INumber<T>
     {
-        public string ToSEHexCount()
+        public string ToSEHexCount(string? format = null)
         {
-            var raw = value.ToString(null, CultureInfo.InvariantCulture);
+            var raw = value.ToString(format, CultureInfo.InvariantCulture);
 
             if (string.IsNullOrEmpty(raw))
                 return string.Empty;
@@ -62,9 +62,9 @@ public static class SeStringExtension
             );
         }
 
-        public string ToSESmallCount()
+        public string ToSESmallCount(string? format = null)
         {
-            var raw = value.ToString(null, CultureInfo.InvariantCulture);
+            var raw = value.ToString(format, CultureInfo.InvariantCulture);
 
             if (string.IsNullOrEmpty(raw))
                 return string.Empty;
@@ -87,9 +87,9 @@ public static class SeStringExtension
             );
         }
 
-        public string ToSESquareCount()
+        public string ToSESquareCount(string? format = null)
         {
-            var raw = value.ToString(null, CultureInfo.InvariantCulture);
+            var raw = value.ToString(format, CultureInfo.InvariantCulture);
 
             if (string.IsNullOrEmpty(raw))
                 return string.Empty;
