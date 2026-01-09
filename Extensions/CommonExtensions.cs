@@ -8,21 +8,27 @@ public static class CommonExtensions
 {
     extension<T>(T config) where T : class
     {
-        public string ToJsonBase64()
-        {
-            var json = JsonConvert.SerializeObject(config, JsonSettings);
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
-        }
+        public string ToJsonBase64() =>
+            Convert.ToBase64String(Encoding.UTF8.GetBytes(config.ToJson()));
+
+        public string ToJson() =>
+            JsonConvert.SerializeObject(config, JsonSettings);
     }
 
     extension(string textData)
     {
-        public T? FromJsonBase64<T>() where T : class
+        public T? FromJson<T>() where T : class
         {
             if (string.IsNullOrEmpty(textData)) return null;
 
-            var json = Encoding.UTF8.GetString(Convert.FromBase64String(textData));
-            return JsonConvert.DeserializeObject<T>(json, JsonSettings);
+            return JsonConvert.DeserializeObject<T>(textData, JsonSettings);
+        }
+        
+        public T? FromJsonBase64<T>() where T : class
+        {
+            if (string.IsNullOrEmpty(textData)) return null;
+            
+            return Encoding.UTF8.GetString(Convert.FromBase64String(textData)).FromJson<T>();
         }
     }
 
