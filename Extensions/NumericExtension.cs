@@ -18,7 +18,7 @@ public static class NumericExtension
         Language.TraditionalChinese
     ];
 
-    extension<T>(T number) where T : IBinaryInteger<T>
+    extension<T>(T number) where T : IBinaryInteger<T>, IFormattable
     {
         public ReadOnlySeString ToChineseSeString
         (
@@ -29,7 +29,7 @@ public static class NumericExtension
             if (!ValidFormatLanguages.Contains(GameState.ClientLanguge) || T.IsZero(number))
                 return new ReadOnlySeString(number.ToString());
 
-            const string strZhao = "兆";
+            const string STR_ZHAO = "兆";
             string       strYi   = "亿", strWan = "万", strZero = "零";
 
             switch (GameState.ClientLanguge)
@@ -80,9 +80,9 @@ public static class NumericExtension
                 builder.AddText(zhao.ToString());
 
                 if (unitColor != null)
-                    builder.AddUiForeground(strZhao, unitColor.Value);
+                    builder.AddUiForeground(STR_ZHAO, unitColor.Value);
                 else
-                    builder.AddText(strZhao);
+                    builder.AddText(STR_ZHAO);
 
                 hasPrinted = true;
             }
@@ -136,11 +136,11 @@ public static class NumericExtension
 
         public string ToChineseString()
         {
-            if (T.IsZero(number))
-                return "0";
+            if (!ValidFormatLanguages.Contains(GameState.ClientLanguge) || T.IsZero(number))
+                return number.ToString("N0", null);
 
-            const char cZhao = '兆';
-            char       cYi   = '亿', cWan = '万', cZero = '零';
+            const char C_ZHAO = '兆';
+            char       cYi    = '亿', cWan = '万', cZero = '零';
 
             switch (GameState.ClientLanguge)
             {
@@ -183,7 +183,7 @@ public static class NumericExtension
             if (zhao > 0)
             {
                 builder.Append(zhao);
-                builder.Append(cZhao);
+                builder.Append(C_ZHAO);
                 hasPrinted = true;
             }
 
@@ -227,15 +227,16 @@ public static class NumericExtension
         }
     }
 
-    extension<T>(T number) where T : INumber<T>
+    extension<T>(T number) where T : INumber<T>, IFormattable
     {
         [SkipLocalsInit]
         public string ToMyriadString()
         {
             Span<char> sourceBuffer = stackalloc char[128];
 
-            if (!number.TryFormat(sourceBuffer, out var charsWritten, null, CultureInfo.InvariantCulture))
-                return number.ToString() ?? string.Empty;
+            if (!ValidFormatLanguages.Contains(GameState.ClientLanguge) ||
+                !number.TryFormat(sourceBuffer, out var charsWritten, null, CultureInfo.InvariantCulture))
+                return number.ToString("N0", null) ?? string.Empty;
 
             ReadOnlySpan<char> source = sourceBuffer[..charsWritten];
 
@@ -245,9 +246,9 @@ public static class NumericExtension
             var integerEndIndex = decimalPointIndex >= 0 ? decimalPointIndex : charsWritten;
             var integerLength   = integerEndIndex - isNegative;
 
-            const int groupSize = 4;
+            const int GROUP_SIZE = 4;
 
-            var separatorCount = integerLength > 0 ? (integerLength - 1) / groupSize : 0;
+            var separatorCount = integerLength > 0 ? (integerLength - 1) / GROUP_SIZE : 0;
             var finalLength    = charsWritten + separatorCount;
 
             return string.Create
