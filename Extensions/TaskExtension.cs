@@ -8,22 +8,20 @@ public static class TaskExtension
         {
             if (condition()) return;
 
-            using var cts   = timeout.HasValue ? new CancellationTokenSource(timeout.Value) : null;
-            var       token = cts?.Token ?? CancellationToken.None;
+            long deadlineTick = 0;
+            if (timeout.HasValue)
+                deadlineTick = Environment.TickCount64 + (long)timeout.Value.TotalMilliseconds;
 
-            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+            var interval = TimeSpan.FromMilliseconds(100); 
 
-            try
+            while (true)
             {
-                while (await timer.WaitForNextTickAsync(token))
-                {
-                    if (condition())
-                        return;
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                throw new TimeoutException();
+                await Task.Delay(interval).ConfigureAwait(false);
+
+                if (condition()) return;
+
+                if (timeout.HasValue && Environment.TickCount64 >= deadlineTick)
+                    throw new TimeoutException();
             }
         }
     }
