@@ -21,5 +21,8 @@ public static class VectorExtension
     {
         public Vector3 ToVector3(scoped in float y) =>
             new(vector2.X, y, vector2.Y);
+
+        public Vector2 Scale() =>
+            vector2 * GlobalFontScale;
     }
 }
