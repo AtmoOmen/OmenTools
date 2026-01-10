@@ -1,4 +1,4 @@
-﻿using Dalamud;
+using Dalamud;
 using Dalamud.Memory;
 
 namespace OmenTools.Helpers;

@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.Game;

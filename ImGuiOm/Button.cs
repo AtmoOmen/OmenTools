@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Textures.TextureWraps;
 using Dalamud.Interface.Utility;

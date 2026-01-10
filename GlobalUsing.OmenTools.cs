@@ -1,4 +1,4 @@
-﻿// ReSharper disable RedundantUsingDirective.Global
+// ReSharper disable RedundantUsingDirective.Global
 
 #region OmenTools
 

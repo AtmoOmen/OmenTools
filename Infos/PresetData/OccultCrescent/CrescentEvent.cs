@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Dalamud.Game.ClientState.Fates;
 using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;

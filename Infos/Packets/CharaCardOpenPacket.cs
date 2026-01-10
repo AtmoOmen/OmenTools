@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 

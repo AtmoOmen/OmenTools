@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Lumina.Excel.Sheets;

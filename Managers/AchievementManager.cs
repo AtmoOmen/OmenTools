@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Dalamud.Hooking;
 using Dalamud.Interface.Textures.TextureWraps;
 using OmenTools.Abstracts;

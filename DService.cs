@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Dalamud.Interface.Textures;
 using Dalamud.IoC;
 using Dalamud.Plugin;

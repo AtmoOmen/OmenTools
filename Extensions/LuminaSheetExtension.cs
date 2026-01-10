@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;

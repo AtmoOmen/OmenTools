@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using CSVector3 = FFXIVClientStructs.FFXIV.Common.Math.Vector3;
 
 namespace OmenTools.Extensions;

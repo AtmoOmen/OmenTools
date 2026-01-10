@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Conditions;
 
 namespace OmenTools.Infos;
 

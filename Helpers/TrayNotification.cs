@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Timer = System.Timers.Timer;
 
 namespace OmenTools.Helpers;

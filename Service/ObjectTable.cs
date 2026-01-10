@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Runtime.CompilerServices;
 using FFXIVClientStructs.Interop;
 using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;

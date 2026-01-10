@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;

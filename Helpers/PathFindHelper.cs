@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Dalamud.Game.Config;
 using Dalamud.Hooking;

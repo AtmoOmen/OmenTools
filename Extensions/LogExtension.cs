@@ -1,4 +1,4 @@
-﻿namespace OmenTools.Extensions;
+namespace OmenTools.Extensions;
 
 public static class LogExtension
 {

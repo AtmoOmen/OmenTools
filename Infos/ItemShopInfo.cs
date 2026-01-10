@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Data.Files;

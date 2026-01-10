@@ -1,4 +1,4 @@
-﻿using Lumina.Text.Expressions;
+using Lumina.Text.Expressions;
 using Lumina.Text.ReadOnly;
 using DSeString = Dalamud.Game.Text.SeStringHandling.SeString;
 using LSeString = Lumina.Text.ReadOnly.ReadOnlySeString;

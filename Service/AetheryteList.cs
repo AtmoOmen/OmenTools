@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;

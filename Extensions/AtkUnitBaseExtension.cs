@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Dalamud.Game.NativeWrapper;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 

@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface;
+using Dalamud.Interface;
 
 namespace OmenTools.ImGuiOm;
 

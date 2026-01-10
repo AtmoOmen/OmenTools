@@ -1,4 +1,4 @@
-﻿namespace OmenTools.Infos;
+namespace OmenTools.Infos;
 
 public interface IGamePacket
 {

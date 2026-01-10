@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using OmenTools.Abstracts;

@@ -1,4 +1,4 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Timer = System.Threading.Timer;
 
 namespace OmenTools.Helpers;

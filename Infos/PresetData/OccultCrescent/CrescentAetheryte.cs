@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 

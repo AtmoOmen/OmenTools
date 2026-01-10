@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
 using LuminaAction = Lumina.Excel.Sheets.Action;

@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 
 namespace OmenTools.Infos;

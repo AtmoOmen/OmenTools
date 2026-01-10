@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace OmenTools.Extensions;
 

@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Action = Lumina.Excel.Sheets.Action;
 
 namespace OmenTools.Widgets;

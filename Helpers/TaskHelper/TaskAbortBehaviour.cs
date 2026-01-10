@@ -1,4 +1,4 @@
-﻿namespace OmenTools.Helpers;
+namespace OmenTools.Helpers;
 
 public enum TaskAbortBehaviour
 {

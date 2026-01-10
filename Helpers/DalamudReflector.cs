@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Runtime.Loader;
 using Dalamud.Plugin;
 using Task = System.Threading.Tasks.Task;
