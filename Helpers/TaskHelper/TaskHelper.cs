@@ -42,26 +42,26 @@ public partial class TaskHelper : IDisposable
         IsDisposed = true;
         
         Instances.TryRemove(this, out _);
+        
         CancelSource.Cancel();
+        CancelSource.Dispose();
         
         TaskChannel.Writer.TryComplete();
 
-        if (CurrentTask is { IsAsync: true, CancelToken: not null })
-        {
-            CurrentTask.CancelToken.Cancel();
-            CurrentTask.CancelToken.Dispose();
-        }
+        CurrentTask?.CancelToken?.Cancel();
+        CurrentTask?.CancelToken?.Dispose();
 
         RunningSystemTask = null;
 
         foreach (var queue in Queues)
         {
-            foreach (var task in queue.Tasks.Where(t => t.IsAsync))
+            foreach (var task in queue.Tasks)
             {
                 task.CancelToken?.Cancel();
                 task.CancelToken?.Dispose();
             }
         }
+        Queues.Clear();
     }
 
     /// <summary>
@@ -126,10 +126,10 @@ public partial class TaskHelper : IDisposable
             while (!ct.IsCancellationRequested)
             {
                 if (CurrentTask == null && queueTaskCount == 0 && pendingTaskCount == 0)
-                    await TaskChannel.Reader.WaitToReadAsync(ct);
+                    await TaskChannel.Reader.WaitToReadAsync(ct).ConfigureAwait(false);
 
                 var isBusy = false;
-                await DService.Instance().Framework.RunOnTick(() =>
+                await DService.Instance().Framework.Run(() =>
                 {
                     SyncPendingTasks();
 
@@ -143,10 +143,10 @@ public partial class TaskHelper : IDisposable
                     }
                     else
                         isBusy = queueTaskCount > 0 || pendingTaskCount > 0;
-                }, cancellationToken: ct);
+                }, cancellationToken: ct).ConfigureAwait(false);
 
                 if (isBusy)
-                    await Task.Delay(1, ct);
+                    await Task.Delay(1, ct).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -203,15 +203,17 @@ public partial class TaskHelper : IDisposable
                 Task<bool> newTask = null;
                 if (CurrentTask.IsAsync)
                 {
-                    newTask = DService.Instance().Framework.RunOnTick
+                    newTask = DService.Instance().Framework.Run
                     (
-                        async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token),
+                        async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token).ConfigureAwait(false),
                         cancellationToken: CurrentTask.CancelToken.Token
                     );
                 }
                 else
-                    newTask = DService.Instance().Framework.RunOnTick(() => CurrentTask.Action());
+                    newTask = DService.Instance().Framework.Run(() => CurrentTask.Action(), cancellationToken: CurrentTask.CancelToken.Token);
+                
                 RunningSystemTask = newTask;
+                RunningSystemTask.ConfigureAwait(false);
 
                 Log($"启动{(CurrentTask.IsAsync ? "异步" : "同步")}任务 {CurrentTask.GetName()}");
                 return;
@@ -229,14 +231,15 @@ public partial class TaskHelper : IDisposable
                     {
                         newTask = DService.Instance().Framework.RunOnTick
                         (
-                            async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token),
+                            async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token).ConfigureAwait(false),
                             cancellationToken: CurrentTask.CancelToken.Token
                         );
                     }
                     else
-                        newTask = DService.Instance().Framework.RunOnTick(() => CurrentTask.Action());
+                        newTask = DService.Instance().Framework.RunOnTick(() => CurrentTask.Action(), cancellationToken: CurrentTask.CancelToken.Token);
                     
                     RunningSystemTask = newTask;
+                    RunningSystemTask.ConfigureAwait(false);
                 }
             }
             else if (task.IsCanceled)
@@ -305,11 +308,8 @@ public partial class TaskHelper : IDisposable
             case TaskAbortBehaviour.AbortCurrent:
                 LogWarning($"放弃了当前任务 (原因: {reason})");
 
-                if (CurrentTask is { IsAsync: true, CancelToken: not null })
-                {
-                    CurrentTask.CancelToken.Cancel();
-                    RunningSystemTask = null;
-                }
+                CurrentTask?.CancelToken?.Cancel();
+                CurrentTask?.CancelToken?.Dispose();
 
                 CurrentTask = null;
                 RunningSystemTask = null;
@@ -344,13 +344,22 @@ public partial class TaskHelper : IDisposable
     public void Abort()
     {
         SyncPendingTasks();
+        
         foreach (var queue in Queues)
+        {
+            foreach (var task in queue.Tasks)
+            {
+                task.CancelToken?.Cancel();
+                task.CancelToken?.Dispose();
+            }
+            
             queue.Tasks.Clear();
+        }
 
         queueTaskCount = 0;
 
-        if (CurrentTask is { IsAsync: true, CancelToken: not null })
-            CurrentTask.CancelToken.Cancel();
+        CurrentTask?.CancelToken?.Cancel();
+        CurrentTask?.CancelToken?.Dispose();
 
         RunningSystemTask = null;
         CurrentTask = null;

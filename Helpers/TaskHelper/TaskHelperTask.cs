@@ -39,8 +39,7 @@ public record TaskHelperTask
     public TaskAbortBehaviour? ExceptionBehaviour { get; }
     
     /// <summary>
-    ///     异步任务取消令牌源 <br />
-    ///     仅在异步任务中有效
+    ///     任务取消令牌源 <br />
     /// </summary>
     public CancellationTokenSource? CancelToken { get; }
     
@@ -87,7 +86,7 @@ public record TaskHelperTask
         TimeoutBehaviour   = timeoutBehaviour;
         ExceptionBehaviour = exceptionBehaviour;
         Name               = name;
-        CancelToken        = null;
+        CancelToken        = new();
     }
 
     /// <summary>
