@@ -1,3 +1,5 @@
+using System.Numerics;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Extensions;
@@ -5,6 +7,23 @@ namespace OmenTools.Extensions;
 // 单独开一个文件方法太少了，就会扔到这里
 public static unsafe class AtkExtension
 {
+    extension(scoped ref AtkTextNode node)
+    {
+        public Vector2 GetTextDrawSize(bool considerScale = false)
+        {
+            fixed (AtkTextNode* ptr = &node)
+            {
+                using var builder = new RentedSeStringBuilder();
+
+                ushort sizeX = 0;
+                ushort sizeY = 0;
+
+                ptr->GetTextDrawSize(&sizeX, &sizeY, ptr->NodeText.StringPtr, considerScale: considerScale);
+                return new Vector2(sizeX, sizeY);
+            }
+        }
+    }
+    
     extension(scoped ref AtkCollisionNode target)
     {
         public void Click(AtkEvent* eventData)
