@@ -91,6 +91,18 @@ public partial class TaskHelper : IDisposable
     ///     注: 异步任务被取消将被视为发生异常
     /// </summary>
     public TaskAbortBehaviour ExceptionBehaviour { get; set; } = TaskAbortBehaviour.AbortAll;
+    
+    /// <summary>
+    ///     当单一任务超时时额外执行的全局逻辑
+    ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.TimeoutAction" />) 则以任务的为判断标准
+    /// </summary>
+    public Action? TimeoutAction { get; set; }
+    
+    /// <summary>
+    ///     当单一任务执行出现异常时额外执行的全局逻辑
+    ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.ExceptionAction" />) 则以任务的为判断标准
+    /// </summary>
+    public Action? ExceptionAction { get; set; }
 
     /// <summary>
     ///     是否显示调试信息
@@ -187,7 +199,7 @@ public partial class TaskHelper : IDisposable
             CurrentTask           = task;
             CurrentTask.StartTime = Stopwatch.GetTimestamp();
 
-            Log($"开始执行任务 {CurrentTask.GetName()}");
+            Log($"开始执行任务: {CurrentTask.GetName()}");
             break;
         }
     }
@@ -215,7 +227,7 @@ public partial class TaskHelper : IDisposable
                 RunningSystemTask = newTask;
                 RunningSystemTask.ConfigureAwait(false);
 
-                Log($"启动{(CurrentTask.IsAsync ? "异步" : "同步")}任务 {CurrentTask.GetName()}");
+                Log($"启动{(CurrentTask.IsAsync ? "异步" : "同步")}任务: {CurrentTask.GetName()}");
                 return;
             }
 
@@ -275,8 +287,9 @@ public partial class TaskHelper : IDisposable
 
         var timeoutBehaviour = CurrentTask.TimeoutBehaviour ?? TimeoutBehaviour;
         var reason           = $"任务 {CurrentTask.GetName()} 执行时间过长";
+        var extraAction      = CurrentTask.TimeoutAction ?? TimeoutAction;
 
-        ExecuteTaskAbortBehaviour(timeoutBehaviour, reason, CurrentTask);
+        ExecuteTaskAbortBehaviour(timeoutBehaviour, reason, CurrentTask, extraAction);
     }
 
     private void HandleTaskError(Exception? ex = null)
@@ -285,28 +298,29 @@ public partial class TaskHelper : IDisposable
 
         var exceptionBehaviour = CurrentTask.ExceptionBehaviour ?? ExceptionBehaviour;
         var reason             = $"执行任务 {CurrentTask.GetName()} 过程中出现错误";
+        var extraAction        = CurrentTask.ExceptionAction ?? ExceptionAction;
 
         if (ex != null)
             Error(reason, ex);
         else
             Error(reason);
 
-        ExecuteTaskAbortBehaviour(exceptionBehaviour, reason, CurrentTask);
+        ExecuteTaskAbortBehaviour(exceptionBehaviour, reason, CurrentTask, extraAction);
     }
 
-    private void ExecuteTaskAbortBehaviour(TaskAbortBehaviour behaviour, string reason, TaskHelperTask task)
+    private void ExecuteTaskAbortBehaviour(TaskAbortBehaviour behaviour, string reason, TaskHelperTask task, Action? extraAction = null)
     {
         if (task == null) return;
 
         switch (behaviour)
         {
             case TaskAbortBehaviour.AbortAll:
-                LogWarning($"放弃了所有任务 (原因: {reason})");
+                LogWarning($"放弃了所有任务 (原因: {reason})" + (extraAction == null ? string.Empty : "\n开始执行该原因出现时的自定义逻辑"));
 
                 Abort();
                 break;
             case TaskAbortBehaviour.AbortCurrent:
-                LogWarning($"放弃了当前任务 (原因: {reason})");
+                LogWarning($"放弃了当前任务 (原因: {reason})" + (extraAction == null ? string.Empty : "\n开始执行该原因出现时的自定义逻辑"));
 
                 CurrentTask?.CancelToken?.Cancel();
                 CurrentTask?.CancelToken?.Dispose();
@@ -316,6 +330,15 @@ public partial class TaskHelper : IDisposable
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(behaviour));
+        }
+
+        try
+        {
+            extraAction?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            Error($"在执行 {reason} 原因出现时应执行的自定义逻辑时发生错误", ex);
         }
     }
     

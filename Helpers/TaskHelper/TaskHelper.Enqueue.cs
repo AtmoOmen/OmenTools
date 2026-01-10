@@ -39,6 +39,8 @@ public partial class TaskHelper
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
     /// <param name="weight">队列权重</param>
     public void Enqueue(
         Func<bool>          task,
@@ -46,9 +48,11 @@ public partial class TaskHelper
         int                 timeoutMS          = 0,
         TaskAbortBehaviour? timeoutBehaviour   = null,
         TaskAbortBehaviour? exceptionBehaviour = null,
+        Action?             timeoutAction      = null,
+        Action?             exceptionAction    = null,
         int                 weight             = 0)
     {
-        if (!TaskChannel.Writer.TryWrite((new(task, name, timeoutMS, timeoutBehaviour, exceptionBehaviour), weight))) return;
+        if (!TaskChannel.Writer.TryWrite((new(task, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, timeoutAction, exceptionAction), weight))) return;
         Interlocked.Increment(ref pendingTaskCount);
     }
 
@@ -63,6 +67,8 @@ public partial class TaskHelper
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
     /// <param name="weight">队列权重</param>
     public void Enqueue(
         Action              task,
@@ -70,12 +76,14 @@ public partial class TaskHelper
         int                 timeoutMS          = 0,
         TaskAbortBehaviour? timeoutBehaviour   = null,
         TaskAbortBehaviour? exceptionBehaviour = null,
+        Action?             timeoutAction      = null,
+        Action?             exceptionAction    = null,
         int                 weight             = 0) =>
         Enqueue(() =>
         {
             task();
             return true;
-        }, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, weight);
+        }, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, timeoutAction, exceptionAction, weight);
 
     /// <summary>
     ///     将可能返回 null 的同步任务加入队列
@@ -92,6 +100,8 @@ public partial class TaskHelper
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
     /// <param name="weight">队列权重</param>
     public void Enqueue(
         Func<bool?>         task,
@@ -99,8 +109,10 @@ public partial class TaskHelper
         int                 timeoutMS          = 0,
         TaskAbortBehaviour? timeoutBehaviour   = null,
         TaskAbortBehaviour? exceptionBehaviour = null,
+        Action?             timeoutAction      = null,
+        Action?             exceptionAction    = null,
         int                 weight             = 0) =>
-        Enqueue(() => task() ?? false, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, weight);
+        Enqueue(() => task() ?? false, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, timeoutAction, exceptionAction, weight);
 
     #endregion
 
@@ -122,6 +134,8 @@ public partial class TaskHelper
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
     /// <param name="weight">队列权重</param>
     public void EnqueueAsync(
         Func<CancellationToken, Task<bool>> asyncTask,
@@ -129,9 +143,11 @@ public partial class TaskHelper
         int                                 timeoutMS          = 0,
         TaskAbortBehaviour?                 timeoutBehaviour   = null,
         TaskAbortBehaviour?                 exceptionBehaviour = null,
+        Action?                             timeoutAction      = null,
+        Action?                             exceptionAction    = null,
         int                                 weight             = 0)
     {
-        if (!TaskChannel.Writer.TryWrite((new(asyncTask, name, timeoutMS, timeoutBehaviour, exceptionBehaviour), weight))) return;
+        if (!TaskChannel.Writer.TryWrite((new(asyncTask, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, timeoutAction, exceptionAction), weight))) return;
         Interlocked.Increment(ref pendingTaskCount);
     }
 
@@ -149,6 +165,8 @@ public partial class TaskHelper
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
     /// <param name="weight">队列权重</param>
     public void EnqueueAsync(
         Func<CancellationToken, Task> asyncTask,
@@ -156,12 +174,14 @@ public partial class TaskHelper
         int                           timeoutMS          = 0,
         TaskAbortBehaviour?           timeoutBehaviour   = null,
         TaskAbortBehaviour?           exceptionBehaviour = null,
+        Action?                       timeoutAction      = null,
+        Action?                       exceptionAction    = null,
         int                           weight             = 0) =>
         EnqueueAsync(async ct =>
         {
             await asyncTask(ct);
             return true;
-        }, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, weight);
+        }, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, timeoutAction, exceptionAction, weight);
 
     /// <summary>
     ///     将可能返回 null 的异步任务加入队列
@@ -179,6 +199,8 @@ public partial class TaskHelper
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
     /// <param name="weight">队列权重</param>
     public void EnqueueAsync(
         Func<CancellationToken, Task<bool?>> asyncTask,
@@ -186,8 +208,10 @@ public partial class TaskHelper
         int                                  timeoutMS          = 0,
         TaskAbortBehaviour?                  timeoutBehaviour   = null,
         TaskAbortBehaviour?                  exceptionBehaviour = null,
+        Action?                              timeoutAction      = null,
+        Action?                              exceptionAction    = null,
         int                                  weight             = 0) =>
-        EnqueueAsync(async ct => (await asyncTask(ct)) ?? false, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, weight);
+        EnqueueAsync(async ct => (await asyncTask(ct)) ?? false, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, timeoutAction, exceptionAction, weight);
 
     /// <summary>
     ///     将不接受 CancellationToken 的异步任务加入队列
@@ -204,6 +228,8 @@ public partial class TaskHelper
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
     /// <param name="weight">队列权重</param>
     public void EnqueueAsync(
         Func<Task<bool>>    asyncTask,
@@ -211,8 +237,10 @@ public partial class TaskHelper
         int                 timeoutMS          = 0,
         TaskAbortBehaviour? timeoutBehaviour   = null,
         TaskAbortBehaviour? exceptionBehaviour = null,
+        Action?             timeoutAction      = null,
+        Action?             exceptionAction    = null,
         int                 weight             = 0) =>
-        EnqueueAsync(_ => asyncTask(), name, timeoutMS, timeoutBehaviour, exceptionBehaviour, weight);
+        EnqueueAsync(_ => asyncTask(), name, timeoutMS, timeoutBehaviour, exceptionBehaviour, timeoutAction, exceptionAction, weight);
 
     /// <summary>
     ///     将不接受 CancellationToken 且不返回结果的异步任务加入队列
@@ -225,6 +253,8 @@ public partial class TaskHelper
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
     /// <param name="weight">队列权重</param>
     public void EnqueueAsync(
         Func<Task>          asyncTask,
@@ -232,12 +262,14 @@ public partial class TaskHelper
         int                 timeoutMS          = 0,
         TaskAbortBehaviour? timeoutBehaviour   = null,
         TaskAbortBehaviour? exceptionBehaviour = null,
+        Action?             timeoutAction      = null,
+        Action?             exceptionAction    = null,
         int                 weight             = 0) =>
         EnqueueAsync(async _ =>
         {
             await asyncTask();
             return true;
-        }, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, weight);
+        }, name, timeoutMS, timeoutBehaviour, exceptionBehaviour, timeoutAction, exceptionAction, weight);
 
     #endregion
 

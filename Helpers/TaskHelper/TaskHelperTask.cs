@@ -25,24 +25,36 @@ public record TaskHelperTask
     ///     此处优先级大于 <see cref="TaskHelper.TimeoutMS" />
     /// </summary>
     public int TimeoutMS { get; }
-    
+
     /// <summary>
     ///     当任务超时时的控制逻辑 <br />
     ///     若为 null 则使用全局配置 <see cref="TaskHelper.TimeoutBehaviour" />
     /// </summary>
-    public TaskAbortBehaviour? TimeoutBehaviour   { get; }
-    
+    public TaskAbortBehaviour? TimeoutBehaviour { get; }
+
     /// <summary>
     ///     当任务执行出现异常时的控制逻辑 <br />
     ///     若为 null 则使用全局配置 <see cref="TaskHelper.ExceptionBehaviour" />
     /// </summary>
     public TaskAbortBehaviour? ExceptionBehaviour { get; }
-    
+
+    /// <summary>
+    ///     当单一任务超时时额外执行的逻辑
+    ///     若为 null 则使用全局配置 <see cref="TaskHelper.TimeoutAction" />
+    /// </summary>
+    public Action? TimeoutAction { get; set; }
+
+    /// <summary>
+    ///     当单一任务执行出现异常时额外执行的逻辑
+    ///     若为 null 则使用全局配置 <see cref="TaskHelper.ExceptionAction" />
+    /// </summary>
+    public Action? ExceptionAction { get; set; }
+
     /// <summary>
     ///     任务取消令牌源 <br />
     /// </summary>
     public CancellationTokenSource? CancelToken { get; }
-    
+
     /// <summary>
     ///     任务名称
     /// </summary>
@@ -73,18 +85,26 @@ public record TaskHelperTask
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
-    public TaskHelperTask(
-        Func<bool>          action, 
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
+    public TaskHelperTask
+    (
+        Func<bool>          action,
         string?             name               = null,
         int                 timeoutMS          = 0,
         TaskAbortBehaviour? timeoutBehaviour   = null,
-        TaskAbortBehaviour? exceptionBehaviour = null)
+        TaskAbortBehaviour? exceptionBehaviour = null,
+        Action?             timeoutAction      = null,
+        Action?             exceptionAction    = null
+    )
     {
         Action             = action;
         AsyncAction        = null;
         TimeoutMS          = timeoutMS;
         TimeoutBehaviour   = timeoutBehaviour;
         ExceptionBehaviour = exceptionBehaviour;
+        TimeoutAction      = timeoutAction;
+        ExceptionAction    = exceptionAction;
         Name               = name;
         CancelToken        = new();
     }
@@ -104,17 +124,26 @@ public record TaskHelperTask
     /// </param>
     /// <param name="timeoutBehaviour">超时控制行为</param>
     /// <param name="exceptionBehaviour">异常控制行为</param>
-    public TaskHelperTask(
-        Func<CancellationToken, Task<bool>> asyncAction, string? name = null,
+    /// <param name="timeoutAction">超时额外执行逻辑</param>
+    /// <param name="exceptionAction">异常额外执行逻辑</param>
+    public TaskHelperTask
+    (
+        Func<CancellationToken, Task<bool>> asyncAction,
+        string?                             name               = null,
         int                                 timeoutMS          = 0,
         TaskAbortBehaviour?                 timeoutBehaviour   = null,
-        TaskAbortBehaviour?                 exceptionBehaviour = null)
+        TaskAbortBehaviour?                 exceptionBehaviour = null,
+        Action?                             timeoutAction      = null,
+        Action?                             exceptionAction    = null
+    )
     {
         Action             = null;
         AsyncAction        = asyncAction;
         TimeoutMS          = timeoutMS;
         TimeoutBehaviour   = timeoutBehaviour;
         ExceptionBehaviour = exceptionBehaviour;
+        TimeoutAction      = timeoutAction;
+        ExceptionAction    = exceptionAction;
         Name               = name;
         CancelToken        = new();
     }
@@ -123,6 +152,6 @@ public record TaskHelperTask
     ///     获取任务名称
     /// </summary>
     /// <returns>任务名称，若未设置则返回 "(无名称)"</returns>
-    public string GetName() => 
+    public string GetName() =>
         Name ?? "(无名称)";
 }
