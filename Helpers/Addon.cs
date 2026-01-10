@@ -199,9 +199,9 @@ public static unsafe partial class HelpersOm
     public static bool TryScanContextMenuText(string text, out int index)
     {
         index = -1;
-        if (ContextMenuXIV == null) return false;
+        if (ContextMenuAddon == null) return false;
 
-        var atkValues  = ((AddonContextMenu*)ContextMenuXIV)->AtkValues;
+        var atkValues  = ((AddonContextMenu*)ContextMenuAddon)->AtkValues;
         var entryCount = atkValues[0].UInt;
         if (entryCount == 0) return false;
 
@@ -235,9 +235,9 @@ public static unsafe partial class HelpersOm
     public static bool TryScanContextMenuText(IReadOnlyList<string> texts, out int index)
     {
         index = -1;
-        if (ContextMenuXIV == null) return false;
+        if (ContextMenuAddon == null) return false;
 
-        var atkValues  = ((AddonContextMenu*)ContextMenuXIV)->AtkValues;
+        var atkValues  = ((AddonContextMenu*)ContextMenuAddon)->AtkValues;
         var entryCount = atkValues[0].UInt;
         if (entryCount == 0) return false;
 

@@ -9,6 +9,7 @@ global using OmenTools.Managers;
 global using OmenTools.ImGuiOm;
 global using OmenTools.Helpers;
 global using OmenTools.Extensions;
+global using OmenTools.Widgets;
 
 global using IAetheryteList = OmenTools.Service.IAetheryteList;
 global using IAetheryteEntry = OmenTools.Service.IAetheryteEntry;
@@ -25,6 +26,7 @@ global using StatusList = OmenTools.Service.StatusList;
 global using static OmenTools.Helpers.HelpersOm;
 global using static OmenTools.Infos.InfosOm;
 global using static OmenTools.Helpers.ThrottlerHelper;
+global using static OmenTools.Infos.GameAddon;
 
 #endregion
 

@@ -2,7 +2,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Infos;
 
-public static unsafe partial class InfosOm
+public static unsafe class GameAddon
 {
     #region Sub Addons
 
@@ -64,7 +64,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* MovieStaffList                  => GetAddonByName("MovieStaffList");
     public static AtkUnitBase* Hud                             => GetAddonByName("Hud");
     public static AtkUnitBase* ChatLog                         => GetAddonByName("ChatLog");
-    public static AtkUnitBase* ContextMenuXIV                  => GetAddonByName("ContextMenu");
+    public static AtkUnitBase* ContextMenuAddon                => GetAddonByName("ContextMenu");
     public static AtkUnitBase* SelectOK                        => GetAddonByName("SelectOk");
     public static AtkUnitBase* SelectYesno                     => GetAddonByName("SelectYesno");
     public static AtkUnitBase* SelectString                    => GetAddonByName("SelectString");
@@ -108,7 +108,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* LetterList                      => GetAddonByName("LetterList");
     public static AtkUnitBase* LetterViewer                    => GetAddonByName("LetterViewer");
     public static AtkUnitBase* LetterEditor                    => GetAddonByName("LetterEditor");
-    public static AtkUnitBase* RecipeNote                      => GetAddonByName("RecipeNote");
+    public static AtkUnitBase* RecipeNoteAddon                 => GetAddonByName("RecipeNote");
     public static AtkUnitBase* RecipeNoteSetting               => GetAddonByName("RecipeNoteSetting");
     public static AtkUnitBase* RecipeTree                      => GetAddonByName("RecipeTree");
     public static AtkUnitBase* RecipeMaterialList              => GetAddonByName("RecipeMaterialList");
@@ -169,7 +169,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* AchievementInfo                 => GetAddonByName("AchievementInfo");
     public static AtkUnitBase* AchievementSetting              => GetAddonByName("AchievementSetting");
     public static AtkUnitBase* HowToList                       => GetAddonByName("HowToList");
-    public static AtkUnitBase* Cabinet                         => GetAddonByName("Cabinet");
+    public static AtkUnitBase* CabinetAddon                    => GetAddonByName("Cabinet");
     public static AtkUnitBase* FishingNote                     => GetAddonByName("FishingNote");
     public static AtkUnitBase* ContentsFinder                  => GetAddonByName("ContentsFinder");
     public static AtkUnitBase* ContentsFinderSetting           => GetAddonByName("ContentsFinderSetting");
@@ -340,7 +340,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* RelicNoteBook                   => GetAddonByName("RelicNoteBook");
     public static AtkUnitBase* Tryon                           => GetAddonByName("Tryon");
     public static AtkUnitBase* TryonGlassesSelect              => GetAddonByName("TryonGlassesSelect");
-    public static AtkUnitBase* TradeMultiple                   => GetAddonByName("TradeMultiple");
+    public static AtkUnitBase* TradeMultipleAddon              => GetAddonByName("TradeMultiple");
     public static AtkUnitBase* MacroTextCommandList            => GetAddonByName("MacroTextCommandList");
     public static AtkUnitBase* RelicSphereUpgrade              => GetAddonByName("RelicSphereUpgrade");
     public static AtkUnitBase* RegistGearSetList               => GetAddonByName("RegistGearSetList");
@@ -623,7 +623,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* PvpCalendar                     => GetAddonByName("PvpCalendar");
     public static AtkUnitBase* PvpReward                       => GetAddonByName("PvpReward");
     public static AtkUnitBase* LFGFilterSettings               => GetAddonByName("LFGFilterSettings");
-    public static AtkUnitBase* ScenarioTree                    => GetAddonByName("ScenarioTree");
+    public static AtkUnitBase* ScenarioTreeAddon               => GetAddonByName("ScenarioTree");
     public static AtkUnitBase* ScenarioTreeDetail              => GetAddonByName("ScenarioTreeDetail");
     public static AtkUnitBase* LFGLogSettings                  => GetAddonByName("LFGLogSettings");
     public static AtkUnitBase* TreasureHighLow                 => GetAddonByName("TreasureHighLow");
@@ -791,7 +791,7 @@ public static unsafe partial class InfosOm
     public static AtkUnitBase* IKDResult                       => GetAddonByName("IKDResult");
     public static AtkUnitBase* IKDMission                      => GetAddonByName("IKDMission");
     public static AtkUnitBase* InclusionShop                   => GetAddonByName("InclusionShop");
-    public static AtkUnitBase* CollectablesShop                => GetAddonByName("CollectablesShop");
+    public static AtkUnitBase* CollectablesShopAddon           => GetAddonByName("CollectablesShop");
     public static AtkUnitBase* MYCWarResultNotebook            => GetAddonByName("MYCWarResultNotebook");
     public static AtkUnitBase* MYCInfo                         => GetAddonByName("MYCInfo");
     public static AtkUnitBase* MYCItemBox                      => GetAddonByName("MYCItemBox");
