@@ -256,18 +256,7 @@ public partial class TaskHelper
 
         EnqueueAsync
         (
-            async ct => await Task.Run
-                        (() =>
-                            {
-                                var startTick = Stopwatch.GetTimestamp();
-
-                                while (Stopwatch.GetElapsedTime(startTick).TotalMilliseconds < delayMS)
-                                {
-                                    // ignored
-                                }
-                            },
-                            ct
-                        ),
+            async ct => await Task.Delay(delayMS, ct).ConfigureAwait(false),
             $"{uniqueName} (延迟 {delayMS} 毫秒)",
             weight: weight
         );
