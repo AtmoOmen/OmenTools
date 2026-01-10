@@ -86,7 +86,7 @@ public static unsafe class AtkUldManagerExtension
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
-                    if (node == null || node->Type != NodeType.Component) continue;
+                    if (node == null || (uint)node->Type < 1000) continue;
 
                     var componentNode = (AtkComponentNode*)node;
                     var componentInfo = componentNode->Component->UldManager;
@@ -110,7 +110,7 @@ public static unsafe class AtkUldManagerExtension
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
-                    if (node == null || node->Type != NodeType.Component) continue;
+                    if (node == null || (uint)node->Type < 1000) continue;
 
                     var componentNode = (AtkComponentNode*)node;
                     var componentInfo = componentNode->Component->UldManager;
@@ -134,7 +134,7 @@ public static unsafe class AtkUldManagerExtension
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
-                    if (node == null || node->Type != NodeType.Component) continue;
+                    if (node == null || (uint)node->Type < 1000) continue;
 
                     var componentNode = (AtkComponentNode*)node;
                     var componentInfo = componentNode->Component->UldManager;
@@ -160,7 +160,7 @@ public static unsafe class AtkUldManagerExtension
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
-                    if (node == null || node->Type != NodeType.Component) continue;
+                    if (node == null || (uint)node->Type < 1000) continue;
 
                     var componentNode = (AtkComponentNode*)node;
                     var componentInfo = componentNode->Component->UldManager;
@@ -184,7 +184,7 @@ public static unsafe class AtkUldManagerExtension
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
-                    if (node == null || node->Type != NodeType.Component) continue;
+                    if (node == null || (uint)node->Type < 1000) continue;
 
                     var componentNode = (AtkComponentNode*)node;
                     var componentInfo = componentNode->Component->UldManager;
@@ -208,7 +208,7 @@ public static unsafe class AtkUldManagerExtension
                 for (var i = 0; i < managerPtr->NodeListCount; i++)
                 {
                     var node = managerPtr->NodeList[i];
-                    if (node == null || node->Type != NodeType.Component) continue;
+                    if (node == null || (uint)node->Type < 1000) continue;
 
                     var componentNode = (AtkComponentNode*)node;
                     var componentInfo = componentNode->Component->UldManager;
