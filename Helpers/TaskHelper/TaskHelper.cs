@@ -30,8 +30,11 @@ public partial class TaskHelper : IDisposable
     private static Channel<(TaskHelperTask Task, int Weight)> CreateTaskChannel() =>
         Channel.CreateUnbounded<(TaskHelperTask, int)>(new() { SingleReader = true });
 
-    public TaskHelper() =>
+    public TaskHelper()
+    {
         Instances.TryAdd(this, 0);
+        _ = ProcessChannelAsync(CancelSource.Token);
+    }
 
     public void Dispose()
     {
@@ -39,17 +42,17 @@ public partial class TaskHelper : IDisposable
         IsDisposed = true;
         
         Instances.TryRemove(this, out _);
+        CancelSource.Cancel();
         
-        DService.Instance().Framework.Update -= Tick;
         TaskChannel.Writer.TryComplete();
 
-        foreach (var kvp in RunningAsyncTasks)
+        if (CurrentTask is { IsAsync: true, CancelToken: not null })
         {
-            kvp.Key.CancelToken?.Cancel();
-            kvp.Key.CancelToken?.Dispose();
+            CurrentTask.CancelToken.Cancel();
+            CurrentTask.CancelToken.Dispose();
         }
 
-        RunningAsyncTasks.Clear();
+        RunningSystemTask = null;
 
         foreach (var queue in Queues)
         {
@@ -107,25 +110,53 @@ public partial class TaskHelper : IDisposable
     /// </summary>
     public bool IsDisposed { get; private set; }
 
-    private TaskHelperTask?                                  CurrentTask       { get; set; }
-    private ConcurrentDictionary<TaskHelperTask, Task<bool>> RunningAsyncTasks { get; set; } = [];
-    private SortedSet<TaskHelperQueue>                       Queues            { get; }      = [new(1), new(0)];
-    private Channel<(TaskHelperTask Task, int Weight)>       TaskChannel       { get; }      = CreateTaskChannel();
+    private TaskHelperTask?                            CurrentTask       { get; set; }
+    private Task<bool>?                                RunningSystemTask { get; set; }
+    private SortedSet<TaskHelperQueue>                 Queues            { get; } = [new(1), new(0)];
+    private Channel<(TaskHelperTask Task, int Weight)> TaskChannel       { get; } = CreateTaskChannel();
+    private CancellationTokenSource                    CancelSource      { get; } = new();
 
     private volatile int pendingTaskCount;
     private volatile int queueTaskCount;
-    private volatile int isScanning;
 
-    private void Tick(IFramework framework)
+    private async Task ProcessChannelAsync(CancellationToken ct)
     {
-        SyncPendingTasks();
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                if (CurrentTask == null && queueTaskCount == 0 && pendingTaskCount == 0)
+                    await TaskChannel.Reader.WaitToReadAsync(ct);
 
-        if (CurrentTask == null)
-            ProcessNextTask();
-        else
-            ExecuteCurrentTask(framework);
+                var isBusy = false;
+                await DService.Instance().Framework.RunOnTick(() =>
+                {
+                    SyncPendingTasks();
 
-        TryUnregisterTick();
+                    if (CurrentTask == null)
+                        ProcessNextTask();
+                    
+                    if (CurrentTask != null)
+                    {
+                        ExecuteCurrentTask();
+                        isBusy = true;
+                    }
+                    else
+                        isBusy = queueTaskCount > 0 || pendingTaskCount > 0;
+                }, cancellationToken: ct);
+
+                if (isBusy)
+                    await Task.Delay(1, ct);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // ignored
+        }
+        catch (Exception ex)
+        {
+            LogWarning($"[TaskHelper] 异步轮询出现异常: {ex}");
+        }
     }
 
     private void SyncPendingTasks()
@@ -133,11 +164,11 @@ public partial class TaskHelper : IDisposable
         while (TaskChannel.Reader.TryRead(out var item))
         {
             Interlocked.Decrement(ref pendingTaskCount);
-            var queue = Queues.FirstOrDefault(q => q.Weight == item.Weight);
+            var lookup = new TaskHelperQueue(item.Weight);
 
-            if (queue == null)
+            if (!Queues.TryGetValue(lookup, out var queue))
             {
-                queue = new TaskHelperQueue(item.Weight);
+                queue = lookup;
                 Queues.Add(queue);
             }
 
@@ -161,47 +192,59 @@ public partial class TaskHelper : IDisposable
         }
     }
 
-    private void ExecuteCurrentTask(IFramework framework)
+    private void ExecuteCurrentTask()
     {
         try
         {
             if (CurrentTask == null) return;
 
-            if (CurrentTask.IsAsync)
+            if (RunningSystemTask == null)
             {
-                if (!RunningAsyncTasks.TryGetValue(CurrentTask, out var task))
+                Task<bool> newTask = null;
+                if (CurrentTask.IsAsync)
                 {
-                    var asyncTask = framework.Run(async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token),
-                                                  CurrentTask.CancelToken.Token);
-                    RunningAsyncTasks[CurrentTask] = asyncTask;
-
-                    Log($"启动异步任务 {CurrentTask.GetName()}");
-                    return;
+                    newTask = DService.Instance().Framework.RunOnTick
+                    (
+                        async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token),
+                        cancellationToken: CurrentTask.CancelToken.Token
+                    );
                 }
-
-                if (task.IsCompletedSuccessfully)
-                    HandleTaskCompletion();
-                else if (task.IsCanceled)
-                    throw new OperationCanceledException($"异步任务 {CurrentTask.GetName()} 已取消");
-                else if (task.IsFaulted)
-                    throw task.Exception?.GetBaseException() ?? new Exception($"异步任务 {CurrentTask.GetName()} 已失败");
                 else
-                    HandleTaskTimeout();
+                    newTask = DService.Instance().Framework.RunOnTick(() => CurrentTask.Action());
+                RunningSystemTask = newTask;
+
+                Log($"启动{(CurrentTask.IsAsync ? "异步" : "同步")}任务 {CurrentTask.GetName()}");
+                return;
             }
-            else
+
+            var task = RunningSystemTask;
+            if (task.IsCompletedSuccessfully)
             {
-                switch (CurrentTask.Action())
+                if (task.Result)
+                    HandleTaskCompletion();
+                else
                 {
-                    case true:
-                        HandleTaskCompletion();
-                        break;
-                    case false:
-                        HandleTaskTimeout();
-                        break;
+                    Task<bool> newTask = null;
+                    if (CurrentTask.IsAsync)
+                    {
+                        newTask = DService.Instance().Framework.RunOnTick
+                        (
+                            async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token),
+                            cancellationToken: CurrentTask.CancelToken.Token
+                        );
+                    }
+                    else
+                        newTask = DService.Instance().Framework.RunOnTick(() => CurrentTask.Action());
+                    
+                    RunningSystemTask = newTask;
                 }
             }
-
-
+            else if (task.IsCanceled)
+                throw new OperationCanceledException($"异步任务 {CurrentTask.GetName()} 已取消");
+            else if (task.IsFaulted)
+                throw task.Exception?.GetBaseException() ?? new Exception($"异步任务 {CurrentTask.GetName()} 已失败");
+            else
+                HandleTaskTimeout();
         }
         catch (Exception ex)
         {
@@ -215,7 +258,7 @@ public partial class TaskHelper : IDisposable
 
         Log($"已完成任务: {CurrentTask.GetName()}");
         CurrentTask = null;
-        RunningAsyncTasks.TryRemove(CurrentTask, out _);
+        RunningSystemTask = null;
     }
 
     private void HandleTaskTimeout()
@@ -265,38 +308,14 @@ public partial class TaskHelper : IDisposable
                 if (CurrentTask is { IsAsync: true, CancelToken: not null })
                 {
                     CurrentTask.CancelToken.Cancel();
-                    RunningAsyncTasks.TryRemove(CurrentTask, out _);
+                    RunningSystemTask = null;
                 }
 
                 CurrentTask = null;
-                RunningAsyncTasks.TryRemove(CurrentTask, out _);
+                RunningSystemTask = null;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(behaviour));
-        }
-    }
-
-    private void TryRegisterTick()
-    {
-        if (Interlocked.CompareExchange(ref isScanning, 1, 0) == 0)
-        {
-            DService.Instance().Framework.Update -= Tick;
-            DService.Instance().Framework.Update += Tick;
-        }
-    }
-
-    private void TryUnregisterTick()
-    {
-        if (CurrentTask == null && pendingTaskCount == 0 && queueTaskCount == 0 && RunningAsyncTasks.IsEmpty)
-        {
-            DService.Instance().Framework.Update -= Tick;
-            Interlocked.Exchange(ref isScanning, 0);
-
-            if (CurrentTask != null || pendingTaskCount > 0 || queueTaskCount > 0 || !RunningAsyncTasks.IsEmpty)
-            {
-                if (Interlocked.CompareExchange(ref isScanning, 1, 0) == 0)
-                    DService.Instance().Framework.Update += Tick;
-            }
         }
     }
     
@@ -330,11 +349,10 @@ public partial class TaskHelper : IDisposable
 
         queueTaskCount = 0;
 
-        foreach (var kvp in RunningAsyncTasks)
-            kvp.Key.CancelToken?.Cancel();
+        if (CurrentTask is { IsAsync: true, CancelToken: not null })
+            CurrentTask.CancelToken.Cancel();
 
-        RunningAsyncTasks.Clear();
-
+        RunningSystemTask = null;
         CurrentTask = null;
     }
 

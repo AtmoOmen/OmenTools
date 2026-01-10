@@ -20,9 +20,8 @@ public partial class TaskHelper
         if (task is { Action: not null, AsyncAction: not null })
             throw new ArgumentException($"任务 {task.GetName()} 的执行逻辑不明确 (Action 和 AsyncAction 均不为 null)");
         
-        TaskChannel.Writer.TryWrite((task, weight));
+        if (!TaskChannel.Writer.TryWrite((task, weight))) return;
         Interlocked.Increment(ref pendingTaskCount);
-        TryRegisterTick();
     }
 
     /// <summary>
@@ -49,9 +48,8 @@ public partial class TaskHelper
         TaskAbortBehaviour? exceptionBehaviour = null,
         int                 weight             = 0)
     {
-        TaskChannel.Writer.TryWrite((new(task, name, timeoutMS, timeoutBehaviour, exceptionBehaviour), weight));
+        if (!TaskChannel.Writer.TryWrite((new(task, name, timeoutMS, timeoutBehaviour, exceptionBehaviour), weight))) return;
         Interlocked.Increment(ref pendingTaskCount);
-        TryRegisterTick();
     }
 
     /// <summary>
@@ -133,9 +131,8 @@ public partial class TaskHelper
         TaskAbortBehaviour?                 exceptionBehaviour = null,
         int                                 weight             = 0)
     {
-        TaskChannel.Writer.TryWrite((new(asyncTask, name, timeoutMS, timeoutBehaviour, exceptionBehaviour), weight));
+        if (!TaskChannel.Writer.TryWrite((new(asyncTask, name, timeoutMS, timeoutBehaviour, exceptionBehaviour), weight))) return;
         Interlocked.Increment(ref pendingTaskCount);
-        TryRegisterTick();
     }
 
     /// <summary>
