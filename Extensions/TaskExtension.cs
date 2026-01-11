@@ -4,9 +4,11 @@ public static class TaskExtension
 {
     extension(Task task)
     {
-        public static async ValueTask WaitForConditionAsync(Func<bool> condition, TimeSpan? timeout = null)
+        public static async ValueTask WaitForConditionAsync(Func<bool> condition, TimeSpan? timeout = null, CancellationToken? token = null)
         {
             if (condition()) return;
+            
+            token ??= CancellationToken.None;
 
             long deadlineTick = 0;
             if (timeout.HasValue)
@@ -14,9 +16,9 @@ public static class TaskExtension
 
             var interval = TimeSpan.FromMilliseconds(100); 
 
-            while (true)
+            while (!token.Value.IsCancellationRequested)
             {
-                await Task.Delay(interval).ConfigureAwait(false);
+                await Task.Delay(interval, token.Value).ConfigureAwait(false);
 
                 if (condition()) return;
 
