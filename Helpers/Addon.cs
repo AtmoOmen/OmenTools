@@ -11,7 +11,7 @@ public static unsafe partial class HelpersOm
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetAddonByName(string addonName, out AtkUnitBase* addonPtr)
     {
-        var addon = DService.Instance().Gui.GetAddonByName(addonName).Address;
+        var addon = DService.Instance().GameGUI.GetAddonByName(addonName).Address;
         if (addon == nint.Zero)
         {
             addonPtr = null;
@@ -25,7 +25,7 @@ public static unsafe partial class HelpersOm
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetAddonByName<T>(string addonName, out T* addonPtr) where T : unmanaged
     {
-        var addon = DService.Instance().Gui.GetAddonByName(addonName).Address;
+        var addon = DService.Instance().GameGUI.GetAddonByName(addonName).Address;
         if (addon == nint.Zero)
         {
             addonPtr = null;
@@ -39,7 +39,7 @@ public static unsafe partial class HelpersOm
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T* GetAddonByName<T>(string addonName) where T : unmanaged
     {
-        var a = DService.Instance().Gui.GetAddonByName(addonName).Address;
+        var a = DService.Instance().GameGUI.GetAddonByName(addonName).Address;
         if (a == nint.Zero) return null;
 
         return (T*)a;

@@ -116,7 +116,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
         TaskHelper ??= new() { TimeoutMS = 5_000 };
 
         DService.Instance().ContextMenu.OnMenuOpened += OnMenuOpened;
-        DService.Instance().Gui.HoveredItemChanged   += OnHoveredItemChanged;
+        DService.Instance().GameGUI.HoveredItemChanged   += OnHoveredItemChanged;
         FrameworkManager.Instance().Reg(OnUpdate);
 
         DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
@@ -155,7 +155,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
 
         DService.Instance().AddonLifecycle.UnregisterListener(OnAddon);
         
-        DService.Instance().Gui.HoveredItemChanged   -= OnHoveredItemChanged;
+        DService.Instance().GameGUI.HoveredItemChanged   -= OnHoveredItemChanged;
         DService.Instance().ContextMenu.OnMenuOpened -= OnMenuOpened;
 
         TaskHelper?.Abort();

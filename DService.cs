@@ -109,45 +109,52 @@ public sealed class DService
     public T? GetOmenService<T>() where T : OmenServiceBase =>
         (T?)OmenServices.GetValueOrDefault(typeof(T));
 
-    [PluginService] public IAddonLifecycle      AddonLifecycle      { get; private set; } = null!;
-    [PluginService] public IAddonEventManager   AddonEvent          { get; private set; } = null!;
-    [PluginService] public IBuddyList           BuddyList           { get; private set; } = null!;
-    [PluginService] public IChatGui             Chat                { get; private set; } = null!;
-    [PluginService] public IClientState         ClientState         { get; private set; } = null!;
-    [PluginService] public ICommandManager      Command             { get; private set; } = null!;
-    [PluginService] public ICondition           Condition           { get; private set; } = null!;
-    [PluginService] public IContextMenu         ContextMenu         { get; private set; } = null!;
-    [PluginService] public IDataManager         Data                { get; private set; } = null!;
-    [PluginService] public IDtrBar              DtrBar              { get; private set; } = null!;
-    [PluginService] public IDutyState           DutyState           { get; private set; } = null!;
-    [PluginService] public IFateTable           Fate                { get; private set; } = null!;
-    [PluginService] public IFlyTextGui          FlyText             { get; private set; } = null!;
-    [PluginService] public IFramework           Framework           { get; private set; } = null!;
-    [PluginService] public IGameConfig          GameConfig          { get; private set; } = null!;
-    [PluginService] public IGameGui             Gui                 { get; private set; } = null!;
-    [PluginService] public IGameInteropProvider Hook                { get; private set; } = null!;
-    [PluginService] public IGameInventory       Inventory           { get; private set; } = null!;
-    [PluginService] public IGameLifecycle       Lifecycle           { get; private set; } = null!;
-    [PluginService] public IGamepadState        Gamepad             { get; private set; } = null!;
-    [PluginService] public IJobGauges           JobGauges           { get; private set; } = null!;
-    [PluginService] public IKeyState            KeyState            { get; private set; } = null!;
-    [PluginService] public IMarketBoard         MarketBoard         { get; private set; } = null!;
-    [PluginService] public INamePlateGui        NamePlateGui        { get; private set; } = null!;
-    [PluginService] public INotificationManager DalamudNotification { get; private set; } = null!;
-    [PluginService] public IPartyFinderGui      PartyFinder         { get; private set; } = null!;
-    [PluginService] public IPartyList           PartyList           { get; private set; } = null!;
-    [PluginService] public IPlayerState         PlayerState         { get; private set; } = null!;
-    [PluginService] public IPluginLog           Log                 { get; private set; } = null!;
-    [PluginService] public ISeStringEvaluator   SeStringEvaluator   { get; private set; } = null!;
-    [PluginService] public ITextureProvider     Texture             { get; private set; } = null!;
-    [PluginService] public ITitleScreenMenu     TitleScreenMenu     { get; private set; } = null!;
-    [PluginService] public IToastGui            Toast               { get; private set; } = null!;
+    [PluginService] public IAddonEventManager           AddonEvent          { get; private set; } = null!;
+    [PluginService] public IAddonLifecycle              AddonLifecycle      { get; private set; } = null!;
+    [PluginService] public IBuddyList                   BuddyList           { get; private set; } = null!;
+    [PluginService] public IChatGui                     Chat                { get; private set; } = null!;
+    [PluginService] public IClientState                 ClientState         { get; private set; } = null!;
+    [PluginService] public ICommandManager              Command             { get; private set; } = null!;
+    [PluginService] public ICondition                   Condition           { get; private set; } = null!;
+    [PluginService] public IContextMenu                 ContextMenu         { get; private set; } = null!;
+    [PluginService] public IDataManager                 Data                { get; private set; } = null!;
+    [PluginService] public IDtrBar                      DTRBar              { get; private set; } = null!;
+    [PluginService] public IDutyState                   DutyState           { get; private set; } = null!;
+    [PluginService] public IFateTable                   Fate                { get; private set; } = null!;
+    [PluginService] public IFlyTextGui                  FlyText             { get; private set; } = null!;
+    [PluginService] public IFramework                   Framework           { get; private set; } = null!;
+    [PluginService] public IGameConfig                  GameConfig          { get; private set; } = null!;
+    [PluginService] public IGameGui                     GameGUI             { get; private set; } = null!;
+    [PluginService] public IGameInteropProvider         Hook                { get; private set; } = null!;
+    [PluginService] public IGameInventory               GameInventory       { get; private set; } = null!;
+    [PluginService] public IGameLifecycle               GameLifecycle       { get; private set; } = null!;
+    [PluginService] public IGamepadState                Gamepad             { get; private set; } = null!;
+    [PluginService] public IJobGauges                   JobGauges           { get; private set; } = null!;
+    [PluginService] public IKeyState                    KeyState            { get; private set; } = null!;
+    [PluginService] public IMarketBoard                 MarketBoard         { get; private set; } = null!;
+    [PluginService] public INamePlateGui                NamePlate           { get; private set; } = null!;
+    [PluginService] public INotificationManager         DalamudNotification { get; private set; } = null!;
+    [PluginService] public IPartyFinderGui              PartyFinder         { get; private set; } = null!;
+    [PluginService] public IPartyList                   PartyList           { get; private set; } = null!;
+    [PluginService] public IPlayerState                 PlayerState         { get; private set; } = null!;
+    [PluginService] public IPluginLog                   Log                 { get; private set; } = null!;
+    [PluginService] public ISeStringEvaluator           SeStringEvaluator   { get; private set; } = null!;
+    [PluginService] public ISelfTestRegistry            SelfTestRegistry    { get; private set; }
+    [PluginService] public ISigScanner                  SigScanner          { get; private set; }
+    [PluginService] public ITextureProvider             Texture             { get; private set; } = null!;
+    [PluginService] public ITextureReadbackProvider     TextureReadback     { get; private set; } = null!;
+    [PluginService] public ITextureSubstitutionProvider TextureSubstitution { get; private set; } = null!;
+    [PluginService] public ITitleScreenMenu             TitleScreenMenu     { get; private set; } = null!;
+    [PluginService] public IToastGui                    Toast               { get; private set; } = null!;
 
+    // TODO: 等待 7.41
+    // [PluginService] public IAgentLifecycle AgentLifecycle { get; private set; } = null!; 
+    // [PluginService] public IUnlockState    UnlockState    { get; private set; } = null!;
+    
     public IDalamudPluginInterface PI            { get; private set; } = null!;
     public IUiBuilder              UIBuilder     { get; private set; } = null!;
     public IAetheryteList          AetheryteList { get; private set; } = null!;
     public IObjectTable            ObjectTable   { get; private set; } = null!;
-    public SigScanner              SigScanner    { get; private set; } = new();
 
     public TrayNotification? TrayNotification
     {
