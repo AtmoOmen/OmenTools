@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Channels;
-using Dalamud.Plugin.Services;
 
 namespace OmenTools.Helpers;
 
@@ -42,14 +41,29 @@ public partial class TaskHelper : IDisposable
         IsDisposed = true;
         
         Instances.TryRemove(this, out _);
+
+        try
+        {
+            CancelSource.Cancel();
+            CancelSource.Dispose();
+        }
+        catch
+        {
+            // ignored
+        }
         
-        CancelSource.Cancel();
-        CancelSource.Dispose();
         
         TaskChannel.Writer.TryComplete();
 
-        CurrentTask?.CancelToken?.Cancel();
-        CurrentTask?.CancelToken?.Dispose();
+        try
+        {
+            CurrentTask?.CancelToken?.Cancel();
+            CurrentTask?.CancelToken?.Dispose();
+        }
+        catch
+        {
+            // ignored
+        }
 
         RunningSystemTask = null;
 
@@ -57,8 +71,16 @@ public partial class TaskHelper : IDisposable
         {
             foreach (var task in queue.Tasks)
             {
-                task.CancelToken?.Cancel();
-                task.CancelToken?.Dispose();
+                try
+                {
+                    task.CancelToken?.Cancel();
+                    task.CancelToken?.Dispose();
+                }
+                catch
+                {
+                    // ignored
+                }
+                
             }
         }
         Queues.Clear();
