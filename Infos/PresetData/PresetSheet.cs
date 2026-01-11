@@ -6,24 +6,26 @@ namespace OmenTools.Infos;
 
 public static class PresetSheet
 {
-    public static Dictionary<uint, Status> DispellableStatuses { get; } = 
+    public static Dictionary<uint, Status> DispellableStatuses { get; } =
         LuminaGetter.Get<Status>()
                     .Where(x => x is { CanDispel: true } && !string.IsNullOrEmpty(x.Name.ToString()))
                     .ToDictionary(x => x.RowId, s => s);
-    
+
     public static Dictionary<uint, Action> PlayerActions { get; } =
         LuminaGetter.Get<Action>()
                     .Where(x => !string.IsNullOrEmpty(x.Name.ToString()))
                     .Where(x => !string.IsNullOrEmpty(x.ClassJobCategory.ValueNullable?.Name.ToString() ?? string.Empty))
-                    .Where(x => x is
-                    {
-                        IsPlayerAction: false,
-                        ClassJobLevel : > 0
-                    } 
-                    or
-                    {
-                        IsPlayerAction: true
-                    })
+                    .Where
+                    (x => x is
+                              {
+                                  IsPlayerAction: false,
+                                  ClassJobLevel : > 0
+                              }
+                              or
+                              {
+                                  IsPlayerAction: true
+                              }
+                    )
                     .OrderBy(x => x.ClassJob.RowId)
                     .ThenBy(x => x.ClassJobLevel)
                     .ToDictionary(x => x.RowId, x => x);
@@ -54,26 +56,30 @@ public static class PresetSheet
 
     public static Dictionary<uint, World> Worlds { get; } =
         LuminaGetter.Get<World>()
-                    .Where(x => x.DataCenter.RowId != 0                          &&
-                                x.DataCenter.RowId != 13                         && // 北美云服务器
-                                x.UserType         != 0                          &&
-                                x.Region           != 0                          &&
-                                !string.IsNullOrEmpty(x.Name.ToString())         &&
-                                !string.IsNullOrEmpty(x.InternalName.ToString()) &&
-                                !x.Name.ToString().Contains('-')                 &&
-                                (x.UserType - 1) * 1000 is var minWorldID        &&
-                                x.UserType       * 1000 is var maxWorldID        &&
-                                x.RowId > minWorldID                             &&
-                                x.RowId < maxWorldID)
+                    .Where
+                    (x => x.DataCenter.RowId != 0                          &&
+                          x.DataCenter.RowId != 13                         && // 北美云服务器
+                          x.UserType         != 0                          &&
+                          x.Region           != 0                          &&
+                          !string.IsNullOrEmpty(x.Name.ToString())         &&
+                          !string.IsNullOrEmpty(x.InternalName.ToString()) &&
+                          !x.Name.ToString().Contains('-')                 &&
+                          (x.Region - 1) * 1000 is var minWorldID          &&
+                          x.Region       * 1000 is var maxWorldID          &&
+                          x.RowId > minWorldID                             &&
+                          x.RowId < maxWorldID
+                    )
                     .ToDictionary(x => x.RowId, x => x);
 
     public static Dictionary<uint, World> CNWorlds { get; } =
         Worlds
-            .Where(x => x.Key is > 1000 and < 2000           &&
-                        x.Value.DataCenter.RowId        != 0 &&
-                        x.Value.UserType                == 2 &&
-                        x.Value.DataCenter.Value.Region == 5 &&
-                        x.Value.Region                  == 101)
+            .Where
+            (x => x.Key is > 1000 and < 2000           &&
+                  x.Value.DataCenter.RowId        != 0 &&
+                  x.Value.Region                  == 2 &&
+                  x.Value.DataCenter.Value.Region == 5 &&
+                  x.Value.UserType                == 101
+            )
             .ToDictionary(x => x.Key, x => x.Value);
 
     public static Dictionary<uint, TerritoryType> Zones { get; } =

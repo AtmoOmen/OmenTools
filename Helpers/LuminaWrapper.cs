@@ -112,7 +112,7 @@ public static class LuminaWrapper
         LuminaGetter.TryGetRow<MKDSupportJob>(rowID, out var item) ? item.Description.ToString() : string.Empty;
     
     public static string GetMKDTraitName(uint rowID) => 
-        LuminaGetter.TryGetRow<MKDTrait>(rowID, out var item) ? item.Unknown0.ToString() : string.Empty;
+        LuminaGetter.TryGetRow<MKDTrait>(rowID, out var item) ? item.Name.ToString() : string.Empty;
     
     public static string GetWeatherName(uint rowID) => 
         LuminaGetter.TryGetRow<Weather>(rowID, out var item) ? item.Name.ToString() : string.Empty;

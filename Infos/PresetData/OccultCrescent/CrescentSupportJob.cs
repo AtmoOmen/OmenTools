@@ -173,12 +173,12 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
 
         foreach (var trait in LuminaGetter.Get<MKDTrait>())
         {
-            if (trait.Unknown2 == -1) continue;
+            if (trait.Icon == -1) continue;
             
-            var supportJob  = trait.Unknown3;
+            var supportJob  = trait.MKDSupportJob.RowId;
             if (supportJob != DataID) continue;
             
-            var unlockLevel = trait.Unknown4;
+            var unlockLevel = trait.LevelUnlock;
             Traits[trait.RowId] = unlockLevel;
         }
 
