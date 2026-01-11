@@ -111,6 +111,7 @@ public sealed class DService
 
     [PluginService] public IAddonEventManager           AddonEvent          { get; private set; } = null!;
     [PluginService] public IAddonLifecycle              AddonLifecycle      { get; private set; } = null!;
+    [PluginService] public IAgentLifecycle              AgentLifecycle      { get; private set; } = null!; 
     [PluginService] public IBuddyList                   BuddyList           { get; private set; } = null!;
     [PluginService] public IChatGui                     Chat                { get; private set; } = null!;
     [PluginService] public IClientState                 ClientState         { get; private set; } = null!;
@@ -146,10 +147,7 @@ public sealed class DService
     [PluginService] public ITextureSubstitutionProvider TextureSubstitution { get; private set; } = null!;
     [PluginService] public ITitleScreenMenu             TitleScreenMenu     { get; private set; } = null!;
     [PluginService] public IToastGui                    Toast               { get; private set; } = null!;
-
-    // TODO: 等待 7.41
-    // [PluginService] public IAgentLifecycle AgentLifecycle { get; private set; } = null!; 
-    // [PluginService] public IUnlockState    UnlockState    { get; private set; } = null!;
+    [PluginService] public IUnlockState                 UnlockState         { get; private set; } = null!;
     
     public IDalamudPluginInterface PI            { get; private set; } = null!;
     public IUiBuilder              UIBuilder     { get; private set; } = null!;
