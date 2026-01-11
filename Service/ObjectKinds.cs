@@ -1,6 +1,7 @@
 using System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
@@ -16,10 +17,18 @@ using Ornament = Lumina.Excel.Sheets.Ornament;
 
 namespace OmenTools.Service;
 
-internal unsafe class GameObject(nint address) : IGameObject
+internal unsafe class GameObject : IGameObject
 {
+    public GameObject(nint address)
+    {
+        Address = address;
+
+        if (IsValid(this))
+            cachedGameObjectID = Struct->GetGameObjectId();
+    }
+
     public SeString              Name             => SeString.Parse(Struct->Name);
-    public ulong                 GameObjectID     => Struct->GetGameObjectId();
+    public ulong                 GameObjectID     => cachedGameObjectID;
     public uint                  EntityID         => Struct->EntityId;
     public uint                  DataID           => Struct->BaseId;
     public uint                  OwnerID          => Struct->OwnerId;
@@ -53,7 +62,7 @@ internal unsafe class GameObject(nint address) : IGameObject
     public CSGameObject*  ToStruct()   => Struct;
     public CSBattleChara* ToBCStruct() => (CSBattleChara*)Struct;
     
-    public nint Address { get; internal set; } = address;
+    public nint Address { get; internal set; }
     
     public static implicit operator bool(GameObject? gameObject) => IsValid(gameObject);
 
@@ -68,17 +77,26 @@ internal unsafe class GameObject(nint address) : IGameObject
     public static bool operator !=(GameObject? actor1, GameObject? actor2) => !(actor1 == actor2);
 
     public static bool IsValid(IGameObject? actor) =>
-        actor is not null && LocalPlayerState.ContentID != 0;
+        actor is not null                         && 
+        LocalPlayerState.ContentID   != 0         &&
+        actor.Address                != nint.Zero &&
+        (CSGameObject*)actor.Address != null;
     
-    bool IEquatable<IGameObject>.Equals(IGameObject? other) => GameObjectID == other?.GameObjectID;
+    bool IEquatable<IGameObject>.Equals(IGameObject? other) =>
+        GameObjectID == other?.GameObjectID;
 
-    public override bool Equals(object? obj) => ((IEquatable<IGameObject>)this).Equals(obj as IGameObject);
+    public override bool Equals(object? obj) => 
+        ((IEquatable<IGameObject>)this).Equals(obj as IGameObject);
 
-    public override int GetHashCode() => GameObjectID.GetHashCode();
+    public override int GetHashCode() => 
+        GameObjectID.GetHashCode();
     
-    public override string ToString() => $"{GameObjectID:X}({Name.TextValue} - {ObjectKind}) Address: {Address:X}";
+    public override string ToString() => 
+        $"{GameObjectID:X}({Name.TextValue} - {ObjectKind}) Address: {Address:X}";
     
     protected internal CSGameObject* Struct => (CSGameObject*)Address;
+    
+    private GameObjectId cachedGameObjectID = 0xE0000000;
 }
 
 internal unsafe class Character(nint address) : GameObject(address), ICharacter

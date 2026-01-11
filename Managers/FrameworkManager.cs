@@ -62,7 +62,7 @@ public class FrameworkManager : OmenServiceBase<FrameworkManager>
 
     private void DailyRoutines_OnUpdate(IFramework framework)
     {
-        framework.RunOnTick(() =>
+        framework.Run(() =>
         {
             if (Interlocked.Exchange(ref isLastAsyncUpdating, 1) != 0)
                 return;
@@ -74,8 +74,14 @@ public class FrameworkManager : OmenServiceBase<FrameworkManager>
                     if (throttle > 0 && !Throttler.Throttle($"FrameworkManager-OnUpdate-{key}", throttle))
                         continue;
 
-                    try { method(framework); }
-                    catch (Exception ex) { Error("在 Framework 异步更新过程中发生错误", ex); }
+                    try
+                    {
+                        method(framework);
+                    }
+                    catch (Exception ex)
+                    {
+                        Error("在 Framework 异步更新过程中发生错误", ex);
+                    }
                 }
             }
             finally
