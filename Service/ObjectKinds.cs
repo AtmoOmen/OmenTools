@@ -17,18 +17,10 @@ using Ornament = Lumina.Excel.Sheets.Ornament;
 
 namespace OmenTools.Service;
 
-internal unsafe class GameObject : IGameObject
+internal unsafe class GameObject(nint address) : IGameObject
 {
-    public GameObject(nint address)
-    {
-        Address = address;
-
-        if (IsValid(this))
-            cachedGameObjectID = Struct->GetGameObjectId();
-    }
-
     public SeString              Name             => SeString.Parse(Struct->Name);
-    public ulong                 GameObjectID     => cachedGameObjectID;
+    public ulong                 GameObjectID     => Struct->GetGameObjectId();
     public uint                  EntityID         => Struct->EntityId;
     public uint                  DataID           => Struct->BaseId;
     public uint                  OwnerID          => Struct->OwnerId;
@@ -62,8 +54,8 @@ internal unsafe class GameObject : IGameObject
     public CSGameObject*  ToStruct()   => Struct;
     public CSBattleChara* ToBCStruct() => (CSBattleChara*)Struct;
     
-    public nint Address { get; internal set; }
-    
+    public nint Address { get; internal set; } = address;
+
     public static implicit operator bool(GameObject? gameObject) => IsValid(gameObject);
 
     public static bool operator ==(GameObject? gameObject1, GameObject? gameObject2)
@@ -95,8 +87,6 @@ internal unsafe class GameObject : IGameObject
         $"{GameObjectID:X}({Name.TextValue} - {ObjectKind}) Address: {Address:X}";
     
     protected internal CSGameObject* Struct => (CSGameObject*)Address;
-    
-    private GameObjectId cachedGameObjectID = 0xE0000000;
 }
 
 internal unsafe class Character(nint address) : GameObject(address), ICharacter
