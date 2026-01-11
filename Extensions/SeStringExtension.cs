@@ -3,6 +3,11 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Utility;
+using Lumina.Excel.Sheets;
+using Lumina.Text.Payloads;
+using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Extensions;
 
@@ -148,6 +153,43 @@ public static class SeStringExtension
             }
 
             return new string(output[..outputIndex]);
+        }
+    }
+
+    extension(ReadOnlySeStringSpan span)
+    {
+        public ReadOnlySeString PraseAutoTranslate()
+        {
+            var builder = new SeStringBuilder();
+
+            var counter = -1;
+            foreach (var payload in span)
+            {
+                counter++;
+                if (payload.Type            != ReadOnlySePayloadType.Macro  ||
+                    payload.MacroCode       != MacroCode.Fixed              ||
+                    payload.ExpressionCount != 2                            ||
+                    !payload.TryGetExpression(out var expr1, out var expr2) ||
+                    !expr1.TryGetUInt(out var group)                        ||
+                    !expr2.TryGetUInt(out var rowID)                        ||
+                    !LuminaGetter.TryGetRow(rowID, out Completion macroRow) ||
+                    macroRow.Group != group + 1)
+                {
+                    using var rented = new RentedSeStringBuilder();
+
+                    if (counter      == 0                          &&
+                        payload.Type == ReadOnlySePayloadType.Text &&
+                        string.IsNullOrEmpty(payload.ToString().Trim()))
+                        continue;
+                
+                    builder.Append(rented.Builder.Append(payload).ToReadOnlySeString().ToDalamudString());
+                    continue;
+                }
+
+                builder.Add(new AutoTranslatePayload(macroRow.Group, rowID));
+            }
+
+            return builder.Build().Encode();
         }
     }
 
