@@ -344,8 +344,16 @@ public partial class TaskHelper : IDisposable
             case TaskAbortBehaviour.AbortCurrent:
                 LogWarning($"放弃了当前任务 (原因: {reason})" + (extraAction == null ? string.Empty : "\n开始执行该原因出现时的自定义逻辑"));
 
-                CurrentTask?.CancelToken?.Cancel();
-                CurrentTask?.CancelToken?.Dispose();
+                try
+                {
+                    CurrentTask?.CancelToken?.Cancel();
+                    CurrentTask?.CancelToken?.Dispose();
+                }
+                catch
+                {
+                    // ignored
+                }
+                
 
                 CurrentTask = null;
                 RunningSystemTask = null;
@@ -394,8 +402,15 @@ public partial class TaskHelper : IDisposable
         {
             foreach (var task in queue.Tasks)
             {
-                task.CancelToken?.Cancel();
-                task.CancelToken?.Dispose();
+                try
+                {
+                    task.CancelToken?.Cancel();
+                    task.CancelToken?.Dispose();
+                }
+                catch
+                {
+                    // ignored
+                }
             }
             
             queue.Tasks.Clear();
