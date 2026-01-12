@@ -112,7 +112,7 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
             
             if (item.TargetKind != EntityRelationKind.None)
             {
-                sb.AppendLine($"来源: {item.TargetKind}");
+                sb.AppendLine($"目标: {item.TargetKind}");
                 sb.AppendLine($"\t名称: {item.TargetNameString}");
                 sb.AppendLine($"\t服务器: {LuminaWrapper.GetWorldName(item.TargetHomeWorld)} ({item.TargetHomeWorld})");
                 sb.AppendLine($"\t玩家: {item.TargetIsPlayer}");
