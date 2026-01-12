@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Runtime.CompilerServices;
+using Dalamud.Utility;
 using FFXIVClientStructs.Interop;
 using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 using CSGameObjectManager = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObjectManager;
@@ -23,7 +24,14 @@ internal sealed partial class ObjectTable : IObjectTable
             cachedObjectTable[i] = new(nativeObjectTable.GetPointer(i));
     }
 
-    public unsafe nint Address => (nint)(&CSGameObjectManager.Instance()->Objects);
+    public unsafe nint Address
+    {
+        get
+        {
+            ThreadSafety.AssertMainThread();
+            return (nint)(&CSGameObjectManager.Instance()->Objects);
+        }
+    }
 
     public int Length => ObjectTableLength;
 
@@ -41,11 +49,19 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public IEnumerable<IGameObject> ReactionEventObjects => GetObjectsInRange(629..728);
 
-    public IGameObject? this[int index] => 
-        index >= ObjectTableLength || index < 0 ? null : cachedObjectTable[index].Update();
+    public IGameObject? this[int index]
+    {
+        get
+        {
+            ThreadSafety.AssertMainThread();
+            return index >= ObjectTableLength || index < 0 ? null : cachedObjectTable[index].Update();
+        }
+    }
 
     public IGameObject? SearchByID(ulong gameObjectID)
     {
+        ThreadSafety.AssertMainThread();
+        
         if (gameObjectID is 0)
             return null;
 
@@ -60,6 +76,8 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public IGameObject? SearchByEntityID(uint entityID)
     {
+        ThreadSafety.AssertMainThread();
+        
         if (entityID is 0 or 0xE0000000)
             return null;
 
@@ -72,11 +90,17 @@ internal sealed partial class ObjectTable : IObjectTable
         return null;
     }
 
-    public unsafe nint GetObjectAddress(int index) => 
-        index >= ObjectTableLength || index < 0 ? nint.Zero : (nint)cachedObjectTable[index].Address;
+    public unsafe nint GetObjectAddress(int index)
+    {
+        ThreadSafety.AssertMainThread();
+        
+        return index >= ObjectTableLength || index < 0 ? nint.Zero : (nint)cachedObjectTable[index].Address;
+    }
 
     public unsafe IGameObject? CreateObjectReference(nint address)
     {
+        ThreadSafety.AssertMainThread();
+        
         if (address == nint.Zero)
             return null;
 
@@ -120,7 +144,7 @@ internal sealed partial class ObjectTable : IObjectTable
     internal readonly unsafe struct CachedEntry(Pointer<CSGameObject>* gameObjectPtr)
     {
         private readonly PlayerCharacter playerCharacter = new(nint.Zero);
-        private readonly BattleNPC       BattleNPC       = new(nint.Zero);
+        private readonly BattleNPC       battleNPC       = new(nint.Zero);
         private readonly NPC             npc             = new(nint.Zero);
         private readonly EventObj        eventObj        = new(nint.Zero);
         private readonly GameObject      gameObject      = new(nint.Zero);
@@ -140,7 +164,7 @@ internal sealed partial class ObjectTable : IObjectTable
             var activeObject = (ObjectKind)address->ObjectKind switch
             {
                 ObjectKind.Player    => playerCharacter,
-                ObjectKind.BattleNpc => BattleNPC,
+                ObjectKind.BattleNpc => battleNPC,
                 ObjectKind.EventNpc  => npc,
                 ObjectKind.Retainer  => npc,
                 ObjectKind.EventObj  => eventObj,
@@ -158,8 +182,12 @@ internal sealed partial class ObjectTable : IObjectTable
 
 internal sealed partial class ObjectTable
 {
-    public IEnumerator<IGameObject> GetEnumerator() => 
-        new Enumerator(this);
+    public IEnumerator<IGameObject> GetEnumerator()
+    {
+        ThreadSafety.AssertMainThread();
+        
+        return new Enumerator(this);
+    }
 
     IEnumerator IEnumerable.GetEnumerator() => 
         GetEnumerator();
