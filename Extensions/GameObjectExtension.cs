@@ -45,68 +45,61 @@ public static class GameObjectExtension
     {
         public (ObjectKind Kind, uint DataID) FromObjStrID()
         {
-            if (objStrID < 1000000)
+            switch (objStrID)
             {
-                if (LuminaGetter.TryGetRow<BNpcBase>(objStrID, out _))
+                case 0:
+                    return (ObjectKind.None, 0);
+                case < 1000000 when LuminaGetter.TryGetRow<BNpcBase>(objStrID, out _):
                     return (ObjectKind.BattleNpc, objStrID);
-                
-                if (objStrID >= 100000)
+                case < 1000000:
                 {
-                    var highDataID = objStrID + 900000;
+                    if (objStrID >= 100000)
+                    {
+                        var highDataID = objStrID + 900000;
+                        if (LuminaGetter.TryGetRow<BNpcBase>(highDataID, out _))
+                            return (ObjectKind.BattleNpc, highDataID);
+                    }
 
-                    if (LuminaGetter.TryGetRow<BNpcBase>(highDataID, out _))
-                        return (ObjectKind.BattleNpc, highDataID);
+                    return (ObjectKind.None, 0);
                 }
-
-                return (ObjectKind.None, 0);
-            }
-
-            if (objStrID < 2000000)
-            {
-                if (LuminaGetter.TryGetRow<ENpcBase>(objStrID, out _))
+                case < 2000000 when LuminaGetter.TryGetRow<ENpcBase>(objStrID, out _):
                     return (ObjectKind.EventNpc, objStrID);
+                case < 2000000:
+                    return (ObjectKind.None, 0);
+                case < 3000000:
+                {
+                    var rawID = objStrID - 2000000;
+                    if (LuminaGetter.TryGetRow<Treasure>(rawID, out _))
+                        return (ObjectKind.Treasure, rawID);
 
-                return (ObjectKind.None, 0);
+                    return (ObjectKind.None, 0);
+                }
+                case < 4000000:
+                {
+                    var rawID = objStrID - 3000000;
+                    if (LuminaGetter.TryGetRow<Aetheryte>(rawID, out _))
+                        return (ObjectKind.Aetheryte, rawID);
+
+                    return (ObjectKind.ReactionEventObject, rawID);
+                }
+                case < 5000000:
+                {
+                    var rawID = objStrID - 4000000;
+                    if (LuminaGetter.TryGetRow<GatheringPoint>(rawID, out _))
+                        return (ObjectKind.GatheringPoint, rawID);
+
+                    return (ObjectKind.None, 0);
+                }
+                case >= 10000000:
+                {
+                    var rawID = objStrID - 10000000;
+                    if (LuminaGetter.TryGetRow<HousingFurniture>(rawID, out _) || LuminaGetter.TryGetRow<HousingYardObject>(rawID, out _))
+                        return (ObjectKind.HousingEventObject, rawID);
+
+                    break;
+                }
             }
-            
-            if (objStrID < 3000000)
-            {
-                var rawID = objStrID - 2000000;
 
-                if (LuminaGetter.TryGetRow<Treasure>(rawID, out _))
-                    return (ObjectKind.Treasure, rawID);
-
-                return (ObjectKind.None, 0);
-            }
-            
-            if (objStrID < 4000000)
-            {
-                var rawID = objStrID - 3000000;
-
-                if (LuminaGetter.TryGetRow<Aetheryte>(rawID, out _))
-                    return (ObjectKind.Aetheryte, rawID);
-
-                return (ObjectKind.ReactionEventObject, rawID);
-            }
-            
-            if (objStrID < 5000000)
-            {
-                var rawID = objStrID - 4000000;
-
-                if (LuminaGetter.TryGetRow<GatheringPoint>(rawID, out _))
-                    return (ObjectKind.GatheringPoint, rawID);
-
-                return (ObjectKind.None, 0);
-            }
-            
-            if (objStrID >= 10000000)
-            {
-                var rawID = objStrID - 10000000;
-
-                if (LuminaGetter.TryGetRow<HousingFurniture>(rawID, out _) || LuminaGetter.TryGetRow<HousingYardObject>(rawID, out _))
-                    return (ObjectKind.HousingEventObject, rawID);
-            }
-            
             if (objStrID >= 7000000)
             {
                 var rawID = objStrID - 7000000;
@@ -114,7 +107,7 @@ public static class GameObjectExtension
                 if (LuminaGetter.TryGetRow<Companion>(rawID, out _))
                     return (ObjectKind.Companion, rawID);
             }
-            
+
             if (objStrID >= 5000000)
             {
                 var rawID = objStrID - 3000000;
@@ -122,7 +115,7 @@ public static class GameObjectExtension
                 if (LuminaGetter.TryGetRow<EObj>(rawID, out _))
                     return (ObjectKind.EventObj, rawID);
             }
-            
+
             return (ObjectKind.None, 0);
         }
     }

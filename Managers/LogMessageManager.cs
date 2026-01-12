@@ -7,9 +7,13 @@ using System.Text;
 using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.Text;
+using FFXIVClientStructs.Interop;
 using InteropGenerator.Runtime;
+using Lumina.Excel.Sheets;
+using Lumina.Text.ReadOnly;
 using OmenTools.Abstracts;
 using CSCharacter = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 
@@ -99,10 +103,13 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
             var sb = new StringBuilder();
             sb.AppendLine("[Log Message Manager]");
             sb.AppendLine($"ID: {item.LogMessageId}");
+            sb.AppendLine("预览:");
+            sb.AppendLine($"\t{item.ToReadOnlySeString()}");
             
             if (item.SourceKind != EntityRelationKind.None)
             {
-                sb.AppendLine($"来源: {item.SourceKind}");
+                sb.AppendLine("来源:");
+                sb.AppendLine($"\t分类: {item.SourceKind}");
                 sb.AppendLine($"\t名称: {item.SourceNameString}");
                 sb.AppendLine($"\t服务器: {LuminaWrapper.GetWorldName(item.SourceHomeWorld)} ({item.SourceHomeWorld})");
                 sb.AppendLine($"\t玩家: {item.SourceIsPlayer}");
@@ -112,7 +119,8 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
             
             if (item.TargetKind != EntityRelationKind.None)
             {
-                sb.AppendLine($"目标: {item.TargetKind}");
+                sb.AppendLine("目标:");
+                sb.AppendLine($"\t分类: {item.TargetKind}");
                 sb.AppendLine($"\t名称: {item.TargetNameString}");
                 sb.AppendLine($"\t服务器: {LuminaWrapper.GetWorldName(item.TargetHomeWorld)} ({item.TargetHomeWorld})");
                 sb.AppendLine($"\t玩家: {item.TargetIsPlayer}");
