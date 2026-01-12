@@ -259,7 +259,7 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
             Debug
             (
                 $"[Execute Command Manager] Execute Command Complex\n" +
-                $"命令:{command}({(uint)command}) | p1:{target} | p2:{param1} | p3:{param2} | p4:{param3} | p5:{param4}"
+                $"命令:{command}({(uint)command}) | 目标:{target:X} | p1:{param1} | p2:{param2} | p3:{param3} | p4:{param4}"
             );
 
         var isPrevented = false;
