@@ -354,5 +354,13 @@ public static partial class StringExtension
 
             return input.Trim();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public string? NullIfEmpty() =>
+            string.IsNullOrEmpty(input) ? null : input;
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public string? NullIfWhitespace() =>
+            string.IsNullOrWhiteSpace(input) ? null : input;
     }
 }
