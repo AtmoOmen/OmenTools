@@ -4,7 +4,7 @@ namespace OmenTools.Infos;
 
 public partial class InfosOm
 {
-    public static JsonSerializerSettings JsonSettings { get; } = new()
+    public static JsonSerializerSettings JSONSettings { get; } = new()
     {
         Converters =
         {

@@ -4,9 +4,9 @@
     "net10.0-windows7.0": {
       "DailyRoutines.CodeAnalysis": {
         "type": "Direct",
-        "requested": "[1.7.0, )",
-        "resolved": "1.7.0",
-        "contentHash": "4fDCxeok39vZUY9nyBuGwu/WhJNUqNGyB+2SLawO0E564IiB3PSD3DHv/s59BE7NdPGI3h9i/evldN3obf/z+A=="
+        "requested": "[2.2.0, )",
+        "resolved": "2.2.0",
+        "contentHash": "pteNCd/UswooUMCu7O4VRt0wac8TpPCmoBBXCggt3rU5QhG2Y9ITCQ1kvn11gFOk4KKcHgxQx8BwfBUhIdIBVA=="
       },
       "DotNet.ReproducibleBuilds": {
         "type": "Direct",

@@ -20,7 +20,7 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
         int                                        maxRetries       = 3
     )
     {
-        Guid = Guid.NewGuid();
+        GUID = Guid.NewGuid();
 
         if (orderFunc != null)
         {
@@ -64,7 +64,7 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
         );
     }
 
-    public Guid             Guid         { get; init; }
+    public Guid             GUID         { get; init; }
     public IReadOnlyList<T> Data         { get; init; }
     public List<T>          SearchResult { get; private set; }
 
@@ -85,7 +85,7 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
             return;
         }
 
-        if (!SearchThrottler.Throttle(Guid, throttleInterval))
+        if (!SearchThrottler.Throttle(GUID, throttleInterval))
         {
             RetrySearch(keyword, isIgnoreCase, isRegex, 0);
             return;
@@ -101,7 +101,7 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
         Task.Delay(retryInterval).ContinueWith
         (_ =>
             {
-                if (!SearchThrottler.Throttle(Guid, throttleInterval))
+                if (!SearchThrottler.Throttle(GUID, throttleInterval))
                     RetrySearch(keyword, isIgnoreCase, isRegex, attempt + 1);
                 else
                     ExecuteSearch(keyword, isIgnoreCase, isRegex);
@@ -201,7 +201,7 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
         int                                        maxRetries       = 3
     )
     {
-        Guid = Guid.NewGuid();
+        GUID = Guid.NewGuid();
 
         if (orderFunc != null)
         {
@@ -245,7 +245,7 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
         );
     }
 
-    public Guid             Guid         { get; init; }
+    public Guid             GUID         { get; init; }
     public IReadOnlyList<T> Data         { get; init; }
     public List<T>          SearchResult { get; private set; }
 
@@ -266,7 +266,7 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
             return;
         }
 
-        if (!SearchThrottler.Throttle(Guid, throttleInterval))
+        if (!SearchThrottler.Throttle(GUID, throttleInterval))
         {
             RetrySearch(keyword, isIgnoreCase, isRegex, 0);
             return;
@@ -282,7 +282,7 @@ public class LuminaSearcherSubRow<T> where T : struct, IExcelSubrow<T>
         Task.Delay(retryInterval).ContinueWith
         (_ =>
             {
-                if (!SearchThrottler.Throttle(Guid, throttleInterval))
+                if (!SearchThrottler.Throttle(GUID, throttleInterval))
                     RetrySearch(keyword, isIgnoreCase, isRegex, attempt + 1);
                 else
                     ExecuteSearch(keyword, isIgnoreCase, isRegex);

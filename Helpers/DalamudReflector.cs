@@ -31,11 +31,11 @@ public static partial class HelpersOm
 
         try
         {
-            var happyHttpClient = GetService("Dalamud.Networking.Http.HappyHttpClient");
+            var happyHTTPClient = GetService("Dalamud.Networking.Http.HappyHttpClient");
             var pluginRepository = Activator.CreateInstance(
                 DService.Instance().PI.GetType().Assembly
                     .GetType("Dalamud.Plugin.Internal.Types.PluginRepository")!,
-                happyHttpClient, masterURL, true);
+                happyHTTPClient, masterURL, true);
             await pluginRepository?.Call<Task>("ReloadPluginMasterAsync", [])!;
 
             var pluginMaster = pluginRepository!.GetType()
