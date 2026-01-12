@@ -1,3 +1,4 @@
+using Dalamud.Game.NativeWrapper;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
@@ -28,5 +29,14 @@ public static unsafe class AgentExtension
             agentInterface.ReceiveEvent(returnValue, atkValues, (uint)eventParams.Length, eventKind);
             return returnValue;
         }
+    }
+    
+    extension(scoped in AgentInterfacePtr agent)
+    {
+        public AgentInterface* ToStruct() =>
+            (AgentInterface*)agent.Address;
+        
+        public T* ToStruct<T>() where T : unmanaged =>
+            (T*)agent.Address;
     }
 }

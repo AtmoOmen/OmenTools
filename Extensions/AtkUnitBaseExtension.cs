@@ -206,6 +206,9 @@ public static unsafe class AtkUnitBaseExtension
     {
         public AtkUnitBase* ToStruct() =>
             (AtkUnitBase*)addon.Address;
+        
+        public T* ToStruct<T>() where T : unmanaged =>
+            (T*)addon.Address;
     }
 
     extension(nint ptr)
