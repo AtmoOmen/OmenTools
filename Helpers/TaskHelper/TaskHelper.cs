@@ -65,8 +65,6 @@ public partial class TaskHelper : IDisposable
             // ignored
         }
 
-        RunningSystemTask = null;
-
         foreach (var queue in Queues)
         {
             foreach (var task in queue.Tasks)
@@ -145,7 +143,6 @@ public partial class TaskHelper : IDisposable
     public bool IsDisposed { get; private set; }
 
     private TaskHelperTask?                            CurrentTask       { get; set; }
-    private Task<bool>?                                RunningSystemTask { get; set; }
     private SortedSet<TaskHelperQueue>                 Queues            { get; } = [new(1), new(0)];
     private Channel<(TaskHelperTask Task, int Weight)> TaskChannel       { get; } = CreateTaskChannel();
     private CancellationTokenSource                    CancelSource      { get; } = new();
@@ -163,7 +160,7 @@ public partial class TaskHelper : IDisposable
                     await TaskChannel.Reader.WaitToReadAsync(ct).ConfigureAwait(false);
 
                 var isBusy = false;
-                await DService.Instance().Framework.Run(() =>
+                await DService.Instance().Framework.Run(async () =>
                 {
                     SyncPendingTasks();
 
@@ -172,7 +169,11 @@ public partial class TaskHelper : IDisposable
                     
                     if (CurrentTask != null)
                     {
-                        ExecuteCurrentTask();
+                        if (CurrentTask.IsAsync)
+                            await ExecuteCurrentTaskAsync();
+                        else
+                            ExecuteCurrentTask();
+                        
                         isBusy = true;
                     }
                     else
@@ -230,58 +231,13 @@ public partial class TaskHelper : IDisposable
     {
         try
         {
-            if (CurrentTask == null) return;
+            if (CheckAndHandleTimeout()) return;
 
-            if (RunningSystemTask == null)
+            if (CurrentTask.Action())
             {
-                Task<bool> newTask = null;
-                if (CurrentTask.IsAsync)
-                {
-                    newTask = DService.Instance().Framework.Run
-                    (
-                        async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token).ConfigureAwait(false),
-                        cancellationToken: CurrentTask.CancelToken.Token
-                    );
-                }
-                else
-                    newTask = DService.Instance().Framework.Run(() => CurrentTask.Action(), cancellationToken: CurrentTask.CancelToken.Token);
-                
-                RunningSystemTask = newTask;
-                RunningSystemTask.ConfigureAwait(false);
-
-                Log($"启动{(CurrentTask.IsAsync ? "异步" : "同步")}任务: {CurrentTask.GetName()}");
-                return;
+                Log($"已完成任务: {CurrentTask.GetName()}");
+                CurrentTask = null;
             }
-
-            var task = RunningSystemTask;
-            if (task.IsCompletedSuccessfully)
-            {
-                if (task.Result)
-                    HandleTaskCompletion();
-                else
-                {
-                    Task<bool> newTask = null;
-                    if (CurrentTask.IsAsync)
-                    {
-                        newTask = DService.Instance().Framework.RunOnTick
-                        (
-                            async () => await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token).ConfigureAwait(false),
-                            cancellationToken: CurrentTask.CancelToken.Token
-                        );
-                    }
-                    else
-                        newTask = DService.Instance().Framework.RunOnTick(() => CurrentTask.Action(), cancellationToken: CurrentTask.CancelToken.Token);
-                    
-                    RunningSystemTask = newTask;
-                    RunningSystemTask.ConfigureAwait(false);
-                }
-            }
-            else if (task.IsCanceled)
-                throw new OperationCanceledException($"异步任务 {CurrentTask.GetName()} 已取消");
-            else if (task.IsFaulted)
-                throw task.Exception?.GetBaseException() ?? new Exception($"异步任务 {CurrentTask.GetName()} 已失败");
-            else
-                HandleTaskTimeout();
         }
         catch (Exception ex)
         {
@@ -289,29 +245,39 @@ public partial class TaskHelper : IDisposable
         }
     }
 
-    private void HandleTaskCompletion()
+    private async Task ExecuteCurrentTaskAsync()
     {
-        if (CurrentTask == null) return;
+        try
+        {
+            if (CheckAndHandleTimeout()) return;
 
-        Log($"已完成任务: {CurrentTask.GetName()}");
-        CurrentTask = null;
-        RunningSystemTask = null;
+            if (await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token).ConfigureAwait(false))
+            {
+                Log($"已完成任务: {CurrentTask.GetName()}");
+                CurrentTask = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            HandleTaskError(ex);
+        }
     }
 
-    private void HandleTaskTimeout()
+    private bool CheckAndHandleTimeout()
     {
-        if (CurrentTask == null) return;
+        if (CurrentTask == null) return false;
 
         var timeoutMS = CurrentTask.TimeoutMS <= 0 ? TimeoutMS : CurrentTask.TimeoutMS;
-        if (timeoutMS <= 0) return;
+        if (timeoutMS <= 0) return false;
 
-        if (Stopwatch.GetElapsedTime(CurrentTask.StartTime).TotalMilliseconds <= timeoutMS) return;
+        if (Stopwatch.GetElapsedTime(CurrentTask.StartTime).TotalMilliseconds <= timeoutMS) return false;
 
         var timeoutBehaviour = CurrentTask.TimeoutBehaviour ?? TimeoutBehaviour;
         var reason           = $"任务 {CurrentTask.GetName()} 执行时间过长";
         var extraAction      = CurrentTask.TimeoutAction ?? TimeoutAction;
 
         ExecuteTaskAbortBehaviour(timeoutBehaviour, reason, CurrentTask, extraAction);
+        return true;
     }
 
     private void HandleTaskError(Exception? ex = null)
@@ -354,9 +320,7 @@ public partial class TaskHelper : IDisposable
                     // ignored
                 }
                 
-
                 CurrentTask = null;
-                RunningSystemTask = null;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(behaviour));
@@ -421,7 +385,6 @@ public partial class TaskHelper : IDisposable
         CurrentTask?.CancelToken?.Cancel();
         CurrentTask?.CancelToken?.Dispose();
 
-        RunningSystemTask = null;
         CurrentTask = null;
     }
 
