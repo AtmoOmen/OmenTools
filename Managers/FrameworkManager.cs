@@ -10,11 +10,11 @@ public class FrameworkManager : OmenServiceBase<FrameworkManager>
     private readonly ConcurrentDictionary<IFramework.OnUpdateDelegate, (uint Throttle, string HashCode)> methodsCollection = [];
 
     internal override void Init() =>
-        DService.Instance().Framework.Update += DailyRoutines_OnUpdate;
+        DService.Instance().Framework.Update += OnUpdate;
 
     internal override void Uninit()
     {
-        DService.Instance().Framework.Update -= DailyRoutines_OnUpdate;
+        DService.Instance().Framework.Update -= OnUpdate;
 
         methodsCollection.Clear();
     }
@@ -35,7 +35,7 @@ public class FrameworkManager : OmenServiceBase<FrameworkManager>
         return state;
     }
 
-    private void DailyRoutines_OnUpdate(IFramework framework)
+    private void OnUpdate(IFramework framework)
     {
         foreach (var (method, (throttle, hashCode)) in methodsCollection)
         {
