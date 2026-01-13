@@ -165,6 +165,25 @@ internal sealed partial class ObjectTable : IObjectTable
     public IEnumerable<IGameObject> SearchObjects(Predicate<IGameObject> predicate) => 
         SearchObjects(predicate, Range.All);
 
+    public IGameObject? SearchObject(Predicate<IGameObject> predicate, Range range)
+    {
+        ThreadSafety.AssertMainThread();
+
+        var (offset, length) = range.GetOffsetAndLength(ObjectTableLength);
+
+        for (var i = 0; i < length; i++)
+        {
+            ref readonly var e = ref cachedObjectTable[offset + i];
+            if (e.Update() is { } o && predicate(o))
+                return o;
+        }
+        
+        return null;
+    }
+
+    public IGameObject? SearchObject(Predicate<IGameObject> predicate) => 
+        SearchObject(predicate, Range.All);
+
     internal readonly unsafe struct CachedEntry(Pointer<CSGameObject>* gameObjectPtr)
     {
         private readonly PlayerCharacter playerCharacter = new(nint.Zero);
@@ -276,6 +295,10 @@ public interface IObjectTable : IEnumerable<IGameObject>
     public IEnumerable<IGameObject> SearchObjects(Predicate<IGameObject> predicate, Range range);
 
     public IEnumerable<IGameObject> SearchObjects(Predicate<IGameObject> predicate);
+
+    public IGameObject? SearchObject(Predicate<IGameObject> predicate, Range range);
+
+    public IGameObject? SearchObject(Predicate<IGameObject> predicate);
 
     public nint GetObjectAddress(int index);
 
