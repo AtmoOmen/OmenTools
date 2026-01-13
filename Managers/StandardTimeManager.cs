@@ -49,18 +49,32 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
 
     private readonly CancellationTokenSource cancelSource = new();
 
-    internal override void Init() =>
-        Task.Run(async () =>
-        {
-            try
+    internal override void Init()
+    {
+        var token = cancelSource.Token;
+        Task.Run
+        (
+            async () =>
             {
-                Clock = await NTPClient.QueryAsync(cancelSource.Token).ConfigureAwait(false);
-            }
-            catch
-            {
-                await QueryWebTimeAsync(cancelSource.Token).ConfigureAwait(false);
-            }
-        }, cancelSource.Token);
+                try
+                {
+                    try
+                    {
+                        Clock = await NTPClient.QueryAsync(token).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        await QueryWebTimeAsync(token).ConfigureAwait(false);
+                    }
+                }
+                catch
+                {
+                    // ignored
+                }
+            },
+            token
+        );
+    }
 
     private async Task QueryWebTimeAsync(CancellationToken token)
     {
@@ -83,7 +97,8 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
 
     internal override void Uninit()
     {
-        cancelSource.Cancel();
+        if (!cancelSource.IsCancellationRequested)
+            cancelSource.Cancel();
         cancelSource.Dispose();
         
         HTTPClient.Dispose();
