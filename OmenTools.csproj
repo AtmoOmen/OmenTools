@@ -35,6 +35,7 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <PackageReference Include="GuerrillaNtp" Version="3.1.0" />
       <PackageReference Include="TinyPinyin" Version="1.1.0" />
     </ItemGroup>
 </Project>
