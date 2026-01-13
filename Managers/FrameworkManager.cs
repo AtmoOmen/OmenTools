@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
+using System.Diagnostics;
 using Dalamud.Plugin.Services;
 using OmenTools.Abstracts;
 
@@ -7,7 +7,9 @@ namespace OmenTools.Managers;
 
 public class FrameworkManager : OmenServiceBase<FrameworkManager>
 {
-    private readonly ConcurrentDictionary<IFramework.OnUpdateDelegate, (uint Throttle, string HashCode)> methodsCollection = [];
+    private static readonly long TicksPerMillisecond = Stopwatch.Frequency / 1000;
+
+    private readonly ConcurrentDictionary<IFramework.OnUpdateDelegate, MethodState> methodsCollection = [];
 
     internal override void Init() =>
         DService.Instance().Framework.Update += OnUpdate;
@@ -15,32 +17,44 @@ public class FrameworkManager : OmenServiceBase<FrameworkManager>
     internal override void Uninit()
     {
         DService.Instance().Framework.Update -= OnUpdate;
-
         methodsCollection.Clear();
     }
 
-    public bool Reg(IFramework.OnUpdateDelegate method, uint throttleMS = 0) =>
-        methodsCollection.TryAdd(method, (throttleMS, $"{RuntimeHelpers.GetHashCode(method)}_{method.Method.MethodHandle.Value}"));
+    public bool Reg(IFramework.OnUpdateDelegate method, uint throttleMS = 0)
+    {
+        var state = new MethodState
+        {
+            ThrottleTicks     = throttleMS * TicksPerMillisecond,
+            NextExecutionTick = 0
+        };
+
+        return methodsCollection.TryAdd(method, state);
+    }
 
     public bool Unreg(params IFramework.OnUpdateDelegate[] methods)
     {
-        var state = true;
+        var success = true;
 
         foreach (var method in methods)
         {
             if (!methodsCollection.TryRemove(method, out _))
-                state = false;
+                success = false;
         }
 
-        return state;
+        return success;
     }
 
     private void OnUpdate(IFramework framework)
     {
-        foreach (var (method, (throttle, hashCode)) in methodsCollection)
+        var currentTick = Stopwatch.GetTimestamp();
+
+        foreach (var (method, state) in methodsCollection)
         {
-            if (throttle > 0 && !Throttler.Throttle($"FrameworkManager-OnUpdate-{hashCode}", throttle))
+            if (currentTick < state.NextExecutionTick)
                 continue;
+
+            if (state.ThrottleTicks > 0)
+                state.NextExecutionTick = currentTick + state.ThrottleTicks;
 
             try
             {
@@ -48,8 +62,14 @@ public class FrameworkManager : OmenServiceBase<FrameworkManager>
             }
             catch (Exception ex)
             {
-                Error("在 Framework 同步更新过程中发生错误", ex);
+                Error("在 Framework 更新过程中发生错误", ex);
             }
         }
+    }
+
+    private class MethodState
+    {
+        public long ThrottleTicks;
+        public long NextExecutionTick;
     }
 }
