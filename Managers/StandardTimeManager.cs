@@ -7,22 +7,41 @@ namespace OmenTools.Managers;
 
 public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
 {
-    public DateTime Now() => 
-        UTCNow().ToLocalTime();
+    public DateTime Now => 
+        UTCNow.ToLocalTime();
 
-    public DateTime UTCNow()
+    public DateTime UTCNow
     {
-        if (Clock != null) 
-            return Clock.UtcNow.UtcDateTime;
-        if (WebAPIOffset.HasValue) 
-            return DateTime.UtcNow + WebAPIOffset.Value;
+        get
+        {
+            if (Clock != null) 
+                return Clock.UtcNow.UtcDateTime;
+            
+            if (WebAPIOffset.HasValue) 
+                return DateTime.UtcNow + WebAPIOffset.Value;
         
-        return DateTime.UtcNow;
+            return DateTime.UtcNow;
+        }
     }
+
+    public StandardTimeSource Source
+    {
+        get
+        {
+            if (Clock != null)
+                return StandardTimeSource.NTP;
+            
+            if (WebAPIOffset.HasValue)
+                return StandardTimeSource.Web;
+            
+            return StandardTimeSource.Local;
+        }
+    }
+
 
     private const string TIME_API_URL = "http://vv.video.qq.com/checktime?otype=json";
     
-    private NtpClient  NtpClient  { get; } = new("ntp.ntsc.ac.cn");
+    private NtpClient  NTPClient  { get; } = new("ntp.ntsc.ac.cn");
     private HttpClient HTTPClient { get; } = new() { Timeout = TimeSpan.FromSeconds(5) };
     
     private NtpClock? Clock        { get; set; }
@@ -35,7 +54,7 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
         {
             try
             {
-                Clock = await NtpClient.QueryAsync(cancelSource.Token).ConfigureAwait(false);
+                Clock = await NTPClient.QueryAsync(cancelSource.Token).ConfigureAwait(false);
             }
             catch
             {
@@ -72,4 +91,11 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
 
     [GeneratedRegex("\"t\":(\\d+)")]
     private static partial Regex QQVideoResponseRegex();
+}
+
+public enum StandardTimeSource
+{
+    NTP,
+    Web,
+    Local
 }
