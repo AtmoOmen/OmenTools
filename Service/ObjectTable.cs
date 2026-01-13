@@ -37,18 +37,6 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public IPlayerCharacter? LocalPlayer => this[0] as IPlayerCharacter;
 
-    public IEnumerable<IBattleChara> PlayerObjects => GetPlayerObjects();
-
-    public IEnumerable<IGameObject> CharacterManagerObjects => GetObjectsInRange(..199);
-
-    public IEnumerable<IGameObject> ClientObjects => GetObjectsInRange(200..448);
-
-    public IEnumerable<IGameObject> EventObjects => GetObjectsInRange(449..488);
-
-    public IEnumerable<IGameObject> StandObjects => GetObjectsInRange(489..628);
-
-    public IEnumerable<IGameObject> ReactionEventObjects => GetObjectsInRange(629..728);
-
     public IGameObject? this[int index]
     {
         get
@@ -73,18 +61,55 @@ internal sealed partial class ObjectTable : IObjectTable
 
         return null;
     }
+    
+    public unsafe IGameObject? SearchByID(ulong gameObjectID, Range range)
+    {
+        ThreadSafety.AssertMainThread();
 
-    public IGameObject? SearchByEntityID(uint entityID)
+        if (gameObjectID is 0)
+            return null;
+
+        var (offset, length) = range.GetOffsetAndLength(ObjectTableLength);
+        foreach (ref readonly var e in cachedObjectTable.AsSpan(offset, length))
+        {
+            var obj = e.Address;
+            if (obj != null && obj->GetGameObjectId() == gameObjectID)
+                return e.Update();
+        }
+
+        return null;
+    }
+
+    public unsafe IGameObject? SearchByEntityID(uint entityID)
     {
         ThreadSafety.AssertMainThread();
         
         if (entityID is 0 or 0xE0000000)
             return null;
 
-        foreach (var e in cachedObjectTable)
+        foreach (ref readonly var e in cachedObjectTable.AsSpan())
         {
-            if (e.Update() is { } o && o.EntityID == entityID)
-                return o;
+            var obj = e.Address;
+            if (obj != null && obj->EntityId == entityID)
+                return e.Update();
+        }
+
+        return null;
+    }
+
+    public unsafe IGameObject? SearchByEntityID(uint entityID, Range range) 
+    {
+        ThreadSafety.AssertMainThread();
+
+        if (entityID is 0 or 0xE0000000)
+            return null;
+
+        var (offset, length) = range.GetOffsetAndLength(ObjectTableLength);
+        foreach (ref readonly var e in cachedObjectTable.AsSpan(offset, length))
+        {
+            var obj = e.Address;
+            if (obj != null && obj->EntityId == entityID)
+                return e.Update();
         }
 
         return null;
@@ -123,23 +148,22 @@ internal sealed partial class ObjectTable : IObjectTable
         };
     }
 
-    private IEnumerable<IBattleChara> GetPlayerObjects()
+    public IEnumerable<IGameObject> SearchObjects(Predicate<IGameObject> predicate, Range range)
     {
-        for (var index = 0; index < 200; index += 2)
+        ThreadSafety.AssertMainThread();
+
+        var (offset, length) = range.GetOffsetAndLength(ObjectTableLength);
+
+        for (var i = 0; i < length; i++)
         {
-            if (this[index] is IBattleChara { ObjectKind: ObjectKind.Player } gameObject)
-                yield return gameObject;
+            ref readonly var e = ref cachedObjectTable[offset + i];
+            if (e.Update() is { } o && predicate(o))
+                yield return o;
         }
     }
 
-    private IEnumerable<IGameObject> GetObjectsInRange(Range range)
-    {
-        for (var index = range.Start.Value; index <= range.End.Value; index++)
-        {
-            if (this[index] is { } gameObject)
-                yield return gameObject;
-        }
-    }
+    public IEnumerable<IGameObject> SearchObjects(Predicate<IGameObject> predicate) => 
+        SearchObjects(predicate, Range.All);
 
     internal readonly unsafe struct CachedEntry(Pointer<CSGameObject>* gameObjectPtr)
     {
@@ -227,29 +251,31 @@ internal sealed partial class ObjectTable
 
 public interface IObjectTable : IEnumerable<IGameObject>
 {
+    public static readonly Range CharactersRange    = ..200;
+    public static readonly Range ClientRange        = 200..449;
+    public static readonly Range EventRange         = 449..489;
+    public static readonly Range StandRange         = 489..629;
+    public static readonly Range ReactionEventRange = 629..729;
+    
     public nint Address { get; }
     
     public int Length { get; }
-
-    public IPlayerCharacter? LocalPlayer { get; }
-
-    public IEnumerable<IBattleChara> PlayerObjects { get; }
-
-    public IEnumerable<IGameObject> CharacterManagerObjects { get; }
-
-    public IEnumerable<IGameObject> ClientObjects { get; }
-
-    public IEnumerable<IGameObject> EventObjects { get; }
-
-    public IEnumerable<IGameObject> StandObjects { get; }
     
-    public IEnumerable<IGameObject> ReactionEventObjects { get; }
+    public IPlayerCharacter? LocalPlayer { get; }
 
     public IGameObject? this[int index] { get; }
 
     public IGameObject? SearchByID(ulong gameObjectID);
 
+    public IGameObject? SearchByID(ulong gameObjectID, Range range);
+
     public IGameObject? SearchByEntityID(uint entityID);
+
+    public IGameObject? SearchByEntityID(uint entityID, Range range);
+
+    public IEnumerable<IGameObject> SearchObjects(Predicate<IGameObject> predicate, Range range);
+
+    public IEnumerable<IGameObject> SearchObjects(Predicate<IGameObject> predicate);
 
     public nint GetObjectAddress(int index);
 
