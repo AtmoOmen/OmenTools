@@ -8,7 +8,7 @@ public struct ActorSetPosPacket
 (
     Vector3 position,
     byte    territoryTransportType       = 1,
-    byte    characterMode                = 2,
+    byte    characterMode                = 1,
     uint    transitionTerritoryFilterKey = 0
 )
     : IDownstreamPacket
