@@ -7,19 +7,22 @@ namespace OmenTools.Managers;
 
 public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
 {
-    public DateTime Now => 
+    public DateTime Today =>
+        Now.Date;
+
+    public DateTime Now =>
         UTCNow.ToLocalTime();
 
     public DateTime UTCNow
     {
         get
         {
-            if (Clock != null) 
+            if (Clock != null)
                 return Clock.UtcNow.UtcDateTime;
-            
-            if (WebAPIOffset.HasValue) 
+
+            if (WebAPIOffset.HasValue)
                 return DateTime.UtcNow + WebAPIOffset.Value;
-        
+
             return DateTime.UtcNow;
         }
     }
@@ -30,20 +33,20 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
         {
             if (Clock != null)
                 return StandardTimeSource.NTP;
-            
+
             if (WebAPIOffset.HasValue)
                 return StandardTimeSource.Web;
-            
+
             return StandardTimeSource.Local;
         }
     }
 
 
     private const string TIME_API_URL = "http://vv.video.qq.com/checktime?otype=json";
-    
+
     private NtpClient  NTPClient  { get; } = new("ntp.ntsc.ac.cn");
     private HttpClient HTTPClient { get; } = new() { Timeout = TimeSpan.FromSeconds(5) };
-    
+
     private NtpClock? Clock        { get; set; }
     private TimeSpan? WebAPIOffset { get; set; }
 
@@ -83,6 +86,7 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
             var response = await HTTPClient.GetStringAsync(TIME_API_URL, token).ConfigureAwait(false);
 
             var match = QQVideoResponseRegex().Match(response);
+
             if (match.Success && long.TryParse(match.Groups[1].Value, out var timestamp))
             {
                 var serverTime = DateTimeOffset.FromUnixTimeSeconds(timestamp).UtcDateTime;
@@ -100,7 +104,7 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
         if (!cancelSource.IsCancellationRequested)
             cancelSource.Cancel();
         cancelSource.Dispose();
-        
+
         HTTPClient.Dispose();
     }
 
