@@ -1,5 +1,6 @@
 namespace OmenTools.Infos;
 
+// ReSharper disable InconsistentNaming
 public enum ExecuteCommandFlag
 {
     /// <summary>

@@ -23,7 +23,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     
     public GamePacketManagerConfig Config { get; private set; } = null!;
     
-    public void SendPackt<T>(T data) where T : unmanaged, IGamePacket => 
+    public void SendPackt<T>(T data) where T : unmanaged, IUpstreamPacket => 
         SendPacket(Framework.Instance()->NetworkModuleProxy, (byte*)&data, 0, 0x9876543); // 打个标记
 
     #region 注册
@@ -182,7 +182,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
             handler.Log(packet);
     }
 
-    private static void LogPacket<T>(byte* packet) where T : unmanaged, IGamePacket =>
+    private static void LogPacket<T>(byte* packet) where T : unmanaged, IUpstreamPacket =>
         Debug($"[Game Packet Manager] {((T*)packet)->Log()}");
 
     private void ToggleHooks(bool isEnabled)
@@ -259,98 +259,98 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     
     private static readonly Dictionary<int, PacketHandler> PacketHandlers = new()
     {
-        [GamePacketOpcodes.EventCompleteOpcode] =
+        [UpstreamOpcode.EventCompleteOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketEventCompleteLog,
                 LogPacket<EventCompletePackt>
             ),
 
-        [GamePacketOpcodes.EventStartOpcode] =
+        [UpstreamOpcode.EventStartOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketEventStartLog,
                 LogPacket<EventStartPackt>
             ),
 
-        [GamePacketOpcodes.EventActionOpcode] =
+        [UpstreamOpcode.EventActionOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketEventActionLog,
                 LogPacket<EventActionPacket>
             ),
 
-        [GamePacketOpcodes.DiveStartOpcode] =
+        [UpstreamOpcode.DiveStartOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketDiveStartLog,
                 LogPacket<DiveStartPacket>
             ),
 
-        [GamePacketOpcodes.PositionUpdateOpcode] =
+        [UpstreamOpcode.PositionUpdateOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketPositionUpdateLog,
                 LogPacket<PositionUpdatePacket>
             ),
 
-        [GamePacketOpcodes.PositionUpdateInstanceOpcode] =
+        [UpstreamOpcode.PositionUpdateInstanceOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketPositionUpdateLog,
                 LogPacket<PositionUpdateInstancePacket>
             ),
 
-        [GamePacketOpcodes.TreasureOpenOpcode] =
+        [UpstreamOpcode.TreasureOpenOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketTreasureOpenLog,
                 LogPacket<TreasureOpenPacket>
             ),
 
-        [GamePacketOpcodes.HeartbeatOpcode] =
+        [UpstreamOpcode.HeartbeatOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketHeartbeatLog,
                 LogPacket<HeartbeatPacket>
             ),
 
-        [GamePacketOpcodes.UseActionOpcode] =
+        [UpstreamOpcode.UseActionOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketUseActionLog,
                 LogPacket<UseActionPacket>
             ),
 
-        [GamePacketOpcodes.UseActionLocationOpcode] =
+        [UpstreamOpcode.UseActionLocationOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketUseActionLocationLog,
                 LogPacket<UseActionLocationPacket>
             ),
 
-        [GamePacketOpcodes.MJIInteractOpcode] =
+        [UpstreamOpcode.MJIInteractOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketMJIInteractLog,
                 LogPacket<MJIInteractPacket>
             ),
 
-        [GamePacketOpcodes.ExecuteCommandOpcode] =
+        [UpstreamOpcode.ExecuteCommandOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketExecuteCommandLog,
                 LogPacket<ExecuteCommandPacket>
             ),
 
-        [GamePacketOpcodes.CharaCardOpenOpcode] =
+        [UpstreamOpcode.CharaCardOpenOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketCharaCardOpenLog,
                 LogPacket<CharaCardOpenPacket>
             ),
 
-        [GamePacketOpcodes.HandOverItemOpcode] =
+        [UpstreamOpcode.HandOverItemOpcode] =
             new
             (
                 () => Instance().Config.ShowGamePacketHandOverItemLog,

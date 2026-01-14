@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace OmenTools.Infos;
 
-public static class GamePacketOpcodes
+public static class UpstreamOpcode
 {
     public static int EventStartOpcode             { get; private set; }
     public static int EventActionOpcode            { get; private set; }
@@ -61,7 +61,7 @@ public static class GamePacketOpcodes
     private static readonly CompSig HandOverItemOpcodeBaseSig =
         new("E8 ?? ?? ?? ?? EB 3A 40 84 FF");
 
-    static GamePacketOpcodes()
+    static UpstreamOpcode()
     {
         EventStartOpcode             = ReadOpcode("EventStart",             EventStartOpcodeBaseSig,        0x4);
         EventActionOpcode            = ReadOpcode("EventAction",            EventActionOpcodeBaseSig,       0x9E);

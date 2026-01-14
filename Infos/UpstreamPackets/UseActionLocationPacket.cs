@@ -5,9 +5,9 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 namespace OmenTools.Infos;
 
 [StructLayout(LayoutKind.Explicit, Size = 48)]
-public struct UseActionLocationPacket(ActionType type, uint actionID, float rotation, Vector3 location) : IGamePacket
+public struct UseActionLocationPacket(ActionType type, uint actionID, float rotation, Vector3 location) : IUpstreamPacket
 {
-    [FieldOffset(0)]  public        int     Opcode   = GamePacketOpcodes.UseActionLocationOpcode;
+    [FieldOffset(0)]  public        int     Opcode   = UpstreamOpcode.UseActionLocationOpcode;
     [FieldOffset(8)]  public        uint    Length   = 48;
     [FieldOffset(32)] public        uint    ActionID = actionID;
     [FieldOffset(36)] public        byte    CastBuff;

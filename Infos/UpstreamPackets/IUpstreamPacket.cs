@@ -1,6 +1,6 @@
 namespace OmenTools.Infos;
 
-public interface IGamePacket
+public interface IUpstreamPacket
 {
     public string Log();
 

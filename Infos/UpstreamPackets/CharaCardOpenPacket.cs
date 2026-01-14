@@ -5,9 +5,9 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 namespace OmenTools.Infos;
 
 [StructLayout(LayoutKind.Explicit, Size = 48)]
-public struct CharaCardOpenPacket(ulong entityID) : IGamePacket
+public struct CharaCardOpenPacket(ulong entityID) : IUpstreamPacket
 {
-    [FieldOffset(0)]  public        int   Opcode   = GamePacketOpcodes.CharaCardOpenOpcode;
+    [FieldOffset(0)]  public        int   Opcode   = UpstreamOpcode.CharaCardOpenOpcode;
     [FieldOffset(8)]  public        uint  Length   = 32;
     [FieldOffset(32)] public        ulong EntityID = entityID;
     [FieldOffset(40)] public unsafe int   Flag0    = LocalPlayerState.EntityID == entityID ? 2 : 1;

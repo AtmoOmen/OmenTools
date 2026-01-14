@@ -3,10 +3,9 @@ using System.Runtime.InteropServices;
 namespace OmenTools.Infos;
 
 [StructLayout(LayoutKind.Explicit, Size = 52)]
-public struct EventCompletePackt(uint eventID, uint category, uint param0 = 0, uint param1 = 0, uint param2 = 0)
-    : IGamePacket
+public struct EventActionPacket(uint eventID, uint category, uint param0 = 0, uint param1 = 0, uint param2 = 0) : IUpstreamPacket
 {
-    [FieldOffset(0)]  public int  Opcode   = GamePacketOpcodes.EventCompleteOpcode;
+    [FieldOffset(0)]  public int  Opcode   = UpstreamOpcode.EventActionOpcode;
     [FieldOffset(8)]  public uint Length   = 32;
     [FieldOffset(32)] public uint EventID  = eventID;
     [FieldOffset(36)] public uint Category = category;
@@ -15,7 +14,7 @@ public struct EventCompletePackt(uint eventID, uint category, uint param0 = 0, u
     [FieldOffset(48)] public uint Param2   = param2;
 
     public string Log() =>
-        $"Event Complete 包体 ({Opcode} / 长度: {Length})\n" +
+        $"Event Action 包体 ({Opcode} / 长度: {Length})\n" +
         $"Event ID: {EventID} | Category: {Category} \n" +
         $"Param0: {Param0} | Param1: {Param1} | Param2: {Param2}";
     

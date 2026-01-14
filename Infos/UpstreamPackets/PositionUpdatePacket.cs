@@ -6,9 +6,9 @@ namespace OmenTools.Infos;
 
 [StructLayout(LayoutKind.Explicit, Size = 48)]
 public struct PositionUpdatePacket(float rotation, Vector3 position, 
-                                   PositionUpdatePacket.MoveType moveType = PositionUpdatePacket.MoveType.NormalMove0) : IGamePacket
+                                   PositionUpdatePacket.MoveType moveType = PositionUpdatePacket.MoveType.NormalMove0) : IUpstreamPacket
 {
-    [FieldOffset(0)]  public int      Opcode   = GamePacketOpcodes.PositionUpdateOpcode;
+    [FieldOffset(0)]  public int      Opcode   = UpstreamOpcode.PositionUpdateOpcode;
     [FieldOffset(8)]  public uint     Length   = 40;
     [FieldOffset(32)] public float    Rotation = rotation;
     [FieldOffset(36)] public MoveType Move     = moveType;

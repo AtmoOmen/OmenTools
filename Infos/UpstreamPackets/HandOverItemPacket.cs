@@ -3,9 +3,9 @@ using System.Runtime.InteropServices;
 namespace OmenTools.Infos;
 
 [StructLayout(LayoutKind.Explicit, Size = 56)]
-public struct HandOverItemPacket(uint eventID, uint category = 0, uint itemID = 0, uint itemCount = 0, uint leveID = 0) : IGamePacket
+public struct HandOverItemPacket(uint eventID, uint category = 0, uint itemID = 0, uint itemCount = 0, uint leveID = 0) : IUpstreamPacket
 {
-    [FieldOffset(0)] public int  Opcode = GamePacketOpcodes.HandOverItemOpcode;
+    [FieldOffset(0)] public int  Opcode = UpstreamOpcode.HandOverItemOpcode;
     [FieldOffset(8)] public uint Length = 40;
     
     [FieldOffset(32)] public uint EventID   = eventID;
