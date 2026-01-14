@@ -2,6 +2,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Infos;
 
+// ReSharper disable InconsistentNaming
 public static unsafe class GameAddon
 {
     #region Sub Addons
