@@ -1,8 +1,10 @@
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel.Sheets;
 using Aetheryte = Lumina.Excel.Sheets.Aetheryte;
+using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 using Treasure = Lumina.Excel.Sheets.Treasure;
 
@@ -31,6 +33,12 @@ public static class GameObjectExtension
             if (gameObject == null) return false;
             return gameObject.ToStruct()->IsMTQ();
         }
+        
+        public unsafe bool IsReachable()
+        {
+            if (gameObject == null) return false;
+            return gameObject.ToStruct()->IsReachable();
+        }
     }
 
     extension(scoped ref GameObject gameObject)
@@ -48,6 +56,19 @@ public static class GameObjectExtension
 
                 return QuestIcon.IsQuest(ptr->NamePlateIconId) ||
                        ptr->ObjectKind == ObjectKind.EventObj && ptr->TargetStatus == 15;
+            }
+        }
+
+        public unsafe bool IsReachable()
+        {
+            fixed (GameObject* ptr = &gameObject)
+            {
+                if (ptr == null) return false;
+
+                var localPlayer = Control.GetLocalPlayer();
+                if (localPlayer == null) return false;
+                
+                return EventFramework.Instance()->CheckInteractRange((GameObject*)localPlayer, ptr, 23, false);
             }
         }
     }
