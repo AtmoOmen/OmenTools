@@ -3,12 +3,15 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel.Sheets;
 using Aetheryte = Lumina.Excel.Sheets.Aetheryte;
+using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 using Treasure = Lumina.Excel.Sheets.Treasure;
 
 namespace OmenTools.Extensions;
 
 public static class GameObjectExtension
 {
+    private static readonly HashSet<ObjectKind> ValidMTQObjectKinds = [ObjectKind.EventObj, ObjectKind.EventNpc];
+    
     extension(IGameObject? gameObject)
     {
         public unsafe bool TargetInteract()
@@ -22,6 +25,31 @@ public static class GameObjectExtension
         public unsafe bool Interact() =>
             gameObject                                                         != null &&
             TargetSystem.Instance()->InteractWithObject(gameObject.ToStruct()) != 0;
+
+        public unsafe bool IsMTQ()
+        {
+            if (gameObject == null) return false;
+            return gameObject.ToStruct()->IsMTQ();
+        }
+    }
+
+    extension(scoped ref GameObject gameObject)
+    {
+        public unsafe bool IsMTQ()
+        {
+            fixed (GameObject* ptr = &gameObject)
+            {
+                if (ptr == null) return false;
+                
+                if (ptr->RenderFlags != 0    ||
+                    !ptr->GetIsTargetable()  ||
+                    !ValidMTQObjectKinds.Contains(ptr->ObjectKind))
+                    return false;
+
+                return QuestIcon.IsQuest(ptr->NamePlateIconId) ||
+                       ptr->ObjectKind == ObjectKind.EventObj && ptr->TargetStatus == 15;
+            }
+        }
     }
 
     extension(IEnumerable<IGameObject> gameObjects)

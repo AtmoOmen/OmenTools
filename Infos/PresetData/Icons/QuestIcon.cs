@@ -1,6 +1,6 @@
 namespace OmenTools.Infos;
 
-public static class QuestIcons
+public static class QuestIcon
 {
     // 普通任务 (未开始)
     public static HashSet<uint> Normal { get; } =
