@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
-using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Network;
@@ -64,14 +63,11 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
         
         SendPacketInternalHook ??= SendPacketInternalSig.GetHook<SendPacketInternalDelegate>(SendPacketInternalDetour);
         ReceivePacketInternalHook ??=
-            DService.Instance().Hook.HookFromVirtualTable<ReceivePacketInternalDelegate, PacketDispatcher.PacketDispatcherVirtualTable>(
-                PacketDispatcher.StaticVirtualTablePointer, 
-                "OnReceivePacket",
-                ReceivePacketInternalDetour);
+            PacketDispatcher.StaticVirtualTablePointer->HookVFuncFromName("OnReceivePacket", (ReceivePacketInternalDelegate)ReceivePacketInternalDetour);
         
         GameState.Instance().Login  += OnLogin;
         GameState.Instance().Logout += OnLogout;
-        if (DService.Instance().ClientState.IsLoggedIn)
+        if (GameState.IsLoggedIn)
             ToggleHooks(true);
     }
     
