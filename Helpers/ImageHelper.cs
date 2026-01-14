@@ -176,7 +176,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
     }
 
     private void AddToExpirationQueue(object key) =>
-        expirationChannel.Writer.TryWrite(new AddCommand(key, DateTime.UtcNow.Ticks + CacheTTL.Ticks));
+        expirationChannel.Writer.TryWrite(new AddCommand(key, StandardTimeManager.Instance().UTCNow.Ticks + CacheTTL.Ticks));
 
     private async Task ProcessDownloadsAsync(CancellationToken ct)
     {
@@ -241,7 +241,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
                 if (localQueue.TryPeek(out _, out var ticks))
                 {
-                    waitTicks = ticks - DateTime.UtcNow.Ticks;
+                    waitTicks = ticks - StandardTimeManager.Instance().UTCNow.Ticks;
                     if (waitTicks < 0)
                         waitTicks = 0;
                 }
@@ -280,7 +280,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
                 {
                     while (localQueue.TryPeek(out var key, out var itemTicks))
                     {
-                        if (itemTicks <= DateTime.UtcNow.Ticks)
+                        if (itemTicks <= StandardTimeManager.Instance().UTCNow.Ticks)
                         {
                             localQueue.Dequeue();
                             CheckAndProcessItem(key, localQueue);
@@ -312,7 +312,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         {
             if (cachedTextures.TryGetValue(urlKey, out result))
             {
-                if (DateTime.UtcNow - result.LastAccessTime > CacheTTL)
+                if (StandardTimeManager.Instance().UTCNow - result.LastAccessTime > CacheTTL)
                 {
                     if (cachedTextures.TryRemove(urlKey, out var removedItem))
                     {
@@ -326,7 +326,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         {
             if (cachedIcons.TryGetValue(iconKey, out result))
             {
-                if (DateTime.UtcNow - result.LastAccessTime > CacheTTL)
+                if (StandardTimeManager.Instance().UTCNow - result.LastAccessTime > CacheTTL)
                 {
                     if (cachedIcons.TryRemove(iconKey, out var removedItem))
                     {
@@ -369,10 +369,10 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
         public readonly TaskCompletionSource<IDalamudTextureWrap?> CompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        private long     lastAccessTimeTicks = DateTime.UtcNow.Ticks;
+        private long     lastAccessTimeTicks = StandardTimeManager.Instance().UTCNow.Ticks;
         public  DateTime LastAccessTime => new(lastAccessTimeTicks);
 
-        public void RefreshAccess() => Interlocked.Exchange(ref lastAccessTimeTicks, DateTime.UtcNow.Ticks);
+        public void RefreshAccess() => Interlocked.Exchange(ref lastAccessTimeTicks, StandardTimeManager.Instance().UTCNow.Ticks);
 
         public IDalamudTextureWrap? Texture
         {

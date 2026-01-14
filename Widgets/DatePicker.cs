@@ -9,7 +9,7 @@ public class DatePicker
     private CultureInfo cultureInfo;
     private float       currentWidth = 200f;
     private bool        isYearView;
-    private DateTime    viewDate = DateTime.Now;
+    private DateTime    viewDate = StandardTimeManager.Instance().Now;
 
     private string[] weekDays = [];
 
@@ -132,7 +132,7 @@ public class DatePicker
 
             var date       = new DateTime(viewDate.Year, viewDate.Month, day);
             var isSelected = date.Date == currentDate.Date;
-            var isToday    = date.Date == DateTime.Now.Date;
+            var isToday    = date.Date == StandardTimeManager.Instance().Now.Date;
             
             using var colorStack = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.CheckMark], isToday && !isSelected);
             

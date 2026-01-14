@@ -124,7 +124,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
             if (cache.Count >= capacity)
                 RemoveOldest();
 
-            var cacheItem = new CacheItem(key, value, DateTime.UtcNow.Add(expiration));
+            var cacheItem = new CacheItem(key, value, StandardTimeManager.Instance().UTCNow.Add(expiration));
             var newNode   = lruList.AddFirst(cacheItem);
             cache.Add(key, newNode);
 
@@ -185,7 +185,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         {
             if (cache.TryGetValue(key, out var node))
             {
-                if (DateTime.UtcNow > node.Value.ExpirationTime)
+                if (StandardTimeManager.Instance().UTCNow > node.Value.ExpirationTime)
                 {
                     lockSlim.EnterWriteLock();
 
@@ -241,8 +241,8 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
                 var newExpiration = currentIsPermanent
                                         ? DateTime.MaxValue
                                         : expiration.HasValue
-                                            ? DateTime.UtcNow.Add(expiration.Value)
-                                            : DateTime.UtcNow.Add(defaultExpiration);
+                                            ? StandardTimeManager.Instance().UTCNow.Add(expiration.Value)
+                                            : StandardTimeManager.Instance().UTCNow.Add(defaultExpiration);
 
                 var newCacheItem = new CacheItem(key, newValue, newExpiration, currentIsPermanent);
 
@@ -369,7 +369,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
             {
                 var expirationTime = isPermanent
                                          ? DateTime.MaxValue
-                                         : DateTime.UtcNow.Add(expiration ?? defaultExpiration);
+                                         : StandardTimeManager.Instance().UTCNow.Add(expiration ?? defaultExpiration);
 
                 if (cache.TryGetValue(item.Key, out var existingNode))
                 {
@@ -461,7 +461,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
 
             try
             {
-                var now     = DateTime.UtcNow;
+                var now     = StandardTimeManager.Instance().UTCNow;
                 var current = lruList.Last;
 
                 while (current != null)
