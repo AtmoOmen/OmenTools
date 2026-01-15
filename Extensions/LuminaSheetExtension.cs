@@ -102,6 +102,45 @@ public static unsafe class LuminaSheetExtension
         public Vector3 GetPosition() =>
             new(level.X, level.Y, level.Z);
     }
+    
+    extension(scoped in ClassJob job)
+    {
+        public ClassJobType ToJobType()
+        {
+            switch (job.ClassJobCategory.RowId)
+            {
+                case 32:
+                    return ClassJobType.Gatherer;
+
+                case 33:
+                    return ClassJobType.Crafter;
+            }
+
+            switch (job.JobType)
+            {
+                case 1:
+                    return ClassJobType.Tank;
+                
+                case 2:
+                    return ClassJobType.PureHealer;
+                
+                case 3:
+                    return ClassJobType.Melee;
+                
+                case 4:
+                    return ClassJobType.PhysicalRanged;
+                
+                case 5:
+                    return ClassJobType.MagicalRanged;
+                
+                case 6:
+                    return  ClassJobType.ShieldHealer;
+                
+                default:
+                    return ClassJobType.None;
+            }
+        }
+    }
 
     extension(scoped in ClassJobCategory category)
     {
