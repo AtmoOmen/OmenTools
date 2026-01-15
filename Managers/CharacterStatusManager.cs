@@ -145,7 +145,7 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
             var sourceName = sourceID == 0xE000_0000 ? "本地对象" : DService.Instance().ObjectTable.SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
             Debug
             (
-                $"[Player Status Manager] Gain Status\n"                               +
+                $"[Character Status Manager] Gain Status\n"                               +
                 $"玩家: {battleChara.Name} ({battleChara.EntityID})\n"                   +
                 $"状态效果: {LuminaWrapper.GetStatusName(statusID)} ({statusID})\n"        +
                 $"剩余时间: {remainingTime:F1} 秒 | 参数: {statusParam} | 层数: {stackCount}\n" +
@@ -175,7 +175,7 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
             var sourceName = sourceID == 0xE000_0000 ? "本地对象" : DService.Instance().ObjectTable.SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
             Debug
             (
-                $"[Player Status Manager] Lose Status\n"                        +
+                $"[Character Status Manager] Lose Status\n"                        +
                 $"玩家: {battleChara.Name} ({battleChara.EntityID})\n"            +
                 $"状态效果: {LuminaWrapper.GetStatusName(statusID)} ({statusID})\n" +
                 $"参数: {statusParam} | 层数: {stackCount}\n"                       +
