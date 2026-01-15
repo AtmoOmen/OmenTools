@@ -20,16 +20,16 @@ public class FrameworkManager : OmenServiceBase<FrameworkManager>
         methodsCollection.Clear();
     }
 
-    public bool Reg(IFramework.OnUpdateDelegate method, uint throttleMS = 0)
-    {
-        var state = new MethodState
-        {
-            ThrottleTicks     = throttleMS * TicksPerMillisecond,
-            NextExecutionTick = 0
-        };
-
-        return methodsCollection.TryAdd(method, state);
-    }
+    public bool Reg(IFramework.OnUpdateDelegate method, uint throttleMS = 0) =>
+        methodsCollection.TryAdd
+        (
+            method,
+            new()
+            {
+                ThrottleTicks     = throttleMS * TicksPerMillisecond,
+                NextExecutionTick = 0
+            }
+        );
 
     public bool Unreg(params IFramework.OnUpdateDelegate[] methods)
     {
