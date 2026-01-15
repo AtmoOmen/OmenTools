@@ -1,49 +1,53 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace OmenTools.Helpers;
 
 public static partial class HelpersOm
 {
-    public static float WorldDirHToCharaRotation(Vector2 direction) => 
-        direction == Vector2.Zero ? 0f : MathF.Atan2(direction.X, direction.Y);
-
-    public static float CharaRotationSymmetricTransform(float rotation) => 
-        MathF.IEEERemainder(rotation + MathF.PI, 2 * MathF.PI);
+    private const float PACKET_SCALE     = 10430.2195f;
+    private const float INV_PACKET_SCALE = 1 / PACKET_SCALE;
     
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float WorldDirHToCharaRotation(Vector2 direction) =>
+        MathF.Atan2(direction.X, direction.Y);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float CharaRotationSymmetricTransform(float rotation)
+    {
+        var val = (rotation + MathF.PI) % MathF.Tau;
+        if (val <= 0)
+            val += MathF.Tau;
+        return val - MathF.PI;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float CameraDirHToCharaRotation(float cameraDirH)
     {
-        const double twoPi = 2 * Math.PI;
-    
-        var result = cameraDirH + Math.PI;
-    
-        result %= twoPi;
-        if (result < 0)
-            result += twoPi;
-    
-        return (float)result;
+        var result = (cameraDirH + MathF.PI) % MathF.Tau;
+        return result < 0 ? result + MathF.Tau : result;
     }
-    
-    public static bool IsRotationChanged(float targetRotation, float currentRotation, float tolerance = 0.1f)
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsRotationChanged(float target, float current, float tolerance = 0.1f)
     {
-        const float twoPi = 2 * MathF.PI;
-        var         diff  = MathF.Abs(currentRotation - targetRotation);
-        diff = MathF.Min(diff, twoPi - diff);
-    
+        const float TWO_PI = 2 * MathF.PI;
+        var         diff   = MathF.Abs(current - target);
+
+        if (diff > MathF.PI)
+            diff = TWO_PI - diff;
+
         return diff > tolerance;
     }
-
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ushort CharaRotationToPacketRotation(float rotation)
     {
-        var transformed = (ushort)((rotation + 3.1415927f) * 100.0f / 0.0095875263f);
-        return (ushort)(transformed < 65535 ? transformed : 65535);
+        var transformed = (rotation + MathF.PI) * PACKET_SCALE;
+        return (ushort)Math.Clamp(transformed, 0f, 65535f);
     }
-    
-    public static float PacketRotationToCharaRotation(ushort rotation)
-    {
-        var scaledValue   = rotation    * 0.0095875263f;
-        var adjustedValue = scaledValue / 100.0f;
-        var originalValue = adjustedValue - 3.1415927f;
 
-        return (float)Math.Atan2(Math.Sin(originalValue), Math.Cos(originalValue));
-    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float PacketRotationToCharaRotation(ushort rotation) =>
+        rotation * INV_PACKET_SCALE - MathF.PI;
 }
