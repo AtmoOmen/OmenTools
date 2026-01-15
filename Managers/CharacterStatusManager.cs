@@ -6,7 +6,7 @@ using BattleChara = FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara;
 
 namespace OmenTools.Managers;
 
-public unsafe class PlayerStatusManager : OmenServiceBase<PlayerStatusManager>
+public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusManager>
 {
     public PlayerStatusManagerConfig Config { get; private set; } = null!;
 
