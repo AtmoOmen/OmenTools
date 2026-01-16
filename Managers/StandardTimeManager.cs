@@ -44,7 +44,7 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
 
     private const string TIME_API_URL = "http://vv.video.qq.com/checktime?otype=json";
 
-    private NtpClient  NTPClient  { get; } = new("ntp.ntsc.ac.cn");
+    private NtpClient  NTPClient  { get; } = new("ntp.ntsc.ac.cn", TimeSpan.FromSeconds(5));
     private HttpClient HTTPClient { get; } = new() { Timeout = TimeSpan.FromSeconds(5) };
 
     private NtpClock? Clock        { get; set; }
@@ -55,28 +55,43 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
     internal override void Init()
     {
         var token = cancelSource.Token;
-        Task.Run
-        (
-            async () =>
+        _ = QueryAll(token);
+    }
+
+    private async Task QueryAll(CancellationToken token)
+    {
+        if (WebAPIOffset == null)
+        {
+            try
             {
+                await QueryWebTimeAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Error("尝试从 WebAPI 获取标准时间时发生错误", ex);
+            }
+        }
+              
+        if (Clock == null)
+        {
+            try
+            {
+                Clock = await NTPClient.QueryAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Error("尝试从 ntp.ntsc.ac.cn 获取标准时间时发生错误", ex);
+
                 try
                 {
-                    try
-                    {
-                        Clock = await NTPClient.QueryAsync(token).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        await QueryWebTimeAsync(token).ConfigureAwait(false);
-                    }
+                    Clock = await NtpClient.Default.QueryAsync(token).ConfigureAwait(false);
                 }
                 catch
                 {
-                    // ignored
+                    Error("尝试从 pool.ntp.org 获取标准时间时发生错误", ex);
                 }
-            },
-            token
-        );
+            }
+        }
     }
 
     private async Task QueryWebTimeAsync(CancellationToken token)
