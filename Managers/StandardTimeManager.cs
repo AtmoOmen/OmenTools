@@ -66,6 +66,10 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
             {
                 await QueryWebTimeAsync(token).ConfigureAwait(false);
             }
+            catch (OperationCanceledException)
+            {
+                // ignored
+            }
             catch (Exception ex)
             {
                 Error("尝试从 WebAPI 获取标准时间时发生错误", ex);
@@ -78,6 +82,10 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
             {
                 Clock = await NTPClient.QueryAsync(token).ConfigureAwait(false);
             }
+            catch (OperationCanceledException)
+            {
+                // ignored
+            }
             catch (Exception ex)
             {
                 Error("尝试从 ntp.ntsc.ac.cn 获取标准时间时发生错误", ex);
@@ -85,6 +93,10 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
                 try
                 {
                     Clock = await NtpClient.Default.QueryAsync(token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // ignored
                 }
                 catch
                 {
