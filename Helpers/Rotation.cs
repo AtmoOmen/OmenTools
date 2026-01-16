@@ -13,13 +13,8 @@ public static partial class HelpersOm
         MathF.Atan2(direction.X, direction.Y);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static float CharaRotationSymmetricTransform(float rotation)
-    {
-        var val = (rotation + MathF.PI) % MathF.Tau;
-        if (val <= 0)
-            val += MathF.Tau;
-        return val - MathF.PI;
-    }
+    public static float CharaRotationSymmetricTransform(float rotation) =>
+        rotation - MathF.CopySign(MathF.PI, rotation);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float CameraDirHToCharaRotation(float cameraDirH)

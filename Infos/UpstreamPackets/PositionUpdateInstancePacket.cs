@@ -6,14 +6,14 @@ namespace OmenTools.Infos;
 
 [StructLayout(LayoutKind.Explicit, Size = 56)]
 public struct PositionUpdateInstancePacket(
-    float                                 rotation,
+    float                                 charaRotation,
     Vector3                               position,
     PositionUpdateInstancePacket.MoveType moveType = PositionUpdateInstancePacket.MoveType.NormalMove0) : IUpstreamPacket
 {
     [FieldOffset(0)]  public int      Opcode      = UpstreamOpcode.PositionUpdateInstanceOpcode;
     [FieldOffset(8)]  public uint     Length      = 56;
-    [FieldOffset(32)] public float    Rotation    = rotation;
-    [FieldOffset(36)] public float    RotationNew = rotation;
+    [FieldOffset(32)] public float    Rotation    = charaRotation;
+    [FieldOffset(36)] public float    RotationNew = charaRotation;
     [FieldOffset(40)] public MoveType Move        = moveType;
     [FieldOffset(44)] public Vector3  Position    = position;
     [FieldOffset(56)] public Vector3  PositionNew = position;
