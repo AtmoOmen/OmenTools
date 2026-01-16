@@ -104,6 +104,8 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
                 }
             }
         }
+        
+        Debug($"[StandardTimeManager] 请求标准时间完成, 当前 UTC 时间: {UTCNow}, 来源类型: {Source}");
     }
 
     private async Task QueryWebTimeAsync(CancellationToken token)
