@@ -114,7 +114,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
         if (a4 == 0x9876543)
         {
             if (priority == 0)
-                priority = 1;
+                priority = ushort.MaxValue;
         }
         else
             HandlePacketPriority(ref priority);
@@ -194,12 +194,12 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     private static void HandlePacketPriority(ref ushort priority)
     {
         if (priority > 0) return;
-        // 采集状态或副本内
-        if (Conditions.Instance()->Gathering || GameState.ContentFinderCondition != 0) return;
+        // 采集状态
+        if (Conditions.Instance()->Gathering) return;
         // 部队储物柜
         if (FreeCompanyChest != null) return;
 
-        priority = 1;
+        priority = ushort.MaxValue;
     }
 
     #region 注册 (私有)
