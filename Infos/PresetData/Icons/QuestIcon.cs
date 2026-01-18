@@ -1,9 +1,11 @@
+using System.Collections.Frozen;
+
 namespace OmenTools.Infos;
 
 public static class QuestIcon
 {
     // 普通任务 (未开始)
-    public static HashSet<uint> Normal { get; } =
+    public static FrozenSet<uint> Normal { get; } =
     [
         70961, 70965, 70967, 70971, 70973, 70981, 70985, 70987, 70991, 70993, 71001, 71002, 71021, 71022, 71041,
         71042, 71061, 71062, 71081, 71082, 71111, 71122, 71141, 71142, 71201, 71202, 71221, 72222, 71241, 71242,
@@ -11,7 +13,7 @@ public static class QuestIcon
     ];
     
     // 已开始的任务
-    public static HashSet<uint> WaitToComplete { get; } =
+    public static FrozenSet<uint> WaitToComplete { get; } =
     [
         70963, 70969, 70975, 70983, 70989, 70995, 71003, 71005, 71006, 71023, 71025, 71026, 71043, 71045, 71046,
         71063, 71065, 71066, 71083, 71085, 71086, 71112, 71113, 71123, 71125, 71126, 71143, 71145, 71146, 71203,
@@ -20,7 +22,7 @@ public static class QuestIcon
     ];
     
     // 未满足条件的任务
-    public static HashSet<uint> Invalid { get; } =
+    public static FrozenSet<uint> Invalid { get; } =
     [
         70962, 70964, 70966, 70968, 70970, 70972, 70974, 70976, 70982, 70984, 70986, 70988, 70990, 70992, 70994,
         70996, 71011, 71012, 71013, 71015, 71016, 71031, 71032, 71033, 71035, 71036, 71051, 71052, 71053, 71055,
