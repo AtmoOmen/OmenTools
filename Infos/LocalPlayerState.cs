@@ -83,6 +83,12 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         Control.Instance()->IsWalking;
 
     /// <summary>
+    /// 当前玩家的性别
+    /// </summary>
+    public static unsafe byte Sex =>
+        PlayerState.Instance()->Sex;
+    
+    /// <summary>
     /// 当前玩家的用户名
     /// </summary>
     public static unsafe string Name =>
