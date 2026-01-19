@@ -22,7 +22,7 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
     [return: MarshalAs(UnmanagedType.U1)]
     private delegate bool ExecuteCommandComplexDelegate(ExecuteCommandComplexFlag command, long target, uint param1, uint param2, uint param3, uint param4);
     private Hook<ExecuteCommandComplexDelegate>? ExecuteCommandComplexHook;
-
+    
     [return: MarshalAs(UnmanagedType.U1)]
     private delegate bool ExecuteCommandComplexLocationDelegate
     (
@@ -97,8 +97,6 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
 
     private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
 
-    private readonly SemaphoreSlim semaphore = new(3);
-
     internal override void Init()
     {
         Config = LoadConfig<ExecuteCommandManagerConfig>() ?? new();
@@ -122,7 +120,7 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         );
         ExecuteCommandComplexLocationHook?.Enable();
     }
-    
+
     internal override void Uninit()
     {
         ExecuteCommandHook?.Dispose();
@@ -166,14 +164,14 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         if (methods is not { Length: > 0 }) return false;
 
         var type = typeof(T);
-        
+
         while (methodsCollection.TryGetValue(type, out var currentList))
         {
             var newList = currentList.RemoveRange(methods);
-            
+
             if (newList == currentList)
                 return false;
-            
+
             if (newList.IsEmpty)
             {
                 var kvp = new KeyValuePair<Type, ImmutableList<Delegate>>(type, currentList);
@@ -190,25 +188,35 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         return false;
     }
 
-    public bool RegPre(PreExecuteCommandDelegate method, params PreExecuteCommandDelegate[] methods) => 
-        RegisterGeneric(method, methods);
-    public bool RegPost(PostExecuteCommandDelegate method, params PostExecuteCommandDelegate[] methods) => 
-        RegisterGeneric(method, methods);
-    public bool RegPreComplex(PreExecuteCommandComplexDelegate method, params PreExecuteCommandComplexDelegate[] methods) => 
-        RegisterGeneric(method, methods);
-    public bool RegPostComplex(PostExecuteCommandComplexDelegate method, params PostExecuteCommandComplexDelegate[] methods) => 
-        RegisterGeneric(method, methods);
-    public bool RegPreComplexLocation(PreExecuteCommandComplexLocationDelegate method, params PreExecuteCommandComplexLocationDelegate[] methods) => 
-        RegisterGeneric(method, methods);
-    public bool RegPostComplexLocation
-        (PostExecuteCommandComplexLocationDelegate method, params PostExecuteCommandComplexLocationDelegate[] methods) => 
+    public bool RegPre(PreExecuteCommandDelegate method, params PreExecuteCommandDelegate[] methods) =>
         RegisterGeneric(method, methods);
 
-    public bool Unreg(params PreExecuteCommandDelegate[]                 methods) => UnregisterGeneric(methods);
-    public bool Unreg(params PostExecuteCommandDelegate[]                methods) => UnregisterGeneric(methods);
-    public bool Unreg(params PreExecuteCommandComplexDelegate[]          methods) => UnregisterGeneric(methods);
-    public bool Unreg(params PostExecuteCommandComplexDelegate[]         methods) => UnregisterGeneric(methods);
-    public bool Unreg(params PreExecuteCommandComplexLocationDelegate[]  methods) => UnregisterGeneric(methods);
+    public bool RegPost(PostExecuteCommandDelegate method, params PostExecuteCommandDelegate[] methods) =>
+        RegisterGeneric(method, methods);
+
+    public bool RegPreComplex(PreExecuteCommandComplexDelegate method, params PreExecuteCommandComplexDelegate[] methods) =>
+        RegisterGeneric(method, methods);
+
+    public bool RegPostComplex(PostExecuteCommandComplexDelegate method, params PostExecuteCommandComplexDelegate[] methods) =>
+        RegisterGeneric(method, methods);
+
+    public bool RegPreComplexLocation(PreExecuteCommandComplexLocationDelegate method, params PreExecuteCommandComplexLocationDelegate[] methods) =>
+        RegisterGeneric(method, methods);
+
+    public bool RegPostComplexLocation
+        (PostExecuteCommandComplexLocationDelegate method, params PostExecuteCommandComplexLocationDelegate[] methods) =>
+        RegisterGeneric(method, methods);
+
+    public bool Unreg(params PreExecuteCommandDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PostExecuteCommandDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PreExecuteCommandComplexDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PostExecuteCommandComplexDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PreExecuteCommandComplexLocationDelegate[] methods) => UnregisterGeneric(methods);
+
     public bool Unreg(params PostExecuteCommandComplexLocationDelegate[] methods) => UnregisterGeneric(methods);
 
     #endregion
@@ -219,11 +227,13 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
     private bool ExecuteCommandDetour(ExecuteCommandFlag command, uint param1, uint param2, uint param3, uint param4)
     {
         if (Config.ShowExecuteCommandLog)
+        {
             Debug
             (
                 $"[Execute Command Manager] Execute Command\n" +
                 $"命令:{command}({(uint)command}) | p1:{param1} | p2:{param2} | p3:{param3} | p4:{param4}"
             );
+        }
 
         var isPrevented = false;
 
@@ -256,11 +266,13 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
     private bool ExecuteCommandComplexDetour(ExecuteCommandComplexFlag command, long target, uint param1, uint param2, uint param3, uint param4)
     {
         if (Config.ShowExecuteCommandComplexLog)
+        {
             Debug
             (
                 $"[Execute Command Manager] Execute Command Complex\n" +
                 $"命令:{command}({(uint)command}) | 目标:{target:X} | p1:{param1} | p2:{param2} | p3:{param3} | p4:{param4}"
             );
+        }
 
         var isPrevented = false;
 
@@ -303,11 +315,13 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         var locationModified = *location;
 
         if (Config.ShowExecuteCommandComplexLog)
+        {
             Debug
             (
                 $"[Execute Command Manager] Execute Command Complex Location\n" +
                 $"命令:{command}({(uint)command}) | 地点:{locationModified} | p1:{param1} | p2:{param2} | p3:{param3} | p4:{param4}"
             );
+        }
 
         var isPrevented = false;
 
@@ -357,24 +371,15 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         uint               param4 = 0
     )
     {
-        semaphore.Wait();
+        ExecuteCommandHook.Original(command, param1, param2, param3, param4);
 
-        try
+        if (methodsCollection.TryGetValue(typeof(PostExecuteCommandDelegate), out var postDelegates))
         {
-            ExecuteCommandHook.Original(command, param1, param2, param3, param4);
-
-            if (methodsCollection.TryGetValue(typeof(PostExecuteCommandDelegate), out var postDelegates))
+            foreach (var postDelegate in postDelegates)
             {
-                foreach (var postDelegate in postDelegates)
-                {
-                    var postExecuteCommand = (PostExecuteCommandDelegate)postDelegate;
-                    postExecuteCommand(command, param1, param2, param3, param4);
-                }
+                var postExecuteCommand = (PostExecuteCommandDelegate)postDelegate;
+                postExecuteCommand(command, param1, param2, param3, param4);
             }
-        }
-        finally
-        {
-            semaphore.Release();
         }
     }
 
@@ -388,24 +393,15 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         uint                      param4 = 0
     )
     {
-        semaphore.Wait();
+        ExecuteCommandComplexHook.Original(command, target, param1, param2, param3, param4);
 
-        try
+        if (methodsCollection.TryGetValue(typeof(PostExecuteCommandComplexDelegate), out var postDelegates))
         {
-            ExecuteCommandComplexHook.Original(command, target, param1, param2, param3, param4);
-
-            if (methodsCollection.TryGetValue(typeof(PostExecuteCommandComplexDelegate), out var postDelegates))
+            foreach (var postDelegate in postDelegates)
             {
-                foreach (var postDelegate in postDelegates)
-                {
-                    var postExecuteCommand = (PostExecuteCommandComplexDelegate)postDelegate;
-                    postExecuteCommand(command, target, param1, param2, param3, param4);
-                }
+                var postExecuteCommand = (PostExecuteCommandComplexDelegate)postDelegate;
+                postExecuteCommand(command, target, param1, param2, param3, param4);
             }
-        }
-        finally
-        {
-            semaphore.Release();
         }
     }
 
@@ -419,29 +415,20 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         uint                      param4   = 0
     )
     {
-        semaphore.Wait();
+        ExecuteCommandComplexLocationHook.Original(command, &location, param1, param2, param3, param4);
 
-        try
+        if (methodsCollection.TryGetValue(typeof(PostExecuteCommandComplexLocationDelegate), out var postDelegates))
         {
-            ExecuteCommandComplexLocationHook.Original(command, &location, param1, param2, param3, param4);
-
-            if (methodsCollection.TryGetValue(typeof(PostExecuteCommandComplexLocationDelegate), out var postDelegates))
+            foreach (var postDelegate in postDelegates)
             {
-                foreach (var postDelegate in postDelegates)
-                {
-                    var postExecuteCommand = (PostExecuteCommandComplexLocationDelegate)postDelegate;
-                    postExecuteCommand(command, location, param1, param2, param3, param4);
-                }
+                var postExecuteCommand = (PostExecuteCommandComplexLocationDelegate)postDelegate;
+                postExecuteCommand(command, location, param1, param2, param3, param4);
             }
-        }
-        finally
-        {
-            semaphore.Release();
         }
     }
 
     #endregion
-    
+
     public class ExecuteCommandManagerConfig : OmenServiceConfiguration
     {
         public bool ShowExecuteCommandLog;
