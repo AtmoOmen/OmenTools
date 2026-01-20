@@ -5,7 +5,8 @@ namespace OmenTools.Infos;
 public static partial class InfosOm
 {
     public static bool OccupiedInEvent =>
-        DService.Instance().Condition.Any(
+        DService.Instance().Condition.Any
+        (
             ConditionFlag.Occupied,
             ConditionFlag.Occupied30,
             ConditionFlag.Occupied33,
@@ -41,31 +42,35 @@ public static partial class InfosOm
             ConditionFlag.PreparingToCraft,
             ConditionFlag.Fishing,
             ConditionFlag.Transformed,
-            ConditionFlag.UsingHousingFunctions) || 
-        DService.Instance().ObjectTable.LocalPlayer?.IsTargetable != true;
+            ConditionFlag.UsingHousingFunctions
+        );
 
-    public static bool BetweenAreas => 
+    public static bool BetweenAreas =>
         DService.Instance().Condition.Any(ConditionFlag.BetweenAreas, ConditionFlag.BetweenAreas51);
 
     public static bool BoundByDuty =>
-        DService.Instance().Condition.Any(
+        DService.Instance().Condition.Any
+        (
             ConditionFlag.BoundByDuty,
             ConditionFlag.BoundByDuty56,
             ConditionFlag.BoundByDuty95,
-            ConditionFlag.InDutyQueue);
+            ConditionFlag.InDutyQueue,
+            ConditionFlag.WaitingForDuty,
+            ConditionFlag.WaitingForDutyFinder
+        );
 
     public static bool WatchingCutscene =>
         DService.Instance().Condition.Any(ConditionFlag.WatchingCutscene, ConditionFlag.WatchingCutscene78);
 
-    public static bool IsCasting => 
+    public static bool IsCasting =>
         DService.Instance().Condition.Any(ConditionFlag.Casting, ConditionFlag.Casting87);
 
-    public static bool IsOnMount => 
+    public static bool IsOnMount =>
         DService.Instance().Condition.Any(ConditionFlag.Mounted, ConditionFlag.RidingPillion);
 
     public static bool CanMount =>
         !DService.Instance().Condition.Any(ConditionFlag.Mounted, ConditionFlag.Mounting, ConditionFlag.InCombat, ConditionFlag.Casting);
 
-    public static bool IsOnWorldTravel => 
+    public static bool IsOnWorldTravel =>
         DService.Instance().Condition.Any(ConditionFlag.WaitingToVisitOtherWorld, ConditionFlag.ReadyingVisitOtherWorld);
 }
