@@ -38,4 +38,36 @@ public static partial class ImGuiOm
             )
         );
     }
+    
+    public static void AddGlowRect
+    (
+        ImDrawListPtr drawList,
+        Vector2       min,
+        Vector2       max,
+        uint          colU32,
+        float         rounding,
+        float         glowSize,
+        int           steps,
+        float         innerBoost = 0.25f
+    )
+    {
+        for (var i = 0; i < steps; i++)
+        {
+            var t      = (i + 1f) / steps;
+            var expand = t        * glowSize;
+
+            var a = 1f - t;
+            a *= a;
+            a *= 1f / steps * 2.2f;
+
+            a *= 1f + (1f - t) * innerBoost;
+
+            var c = colU32.ToVector4();
+            c.W *= a;
+            var cU32 = c.ToUInt();
+
+            var r = rounding           + expand * 0.6f;
+            drawList.AddRectFilled(min - new Vector2(expand), max + new Vector2(expand), cU32, r);
+        }
+    }
 }
