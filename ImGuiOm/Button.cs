@@ -8,6 +8,68 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
+    public static bool ButtonImage
+    (
+        ImTextureID textureID,
+        Vector2     buttonSize,
+        Vector2     imageSize,
+        Vector2     uv0 = default,
+        Vector2     uv1 = default
+    )
+    {
+        if (uv0 == default)
+            uv0 = new Vector2(0, 0);
+        if (uv1 == default)
+            uv1 = new Vector2(1, 1);
+
+        using var id = ImRaii.PushId($"{textureID}");
+
+        var pressed = ImGui.InvisibleButton("##imgbtn", buttonSize);
+        var hovered = ImGui.IsItemHovered();
+        var held    = ImGui.IsItemActive();
+
+        var min  = ImGui.GetItemRectMin();
+        var max  = ImGui.GetItemRectMax();
+        var draw = ImGui.GetWindowDrawList();
+
+        var bgCol = held ? ImGui.GetColorU32(ImGuiCol.ButtonActive) : hovered ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Button);
+
+        var rounding = ImGui.GetStyle().FrameRounding;
+        draw.AddRectFilled(min, max, bgCol, rounding);
+
+        var borderCol  = ImGui.GetColorU32(ImGuiCol.Border);
+        var borderSize = ImGui.GetStyle().FrameBorderSize;
+        if (borderSize > 0.0f)
+            draw.AddRect(min, max, borderCol, rounding);
+
+        var pad        = ImGui.GetStyle().FramePadding;
+        var contentMin = min + pad;
+        var contentMax = max - pad;
+        if (contentMax.X < contentMin.X)
+            contentMax.X = contentMin.X;
+        if (contentMax.Y < contentMin.Y)
+            contentMax.Y = contentMin.Y;
+
+        var contentSize = contentMax - contentMin;
+
+        var imgDrawMin = contentMin;
+        var imgDrawMax = contentMax;
+
+        var sx = contentSize.X / MathF.Max(1e-6f, imageSize.X);
+        var sy = contentSize.Y / MathF.Max(1e-6f, imageSize.Y);
+        var s  = MathF.Min(sx, sy);
+
+        var drawSize = imageSize                * s;
+        var offset   = (contentSize - drawSize) * 0.5f;
+
+        imgDrawMin = contentMin + offset;
+        imgDrawMax = imgDrawMin + drawSize;
+
+        draw.AddImage(textureID, imgDrawMin, imgDrawMax, uv0, uv1, 0xFFFFFFFF);
+
+        return pressed;
+    }
+
     public static bool ButtonIcon(string id, FontAwesomeIcon icon, string tooltip = "", bool useStaticFont = false)
     {
         using var idPush = ImRaii.PushId($"{id}_{icon}");
