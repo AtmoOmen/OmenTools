@@ -74,7 +74,7 @@ public abstract class OmenServiceBase
         {
             var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
 
-            File.WriteAllText(ConfigFilePath, jsonString);
+            SecureSaveHelper.Instance().WriteAllText(ConfigFilePath, jsonString);
         }
         catch (Exception ex)
         {
@@ -93,7 +93,7 @@ public abstract class OmenServiceBase
             }
 
             var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
-            File.WriteAllText(ConfigFilePath, jsonString);
+            SecureSaveHelper.Instance().WriteAllText(ConfigFilePath, jsonString);
         }
         catch (Exception ex)
         {

@@ -29,7 +29,7 @@ public static class OmenServiceConfigurationExtensions
         {
             var configFile = manager.ConfigFilePath;
             var jsonString = JsonConvert.SerializeObject(config, Formatting.Indented);
-            File.WriteAllText(configFile, jsonString);
+            SecureSaveHelper.Instance().WriteAllText(configFile, jsonString);
         }
         catch (Exception ex)
         {
