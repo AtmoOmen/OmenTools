@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading.Channels;
 using OmenTools.Abstracts;
@@ -10,33 +10,44 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
     public void WriteAllText(string path, string content)
     {
         var fullPath = Path.GetFullPath(path);
-        
-        var entry = pathEntries.GetOrAdd(fullPath, p =>
+
+        while (true)
         {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancelSource.Token);
-            var channel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions 
-            { 
-                SingleReader = true 
-            });
+            var entry = pathEntries.GetOrAdd(fullPath, p => new Lazy<FileChannelEntry>(() =>
+            {
+                var cts = CancellationTokenSource.CreateLinkedTokenSource(cancelSource.Token);
+                var channel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions 
+                { 
+                    SingleReader = true 
+                });
 
-            _ = ProcessFileQueueAsync(p, channel.Reader, cts.Token);
+                var processingTask = ProcessFileQueueAsync(p, channel.Reader, cts.Token);
+                
+                return new(channel, cts, processingTask);
+            })).Value;
+
+            entry.LastAccessed = DateTime.UtcNow;
             
-            return new FileChannelEntry(channel, cts);
-        });
+            if (entry.Channel.Writer.TryWrite(content))
+                return;
 
-        entry.LastAccessed = DateTime.UtcNow;
-        entry.Channel.Writer.TryWrite(content);
+            Thread.Yield();
+        }
     }
+    
 
-    private readonly ConcurrentDictionary<string, FileChannelEntry> pathEntries = [];
+    private readonly ConcurrentDictionary<string, Lazy<FileChannelEntry>> pathEntries = [];
 
     private readonly CancellationTokenSource cancelSource = new();
 
     public SecureSaveHelper() =>
         _ = CleanIdleChannelsAsync();
     
-    internal override void Uninit() =>
-        ShutdownAsync().Wait();
+    internal override void Uninit()
+    {
+        cancelSource.Cancel();
+        pathEntries.Clear();
+    }
 
     private static async Task ProcessFileQueueAsync(string filePath, ChannelReader<string> reader, CancellationToken ct)
     {
@@ -57,17 +68,22 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
                     await AtomicWriteAsync(filePath, latestContent);
                 }
             }
+            
         }
         catch (OperationCanceledException)
         {
-            if (reader.TryRead(out var finalContent))
-                await AtomicWriteAsync(filePath, finalContent);
+            string? latestContent = null;
+            while (reader.TryRead(out var content))
+                latestContent = content;
+
+            if (latestContent != null)
+                await AtomicWriteAsync(filePath, latestContent);
         }
     }
 
     private static async Task AtomicWriteAsync(string filePath, string content)
     {
-        var tempFile = filePath + ".tmp";
+        var tempFile = $"{filePath}.{Guid.NewGuid()}.tmp";
         try
         {
             await File.WriteAllTextAsync(tempFile, content);
@@ -78,47 +94,50 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Save Error] {filePath}: {ex.Message}");
+            Error($"尝试保存内容至 {filePath} 时发生错误", ex);
         }
         finally
         {
-            if (File.Exists(tempFile)) File.Delete(tempFile);
+            if (File.Exists(tempFile))
+                File.Delete(tempFile);
         }
     }
 
     private async Task CleanIdleChannelsAsync()
     {
-        while (!cancelSource.IsCancellationRequested)
+        try
         {
-            await Task.Delay(TimeSpan.FromMinutes(1), cancelSource.Token);
-            
-            var now = DateTime.UtcNow;
-            foreach (var (path, entry) in pathEntries)
+            while (!cancelSource.IsCancellationRequested)
             {
-                if (now - entry.LastAccessed > TimeSpan.FromMinutes(1))
+                await Task.Delay(TimeSpan.FromMinutes(1), cancelSource.Token);
+                
+                var now = DateTime.UtcNow;
+                foreach (var (path, lazyEntry) in pathEntries)
                 {
-                    if (pathEntries.TryRemove(path, out var removed))
+                    if (!lazyEntry.IsValueCreated) continue;
+
+                    var entry = lazyEntry.Value;
+                    if (now - entry.LastAccessed > TimeSpan.FromMinutes(1))
                     {
-                        removed.Channel.Writer.Complete();
-                        removed.Cts.Cancel();
+                        if (pathEntries.TryRemove(path, out var removedLazy))
+                        {
+                            if (removedLazy.IsValueCreated)
+                            {
+                                var removed = removedLazy.Value;
+                                removed.Channel.Writer.TryComplete();
+                            }
+                        }
                     }
                 }
             }
         }
-    }
-
-    internal async Task ShutdownAsync()
-    {
-        cancelSource.Cancel();
-        
-        foreach (var entry in pathEntries.Values)
-            entry.Channel.Writer.Complete();
-
-        await Task.Delay(1000); 
-        pathEntries.Clear();
+        catch (OperationCanceledException)
+        {
+            // ignored
+        }
     }
     
-    private record FileChannelEntry(Channel<string> Channel, CancellationTokenSource Cts)
+    private record FileChannelEntry(Channel<string> Channel, CancellationTokenSource Cts, Task ProcessingTask)
     {
         public DateTime LastAccessed { get; set; } = DateTime.UtcNow;
     }
