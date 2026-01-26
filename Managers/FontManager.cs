@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Drawing.Text;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -18,12 +19,9 @@ public class FontManager : OmenServiceBase<FontManager>
     private static readonly unsafe ushort[] DefaultFontRange =
         BuildRange
         (
-            null,
-            ImGui.GetIO().Fonts.GetGlyphRangesChineseFull(),
+            default(FluentGlyphRangeBuilder).WithLanguage(CultureInfo.CurrentUICulture).BuildExact(),
             ImGui.GetIO().Fonts.GetGlyphRangesDefault()
         );
-
-    private static readonly string[] FontExtensions = [".ttf", ".otf", ".ttc"];
 
     private static unsafe ushort[] BuildRange(ushort[]? extraRanges, params ushort*[] nativeRanges)
     {
@@ -98,14 +96,14 @@ public class FontManager : OmenServiceBase<FontManager>
     public IFontHandle UIFont80  => GetUIFont(0.8f);
     public IFontHandle UIFont60  => GetUIFont(0.6f);
 
-    public float GlobalFontScale => Config.FontSize / 14f * (ImGui.GetIO().DisplaySize.Y / 1440f);
+    public float GlobalFontScale => Config.FontSize / 12f * ImGuiHelpers.GlobalScaleSafe;
     public bool  IsFontBuilding  => activeFontBuilds > 0;
 
     public IFontHandle GetUIFont(float scale) =>
         GetFont(GetActualFontSize(scale));
 
     public float GetActualFontSize(float scale) =>
-        MathF.Round(Config.FontSize * scale, 1);
+        MathF.Round(Config.FontSize * scale * ImGuiHelpers.GlobalScaleSafe, 1);
 
     public IFontHandle GetFont(float size)
     {
@@ -128,22 +126,38 @@ public class FontManager : OmenServiceBase<FontManager>
         if (clearOld)
             ClearFontHandles();
 
-        float[] sizes = [0.6f, 0.8f, 0.9f, 1.0f, 1.2f, 1.4f, 1.6f];
-        var     tasks = new ConcurrentBag<Task>();
+        var sizes = PreBuildFontSizes.Select(GetActualFontSize)
+                                     .Distinct()
+                                     .ToArray();
 
-        await Task.Run
-                  (
-                      () => Parallel.ForEach
-                      (
-                          sizes,
-                          new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-                          size => tasks.Add(Task.Run(() => GetUIFont(size), cancelSource.Token))
-                      ),
-                      cancelSource.Token
-                  )
-                  .ConfigureAwait(false);
+        await semaphore.WaitAsync();
+        Interlocked.Increment(ref activeFontBuilds);
 
-        await Task.WhenAll(tasks);
+        try
+        {
+            foreach (var size in sizes)
+            {
+                if (fontTasks.ContainsKey(size)) continue;
+
+                try
+                {
+                    var handle = CreateFontHandleDefinition(size);
+                    fontTasks.TryAdd(size, Task.FromResult(handle));
+                }
+                catch (Exception ex)
+                {
+                    NotificationError($"字体 (大小: {size}) 预构建失败");
+                    Error($"字体 (大小: {size}) 预构建失败", ex);
+                }
+            }
+
+            await FontAtlas.BuildFontsAsync();
+        }
+        finally
+        {
+            Interlocked.Decrement(ref activeFontBuilds);
+            semaphore.Release();
+        }
     }
 
     public Task RegenerateInstalledFontsAsync() =>
@@ -182,6 +196,90 @@ public class FontManager : OmenServiceBase<FontManager>
         FontAtlas?.Dispose();
     }
 
+    private IFontHandle CreateFontHandleDefinition(float size)
+    {
+        var fontPath = Config.FontFileName;
+
+        if (!File.Exists(fontPath))
+        {
+            Warning("字体获取失败, 已转为 Dalamud 内置字体");
+
+            return FontAtlas.NewDelegateFontHandle
+            (e =>
+                {
+                    e.OnPreBuild
+                    (tk =>
+                        {
+                            var defualtFontPtr = tk.AddDalamudDefaultFont(size, DefaultFontRange);
+
+                            var mixedFontPtr0 = tk.AddGameSymbol
+                            (
+                                new()
+                                {
+                                    SizePx     = size,
+                                    PixelSnapH = true,
+                                    MergeFont  = defualtFontPtr
+                                }
+                            );
+
+                            tk.AddFontAwesomeIconFont
+                            (
+                                new()
+                                {
+                                    SizePx     = size,
+                                    PixelSnapH = true,
+                                    MergeFont  = mixedFontPtr0
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+        }
+
+        return FontAtlas.NewDelegateFontHandle
+        (e =>
+            {
+                e.OnPreBuild
+                (tk =>
+                    {
+                        var fileFontPtr = tk.AddFontFromFile
+                        (
+                            fontPath,
+                            new()
+                            {
+                                SizePx      = size,
+                                PixelSnapH  = true,
+                                GlyphRanges = DefaultFontRange,
+                                FontNo      = 0
+                            }
+                        );
+
+                        var mixedFontPtr0 = tk.AddGameSymbol
+                        (
+                            new()
+                            {
+                                SizePx     = size,
+                                PixelSnapH = true,
+                                MergeFont  = fileFontPtr
+                            }
+                        );
+
+                        tk.AddFontAwesomeIconFont
+                        (
+                            new()
+                            {
+                                SizePx     = size,
+                                PixelSnapH = true,
+                                MergeFont  = mixedFontPtr0
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    }
+
     private async Task<IFontHandle> CreateFontHandleAsync(float size)
     {
         await semaphore.WaitAsync();
@@ -189,91 +287,7 @@ public class FontManager : OmenServiceBase<FontManager>
 
         try
         {
-            var fontPath = Config.FontFileName;
-
-            IFontHandle? handle;
-
-            if (!File.Exists(fontPath))
-            {
-                Warning("字体获取失败, 已转为 Dalamud 内置字体");
-
-                handle = FontAtlas.NewDelegateFontHandle
-                (e =>
-                    {
-                        e.OnPreBuild
-                        (tk =>
-                            {
-                                var defualtFontPtr = tk.AddDalamudDefaultFont(size, DefaultFontRange);
-                                
-                                var mixedFontPtr0 = tk.AddGameSymbol
-                                (
-                                    new()
-                                    {
-                                        SizePx     = size,
-                                        PixelSnapH = true,
-                                        MergeFont  = defualtFontPtr
-                                    }
-                                );
-
-                                tk.AddFontAwesomeIconFont
-                                (
-                                    new()
-                                    {
-                                        SizePx     = size,
-                                        PixelSnapH = true,
-                                        MergeFont  = mixedFontPtr0
-                                    }
-                                );
-                            }
-                        );
-                    }
-                );
-            }
-            else
-            {
-                handle = FontAtlas.NewDelegateFontHandle
-                (e =>
-                    {
-                        e.OnPreBuild
-                        (tk =>
-                            {
-                                var fileFontPtr = tk.AddFontFromFile
-                                (
-                                    fontPath,
-                                    new()
-                                    {
-                                        SizePx      = size,
-                                        PixelSnapH  = true,
-                                        GlyphRanges = DefaultFontRange,
-                                        FontNo      = 0
-                                    }
-                                );
-
-                                var mixedFontPtr0 = tk.AddGameSymbol
-                                (
-                                    new()
-                                    {
-                                        SizePx     = size,
-                                        PixelSnapH = true,
-                                        MergeFont  = fileFontPtr
-                                    }
-                                );
-
-                                tk.AddFontAwesomeIconFont
-                                (
-                                    new()
-                                    {
-                                        SizePx     = size,
-                                        PixelSnapH = true,
-                                        MergeFont  = mixedFontPtr0
-                                    }
-                                );
-                            }
-                        );
-                    }
-                );
-            }
-
+            var handle = CreateFontHandleDefinition(size);
             await FontAtlas.BuildFontsAsync();
             return handle;
         }
@@ -304,7 +318,7 @@ public class FontManager : OmenServiceBase<FontManager>
         var errors              = new ConcurrentBag<Exception>();
 
         var       errorCounter = 0;
-        const int MAX_ERRORS    = 100;
+        const int MAX_ERRORS   = 100;
 
         try
         {
@@ -374,7 +388,7 @@ public class FontManager : OmenServiceBase<FontManager>
         finally
         {
             InstalledFonts = localInstalledFonts;
-            
+
             foreach (var error in errors)
                 Error("尝试获取本机安装字体时出错", error);
         }
@@ -426,6 +440,10 @@ public class FontManager : OmenServiceBase<FontManager>
     private readonly Lazy<IFontHandle> trumpGothicFont230Lazy = new(() => FontAtlasGame.NewGameFontHandle(new(GameFontFamilyAndSize.TrumpGothic23)));
     private readonly Lazy<IFontHandle> trumpGothicFont340Lazy = new(() => FontAtlasGame.NewGameFontHandle(new(GameFontFamilyAndSize.TrumpGothic34)));
     private readonly Lazy<IFontHandle> trumpGothicFont680Lazy = new(() => FontAtlasGame.NewGameFontHandle(new(GameFontFamilyAndSize.TrumpGothic68)));
+    
+    private static readonly float[] PreBuildFontSizes = [0.6f, 0.8f, 0.9f, 1.0f, 1.2f, 1.4f, 1.6f];
+
+    private static readonly string[] FontExtensions = [".ttf", ".otf", ".ttc"];
 
     #endregion
 }
