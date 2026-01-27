@@ -29,6 +29,7 @@ public static unsafe class GameAddon
     public static AtkUnitBase* RaceChocoboParameter   => GetAddonByName("_RaceChocoboParameter");
     public static AtkUnitBase* ScreenText             => GetAddonByName("_ScreenText");
     public static AtkUnitBase* FlyText                => GetAddonByName("_FlyText");
+    public static AtkUnitBase* NotificationLoot       => GetAddonByName("_NotificationLoot");
 
     #endregion
 

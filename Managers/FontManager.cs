@@ -19,8 +19,10 @@ public class FontManager : OmenServiceBase<FontManager>
     private static readonly unsafe ushort[] DefaultFontRange =
         BuildRange
         (
-            default(FluentGlyphRangeBuilder).WithLanguage(CultureInfo.CurrentUICulture).BuildExact(),
-            ImGui.GetIO().Fonts.GetGlyphRangesDefault()
+            null,
+            ImGui.GetIO().Fonts.GetGlyphRangesDefault(),
+            ImGui.GetIO().Fonts.GetGlyphRangesChineseFull(),
+            ImGui.GetIO().Fonts.GetGlyphRangesKorean()
         );
 
     private static unsafe ushort[] BuildRange(ushort[]? extraRanges, params ushort*[] nativeRanges)
