@@ -316,6 +316,14 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         
         return Vector3.Distance(Object.Position, target);
     }
+
+    public static float DistanceTo3DSquared(Vector3 target)
+    {
+        if (Object == null)
+            return float.MaxValue;
+
+        return Vector3.DistanceSquared(Object.Position, target);
+    }
     
     public static float DistanceTo2D(Vector2 target)
     {
@@ -323,6 +331,14 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
             return float.MaxValue;
         
         return Vector2.Distance(Object.Position.ToVector2(), target);
+    }
+
+    public static float DistanceTo2DSquared(Vector2 target)
+    {
+        if (Object == null)
+            return float.MaxValue;
+
+        return Vector2.DistanceSquared(Object.Position.ToVector2(), target);
     }
     
     public static float DistanceToObject2D(IGameObject? target, bool ignoreRadius = true)
@@ -344,6 +360,25 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 
         return DistanceTo2D(target.Position.ToVector2());
     }
+
+    public static float DistanceToObject2DSquared(IGameObject? target, bool ignoreRadius = true)
+    {
+        if (target == null || Object == null)
+            return float.MaxValue;
+
+        if (!ignoreRadius)
+        {
+            if (DistanceTo2DSquared(target.Position.ToVector2()) <= target.HitboxRadius * target.HitboxRadius)
+                return 0f;
+
+            if (!(GetNearestPointToObject(target) is var nearestPoint) || nearestPoint == Vector3.Zero)
+                return 0f;
+
+            return DistanceTo2DSquared(nearestPoint.ToVector2());
+        }
+
+        return DistanceTo2DSquared(target.Position.ToVector2());
+    }
     
     public static float DistanceToObject3D(IGameObject? target, bool ignoreRadius = true)
     {
@@ -363,6 +398,25 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         }
 
         return DistanceTo3D(target.Position);
+    }
+
+    public static float DistanceToObject3DSquared(IGameObject? target, bool ignoreRadius = true)
+    {
+        if (target == null || Object == null)
+            return float.MaxValue;
+
+        if (!ignoreRadius)
+        {
+            if (DistanceTo2DSquared(target.Position.ToVector2()) <= target.HitboxRadius * target.HitboxRadius)
+                return 0f;
+
+            if (!(GetNearestPointToObject(target) is var nearestPoint) || nearestPoint == Vector3.Zero)
+                return 0f;
+
+            return DistanceTo3DSquared(nearestPoint);
+        }
+
+        return DistanceTo3DSquared(target.Position);
     }
 
     public static Vector3 GetNearestPointToObject(IGameObject? target)
