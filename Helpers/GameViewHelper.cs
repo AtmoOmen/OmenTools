@@ -14,7 +14,7 @@ public static class GameViewHelper
         var dev     = Device.Instance();
         var viewPos = ImGuiHelpers.MainViewport.Pos;
 
-        var mat = Unsafe.ReadUnaligned<Matrix4x4>((byte*)&Control.Instance()->ViewProjectionMatrix);
+        var mat = Control.Instance()->ViewProjectionMatrix;
 
         var wx = worldPos.X;
         var wy = worldPos.Y;
