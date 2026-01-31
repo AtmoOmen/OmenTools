@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Dalamud.Game.ClientState.Objects.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Common.Math;
 using Lumina.Excel.Sheets;
 using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
@@ -131,14 +132,19 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// <summary>
     /// 尝试获取周围是否有可用的知见水晶物体
     /// </summary>
-    public static bool TryFindKnowledgeCrystal([NotNullWhen(true)] out IGameObject? knowledgeCrystal)
+    public static unsafe bool TryFindKnowledgeCrystal([NotNullWhen(true)] out IGameObject? knowledgeCrystal)
     {
         knowledgeCrystal = null;
         if (GameState.TerritoryIntendedUse != TerritoryIntendedUse.OccultCrescent) return false;
+
+        knowledgeCrystal = DService.Instance().ObjectTable.SearchObject
+        (
+            x => x is IEventObj { ObjectKind: ObjectKind.EventObj, DataID: 2007457, Name.Payloads.Count: 0 } obj &&
+                 obj.ToStruct()->EventState   == 0                                                               &&
+                 obj.ToStruct()->CameraOffset != Vector3.Zero,
+            IObjectTable.EventRange
+        );
         
-        knowledgeCrystal = DService.Instance().ObjectTable.FirstOrDefault(x => x is { ObjectKind: ObjectKind.EventObj, DataID: 2007457 } &&
-                                                                    string.IsNullOrEmpty(x.Name.TextValue)                    &&
-                                                                    LocalPlayerState.DistanceTo2D(x.Position.ToVector2()) <= 3);
         return knowledgeCrystal != null;
     }
 
