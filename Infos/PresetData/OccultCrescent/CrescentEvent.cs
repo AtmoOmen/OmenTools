@@ -25,15 +25,8 @@ public class CrescentEvent : IEquatable<CrescentEvent>
             isObtained = true;
         else if (JobItemToJob.TryGetValue(specialReward, out var jobIndex))
             isObtained = PublicContentOccultCrescent.GetState()->SupportJobLevels[jobIndex] > 0;
-        else if (LoreItems.Contains(specialReward))
-        {
-            // 提前请求有几率可以让下面不返回 null
-            _ = ExdModule.GetItemRowById(specialReward);
-            
-            var itemRow = ExdModule.GetItemRowById(specialReward);
-            if (itemRow != null)
-                isObtained = UIState.Instance()->IsItemActionUnlocked(itemRow) == 1;
-        }
+        else if (LoreItems.Contains(specialReward) && LuminaGetter.TryGetRow(specialReward, out Item specialRewardRow))
+            isObtained = DService.Instance().UnlockState.IsItemUnlocked(specialRewardRow);
         
         return isObtained;
     }
