@@ -5,20 +5,23 @@ namespace OmenTools.Widgets;
 
 public class ActionSelectCombo : LuminaComboBase<Action>
 {
-    public override uint           SelectedID  { get; set; }
-    public override HashSet<uint> SelectedIDs { get; set; } = [];
-
     public ActionSelectCombo(string id, IEnumerable<Action> actions = null) : base(id, null)
     {
         var data = actions ?? PresetSheet.PlayerActions.Values;
-        Searcher = new LuminaSearcher<Action>(data,
-                                              [
-                                                  x => x.RowId.ToString(),
-                                                  x => x.Name.ToString(),
-                                                  x => x.ClassJob.ValueNullable?.Name.ToString() ?? string.Empty,
-                                              ],
-                                              resultLimit: 200);
+        Searcher = new LuminaSearcher<Action>
+        (
+            data,
+            [
+                x => x.RowId.ToString(),
+                x => x.Name.ToString(),
+                x => x.ClassJob.ValueNullable?.Name.ToString() ?? string.Empty
+            ],
+            resultLimit: 200
+        );
     }
+
+    public override uint          SelectedID  { get; set; }
+    public override HashSet<uint> SelectedIDs { get; set; } = [];
 
     public override bool DrawRadio()
     {
@@ -37,6 +40,7 @@ public class ActionSelectCombo : LuminaComboBase<Action>
 
         ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
         using var popup = ImRaii.Popup($"###Popup_{ID}");
+
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -47,6 +51,7 @@ public class ActionSelectCombo : LuminaComboBase<Action>
 
             var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             using var table     = ImRaii.Table("###Table", 4, ImGuiTableFlags.Borders, tableSize);
+
             if (table)
             {
                 ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
@@ -91,8 +96,13 @@ public class ActionSelectCombo : LuminaComboBase<Action>
             ImGui.RadioButton(string.Empty, SelectedItem.RowId == action.RowId);
 
             ImGui.TableNextColumn();
-            if (ImGui.Selectable($"{jobName}##Action_{action.RowId}_{action.Name.ToString()}", false,
-                                 ImGuiSelectableFlags.SpanAllColumns))
+
+            if (ImGui.Selectable
+                (
+                    $"{jobName}##Action_{action.RowId}_{action.Name.ToString()}",
+                    false,
+                    ImGuiSelectableFlags.SpanAllColumns
+                ))
             {
                 SelectedID  = action.RowId;
                 selectState = true;
@@ -115,7 +125,7 @@ public class ActionSelectCombo : LuminaComboBase<Action>
         var preview = SelectedItems.Count == 0
                           ? string.Empty
                           : $"[{SelectedItems.First().ClassJobCategory.ValueNullable?.Name.ToString()}] " +
-                            $"{SelectedItems.First().Name.ToString()} "                           +
+                            $"{SelectedItems.First().Name.ToString()} "                                   +
                             $"({SelectedItems.First().RowId})...";
         if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
@@ -125,6 +135,7 @@ public class ActionSelectCombo : LuminaComboBase<Action>
 
         ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
         using var popup = ImRaii.Popup($"###Popup_{ID}");
+
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -135,6 +146,7 @@ public class ActionSelectCombo : LuminaComboBase<Action>
 
             var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             using var table     = ImRaii.Table("###Table", 4, ImGuiTableFlags.Borders, tableSize);
+
             if (table)
             {
                 ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
@@ -177,6 +189,7 @@ public class ActionSelectCombo : LuminaComboBase<Action>
 
             ImGui.TableNextColumn();
             var isSelected = SelectedIDs.Contains(action.RowId);
+
             if (ImGui.Checkbox(string.Empty, ref isSelected))
             {
                 if (!SelectedIDs.Remove(action.RowId))
@@ -185,8 +198,13 @@ public class ActionSelectCombo : LuminaComboBase<Action>
             }
 
             ImGui.TableNextColumn();
-            if (ImGui.Selectable($"{jobName}##Action_{action.RowId}_{action.Name.ToString()}", isSelected,
-                                 ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+
+            if (ImGui.Selectable
+                (
+                    $"{jobName}##Action_{action.RowId}_{action.Name.ToString()}",
+                    isSelected,
+                    ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups
+                ))
             {
                 if (!SelectedIDs.Remove(action.RowId))
                     SelectedIDs.Add(action.RowId);

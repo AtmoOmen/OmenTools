@@ -9,10 +9,9 @@ public abstract class LuminaComboBase<T>
 )
     where T : struct, IExcelRow<T>
 {
+    protected string            SearchWord = string.Empty;
     protected LuminaSearcher<T> Searcher { get; init; } = searcher;
     protected string            ID       { get; init; } = id;
-
-    protected string SearchWord = string.Empty;
 
     public abstract uint          SelectedID  { get; set; }
     public abstract HashSet<uint> SelectedIDs { get; set; }
