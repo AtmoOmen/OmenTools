@@ -89,6 +89,9 @@ public static unsafe class LuminaSheetExtension
                 _        => BitmapFontIcon.NewAdventurer
             };
         }
+
+        public uint GetIcon(ClassJobIconType type = ClassJobIconType.Framed) => 
+            job.RowId + (uint)type;
     }
 
     extension(scoped in TerritoryType row)
