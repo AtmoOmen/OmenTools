@@ -3,28 +3,13 @@ using Action = Lumina.Excel.Sheets.Action;
 
 namespace OmenTools.Widgets;
 
-public class ActionSelectCombo
+public class ActionSelectCombo : LuminaComboBase<Action>
 {
-    public LuminaSearcher<Action> Searcher { get; init; }
-    public string                 ID       { get; init; }
+    public override uint           SelectedID  { get; set; }
+    public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    public Action SelectedAction =>
-        LuminaGetter.GetRow<Action>(SelectedActionID).GetValueOrDefault();
-
-    public List<Action> SelectedActions =>
-        SelectedActionIDs.Select(x => LuminaGetter.GetRow<Action>(x).GetValueOrDefault())
-                         .Where(x => x.RowId > 0)
-                         .ToList();
-
-    public uint          SelectedActionID  { get; set; }
-    public HashSet<uint> SelectedActionIDs { get; set; } = [];
-
-    public string SearchWord = string.Empty;
-    
-    public ActionSelectCombo(string id, IEnumerable<Action> actions = null)
+    public ActionSelectCombo(string id, IEnumerable<Action> actions = null) : base(id, null)
     {
-        ID = id;
-        
         var data = actions ?? PresetSheet.PlayerActions.Values;
         Searcher = new LuminaSearcher<Action>(data,
                                               [
@@ -34,24 +19,24 @@ public class ActionSelectCombo
                                               ],
                                               resultLimit: 200);
     }
-    
-    public bool DrawRadio()
+
+    public override bool DrawRadio()
     {
         using var drawID = ImRaii.PushId($"{ID}");
-        
+
         var selectState = false;
-        
-        var preview = SelectedAction.RowId == 0
+
+        var preview = SelectedItem.RowId == 0
                           ? string.Empty
-                          : $"[{SelectedAction.ClassJobCategory.ValueNullable?.Name.ToString()}] {SelectedAction.Name.ToString()} ({SelectedAction.RowId})";
+                          : $"[{SelectedItem.ClassJobCategory.ValueNullable?.Name.ToString()}] {SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
         if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
-            ImGui.OpenPopup("###Popup");
+            ImGui.OpenPopup($"###Popup_{ID}");
 
         ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup("###Popup");
+        using var popup = ImRaii.Popup($"###Popup_{ID}");
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -78,12 +63,12 @@ public class ActionSelectCombo
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(LuminaWrapper.GetAddonText(1340));
 
-                if (SelectedAction is { RowId: > 0 })
-                    Render(SelectedAction);
-                
+                if (SelectedItem is { RowId: > 0 })
+                    Render(SelectedItem);
+
                 foreach (var action in Searcher.SearchResult)
                 {
-                    if (action.RowId == SelectedActionID) continue;
+                    if (action.RowId == SelectedID) continue;
                     Render(action);
                 }
             }
@@ -94,7 +79,7 @@ public class ActionSelectCombo
         void Render(Action action)
         {
             if (!DService.Instance().Texture.TryGetFromGameIcon(new(action.Icon), out var texture)) return;
-            
+
             var actionName = action.Name.ToString();
             var jobName    = action.ClassJobCategory.ValueNullable?.Name.ToString() ?? string.Empty;
 
@@ -103,14 +88,14 @@ public class ActionSelectCombo
             ImGui.TableNextRow();
 
             ImGui.TableNextColumn();
-            ImGui.RadioButton(string.Empty, SelectedAction.RowId == action.RowId);
+            ImGui.RadioButton(string.Empty, SelectedItem.RowId == action.RowId);
 
             ImGui.TableNextColumn();
-            if (ImGui.Selectable($"{jobName}##Action_{action.RowId}_{action.Name.ToString()}", false, 
+            if (ImGui.Selectable($"{jobName}##Action_{action.RowId}_{action.Name.ToString()}", false,
                                  ImGuiSelectableFlags.SpanAllColumns))
             {
-                SelectedActionID = action.RowId;
-                selectState      = true;
+                SelectedID  = action.RowId;
+                selectState = true;
             }
 
             ImGui.TableNextColumn();
@@ -121,25 +106,25 @@ public class ActionSelectCombo
         }
     }
 
-    public bool DrawCheckbox()
+    public override bool DrawCheckbox()
     {
         using var drawID = ImRaii.PushId($"{ID}");
-        
+
         var selectState = false;
-        
-        var preview = SelectedActions.Count == 0
+
+        var preview = SelectedItems.Count == 0
                           ? string.Empty
-                          : $"[{SelectedActions.First().ClassJobCategory.ValueNullable?.Name.ToString()}] " +
-                            $"{SelectedActions.First().Name.ToString()} "                           +
-                            $"({SelectedActions.First().RowId})...";
+                          : $"[{SelectedItems.First().ClassJobCategory.ValueNullable?.Name.ToString()}] " +
+                            $"{SelectedItems.First().Name.ToString()} "                           +
+                            $"({SelectedItems.First().RowId})...";
         if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
-            ImGui.OpenPopup("###Popup");
+            ImGui.OpenPopup($"###Popup_{ID}");
 
         ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup("###Popup");
+        using var popup = ImRaii.Popup($"###Popup_{ID}");
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -166,12 +151,12 @@ public class ActionSelectCombo
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(LuminaWrapper.GetAddonText(1340));
 
-                foreach (var action in SelectedActions)
+                foreach (var action in SelectedItems)
                     Render(action);
 
                 foreach (var action in Searcher.SearchResult)
                 {
-                    if (SelectedActionIDs.Contains(action.RowId)) continue;
+                    if (SelectedIDs.Contains(action.RowId)) continue;
                     Render(action);
                 }
             }
@@ -182,7 +167,7 @@ public class ActionSelectCombo
         void Render(Action action)
         {
             if (!DService.Instance().Texture.TryGetFromGameIcon(new(action.Icon), out var texture)) return;
-            
+
             var actionName = action.Name.ToString();
             var jobName    = action.ClassJobCategory.ValueNullable?.Name.ToString() ?? string.Empty;
 
@@ -191,20 +176,20 @@ public class ActionSelectCombo
             ImGui.TableNextRow();
 
             ImGui.TableNextColumn();
-            var isSelected = SelectedActionIDs.Contains(action.RowId);
+            var isSelected = SelectedIDs.Contains(action.RowId);
             if (ImGui.Checkbox(string.Empty, ref isSelected))
             {
-                if (!SelectedActionIDs.Remove(action.RowId))
-                    SelectedActionIDs.Add(action.RowId);
+                if (!SelectedIDs.Remove(action.RowId))
+                    SelectedIDs.Add(action.RowId);
                 selectState = true;
             }
 
             ImGui.TableNextColumn();
-            if (ImGui.Selectable($"{jobName}##Action_{action.RowId}_{action.Name.ToString()}", isSelected, 
+            if (ImGui.Selectable($"{jobName}##Action_{action.RowId}_{action.Name.ToString()}", isSelected,
                                  ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
             {
-                if (!SelectedActionIDs.Remove(action.RowId))
-                    SelectedActionIDs.Add(action.RowId);
+                if (!SelectedIDs.Remove(action.RowId))
+                    SelectedIDs.Add(action.RowId);
                 selectState = true;
             }
 

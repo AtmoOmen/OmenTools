@@ -3,55 +3,44 @@ using Lumina.Excel.Sheets;
 
 namespace OmenTools.Widgets;
 
-public class ContentSelectCombo
+public class ContentSelectCombo : LuminaComboBase<ContentFinderCondition>
 {
-    public LuminaSearcher<ContentFinderCondition> Searcher { get; init; }
-    public string                                 ID       { get; init; }
-
-    public ContentFinderCondition SelectedContent =>
-        LuminaGetter.GetRow<ContentFinderCondition>(SelectedContentID).GetValueOrDefault();
-
-    public List<ContentFinderCondition> SelectedContents =>
-        SelectedContentIDs.Select(x => LuminaGetter.GetRow<ContentFinderCondition>(x).GetValueOrDefault())
-                          .Where(x => x.RowId > 0)
-                          .ToList();
-
-    public uint          SelectedContentID  { get; set; }
-    public HashSet<uint> SelectedContentIDs { get; set; } = [];
-
-    public string SearchWord = string.Empty;
-
-    public ContentSelectCombo(string id, IEnumerable<ContentFinderCondition> contents = null)
+    public ContentSelectCombo(string id, IEnumerable<ContentFinderCondition> contents = null) : base(id, null)
     {
-        ID = id;
-
         var data = contents ?? PresetSheet.Contents.Values;
-        Searcher = new LuminaSearcher<ContentFinderCondition>(data,
-                                              [
-                                                  x => x.RowId.ToString(),
-                                                  x => x.Name.ToString(),
-                                                  x => x.TerritoryType.ValueNullable?.PlaceName.ValueNullable?.Name.ToString() ?? string.Empty,
-                                              ],
-                                              resultLimit: 200);
+        Searcher = new LuminaSearcher<ContentFinderCondition>
+        (
+            data,
+            [
+                x => x.RowId.ToString(),
+                x => x.Name.ToString(),
+                x => x.TerritoryType.ValueNullable?.PlaceName.ValueNullable?.Name.ToString() ?? string.Empty
+            ],
+            resultLimit: 200
+        );
     }
 
-    public bool DrawRadio()
+    public override uint          SelectedID  { get; set; }
+    public override HashSet<uint> SelectedIDs { get; set; } = [];
+
+    public override bool DrawRadio()
     {
         using var drawID = ImRaii.PushId($"{ID}");
 
         var selectState = false;
 
-        var preview = SelectedContent.RowId == 0
+        var preview = SelectedItem.RowId == 0
                           ? string.Empty
-                          : $"{SelectedContent.Name.ToString()} ({SelectedContent.RowId})";
+                          : $"{SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
         if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
-            ImGui.OpenPopup("###Popup");
+            ImGui.OpenPopup($"###Popup_{ID}");
 
         ImGui.SetNextWindowSize(ScaledVector2(600f, 400f));
-        using var popup = ImRaii.Popup("###Popup");
+        using var popup = ImRaii.Popup($"###Popup_{ID}");
+
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -62,6 +51,7 @@ public class ContentSelectCombo
 
             var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             using var table     = ImRaii.Table("###Table", 5, ImGuiTableFlags.Borders, tableSize);
+
             if (table)
             {
                 ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed,   20f * GlobalFontScale);
@@ -80,12 +70,12 @@ public class ContentSelectCombo
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(LuminaWrapper.GetAddonText(870));
 
-                if (SelectedContent is { RowId: > 0 })
-                    Render(SelectedContent);
+                if (SelectedItem is { RowId: > 0 })
+                    Render(SelectedItem);
 
                 foreach (var content in Searcher.SearchResult)
                 {
-                    if (content.RowId == SelectedContentID) continue;
+                    if (content.RowId == SelectedID) continue;
                     Render(content);
                 }
             }
@@ -103,7 +93,7 @@ public class ContentSelectCombo
             ImGui.TableNextRow();
 
             ImGui.TableNextColumn();
-            ImGui.RadioButton(string.Empty, SelectedContent.RowId == content.RowId);
+            ImGui.RadioButton(string.Empty, SelectedItem.RowId == content.RowId);
 
             ImGui.TableNextColumn();
             if (DService.Instance().Texture.TryGetFromGameIcon(new(content.ContentType.ValueNullable?.Icon ?? 0), out var icon))
@@ -113,13 +103,18 @@ public class ContentSelectCombo
             ImGui.TextUnformatted(content.ClassJobLevelRequired.ToString());
 
             ImGui.TableNextColumn();
-            if (ImGui.Selectable($"{contentName}##Content_{content.RowId}", false, 
-                                 ImGuiSelectableFlags.SpanAllColumns))
+
+            if (ImGui.Selectable
+                (
+                    $"{contentName}##Content_{content.RowId}",
+                    false,
+                    ImGuiSelectableFlags.SpanAllColumns
+                ))
             {
-                SelectedContentID = content.RowId;
-                selectState       = true;
+                SelectedID  = content.RowId;
+                selectState = true;
             }
-            
+
             if (DService.Instance().Texture.TryGetFromGameIcon(new(content.Image), out var image) && ImGui.IsItemHovered())
             {
                 using (ImRaii.Tooltip())
@@ -131,23 +126,24 @@ public class ContentSelectCombo
         }
     }
 
-    public bool DrawCheckbox()
+    public override bool DrawCheckbox()
     {
         using var drawID = ImRaii.PushId($"{ID}");
 
         var selectState = false;
 
-        var preview = SelectedContents.Count == 0
+        var preview = SelectedItems.Count == 0
                           ? string.Empty
-                          : $"[{SelectedContents.Count}] {SelectedContents.First().Name.ToString()} ({SelectedContents.First().RowId})...";
+                          : $"[{SelectedItems.Count}] {SelectedItems.First().Name.ToString()} ({SelectedItems.First().RowId})...";
         if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
-            ImGui.OpenPopup("###Popup");
+            ImGui.OpenPopup($"###Popup_{ID}");
 
         ImGui.SetNextWindowSize(ScaledVector2(600f, 400f));
-        using var popup = ImRaii.Popup("###Popup");
+        using var popup = ImRaii.Popup($"###Popup_{ID}");
+
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -158,6 +154,7 @@ public class ContentSelectCombo
 
             var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             using var table     = ImRaii.Table("###Table", 5, ImGuiTableFlags.Borders, tableSize);
+
             if (table)
             {
                 ImGui.TableSetupColumn("Checkbox",  ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
@@ -176,12 +173,12 @@ public class ContentSelectCombo
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(LuminaWrapper.GetAddonText(870));
 
-                foreach (var content in SelectedContents)
+                foreach (var content in SelectedItems)
                     Render(content);
 
                 foreach (var content in Searcher.SearchResult)
                 {
-                    if (SelectedContentIDs.Contains(content.RowId)) continue;
+                    if (SelectedIDs.Contains(content.RowId)) continue;
                     Render(content);
                 }
             }
@@ -199,11 +196,12 @@ public class ContentSelectCombo
             ImGui.TableNextRow();
 
             ImGui.TableNextColumn();
-            var isSelected = SelectedContentIDs.Contains(content.RowId);
+            var isSelected = SelectedIDs.Contains(content.RowId);
+
             if (ImGui.Checkbox(string.Empty, ref isSelected))
             {
-                if (!SelectedContentIDs.Remove(content.RowId))
-                    SelectedContentIDs.Add(content.RowId);
+                if (!SelectedIDs.Remove(content.RowId))
+                    SelectedIDs.Add(content.RowId);
                 selectState = true;
             }
 
@@ -215,14 +213,19 @@ public class ContentSelectCombo
             ImGui.TextUnformatted(content.ClassJobLevelRequired.ToString());
 
             ImGui.TableNextColumn();
-            if (ImGui.Selectable($"{contentName}##Content_{content.RowId}", isSelected, 
-                                 ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+
+            if (ImGui.Selectable
+                (
+                    $"{contentName}##Content_{content.RowId}",
+                    isSelected,
+                    ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups
+                ))
             {
-                if (!SelectedContentIDs.Remove(content.RowId))
-                    SelectedContentIDs.Add(content.RowId);
+                if (!SelectedIDs.Remove(content.RowId))
+                    SelectedIDs.Add(content.RowId);
                 selectState = true;
             }
-            
+
             if (DService.Instance().Texture.TryGetFromGameIcon(new(content.Image), out var image) && ImGui.IsItemHovered())
             {
                 using (ImRaii.Tooltip())

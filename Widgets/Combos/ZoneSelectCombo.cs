@@ -3,57 +3,46 @@ using Lumina.Excel.Sheets;
 
 namespace OmenTools.Widgets;
 
-public class ZoneSelectCombo
+public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
 {
-    public LuminaSearcher<TerritoryType> Searcher { get; init; }
-    public string                        ID       { get; init; }
-
-    public TerritoryType SelectedZone =>
-        LuminaGetter.GetRow<TerritoryType>(SelectedZoneID).GetValueOrDefault();
-
-    public List<TerritoryType> SelectedZones =>
-        SelectedZoneIDs.Select(x => LuminaGetter.GetRow<TerritoryType>(x).GetValueOrDefault())
-                        .Where(x => x.RowId > 0)
-                        .ToList();
-
-    public uint          SelectedZoneID  { get; set; }
-    public HashSet<uint> SelectedZoneIDs { get; set; } = [];
-
-    public string SearchWord = string.Empty;
-    
-    public ZoneSelectCombo(string id, IEnumerable<TerritoryType> zones = null)
+    public ZoneSelectCombo(string id, IEnumerable<TerritoryType> zones = null) : base(id, null)
     {
-        ID = id;
-        
         var data = zones ?? LuminaGetter.Get<TerritoryType>().Where(x => !string.IsNullOrEmpty(x.Name.ToString()));
-        Searcher = new LuminaSearcher<TerritoryType>(data,
-                                              [
-                                                  x => x.RowId.ToString(),
-                                                  x => x.Name.ToString(),
-                                                  x => x.PlaceName.ValueNullable?.Name.ToString() ?? string.Empty,
-                                                  x => x.PlaceNameZone.ValueNullable?.Name.ToString() ?? string.Empty,
-                                                  x => x.PlaceNameRegion.ValueNullable?.Name.ToString() ?? string.Empty,
-                                              ],
-                                              resultLimit: 200);
+        Searcher = new LuminaSearcher<TerritoryType>
+        (
+            data,
+            [
+                x => x.RowId.ToString(),
+                x => x.Name.ToString(),
+                x => x.PlaceName.ValueNullable?.Name.ToString()       ?? string.Empty,
+                x => x.PlaceNameZone.ValueNullable?.Name.ToString()   ?? string.Empty,
+                x => x.PlaceNameRegion.ValueNullable?.Name.ToString() ?? string.Empty
+            ],
+            resultLimit: 200
+        );
     }
-    
-    public bool DrawRadio()
+
+    public override uint          SelectedID  { get; set; }
+    public override HashSet<uint> SelectedIDs { get; set; } = [];
+
+    public override bool DrawRadio()
     {
         using var drawID = ImRaii.PushId($"{ID}");
-        
+
         var selectState = false;
-        
-        var preview = SelectedZone.RowId == 0
+
+        var preview = SelectedItem.RowId == 0
                           ? string.Empty
-                          : $"{SelectedZone.ExtractPlaceName()} ({SelectedZone.RowId})";
+                          : $"{SelectedItem.ExtractPlaceName()} ({SelectedItem.RowId})";
         if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
-            ImGui.OpenPopup("###Popup");
+            ImGui.OpenPopup($"###Popup_{ID}");
 
         ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup("###Popup");
+        using var popup = ImRaii.Popup($"###Popup_{ID}");
+
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -64,6 +53,7 @@ public class ZoneSelectCombo
 
             var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             using var table     = ImRaii.Table("###Table", 3, ImGuiTableFlags.Borders, tableSize);
+
             if (table)
             {
                 ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
@@ -76,12 +66,12 @@ public class ZoneSelectCombo
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(LuminaWrapper.GetAddonText(870));
 
-                if (SelectedZone is { RowId: > 0 })
-                    Render(SelectedZone);
-                
+                if (SelectedItem is { RowId: > 0 })
+                    Render(SelectedItem);
+
                 foreach (var zone in Searcher.SearchResult)
                 {
-                    if (zone.RowId == SelectedZoneID) continue;
+                    if (zone.RowId == SelectedID) continue;
                     Render(zone);
                 }
             }
@@ -91,9 +81,9 @@ public class ZoneSelectCombo
 
         void Render(TerritoryType zone)
         {
-            var zoneName = zone.ExtractPlaceName();
+            var zoneName   = zone.ExtractPlaceName();
             var regionName = zone.PlaceNameRegion.ValueNullable?.Name.ToString() ?? string.Empty;
-            if (zone.ContentFinderCondition.RowId > 0 &&
+            if (zone.ContentFinderCondition.RowId > 0                                &&
                 zone.ContentFinderCondition.Value.Name.ToString() is var contentName &&
                 !string.IsNullOrEmpty(contentName))
                 zoneName += $" ({contentName})";
@@ -103,39 +93,46 @@ public class ZoneSelectCombo
             ImGui.TableNextRow();
 
             ImGui.TableNextColumn();
-            ImGui.RadioButton(string.Empty, SelectedZone.RowId == zone.RowId);
+            ImGui.RadioButton(string.Empty, SelectedItem.RowId == zone.RowId);
 
             ImGui.TableNextColumn();
             ImGui.TextUnformatted(regionName);
 
             ImGui.TableNextColumn();
-            if (ImGui.Selectable($"{zoneName}##Zone_{zone.RowId}", false, 
-                                 ImGuiSelectableFlags.SpanAllColumns))
+
+            if (ImGui.Selectable
+                (
+                    $"{zoneName}##Zone_{zone.RowId}",
+                    false,
+                    ImGuiSelectableFlags.SpanAllColumns
+                ))
             {
-                SelectedZoneID = zone.RowId;
-                selectState    = true;
+                SelectedID  = zone.RowId;
+                selectState = true;
             }
+
             ImGuiOm.ImGuiOm.TooltipHover(zoneName);
         }
     }
-    
-    public bool DrawCheckbox()
+
+    public override bool DrawCheckbox()
     {
         using var drawID = ImRaii.PushId($"{ID}");
-        
+
         var selectState = false;
-        
-        var preview = SelectedZones.Count == 0
+
+        var preview = SelectedItems.Count == 0
                           ? string.Empty
-                          : $"[{SelectedZones.Count}] {SelectedZones.First().ExtractPlaceName()} ({SelectedZones.First().RowId})...";
+                          : $"[{SelectedItems.Count}] {SelectedItems.First().ExtractPlaceName()} ({SelectedItems.First().RowId})...";
         if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
-            ImGui.OpenPopup("###Popup");
+            ImGui.OpenPopup($"###Popup_{ID}");
 
         ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup("###Popup");
+        using var popup = ImRaii.Popup($"###Popup_{ID}");
+
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -146,6 +143,7 @@ public class ZoneSelectCombo
 
             var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             using var table     = ImRaii.Table("###Table", 3, ImGuiTableFlags.Borders, tableSize);
+
             if (table)
             {
                 ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
@@ -158,12 +156,12 @@ public class ZoneSelectCombo
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(LuminaWrapper.GetAddonText(870));
 
-                foreach (var zone in SelectedZones)
+                foreach (var zone in SelectedItems)
                     Render(zone);
-                
+
                 foreach (var zone in Searcher.SearchResult)
                 {
-                    if (SelectedZoneIDs.Contains(zone.RowId)) continue;
+                    if (SelectedIDs.Contains(zone.RowId)) continue;
                     Render(zone);
                 }
             }
@@ -173,7 +171,7 @@ public class ZoneSelectCombo
 
         void Render(TerritoryType zone)
         {
-            var zoneName = zone.ExtractPlaceName();
+            var zoneName   = zone.ExtractPlaceName();
             var regionName = zone.PlaceNameRegion.ValueNullable?.Name.ToString() ?? string.Empty;
 
             using var id = ImRaii.PushId($"Zone_{zone.RowId}");
@@ -181,11 +179,12 @@ public class ZoneSelectCombo
             ImGui.TableNextRow();
 
             ImGui.TableNextColumn();
-            var isSelected = SelectedZoneIDs.Contains(zone.RowId);
+            var isSelected = SelectedIDs.Contains(zone.RowId);
+
             if (ImGui.Checkbox(string.Empty, ref isSelected))
             {
-                if (!SelectedZoneIDs.Remove(zone.RowId))
-                    SelectedZoneIDs.Add(zone.RowId);
+                if (!SelectedIDs.Remove(zone.RowId))
+                    SelectedIDs.Add(zone.RowId);
                 selectState = true;
             }
 
@@ -193,13 +192,18 @@ public class ZoneSelectCombo
             ImGui.TextUnformatted(regionName);
 
             ImGui.TableNextColumn();
-            if (ImGui.Selectable($"{zoneName}##Zone_{zone.RowId}", isSelected, 
-                                 ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+
+            if (ImGui.Selectable
+                (
+                    $"{zoneName}##Zone_{zone.RowId}",
+                    isSelected,
+                    ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups
+                ))
             {
-                if (!SelectedZoneIDs.Remove(zone.RowId))
-                    SelectedZoneIDs.Add(zone.RowId);
+                if (!SelectedIDs.Remove(zone.RowId))
+                    SelectedIDs.Add(zone.RowId);
                 selectState = true;
             }
         }
     }
-} 
+}

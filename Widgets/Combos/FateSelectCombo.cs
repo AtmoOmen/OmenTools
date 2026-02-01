@@ -3,56 +3,45 @@ using Lumina.Excel.Sheets;
 
 namespace OmenTools.Widgets;
 
-public class FateSelectCombo
+public class FateSelectCombo : LuminaComboBase<Fate>
 {
-    public LuminaSearcher<Fate> Searcher { get; init; }
-    public string               ID       { get; init; }
-
-    public Fate SelectedFate =>
-        LuminaGetter.GetRow<Fate>(SelectedFateID).GetValueOrDefault();
-
-    public List<Fate> SelectedFates =>
-        SelectedFateIDs.Select(x => LuminaGetter.GetRow<Fate>(x).GetValueOrDefault())
-                       .Where(x => x.RowId > 0)
-                       .ToList();
-
-    public uint          SelectedFateID  { get; set; }
-    public HashSet<uint> SelectedFateIDs { get; set; } = [];
-
-    public string SearchWord = string.Empty;
-    
-    public FateSelectCombo(string id, IEnumerable<Fate> fates = null)
+    public FateSelectCombo(string id, IEnumerable<Fate> fates = null) : base(id, null)
     {
-        ID = id;
-        
         var data = fates ?? LuminaGetter.Get<Fate>().Where(x => !string.IsNullOrEmpty(x.Name.ToString())).OrderBy(x => x.ClassJobLevel);
-        Searcher = new LuminaSearcher<Fate>(data,
-                                            [
-                                                x => x.RowId.ToString(),
-                                                x => x.Name.ToString(),
-                                                x => x.Description.ToString(),
-                                                x => x.Objective.ToString(),
-                                            ],
-                                            resultLimit: 200);
+        Searcher = new LuminaSearcher<Fate>
+        (
+            data,
+            [
+                x => x.RowId.ToString(),
+                x => x.Name.ToString(),
+                x => x.Description.ToString(),
+                x => x.Objective.ToString()
+            ],
+            resultLimit: 200
+        );
     }
-    
-    public bool DrawRadio()
+
+    public override uint          SelectedID  { get; set; }
+    public override HashSet<uint> SelectedIDs { get; set; } = [];
+
+    public override bool DrawRadio()
     {
         using var drawID = ImRaii.PushId($"{ID}");
-        
+
         var selectState = false;
-        
-        var preview = SelectedFate.RowId == 0
+
+        var preview = SelectedItem.RowId == 0
                           ? string.Empty
-                          : $"{SelectedFate.Name.ToString()} ({SelectedFate.RowId})";
+                          : $"{SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
         if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
-            ImGui.OpenPopup("###Popup");
+            ImGui.OpenPopup($"###Popup_{ID}");
 
         ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup("###Popup");
+        using var popup = ImRaii.Popup($"###Popup_{ID}");
+
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -63,6 +52,7 @@ public class FateSelectCombo
 
             var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             using var table     = ImRaii.Table("###Table", 3, ImGuiTableFlags.Borders, tableSize);
+
             if (table)
             {
                 ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
@@ -76,12 +66,12 @@ public class FateSelectCombo
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(LuminaWrapper.GetAddonText(1340));
 
-                if (SelectedFate is { RowId: > 0 })
-                    Render(SelectedFate);
-                
+                if (SelectedItem is { RowId: > 0 })
+                    Render(SelectedItem);
+
                 foreach (var fate in Searcher.SearchResult)
                 {
-                    if (fate.RowId == SelectedFateID) continue;
+                    if (fate.RowId == SelectedID) continue;
                     Render(fate);
                 }
             }
@@ -92,7 +82,7 @@ public class FateSelectCombo
         void Render(Fate fate)
         {
             if (!DService.Instance().Texture.TryGetFromGameIcon(new(fate.Icon), out var texture)) return;
-            
+
             var fateName = fate.Name.ToString();
 
             using var id = ImRaii.PushId($"Fate_{fate.RowId}");
@@ -100,39 +90,48 @@ public class FateSelectCombo
             ImGui.TableNextRow();
 
             ImGui.TableNextColumn();
-            ImGui.RadioButton(string.Empty, SelectedFate.RowId == fate.RowId);
+            ImGui.RadioButton(string.Empty, SelectedItem.RowId == fate.RowId);
 
             ImGui.TableNextColumn();
             ImGui.TextUnformatted(fate.ClassJobLevel.ToString());
 
             ImGui.TableNextColumn();
-            if (ImGuiOm.ImGuiOm.SelectableImageWithText(texture.GetWrapOrEmpty().Handle, new(ImGui.GetTextLineHeight()),
-                                                        $"{fateName}", false, ImGuiSelectableFlags.SpanAllColumns))
+
+            if (ImGuiOm.ImGuiOm.SelectableImageWithText
+                (
+                    texture.GetWrapOrEmpty().Handle,
+                    new(ImGui.GetTextLineHeight()),
+                    $"{fateName}",
+                    false,
+                    ImGuiSelectableFlags.SpanAllColumns
+                ))
             {
-                SelectedFateID = fate.RowId;
-                selectState    = true;
+                SelectedID  = fate.RowId;
+                selectState = true;
             }
+
             ImGuiOm.ImGuiOm.TooltipHover($"{fate.Description.ToString()}");
         }
     }
 
-    public bool DrawCheckbox()
+    public override bool DrawCheckbox()
     {
         using var drawID = ImRaii.PushId($"{ID}");
-        
+
         var selectState = false;
-        
-        var preview = SelectedFates.Count == 0
+
+        var preview = SelectedItems.Count == 0
                           ? string.Empty
-                          : $"[{SelectedFates.Count}] {SelectedFates.First().Name.ToString()} ({SelectedFates.First().RowId})...";
+                          : $"[{SelectedItems.Count}] {SelectedItems.First().Name.ToString()} ({SelectedItems.First().RowId})...";
         if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
             ImGui.EndCombo();
 
         if (ImGui.IsItemClicked())
-            ImGui.OpenPopup("###Popup");
+            ImGui.OpenPopup($"###Popup_{ID}");
 
         ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup("###Popup");
+        using var popup = ImRaii.Popup($"###Popup_{ID}");
+
         if (popup)
         {
             ImGui.SetNextItemWidth(-1f);
@@ -143,6 +142,7 @@ public class FateSelectCombo
 
             var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
             using var table     = ImRaii.Table("###Table", 3, ImGuiTableFlags.Borders, tableSize);
+
             if (table)
             {
                 ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
@@ -156,12 +156,12 @@ public class FateSelectCombo
                 ImGui.TableNextColumn();
                 ImGui.TextUnformatted(LuminaWrapper.GetAddonText(1340));
 
-                foreach (var fate in SelectedFates)
+                foreach (var fate in SelectedItems)
                     Render(fate);
-                
+
                 foreach (var fate in Searcher.SearchResult)
                 {
-                    if (SelectedFateIDs.Contains(fate.RowId)) continue;
+                    if (SelectedIDs.Contains(fate.RowId)) continue;
                     Render(fate);
                 }
             }
@@ -172,7 +172,7 @@ public class FateSelectCombo
         void Render(Fate fate)
         {
             if (!DService.Instance().Texture.TryGetFromGameIcon(new(fate.Icon), out var texture)) return;
-            
+
             var fateName = fate.Name.ToString();
 
             using var id = ImRaii.PushId($"Fate_{fate.RowId}");
@@ -180,11 +180,12 @@ public class FateSelectCombo
             ImGui.TableNextRow();
 
             ImGui.TableNextColumn();
-            var isSelected = SelectedFateIDs.Contains(fate.RowId);
+            var isSelected = SelectedIDs.Contains(fate.RowId);
+
             if (ImGui.Checkbox(string.Empty, ref isSelected))
             {
-                if (!SelectedFateIDs.Remove(fate.RowId))
-                    SelectedFateIDs.Add(fate.RowId);
+                if (!SelectedIDs.Remove(fate.RowId))
+                    SelectedIDs.Add(fate.RowId);
                 selectState = true;
             }
 
@@ -192,15 +193,22 @@ public class FateSelectCombo
             ImGui.TextUnformatted(fate.ClassJobLevel.ToString());
 
             ImGui.TableNextColumn();
-            if (ImGuiOm.ImGuiOm.SelectableImageWithText(texture.GetWrapOrEmpty().Handle, new(ImGui.GetTextLineHeight()),
-                                                        $"{fateName}", false, 
-                                                        ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups))
+
+            if (ImGuiOm.ImGuiOm.SelectableImageWithText
+                (
+                    texture.GetWrapOrEmpty().Handle,
+                    new(ImGui.GetTextLineHeight()),
+                    $"{fateName}",
+                    false,
+                    ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups
+                ))
             {
-                if (!SelectedFateIDs.Remove(fate.RowId))
-                    SelectedFateIDs.Add(fate.RowId);
+                if (!SelectedIDs.Remove(fate.RowId))
+                    SelectedIDs.Add(fate.RowId);
                 selectState = true;
             }
+
             ImGuiOm.ImGuiOm.TooltipHover($"{fate.Description.ToString()}");
         }
     }
-} 
+}
