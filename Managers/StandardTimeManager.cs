@@ -1,4 +1,4 @@
-﻿using System.Net.Http;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using GuerrillaNtp;
 using OmenTools.Abstracts;
@@ -8,24 +8,23 @@ namespace OmenTools.Managers;
 public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
 {
     public DateTime Today =>
-        Now.Date;
+        TodayOffset.DateTime;
+
+    public DateTimeOffset TodayOffset =>
+        new(NowOffset.Date, NowOffset.Offset);
 
     public DateTime Now =>
-        UTCNow.ToLocalTime();
+        NowOffset.DateTime;
 
-    public DateTime UTCNow
-    {
-        get
-        {
-            if (Clock != null)
-                return Clock.UtcNow.UtcDateTime;
+    public DateTimeOffset NowOffset =>
+        UTCNowOffset.ToLocalTime();
 
-            if (WebAPIOffset.HasValue)
-                return DateTime.UtcNow + WebAPIOffset.Value;
+    public DateTime UTCNow =>
+        UTCNowOffset.UtcDateTime;
 
-            return DateTime.UtcNow;
-        }
-    }
+    public DateTimeOffset UTCNowOffset =>
+        Clock?.UtcNow ??
+        (WebAPIOffset.HasValue ? DateTimeOffset.UtcNow + WebAPIOffset.Value : DateTimeOffset.UtcNow);
 
     public StandardTimeSource Source
     {
@@ -75,7 +74,7 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
                 Error("尝试从 WebAPI 获取标准时间时发生错误", ex);
             }
         }
-              
+
         if (Clock == null)
         {
             try
@@ -104,7 +103,7 @@ public partial class StandardTimeManager : OmenServiceBase<StandardTimeManager>
                 }
             }
         }
-        
+
         Debug($"[StandardTimeManager] 请求标准时间完成, 当前 UTC 时间: {UTCNow}, 来源类型: {Source}");
     }
 
