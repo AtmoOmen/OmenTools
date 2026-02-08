@@ -26,6 +26,16 @@ public class ItemShopInfo
 
     static ItemShopInfo()
     {
+        if (DService.Instance().PI.TryGetData("OmenTools.Infos.ItemShopInfo", out Dictionary<uint, ItemShopInfo> shopInfo) &&
+            DService.Instance().PI.TryGetData("OmenTools.Infos.NPCIDToLocations", out Dictionary<uint, ShopNPCLocation> npcInfo))
+        {
+            IsDataInitialized   = IsDataLoaded = true;
+            ItemToItemShopInfos = shopInfo;
+            NPCIDToLocations    = npcInfo;
+            
+            return;
+        }
+        
         if (IsDataInitialized || IsDataLoaded) return;
         
         IsDataInitialized = true;
@@ -57,6 +67,9 @@ public class ItemShopInfo
             {
                 timer.Stop();
                 Debug($"[ItemShopInfo] 构建完毕, 构建时间: {timer.Elapsed}");
+
+                DService.Instance().PI.GetOrCreateData("OmenTools.Infos.ItemShopInfo.NPCIDToLocations", () => NPCIDToLocations);
+                DService.Instance().PI.GetOrCreateData("OmenTools.Infos.ItemShopInfo.ItemToItemShopInfos", () => ItemToItemShopInfos);
                 
                 IsDataLoaded = true;
             }
