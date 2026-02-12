@@ -6,7 +6,7 @@ namespace OmenTools.Infos;
 
 public static class PresetSheet
 {
-    public static Dictionary<uint, Status> DispellableStatuses { get; } =
+    public static Dictionary<uint, Status> DispellableStatuses =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.DispellableStatuses",
@@ -15,7 +15,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, s => s)
         );
 
-    public static Dictionary<uint, Action> PlayerActions { get; } =
+    public static Dictionary<uint, Action> PlayerActions =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.PlayerActions",
@@ -38,7 +38,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, Status> Statuses { get; } =
+    public static Dictionary<uint, Status> Statuses =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Statuses",
@@ -47,7 +47,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, ContentFinderCondition> Contents { get; } =
+    public static Dictionary<uint, ContentFinderCondition> Contents =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Contents",
@@ -59,7 +59,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.TerritoryType.RowId, x => x)
         );
 
-    public static Dictionary<uint, Item> Gears { get; } =
+    public static Dictionary<uint, Item> Gears =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Gears",
@@ -69,7 +69,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, Item> Dyes { get; } =
+    public static Dictionary<uint, Item> Dyes =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Dyes",
@@ -78,7 +78,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x.Item1.Value)
         );
 
-    public static Dictionary<uint, World> Worlds { get; } =
+    public static Dictionary<uint, World> Worlds =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Worlds",
@@ -99,7 +99,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, World> CNWorlds { get; } =
+    public static Dictionary<uint, World> CNWorlds =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.CNWorlds",
@@ -114,7 +114,7 @@ public static class PresetSheet
                   .ToDictionary(x => x.Key, x => x.Value)
         );
 
-    public static Dictionary<uint, TerritoryType> Zones { get; } =
+    public static Dictionary<uint, TerritoryType> Zones =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Zones",
@@ -123,7 +123,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, Mount> Mounts { get; } =
+    public static Dictionary<uint, Mount> Mounts =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Mounts",
@@ -132,7 +132,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, Item> Food { get; } =
+    public static Dictionary<uint, Item> Food =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Food",
@@ -141,7 +141,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, Item> Seeds { get; } =
+    public static Dictionary<uint, Item> Seeds =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Seeds",
@@ -150,7 +150,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, Item> Soils { get; } =
+    public static Dictionary<uint, Item> Soils =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Soils",
@@ -159,7 +159,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, Item> Fertilizers { get; } =
+    public static Dictionary<uint, Item> Fertilizers =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Fertilizers",
@@ -168,7 +168,7 @@ public static class PresetSheet
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    public static Dictionary<uint, Item> Materias { get; } =
+    public static Dictionary<uint, Item> Materias =>
         DService.Instance().PI.GetOrCreateData
         (
             "OmenTools.Infos.PresetSheet.Materias",
