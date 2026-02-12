@@ -15,9 +15,9 @@ public class ItemShopInfo
 
     private static readonly Dictionary<uint, ItemShopInfo>    ItemToItemShopInfos = [];
     private static readonly Dictionary<uint, ShopNPCLocation> NPCIDToLocations    = [];
-    
+
     private static readonly EventHandlerType[] EventHandlerTypes = Enum.GetValues<EventHandlerType>();
-    
+
     public uint               ItemID                 { get; init; }
     public string             Name                   { get; init; }
     public List<ShopNPCInfos> NPCInfos               { get; private set; } = [];
@@ -26,62 +26,62 @@ public class ItemShopInfo
 
     static ItemShopInfo()
     {
-        if (DService.Instance().PI.TryGetData("OmenTools.Infos.ItemShopInfo", out Dictionary<uint, ItemShopInfo> shopInfo) &&
-            DService.Instance().PI.TryGetData("OmenTools.Infos.NPCIDToLocations", out Dictionary<uint, ShopNPCLocation> npcInfo))
+        if (DService.Instance().PI.TryGetData("OmenTools.Infos.ItemShopInfo", out Dictionary<uint, ItemShopInfo> shopInfo))
         {
             IsDataInitialized   = IsDataLoaded = true;
             ItemToItemShopInfos = shopInfo;
-            NPCIDToLocations    = npcInfo;
-            
+
             return;
         }
-        
+
         if (IsDataInitialized || IsDataLoaded) return;
-        
+
         IsDataInitialized = true;
         IsDataLoaded      = false;
 
-        Task.Run(() =>
-        {
-            var timer = new Stopwatch();
-            timer.Start();
-            Debug("[ItemShopInfo] 开始构建数据");
-            
-            try
+        Task.Run
+        (() =>
             {
-                BuildNPCLocations();
-                CorrectNPCLocations();
+                var timer = new Stopwatch();
+                timer.Start();
+                Debug("[ItemShopInfo] 开始构建数据");
 
-                foreach (var npcBase in LuminaGetter.Get<ENpcBase>())
-                    BuildNPCInfo(npcBase);
-                
-                AddAchievementItem();
-
-                foreach (var info in ItemToItemShopInfos)
+                try
                 {
-                    if (info.Value.NPCInfos is not { Count: > 0 })
-                        ItemToItemShopInfos.RemoveRange(info);
-                }
-            } 
-            finally
-            {
-                timer.Stop();
-                Debug($"[ItemShopInfo] 构建完毕, 构建时间: {timer.Elapsed}");
+                    BuildNPCLocations();
+                    CorrectNPCLocations();
 
-                DService.Instance().PI.GetOrCreateData("OmenTools.Infos.ItemShopInfo.NPCIDToLocations", () => NPCIDToLocations);
-                DService.Instance().PI.GetOrCreateData("OmenTools.Infos.ItemShopInfo.ItemToItemShopInfos", () => ItemToItemShopInfos);
-                
-                IsDataLoaded = true;
+                    foreach (var npcBase in LuminaGetter.Get<ENpcBase>())
+                        BuildNPCInfo(npcBase);
+
+                    AddAchievementItem();
+
+                    foreach (var info in ItemToItemShopInfos)
+                    {
+                        if (info.Value.NPCInfos is not { Count: > 0 })
+                            ItemToItemShopInfos.RemoveRange(info);
+                    }
+                }
+                finally
+                {
+                    timer.Stop();
+                    Debug($"[ItemShopInfo] 构建完毕, 构建时间: {timer.Elapsed}");
+
+                    DService.Instance().PI.GetOrCreateData("OmenTools.Infos.ItemShopInfo.ItemToItemShopInfos", () => ItemToItemShopInfos);
+
+                    IsDataLoaded = true;
+                }
             }
-        });
+        );
     }
-    
-    public static ItemShopInfo? GetItemInfo(uint itemID) => 
+
+    public static ItemShopInfo? GetItemInfo(uint itemID) =>
         !IsDataLoaded ? null : ItemToItemShopInfos.GetValueOrDefault(itemID);
 
     private static void BuildNPCLocations()
     {
         HashSet<uint> addedAetheryte = [];
+
         foreach (var territory in LuminaGetter.Get<Aetheryte>()
                                               .Where(i => i.Territory.IsValid && i.Territory.RowId != 1)
                                               .Select(i => i.Territory.Value))
@@ -96,11 +96,13 @@ public class ItemShopInfo
         }
 
         foreach (var territory in LuminaGetter.Get<TerritoryType>()
-                                              .Where(type =>
-                                              {
-                                                  var condition = type.ContentFinderCondition.Value;
-                                                  return condition.ContentType.RowId is 26 or 29 or 16;
-                                              }))
+                                              .Where
+                                              (type =>
+                                                  {
+                                                      var condition = type.ContentFinderCondition.Value;
+                                                      return condition.ContentType.RowId is 26 or 29 or 16;
+                                                  }
+                                              ))
         {
             var file = GetLgbFileFromBg(territory.Bg.ToString());
             if (file == null) continue;
@@ -137,7 +139,7 @@ public class ItemShopInfo
         NPCIDToLocations[1019103] = new(-52.35376f, 76.58496f, 641);
         NPCIDToLocations[1019101] = new(-36.484375f, 49.240845f, 641);
         NPCIDToLocations[1004418] = new(-114.0307f, 118.30322f, 131, 73);
-        
+
         NPCIDToLocations.TryAdd(1006004, new(5.355835f, 155.22998f, 128));
         NPCIDToLocations.TryAdd(1017613, new(2.822865f, 153.521f, 128));
         NPCIDToLocations.TryAdd(1003633, new(-259.32715f, 37.491333f, 129));
@@ -183,6 +185,7 @@ public class ItemShopInfo
         if (FixNPCInfo(npcBase, resident)) return;
 
         var fateShop = LuminaGetter.GetRow<FateShop>(npcBase.RowId);
+
         if (fateShop.HasValue)
         {
             foreach (var specialShop in fateShop.Value.SpecialShop)
@@ -263,16 +266,20 @@ public class ItemShopInfo
                 if (!LuminaGetter.TryGetRow<CustomTalk>(npcData, out var customTalk)) break;
 
                 var scriptArgs = customTalk.Script.Select(x => x.ScriptArg).ToArray();
+
                 if (npcData == 721068)
                 {
-                    AddItemGeneral(scriptArgs[2],
-                                   LuminaWrapper.GetItemName(scriptArgs[2]),
-                                   npcBase.RowId,
-                                   resident.Singular.ToString(),
-                                   customTalk.MainOption.ToString(),
-                                   [new(scriptArgs[4], 28)],
-                                   NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
-                                   ItemShopType.SpecialShop);
+                    AddItemGeneral
+                    (
+                        scriptArgs[2],
+                        LuminaWrapper.GetItemName(scriptArgs[2]),
+                        npcBase.RowId,
+                        resident.Singular.ToString(),
+                        customTalk.MainOption.ToString(),
+                        [new(scriptArgs[4], 28)],
+                        NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
+                        ItemShopType.SpecialShop
+                    );
                     continue;
                 }
 
@@ -336,20 +343,62 @@ public class ItemShopInfo
         {
             case 1043463:
 
-                AddSpecialItem(LuminaGetter.GetRowOrDefault<SpecialShop>(1770601), npcBase, resident, ItemShopType.SpecialShop,
-                               $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_000")}\n{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q2_000_000")}");
-                AddSpecialItem(LuminaGetter.GetRowOrDefault<SpecialShop>(1770659), npcBase, resident, ItemShopType.SpecialShop,
-                               $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_000")} \n {GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q2_000_005")}");
-                AddSpecialItem(LuminaGetter.GetRowOrDefault<SpecialShop>(1770660), npcBase, resident, ItemShopType.SpecialShop,
-                               $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_000")}\n{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q2_000_010")}");
-                AddSpecialItem(LuminaGetter.GetRowOrDefault<SpecialShop>(1770602), npcBase, resident, ItemShopType.SpecialShop,
-                               $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_005")}");
-                AddSpecialItem(LuminaGetter.GetRowOrDefault<SpecialShop>(1770603), npcBase, resident, ItemShopType.SpecialShop,
-                               $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_010")}");
-                AddSpecialItem(LuminaGetter.GetRowOrDefault<SpecialShop>(1770723), npcBase, resident, ItemShopType.SpecialShop,
-                               $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_025")}");
-                AddSpecialItem(LuminaGetter.GetRowOrDefault<SpecialShop>(1770734), npcBase, resident, ItemShopType.SpecialShop,
-                               $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_030")}");
+                AddSpecialItem
+                (
+                    LuminaGetter.GetRowOrDefault<SpecialShop>(1770601),
+                    npcBase,
+                    resident,
+                    ItemShopType.SpecialShop,
+                    $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_000")}\n{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q2_000_000")}"
+                );
+                AddSpecialItem
+                (
+                    LuminaGetter.GetRowOrDefault<SpecialShop>(1770659),
+                    npcBase,
+                    resident,
+                    ItemShopType.SpecialShop,
+                    $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_000")} \n {GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q2_000_005")}"
+                );
+                AddSpecialItem
+                (
+                    LuminaGetter.GetRowOrDefault<SpecialShop>(1770660),
+                    npcBase,
+                    resident,
+                    ItemShopType.SpecialShop,
+                    $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_000")}\n{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q2_000_010")}"
+                );
+                AddSpecialItem
+                (
+                    LuminaGetter.GetRowOrDefault<SpecialShop>(1770602),
+                    npcBase,
+                    resident,
+                    ItemShopType.SpecialShop,
+                    $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_005")}"
+                );
+                AddSpecialItem
+                (
+                    LuminaGetter.GetRowOrDefault<SpecialShop>(1770603),
+                    npcBase,
+                    resident,
+                    ItemShopType.SpecialShop,
+                    $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_010")}"
+                );
+                AddSpecialItem
+                (
+                    LuminaGetter.GetRowOrDefault<SpecialShop>(1770723),
+                    npcBase,
+                    resident,
+                    ItemShopType.SpecialShop,
+                    $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_025")}"
+                );
+                AddSpecialItem
+                (
+                    LuminaGetter.GetRowOrDefault<SpecialShop>(1770734),
+                    npcBase,
+                    resident,
+                    ItemShopType.SpecialShop,
+                    $"{GetNameFromKey("TEXT_CTSMJISPECIALSHOP_00789_Q1_000_030")}"
+                );
                 return true;
 
                 string GetNameFromKey(string key)
@@ -400,13 +449,11 @@ public class ItemShopInfo
             case 1016135:
 
                 for (uint i = 3; i <= 10; i++)
+                for (ushort j = 0; j <= 12; j++)
                 {
-                    for (ushort j = 0; j <= 12; j++)
-                    {
-                        var questClassJobReward = LuminaGetter.GetSubRowOrDefault<QuestClassJobReward>(i, j);
-                        AddQuestReward(questClassJobReward, npcBase, resident);
-                        AddQuestRewardCost(questClassJobReward, npcBase, GetCost(i));
-                    }
+                    var questClassJobReward = LuminaGetter.GetSubRowOrDefault<QuestClassJobReward>(i, j);
+                    AddQuestReward(questClassJobReward, npcBase, resident);
+                    AddQuestRewardCost(questClassJobReward, npcBase, GetCost(i));
                 }
 
                 return true;
@@ -471,12 +518,16 @@ public class ItemShopInfo
                 {
                     var questClassJobReward = LuminaGetter.GetSubRowOrDefault<QuestClassJobReward>(17, i);
                     AddQuestReward(questClassJobReward, npcBase, resident);
-                    AddQuestRewardCost(questClassJobReward, npcBase,
-                    [
-                        new(20, 31573),
-                        new(20, 31574),
-                        new(20, 31575)
-                    ]);
+                    AddQuestRewardCost
+                    (
+                        questClassJobReward,
+                        npcBase,
+                        [
+                            new(20, 31573),
+                            new(20, 31574),
+                            new(20, 31575)
+                        ]
+                    );
 
                     questClassJobReward = LuminaGetter.GetSubRowOrDefault<QuestClassJobReward>(18, i);
                     AddQuestReward(questClassJobReward, npcBase, resident);
@@ -503,15 +554,17 @@ public class ItemShopInfo
                 return true;
         }
     }
-    
+
     #region 添加物品
 
-    private static void AddSpecialItem(
+    private static void AddSpecialItem
+    (
         SpecialShop  specialShop,
         ENpcBase     npcBase,
         ENpcResident resident,
         ItemShopType shopType = ItemShopType.SpecialShop,
-        string?      shop     = null)
+        string?      shop     = null
+    )
     {
         foreach (var entry in specialShop.Item)
         {
@@ -523,6 +576,7 @@ public class ItemShopInfo
                              select new ShopItemCostInfo(e.CurrencyCost, ConvertCurrency(e.ItemCost.Value.RowId, specialShop).RowId)).ToList();
 
                 var achievementDescription = string.Empty;
+
                 if (shopType == ItemShopType.Achievement)
                 {
                     achievementDescription = LuminaGetter.Get<Achievement>()
@@ -532,8 +586,18 @@ public class ItemShopInfo
                                                          .ToString();
                 }
 
-                AddItemGeneral(item.RowId, item.Name.ToString(), npcBase.RowId, resident.Singular.ToString(), shop, costs,
-                               NPCIDToLocations.GetValueOrDefault(npcBase.RowId), shopType, achievementDescription);
+                AddItemGeneral
+                (
+                    item.RowId,
+                    item.Name.ToString(),
+                    npcBase.RowId,
+                    resident.Singular.ToString(),
+                    shop,
+                    costs,
+                    NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
+                    shopType,
+                    achievementDescription
+                );
             }
         }
     }
@@ -541,24 +605,26 @@ public class ItemShopInfo
     private static void AddGilShopItem(GilShop gilShop, ENpcBase npcBase, ENpcResident resident, string shop = null)
     {
         for (ushort i = 0;; i++)
-        {
             try
             {
                 if (!LuminaGetter.TryGetSubRow(gilShop.RowId, out GilShopItem item, i)) continue;
 
-                AddItemGeneral(item.Item.Value.RowId,
-                               item.Item.Value.Name.ToString(),
-                               npcBase.RowId,
-                               resident.Singular.ToString(),
-                               shop != null ? $"{shop}\n{gilShop.Name}" : gilShop.Name.ToString(),
-                               [new(item.Item.Value.PriceMid, 1)],
-                               NPCIDToLocations.GetValueOrDefault(npcBase.RowId), ItemShopType.GilShop);
+                AddItemGeneral
+                (
+                    item.Item.Value.RowId,
+                    item.Item.Value.Name.ToString(),
+                    npcBase.RowId,
+                    resident.Singular.ToString(),
+                    shop != null ? $"{shop}\n{gilShop.Name}" : gilShop.Name.ToString(),
+                    [new(item.Item.Value.PriceMid, 1)],
+                    NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
+                    ItemShopType.GilShop
+                );
             }
             catch
             {
                 break;
             }
-        }
     }
 
     private static void AddGcShopItem(GCShop gcID, ENpcBase npcBase, ENpcResident resident)
@@ -568,7 +634,6 @@ public class ItemShopInfo
         foreach (var category in LuminaGetter.Get<GCScripShopCategory>().Where(i => i.GrandCompany.RowId == gcID.GrandCompany.RowId))
         {
             for (ushort i = 0;; i++)
-            {
                 try
                 {
                     var item = LuminaGetter.GetSub<GCScripShopItem>().GetSubrowOrDefault(category.RowId, i);
@@ -576,16 +641,22 @@ public class ItemShopInfo
 
                     if (item.Value.SortKey == 0) break;
 
-                    AddItemGeneral(item.Value.Item.Value.RowId,
-                                   item.Value.Item.Value.Name.ToString(),
-                                   npcBase.RowId,
-                                   resident.Singular.ToString(),
-                                   null,
-                                   [new(item.Value.CostGCSeals, seal.RowId)],
-                                   NPCIDToLocations.GetValueOrDefault(npcBase.RowId), ItemShopType.GcShop);
+                    AddItemGeneral
+                    (
+                        item.Value.Item.Value.RowId,
+                        item.Value.Item.Value.Name.ToString(),
+                        npcBase.RowId,
+                        resident.Singular.ToString(),
+                        null,
+                        [new(item.Value.CostGCSeals, seal.RowId)],
+                        NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
+                        ItemShopType.GcShop
+                    );
                 }
-                catch (Exception) { break; }
-            }
+                catch (Exception)
+                {
+                    break;
+                }
         }
     }
 
@@ -596,7 +667,6 @@ public class ItemShopInfo
             if (category.Value.RowId == 0) continue;
 
             for (ushort i = 0;; i++)
-            {
                 try
                 {
                     if (!LuminaGetter.TryGetSubRow(category.Value.InclusionShopSeries.RowId, out InclusionShopSeries series, i)) continue;
@@ -608,8 +678,10 @@ public class ItemShopInfo
                     shop += $"{category.Value.Name}\n{specialShop.Name}";
                     AddSpecialItem(specialShop, npcBase, resident, shop: shop);
                 }
-                catch (Exception) { break; }
-            }
+                catch (Exception)
+                {
+                    break;
+                }
         }
     }
 
@@ -623,14 +695,17 @@ public class ItemShopInfo
 
             var cost = t.Cost;
 
-            AddItemGeneral(item.RowId,
-                           item.Name.ToString(),
-                           npcBase.RowId,
-                           resident.Singular.ToString(),
-                           null,
-                           [new(cost, 102233)],
-                           NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
-                           ItemShopType.FcShop);
+            AddItemGeneral
+            (
+                item.RowId,
+                item.Name.ToString(),
+                npcBase.RowId,
+                resident.Singular.ToString(),
+                null,
+                [new(cost, 102233)],
+                NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
+                ItemShopType.FcShop
+            );
         }
     }
 
@@ -699,13 +774,12 @@ public class ItemShopInfo
 
         foreach (var t in shop.ShopItems)
         {
-            var         row = t.Value.RowId;
+            var row = t.Value.RowId;
 
             if (row == 0)
                 continue;
 
             for (ushort subRow = 0; subRow < 100; subRow++)
-            {
                 try
                 {
                     var exchangeItem = LuminaGetter.GetSubRowOrDefault<CollectablesShopItem>(row, subRow);
@@ -719,21 +793,26 @@ public class ItemShopInfo
                         shopName += $"{shop.Name.ToString()}\n";
                     shopName += $"{exchangeItem.CollectablesShopItemGroup.Value.Name.ToString()}";
 
-                    AddItemGeneral(rewardItem.Item.Value.RowId,
-                                   rewardItem.Item.Value.Name.ToString(),
-                                   npcBase.RowId,
-                                   resident.Singular.ToString(),
-                                   shopName,
-                                   [
-                                       new(rewardItem.RewardLow, exchangeItem.Item.RowId, Collectablity: refine.LowCollectability),
-                                       new(rewardItem.RewardMid, exchangeItem.Item.RowId, Collectablity: refine.MidCollectability),
-                                       new(rewardItem.RewardHigh, exchangeItem.Item.RowId, Collectablity: refine.HighCollectability)
-                                   ],
-                                   NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
-                                   ItemShopType.CollectableExchange);
+                    AddItemGeneral
+                    (
+                        rewardItem.Item.Value.RowId,
+                        rewardItem.Item.Value.Name.ToString(),
+                        npcBase.RowId,
+                        resident.Singular.ToString(),
+                        shopName,
+                        [
+                            new(rewardItem.RewardLow, exchangeItem.Item.RowId, refine.LowCollectability),
+                            new(rewardItem.RewardMid, exchangeItem.Item.RowId, refine.MidCollectability),
+                            new(rewardItem.RewardHigh, exchangeItem.Item.RowId, refine.HighCollectability)
+                        ],
+                        NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
+                        ItemShopType.CollectableExchange
+                    );
                 }
-                catch { break; }
-            }
+                catch
+                {
+                    break;
+                }
         }
     }
 
@@ -761,13 +840,17 @@ public class ItemShopInfo
             if (rewardItem.RowId == 0)
                 break;
 
-            AddItemGeneral(rewardItem.RowId,
-                           rewardItem.Value.Name.ToString(),
-                           npcBase.RowId,
-                           resident.Singular.ToString(), string.Empty,
-                           cost,
-                           NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
-                           ItemShopType.QuestReward);
+            AddItemGeneral
+            (
+                rewardItem.RowId,
+                rewardItem.Value.Name.ToString(),
+                npcBase.RowId,
+                resident.Singular.ToString(),
+                string.Empty,
+                cost,
+                NPCIDToLocations.GetValueOrDefault(npcBase.RowId),
+                ItemShopType.QuestReward
+            );
         }
     }
 
@@ -784,7 +867,7 @@ public class ItemShopInfo
             AddItemCost(rewardItem.RowId, npcBase.RowId, cost);
         }
     }
-    
+
     private static void AddAchievementItem()
     {
         for (var i = 1006004u; i <= 1006006; i++)
@@ -812,7 +895,8 @@ public class ItemShopInfo
         result.CostInfos.AddRange(cost);
     }
 
-    private static void AddItemGeneral(
+    private static void AddItemGeneral
+    (
         uint                   itemID,
         string                 itemName,
         uint                   npcID,
@@ -821,7 +905,8 @@ public class ItemShopInfo
         List<ShopItemCostInfo> cost,
         ShopNPCLocation        npcLocation,
         ItemShopType           shopType,
-        string                 achievementDesc = "")
+        string                 achievementDesc = ""
+    )
     {
         if (itemID == 0)
             return;
@@ -831,26 +916,36 @@ public class ItemShopInfo
 
         if (!ItemToItemShopInfos.ContainsKey(itemID))
         {
-            ItemToItemShopInfos.Add(itemID, new()
-            {
-                ItemID                     = itemID,
-                Name                   = itemName,
-                NPCInfos               = [new() { ID = npcID, Location = npcLocation, CostInfos = cost, Name = npcName, ShopName = shopName }],
-                ShopType               = shopType,
-                AchievementDescription = achievementDesc
-            });
+            ItemToItemShopInfos.Add
+            (
+                itemID,
+                new()
+                {
+                    ItemID                 = itemID,
+                    Name                   = itemName,
+                    NPCInfos               = [new() { ID = npcID, Location = npcLocation, CostInfos = cost, Name = npcName, ShopName = shopName }],
+                    ShopType               = shopType,
+                    AchievementDescription = achievementDesc
+                }
+            );
             return;
         }
 
         if (!ItemToItemShopInfos.TryGetValue(itemID, out var itemInfo))
-            ItemToItemShopInfos.TryAdd(itemID, itemInfo = new()
-            {
-                ItemID                     = itemID,
-                Name                   = itemName,
-                NPCInfos               = [new() { ID = npcID, Location = npcLocation, CostInfos = cost, Name = npcName, ShopName = shopName }],
-                ShopType               = shopType,
-                AchievementDescription = achievementDesc
-            });
+        {
+            ItemToItemShopInfos.TryAdd
+            (
+                itemID,
+                itemInfo = new()
+                {
+                    ItemID                 = itemID,
+                    Name                   = itemName,
+                    NPCInfos               = [new() { ID = npcID, Location = npcLocation, CostInfos = cost, Name = npcName, ShopName = shopName }],
+                    ShopType               = shopType,
+                    AchievementDescription = achievementDesc
+                }
+            );
+        }
 
         if (shopType == ItemShopType.Achievement && itemInfo.ShopType != ItemShopType.Achievement)
         {
@@ -888,10 +983,12 @@ public class ItemShopInfo
                 if (!match) continue;
 
                 var mapID = resident.Map;
+
                 try
                 {
                     var map = LuminaGetter.Get<Map>().First(i => i.TerritoryType.RowId == sTerritoryType.RowId && i.MapIndex == mapID);
-                    NPCIDToLocations.Add(npcRowID, new(instanceObject.Transform.Translation.X, instanceObject.Transform.Translation.Z, sTerritoryType.RowId, map.RowId));
+                    NPCIDToLocations.Add
+                        (npcRowID, new(instanceObject.Transform.Translation.X, instanceObject.Transform.Translation.Z, sTerritoryType.RowId, map.RowId));
                 }
                 catch (InvalidOperationException)
                 {
@@ -901,7 +998,7 @@ public class ItemShopInfo
         }
     }
 
-    private static LgbFile? GetLgbFileFromBg(string bg) => 
+    private static LgbFile? GetLgbFileFromBg(string bg) =>
         DService.Instance().Data.GetFile<LgbFile>("bg/" + bg[..(bg.IndexOf("/level/", StringComparison.Ordinal) + 1)] + "level/planevent.lgb");
 
     private static bool MatchEventHandlerType(uint data, EventHandlerType type) =>
@@ -919,7 +1016,7 @@ public class ItemShopInfo
             };
 
     #endregion
-    
+
     public bool HasShopNames() =>
         NPCInfos.Any(i => i.ShopName != null);
 
@@ -951,7 +1048,7 @@ public class ItemShopInfo
                            .Select(i => i.First())
                            .ToList();
 
-    public Item GetItem() => 
+    public Item GetItem() =>
         LuminaGetter.GetRowOrDefault<Item>(ItemID);
 
     private enum EventHandlerType : uint
@@ -987,7 +1084,7 @@ public class ItemShopInfo
         [1027709] = 1769963,
         [1027766] = 1769964
     };
-    
+
     private static readonly Dictionary<string, string> MJISpecialShopNames = new()
     {
         ["0"]  = "TEXT_CTSMJISPECIALSHOP_00789_TALK_ACTOR",
@@ -1008,7 +1105,7 @@ public class ItemShopInfo
         ["15"] = "TEXT_CTSMJISPECIALSHOP_00789_SYSTEM_100_000",
         ["16"] = "TEXT_CTSMJISPECIALSHOP_00789_OMISE_200_000"
     };
-    
+
     private static readonly Dictionary<GrandCompany, uint> GrandCompanyVendors = new()
     {
         [GrandCompany.None]           = 0,
@@ -1016,7 +1113,7 @@ public class ItemShopInfo
         [GrandCompany.TwinAdder]      = 1002393,
         [GrandCompany.ImmortalFlames] = 1002390
     };
-    
+
     private static readonly Dictionary<GrandCompany, uint> OICVendors = new()
     {
         [GrandCompany.Maelstrom]      = 1002389,
@@ -1025,7 +1122,7 @@ public class ItemShopInfo
         [GrandCompany.None]           = 0
     };
 
-    private static readonly List<Item> GrandCompanySeals = 
+    private static readonly List<Item> GrandCompanySeals =
         LuminaGetter.Get<Item>().Where(i => i.RowId is >= 20 and <= 22).Select(i => i).ToList();
 }
 
@@ -1056,10 +1153,10 @@ public class ShopNPCLocation
     public float X => TexturePosition.X;
     public float Y => TexturePosition.Y;
 
-    public TerritoryType GetTerritory() => 
+    public TerritoryType GetTerritory() =>
         LuminaGetter.GetRowOrDefault<TerritoryType>(TerritoryID);
-        
-    public Map GetMap() => 
+
+    public Map GetMap() =>
         LuminaGetter.GetRowOrDefault<Map>(MapID);
 
     private static Vector2 ToMapPos(Vector2 pos, float scale, Vector2 offset)
@@ -1068,27 +1165,32 @@ public class ShopNPCLocation
         var y = ToMapPos(pos.Y, scale, (short)offset.Y);
         return new(x, y);
     }
-    
+
     private static float ToMapPos(float val, float scale, short offset)
     {
         var c = scale / 100.0f;
 
         val = (val + offset) * c;
 
-        return (41.0f / c * ((val + 1024.0f) / 2048.0f)) + 1;
+        return 41.0f / c * ((val + 1024.0f) / 2048.0f) + 1;
     }
 }
 
-public record ShopItemCostInfo(uint Cost, uint ItemID, uint? Collectablity = null)
+public record ShopItemCostInfo
+(
+    uint  Cost,
+    uint  ItemID,
+    uint? Collectablity = null
+)
 {
-    public string GetItemName() => 
+    public string GetItemName() =>
         LuminaWrapper.GetItemName(ItemID);
 
     public override string ToString()
     {
         if (Collectablity != null)
             return $"{GetItemName()} \ue03d ({Collectablity.Value}~)";
-        
+
         return $"{GetItemName()} x{Cost}";
     }
 }
