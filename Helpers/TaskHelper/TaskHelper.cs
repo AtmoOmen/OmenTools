@@ -15,7 +15,7 @@ public partial class TaskHelper : IDisposable
         foreach (var instance in Instances.Keys)
         {
             if (instance is not { IsDisposed: false }) continue;
-            
+
             instance.Dispose();
             disposedCount++;
         }
@@ -26,12 +26,14 @@ public partial class TaskHelper : IDisposable
         Instances.Clear();
     }
 
-    private static Channel<(TaskHelperTask Task, int Weight)> CreateTaskChannel() =>
-        Channel.CreateUnbounded<(TaskHelperTask, int)>(new() { SingleReader = true });
+    private static Channel<ITaskHelperMessage> CreateTaskChannel() =>
+        Channel.CreateUnbounded<ITaskHelperMessage>(new() { SingleReader = true });
 
     public TaskHelper()
     {
         Instances.TryAdd(this, 0);
+        QueueCounts.TryAdd(1, 0);
+        QueueCounts.TryAdd(0, 0);
         _ = ProcessChannelAsync(CancelSource.Token);
     }
 
@@ -39,7 +41,7 @@ public partial class TaskHelper : IDisposable
     {
         if (IsDisposed) return;
         IsDisposed = true;
-        
+
         Instances.TryRemove(this, out _);
 
         try
@@ -51,8 +53,8 @@ public partial class TaskHelper : IDisposable
         {
             // ignored
         }
-        
-        
+
+
         TaskChannel.Writer.TryComplete();
 
         try
@@ -78,10 +80,12 @@ public partial class TaskHelper : IDisposable
                 {
                     // ignored
                 }
-                
+
             }
         }
+
         Queues.Clear();
+        QueueCounts.Clear();
     }
 
     /// <summary>
@@ -111,13 +115,13 @@ public partial class TaskHelper : IDisposable
     ///     注: 异步任务被取消将被视为发生异常
     /// </summary>
     public TaskAbortBehaviour ExceptionBehaviour { get; set; } = TaskAbortBehaviour.AbortAll;
-    
+
     /// <summary>
     ///     当单一任务超时时额外执行的全局逻辑
     ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.TimeoutAction" />) 则以任务的为判断标准
     /// </summary>
     public Action? TimeoutAction { get; set; }
-    
+
     /// <summary>
     ///     当单一任务执行出现异常时额外执行的全局逻辑
     ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.ExceptionAction" />) 则以任务的为判断标准
@@ -142,14 +146,14 @@ public partial class TaskHelper : IDisposable
     /// </summary>
     public bool IsDisposed { get; private set; }
 
-    private TaskHelperTask?                            CurrentTask       { get; set; }
-    private SortedSet<TaskHelperQueue>                 Queues            { get; } = [new(1), new(0)];
-    private Channel<(TaskHelperTask Task, int Weight)> TaskChannel       { get; } = CreateTaskChannel();
-    private CancellationTokenSource                    CancelSource      { get; } = new();
+    private TaskHelperTask?                CurrentTask  { get; set; }
+    private SortedSet<TaskHelperQueue>     Queues       { get; } = [new(1), new(0)];
+    private ConcurrentDictionary<int, int> QueueCounts  { get; } = new();
+    private Channel<ITaskHelperMessage>    TaskChannel  { get; } = CreateTaskChannel();
+    private CancellationTokenSource        CancelSource { get; } = new();
 
     private volatile int pendingTaskCount;
     private volatile int queueTaskCount;
-    private int          abortRequested;
 
     private async Task ProcessChannelAsync(CancellationToken ct)
     {
@@ -161,28 +165,29 @@ public partial class TaskHelper : IDisposable
                     await TaskChannel.Reader.WaitToReadAsync(ct).ConfigureAwait(false);
 
                 var isBusy = false;
-                await DService.Instance().Framework.Run(async () =>
-                {
-                    if (Interlocked.Exchange(ref abortRequested, 0) != 0)
-                        AbortOnWorkerThread();
-
-                    SyncPendingTasks();
-
-                    if (CurrentTask == null)
-                        ProcessNextTask();
-                    
-                    if (CurrentTask != null)
+                await DService.Instance().Framework.Run
+                (
+                    async () =>
                     {
-                        if (CurrentTask.IsAsync)
-                            await ExecuteCurrentTaskAsync();
+                        SyncPendingTasks();
+
+                        if (CurrentTask == null)
+                            ProcessNextTask();
+
+                        if (CurrentTask != null)
+                        {
+                            if (CurrentTask.IsAsync)
+                                await ExecuteCurrentTaskAsync();
+                            else
+                                ExecuteCurrentTask();
+
+                            isBusy = true;
+                        }
                         else
-                            ExecuteCurrentTask();
-                        
-                        isBusy = true;
-                    }
-                    else
-                        isBusy = queueTaskCount > 0 || pendingTaskCount > 0;
-                }, cancellationToken: ct).ConfigureAwait(false);
+                            isBusy = queueTaskCount > 0 || pendingTaskCount > 0;
+                    },
+                    ct
+                ).ConfigureAwait(false);
 
                 if (isBusy)
                     await Task.Delay(1, ct).ConfigureAwait(false);
@@ -200,19 +205,52 @@ public partial class TaskHelper : IDisposable
 
     private void SyncPendingTasks()
     {
-        while (TaskChannel.Reader.TryRead(out var item))
+        while (TaskChannel.Reader.TryRead(out var message))
         {
-            Interlocked.Decrement(ref pendingTaskCount);
-            var lookup = new TaskHelperQueue(item.Weight);
-
-            if (!Queues.TryGetValue(lookup, out var queue))
+            switch (message)
             {
-                queue = lookup;
-                Queues.Add(queue);
-            }
+                case AddTaskMessage msg:
+                    Interlocked.Decrement(ref pendingTaskCount);
+                    var lookup = new TaskHelperQueue(msg.Weight);
 
-            queue.Tasks.Add(item.Task);
-            Interlocked.Increment(ref queueTaskCount);
+                    if (!Queues.TryGetValue(lookup, out var queue))
+                    {
+                        queue = lookup;
+                        Queues.Add(queue);
+                        QueueCounts.TryAdd(msg.Weight, 0);
+                    }
+
+                    queue.Tasks.Add(msg.Task);
+                    Interlocked.Increment(ref queueTaskCount);
+                    QueueCounts.AddOrUpdate(msg.Weight, 1, (_, c) => c + 1);
+                    break;
+                case AbortMessage:
+                    PerformAbort();
+                    break;
+                case AddQueueMessage msg:
+                    if (Queues.All(q => q.Weight != msg.Weight))
+                    {
+                        Queues.Add(new(msg.Weight));
+                        QueueCounts.TryAdd(msg.Weight, 0);
+                    }
+
+                    break;
+                case RemoveQueueMessage msg:
+                    PerformRemoveQueue(msg.Weight);
+                    break;
+                case RemoveQueueTasksMessage msg:
+                    PerformRemoveQueueTasks(msg.Weight);
+                    break;
+                case RemoveQueueFirstTaskMessage msg:
+                    PerformRemoveQueueFirstTask(msg.Weight);
+                    break;
+                case RemoveQueueLastTaskMessage msg:
+                    PerformRemoveQueueLastTask(msg.Weight);
+                    break;
+                case RemoveQueueFirstNTasksMessage msg:
+                    PerformRemoveQueueFirstNTasks(msg.Weight, msg.Count);
+                    break;
+            }
         }
     }
 
@@ -222,6 +260,7 @@ public partial class TaskHelper : IDisposable
         {
             if (!queue.Tasks.TryDequeue(out var task)) continue;
             Interlocked.Decrement(ref queueTaskCount);
+            QueueCounts.AddOrUpdate(queue.Weight, 0, (_, c) => Math.Max(0, c - 1));
 
             CurrentTask           = task;
             CurrentTask.StartTime = Stopwatch.GetTimestamp();
@@ -309,7 +348,7 @@ public partial class TaskHelper : IDisposable
             case TaskAbortBehaviour.AbortAll:
                 LogWarning($"放弃了所有任务 (原因: {reason})" + (extraAction == null ? string.Empty : "\n开始执行该原因出现时的自定义逻辑"));
 
-                Abort();
+                PerformAbort();
                 break;
             case TaskAbortBehaviour.AbortCurrent:
                 LogWarning($"放弃了当前任务 (原因: {reason})" + (extraAction == null ? string.Empty : "\n开始执行该原因出现时的自定义逻辑"));
@@ -323,7 +362,7 @@ public partial class TaskHelper : IDisposable
                 {
                     // ignored
                 }
-                
+
                 CurrentTask = null;
                 break;
             default:
@@ -339,7 +378,7 @@ public partial class TaskHelper : IDisposable
             Error($"在执行 {reason} 原因出现时应执行的自定义逻辑时发生错误", ex);
         }
     }
-    
+
     #region 内部日志
 
     private void Log(string message)
@@ -362,131 +401,95 @@ public partial class TaskHelper : IDisposable
 
     #region 队列与任务
 
-    public void Abort()
+    private void PerformAbort()
     {
-        if (IsDisposed) return;
-
-        try
-        {
-            CurrentTask?.CancelToken?.Cancel();
-        }
-        catch
-        {
-            // ignored
-        }
-
-        Interlocked.Exchange(ref abortRequested, 1);
-
-        if (TaskChannel.Writer.TryWrite((new(() => true, "[TaskHelper] Abort 唤醒"), int.MaxValue)))
-            Interlocked.Increment(ref pendingTaskCount);
-    }
-
-    private void AbortOnWorkerThread()
-    {
-        while (TaskChannel.Reader.TryRead(out var item))
-        {
-            Interlocked.Decrement(ref pendingTaskCount);
-            CancelAndDispose(item.Task);
-        }
-
         foreach (var queue in Queues)
         {
             foreach (var task in queue.Tasks)
-                CancelAndDispose(task);
+            {
+                try
+                {
+                    task.CancelToken?.Cancel();
+                    task.CancelToken?.Dispose();
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
 
             queue.Tasks.Clear();
         }
 
-        Interlocked.Exchange(ref queueTaskCount, 0);
+        queueTaskCount = 0;
+        QueueCounts.Clear();
 
-        if (CurrentTask != null)
-        {
-            CancelAndDispose(CurrentTask);
-            CurrentTask = null;
-        }
+        CurrentTask?.CancelToken?.Cancel();
+        CurrentTask?.CancelToken?.Dispose();
+
+        CurrentTask = null;
     }
 
-    private static void CancelAndDispose(TaskHelperTask task)
+    public void Abort() => TaskChannel.Writer.TryWrite(new AbortMessage());
+
+    public void AddQueue(int weight) => TaskChannel.Writer.TryWrite(new AddQueueMessage(weight));
+
+    private void PerformRemoveQueue(int weight)
     {
-        if (task.CancelToken == null) return;
-
-        try
-        {
-            task.CancelToken.Cancel();
-        }
-        catch
-        {
-            // ignored
-        }
-
-        try
-        {
-            task.CancelToken.Dispose();
-        }
-        catch
-        {
-            // ignored
-        }
-    }
-
-    public bool AddQueue(int weight)
-    {
-        if (Queues.Any(q => q.Weight == weight)) return false;
-        Queues.Add(new(weight));
-        return true;
-    }
-
-    public bool RemoveQueue(int weight)
-    {
-        SyncPendingTasks();
         LogWarning($"移除了权重 {weight} 队列");
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
-        if (queue == null) return false;
+        if (queue == null) return;
 
         Interlocked.Add(ref queueTaskCount, -queue.Tasks.Count);
-        return Queues.Remove(queue);
+        QueueCounts.TryRemove(weight, out _);
+        Queues.Remove(queue);
     }
 
-    public void RemoveQueueTasks(int weight)
+    public void RemoveQueue(int weight) => TaskChannel.Writer.TryWrite(new RemoveQueueMessage(weight));
+
+    private void PerformRemoveQueueTasks(int weight)
     {
-        SyncPendingTasks();
         LogWarning($"清除了权重 {weight} 队列中的所有任务");
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
+
         if (queue != null)
         {
             Interlocked.Add(ref queueTaskCount, -queue.Tasks.Count);
             queue.Tasks.Clear();
+            QueueCounts.AddOrUpdate(weight, 0, (_, _) => 0);
         }
     }
 
-    public bool RemoveQueueFirstTask(int weight)
+    public void RemoveQueueTasks(int weight) => TaskChannel.Writer.TryWrite(new RemoveQueueTasksMessage(weight));
+
+    private void PerformRemoveQueueFirstTask(int weight)
     {
-        SyncPendingTasks();
         LogWarning($"移除了权重 {weight} 队列中的第一个任务");
+
         if ((Queues.FirstOrDefault(q => q.Weight == weight)?.Tasks ?? []).TryDequeue(out _))
         {
             Interlocked.Decrement(ref queueTaskCount);
-            return true;
+            QueueCounts.AddOrUpdate(weight, 0, (_, c) => Math.Max(0, c - 1));
         }
-
-        return false;
     }
 
-    public bool RemoveQueueLastTask(int weight)
+    public void RemoveQueueFirstTask(int weight) => TaskChannel.Writer.TryWrite(new RemoveQueueFirstTaskMessage(weight));
+
+    private void PerformRemoveQueueLastTask(int weight)
     {
-        SyncPendingTasks();
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
-        if (!((queue?.Tasks ?? []).Count > 0)) return false;
+        if (!((queue?.Tasks ?? []).Count > 0)) return;
 
         LogWarning($"清除了权重 {weight} 队列中的最后一个任务");
         queue.Tasks.RemoveAt(queue.Tasks.Count - 1);
         Interlocked.Decrement(ref queueTaskCount);
-        return true;
+        QueueCounts.AddOrUpdate(weight, 0, (_, c) => Math.Max(0, c - 1));
     }
 
-    public bool RemoveQueueFirstNTasks(int weight, int count)
+    public void RemoveQueueLastTask(int weight) => TaskChannel.Writer.TryWrite(new RemoveQueueLastTaskMessage(weight));
+
+    private void PerformRemoveQueueFirstNTasks(int weight, int count)
     {
-        SyncPendingTasks();
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
 
         if ((queue?.Tasks ?? []).Count > 0)
@@ -496,17 +499,54 @@ public partial class TaskHelper : IDisposable
             var actualCountToRemove = Math.Min(count, queue.Tasks.Count);
             queue.Tasks.RemoveRange(0, actualCountToRemove);
             Interlocked.Add(ref queueTaskCount, -actualCountToRemove);
-            return true;
+            QueueCounts.AddOrUpdate(weight, 0, (_, c) => Math.Max(0, c - actualCountToRemove));
         }
-
-        return false;
     }
 
-    public int GetQueueTaskCount(int weight)
-    {
-        SyncPendingTasks();
-        return Queues.FirstOrDefault(x => x.Weight == weight)?.Tasks.Count ?? 0;
-    }
+    public void RemoveQueueFirstNTasks(int weight, int count) => TaskChannel.Writer.TryWrite(new RemoveQueueFirstNTasksMessage(weight, count));
+
+    public int GetQueueTaskCount(int weight) => QueueCounts.GetValueOrDefault(weight, 0);
 
     #endregion
+
+    private interface ITaskHelperMessage;
+
+    private readonly record struct AddTaskMessage
+    (
+        TaskHelperTask Task,
+        int            Weight
+    ) : ITaskHelperMessage;
+
+    private readonly record struct AbortMessage : ITaskHelperMessage;
+
+    private readonly record struct AddQueueMessage
+    (
+        int Weight
+    ) : ITaskHelperMessage;
+
+    private readonly record struct RemoveQueueMessage
+    (
+        int Weight
+    ) : ITaskHelperMessage;
+
+    private readonly record struct RemoveQueueTasksMessage
+    (
+        int Weight
+    ) : ITaskHelperMessage;
+
+    private readonly record struct RemoveQueueFirstTaskMessage
+    (
+        int Weight
+    ) : ITaskHelperMessage;
+
+    private readonly record struct RemoveQueueLastTaskMessage
+    (
+        int Weight
+    ) : ITaskHelperMessage;
+
+    private readonly record struct RemoveQueueFirstNTasksMessage
+    (
+        int Weight,
+        int Count
+    ) : ITaskHelperMessage;
 }
