@@ -149,6 +149,7 @@ public partial class TaskHelper : IDisposable
 
     private volatile int pendingTaskCount;
     private volatile int queueTaskCount;
+    private int          abortRequested;
 
     private async Task ProcessChannelAsync(CancellationToken ct)
     {
@@ -162,6 +163,9 @@ public partial class TaskHelper : IDisposable
                 var isBusy = false;
                 await DService.Instance().Framework.Run(async () =>
                 {
+                    if (Interlocked.Exchange(ref abortRequested, 0) != 0)
+                        AbortOnWorkerThread();
+
                     SyncPendingTasks();
 
                     if (CurrentTask == null)
@@ -360,32 +364,69 @@ public partial class TaskHelper : IDisposable
 
     public void Abort()
     {
-        SyncPendingTasks();
-        
+        if (IsDisposed) return;
+
+        try
+        {
+            CurrentTask?.CancelToken?.Cancel();
+        }
+        catch
+        {
+            // ignored
+        }
+
+        Interlocked.Exchange(ref abortRequested, 1);
+
+        if (TaskChannel.Writer.TryWrite((new(() => true, "[TaskHelper] Abort 唤醒"), int.MaxValue)))
+            Interlocked.Increment(ref pendingTaskCount);
+    }
+
+    private void AbortOnWorkerThread()
+    {
+        while (TaskChannel.Reader.TryRead(out var item))
+        {
+            Interlocked.Decrement(ref pendingTaskCount);
+            CancelAndDispose(item.Task);
+        }
+
         foreach (var queue in Queues)
         {
             foreach (var task in queue.Tasks)
-            {
-                try
-                {
-                    task.CancelToken?.Cancel();
-                    task.CancelToken?.Dispose();
-                }
-                catch
-                {
-                    // ignored
-                }
-            }
-            
+                CancelAndDispose(task);
+
             queue.Tasks.Clear();
         }
 
-        queueTaskCount = 0;
+        Interlocked.Exchange(ref queueTaskCount, 0);
 
-        CurrentTask?.CancelToken?.Cancel();
-        CurrentTask?.CancelToken?.Dispose();
+        if (CurrentTask != null)
+        {
+            CancelAndDispose(CurrentTask);
+            CurrentTask = null;
+        }
+    }
 
-        CurrentTask = null;
+    private static void CancelAndDispose(TaskHelperTask task)
+    {
+        if (task.CancelToken == null) return;
+
+        try
+        {
+            task.CancelToken.Cancel();
+        }
+        catch
+        {
+            // ignored
+        }
+
+        try
+        {
+            task.CancelToken.Dispose();
+        }
+        catch
+        {
+            // ignored
+        }
     }
 
     public bool AddQueue(int weight)
