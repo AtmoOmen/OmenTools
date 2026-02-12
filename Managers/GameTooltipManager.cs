@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Memory;
@@ -20,7 +22,7 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
 {
     #region 外部委托
 
-    public delegate void ActionTooltipModifierDelegate(AtkUnitBase* addon, void* a2, ulong a3);
+    public delegate void ActionTooltipModifierDelegate(AtkUnitBase* addon, NumberArrayData* numberArray, StringArrayData* stringArray);
 
     public delegate void GenerateItemTooltipModifierDelegate(AtkUnitBase* addon, NumberArrayData* numberArray, StringArrayData* stringArray);
 
@@ -57,12 +59,8 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
     );
     private Hook<GenerateActionTooltipDelegate>? GenerateActionTooltipHook;
 
-    private readonly CompSig                      ActionTooltipSig = new("48 89 5C 24 ?? 55 56 57 41 54 41 56 48 83 EC ?? 48 8B 9A");
-    private delegate nint                         ActionTooltipDelegate(AtkUnitBase* addon, void* a2, ulong a3);
-    private          Hook<ActionTooltipDelegate>? ActionTooltipHook;
-
-    private static readonly CompSig ActionHoveredSig = new("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 41 54 41 55 41 56 41 57 48 83 EC ?? 45 8B F1 41 8B D8");
-    private delegate void ActionHoveredDelegate
+    private static readonly CompSig HandleActionHoverSig = new("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 41 54 41 55 41 56 41 57 48 83 EC ?? 45 8B F1 41 8B D8");
+    private delegate void HandleActionHoverDelegate
     (
         AgentActionDetail* agent,
         ActionKind         actionKind,
@@ -70,21 +68,21 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
         int                flag,
         byte               isLovmActionDetail
     );
-    private Hook<ActionHoveredDelegate>? ActionHoveredHook;
+    private Hook<HandleActionHoverDelegate>? HandleActionHoverHook;
 
-    private static readonly CompSig TooltipShowSig = new("66 44 89 44 24 ?? 55 53 41 54");
-    private delegate void TooltipShowDelegate
+    private static readonly CompSig ShowTooltipSig = new("66 44 89 44 24 ?? 55 53 41 54");
+    private delegate void ShowTooltipDelegate
     (
-        AtkTooltipManager*                atkTooltipManager,
+        AtkTooltipManager*                manager,
         AtkTooltipManager.AtkTooltipType  type,
         ushort                            parentID,
         AtkResNode*                       targetNode,
         AtkTooltipManager.AtkTooltipArgs* tooltipArgs,
-        long                              unkDelegate,
+        void*                             unkDelegate,
         byte                              unk7,
         byte                              unk8
     );
-    private Hook<TooltipShowDelegate>? TooltipShowHook;
+    private Hook<ShowTooltipDelegate>? ShowTooltipHook;
 
     private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>>                         modifiers            = [];
     private readonly ConcurrentDictionary<TooltipModifyType, ImmutableList<TooltipModification>> tooltipModifications = [];
@@ -96,26 +94,19 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
 
     internal override void Init()
     {
-        GenerateItemTooltipHook ??= GenerateItemTooltipSig.GetHook<GenerateItemTooltipDelegate>(OnGenerateItemTooltipDetour);
+        GenerateItemTooltipHook ??= GenerateItemTooltipSig.GetHook<GenerateItemTooltipDelegate>(GenerateItemTooltipDetour);
         GenerateItemTooltipHook.Enable();
 
-        GenerateActionTooltipHook ??= GenerateActionTooltipSig.GetHook<GenerateActionTooltipDelegate>(OnGenerateActionTooltipDetour);
+        GenerateActionTooltipHook ??= GenerateActionTooltipSig.GetHook<GenerateActionTooltipDelegate>(GenerateActionTooltipDetour);
         GenerateActionTooltipHook.Enable();
 
-        ActionHoveredHook ??= ActionHoveredSig.GetHook<ActionHoveredDelegate>(OnActionHoveredDetour);
-        ActionHoveredHook.Enable();
+        HandleActionHoverHook ??= HandleActionHoverSig.GetHook<HandleActionHoverDelegate>(HandleActionHoverDetour);
+        HandleActionHoverHook.Enable();
 
-        ActionTooltipHook ??= ActionTooltipSig.GetHook<ActionTooltipDelegate>(OnActionTooltipDetour);
-        ActionTooltipHook.Enable();
+        DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PreRequestedUpdate, "ActionDetail", OnActionDetailRequestedUpdate);
 
-        TooltipShowHook ??= TooltipShowSig.GetHook<TooltipShowDelegate>(OnTooltipShowDetour);
-        TooltipShowHook.Enable();
-
-        RegGenerateItemTooltipModifier(ModifyItemTooltip);
-        RegGenerateActionTooltipModifier(ModifyActionTooltip);
-
-        RegTooltipShowModifier(ModifyWeatherTooltip);
-        RegTooltipShowModifier(ModifyStatuTooltip);
+        ShowTooltipHook ??= ShowTooltipSig.GetHook<ShowTooltipDelegate>(ShowTooltipDetour);
+        ShowTooltipHook.Enable();
     }
 
     internal override void Uninit()
@@ -126,14 +117,13 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
         GenerateActionTooltipHook?.Dispose();
         GenerateActionTooltipHook = null;
 
-        ActionTooltipHook?.Dispose();
-        ActionTooltipHook = null;
+        DService.Instance().AddonLifecycle.UnregisterListener(OnActionDetailRequestedUpdate);
 
-        ActionHoveredHook?.Dispose();
-        ActionHoveredHook = null;
+        HandleActionHoverHook?.Dispose();
+        HandleActionHoverHook = null;
 
-        TooltipShowHook?.Dispose();
-        TooltipShowHook = null;
+        ShowTooltipHook?.Dispose();
+        ShowTooltipHook = null;
 
         modifiers.Clear();
         tooltipModifications.Clear();
@@ -448,247 +438,59 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
     #endregion
 
     #region 事件处理
-
-    private void ModifyItemTooltip(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
-    {
-        try
-        {
-            var itemID = AgentItemDetail.Instance()->ItemId;
-            if (itemID < 2000000)
-                itemID %= 500000;
-
-            var modifications = tooltipModifications.GetValueOrDefault(TooltipModifyType.ItemDetail, [])
-                                                    .Where(m => m.ItemID == itemID)
-                                                    .ToList();
-            if (modifications.Count == 0) return;
-
-            // 按字段分组
-            var modificationsByField = modifications.GroupBy(m => m.ItemField);
-
-            foreach (var group in modificationsByField)
-            {
-                var field      = group.Key;
-                var fieldIndex = (byte)field;
-                if (fieldIndex >= stringArrayData->Size) continue;
-
-                var currentText = GetSeStringFromCStringPointer(stringArrayData->StringArray[fieldIndex]);
-
-                var finalText = ApplyModifications(currentText, group);
-
-                SetItemTooltipString(stringArrayData, field, finalText);
-            }
-        }
-        catch
-        {
-            // Ignored
-        }
-    }
-
-    private void ModifyActionTooltip(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
-    {
-        try
-        {
-            var actionID = AgentActionDetail.Instance()->ActionId;
-
-            var modifications = tooltipModifications.GetValueOrDefault(TooltipModifyType.ActionDetail, [])
-                                                    .Where(m => m.ActionID == actionID)
-                                                    .ToList();
-            if (modifications.Count == 0) return;
-
-            var modificationsByField = modifications.GroupBy(m => m.ActionField);
-
-            foreach (var group in modificationsByField)
-            {
-                var field      = group.Key;
-                var fieldIndex = (byte)field;
-                if (fieldIndex >= stringArrayData->Size) continue;
-
-                var currentText = GetSeStringFromCStringPointer(stringArrayData->StringArray[fieldIndex]);
-
-                var finalText = ApplyModifications(currentText, group);
-
-                SetActionTooltipString(stringArrayData, field, finalText);
-            }
-        }
-        catch
-        {
-            // Ignored
-        }
-    }
-
-    private void ModifyWeatherTooltip
-    (
-        AtkTooltipManager*                manager,
-        AtkTooltipManager.AtkTooltipType  type,
-        ushort                            parentID,
-        AtkResNode*                       targetNode,
-        AtkTooltipManager.AtkTooltipArgs* args
-    )
-    {
-        if (targetNode == null || NaviMap == null || parentID != NaviMap->Id) return;
-
-        var compNode = targetNode->ParentNode->GetAsAtkComponentNode();
-        if (compNode == null) return;
-
-        var imageNode = compNode->Component->UldManager.SearchNodeById(3)->GetAsAtkImageNode();
-        if (imageNode == null) return;
-
-        var iconID    = imageNode->PartsList->Parts[imageNode->PartId].UldAsset->AtkTexture.Resource->IconId;
-        var weatherID = WeatherManager.Instance()->WeatherId;
-
-        if (LuminaGetter.TryGetRow<Weather>(weatherID, out var weather))
-        {
-            if (weather.Icon != iconID) return;
-
-            var currentText = GetSeStringFromCStringPointer(args->TextArgs.Text);
-
-            var finalText = ApplyModifications(currentText, tooltipModifications.GetValueOrDefault(TooltipModifyType.Weather, []));
-
-            SetSeStringToCStringPointer(ref args->TextArgs.Text, finalText);
-            weatherTooltipText = finalText;
-        }
-    }
-
-    private void ModifyStatuTooltip
-    (
-        AtkTooltipManager*                manager,
-        AtkTooltipManager.AtkTooltipType  type,
-        ushort                            parentID,
-        AtkResNode*                       targetNode,
-        AtkTooltipManager.AtkTooltipArgs* args
-    )
-    {
-        Dictionary<uint, uint> IconStatusIDMap = [];
-
-        var localPlayer = DService.Instance().ObjectTable.LocalPlayer;
-        if (localPlayer == null || targetNode == null) return;
-
-        var imageNode = targetNode->GetAsAtkImageNode();
-        if (imageNode == null) return;
-
-        var iconID = imageNode->PartsList->Parts[imageNode->PartId].UldAsset->AtkTexture.Resource->IconId;
-        if (iconID is < 210000 or > 230000) return;
-
-        if (args->TextArgs.Text.Value == null) return;
-
-        var currentTarget = TargetManager.Target;
-        if (currentTarget != null && currentTarget.Address != localPlayer.Address)
-            AddStatusesToMap(currentTarget.ToBCStruct()->StatusManager, ref IconStatusIDMap);
-
-        var focusTarget = TargetManager.FocusTarget;
-        if (focusTarget != null)
-            AddStatusesToMap(focusTarget.ToBCStruct()->StatusManager, ref IconStatusIDMap);
-
-        var partyList = AgentHUD.Instance()->PartyMembers;
-
-        foreach (var member in partyList.ToArray().Where(m => m.Index != 0))
-        {
-            if (member.Object != null)
-                AddStatusesToMap(member.Object->StatusManager, ref IconStatusIDMap);
-        }
-
-        AddStatusesToMap(localPlayer.ToBCStruct()->StatusManager, ref IconStatusIDMap);
-
-        var currentText = GetSeStringFromCStringPointer(args->TextArgs.Text);
-
-        var finalText = ApplyModifications
-        (
-            currentText,
-            tooltipModifications.GetValueOrDefault(TooltipModifyType.Status, []),
-            mod => IconStatusIDMap.TryGetValue(iconID, out var statuId) && statuId == mod.StatuID
-        );
-
-        SetSeStringToCStringPointer(ref args->TextArgs.Text, finalText);
-    }
-
-    private void OnActionHoveredDetour(AgentActionDetail* agent, ActionKind actionKind, uint actionID, int flag, byte isLovmActionDetail)
+    
+    private void HandleActionHoverDetour(AgentActionDetail* agent, ActionKind actionKind, uint actionID, int flag, byte isLovmActionDetail)
     {
         hoveredActionDetail.Category           = actionKind;
         hoveredActionDetail.ID                 = actionID;
         hoveredActionDetail.Flag               = flag;
         hoveredActionDetail.IsLovmActionDetail = isLovmActionDetail != 0;
-        ActionHoveredHook?.Original(agent, actionKind, actionID, flag, isLovmActionDetail);
+        HandleActionHoverHook?.Original(agent, actionKind, actionID, flag, isLovmActionDetail);
     }
-
-    private void* OnGenerateItemTooltipDetour(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
+    
+    
+    private void* GenerateItemTooltipDetour(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
     {
         if (modifiers.TryGetValue(typeof(GenerateItemTooltipModifierDelegate), out var bag))
         {
-            foreach (var modifier in bag.Cast<GenerateItemTooltipModifierDelegate>())
+            foreach (var modifier in bag)
             {
+                var modifierDelegate = (GenerateItemTooltipModifierDelegate)modifier;
+
                 try
                 {
-                    modifier(addon, numberArrayData, stringArrayData);
+                    modifierDelegate(addon, numberArrayData, stringArrayData);
                 }
                 catch
                 {
-                    //Ignored
+                    // ignored
                 }
             }
         }
+        
+        var itemID = AgentItemDetail.Instance()->ItemId;
+        if (itemID < 2000000)
+            itemID %= 500000;
 
-        return GenerateItemTooltipHook.Original(addon, numberArrayData, stringArrayData);
-    }
-
-    private void* OnGenerateActionTooltipDetour(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
-    {
-        if (modifiers.TryGetValue(typeof(GenerateActionTooltipModifierDelegate), out var bag))
+        var modifications = tooltipModifications.GetValueOrDefault(TooltipModifyType.ItemDetail, [])
+                                                .Where(m => m.ItemID == itemID)
+                                                .ToList();
+        if (modifications.Count != 0)
         {
-            foreach (var modifier in bag.Cast<GenerateActionTooltipModifierDelegate>())
+            var modificationsByField = modifications.GroupBy(m => m.ItemField);
+            foreach (var group in modificationsByField)
             {
                 try
                 {
-                    modifier(addon, numberArrayData, stringArrayData);
-                }
-                catch
-                {
-                    //Ignored
-                }
-            }
-        }
+                    var field      = group.Key;
+                    var fieldIndex = (byte)field;
+                    if (fieldIndex >= stringArrayData->Size) continue;
 
-        return GenerateActionTooltipHook.Original(addon, numberArrayData, stringArrayData);
-    }
+                    var currentText = GetSeStringFromCStringPointer(stringArrayData->StringArray[fieldIndex]);
 
-    private nint OnActionTooltipDetour(AtkUnitBase* addon, void* a2, ulong a3)
-    {
-        if (modifiers.TryGetValue(typeof(ActionTooltipModifierDelegate), out var bag))
-        {
-            foreach (var modifier in bag.Cast<ActionTooltipModifierDelegate>())
-            {
-                try
-                {
-                    modifier(addon, a2, a3);
-                }
-                catch
-                {
-                    //Ignored
-                }
-            }
-        }
+                    var finalText = ApplyModifications(currentText, group);
 
-        return ActionTooltipHook.Original(addon, a2, a3);
-    }
-
-    private void OnTooltipShowDetour
-    (
-        AtkTooltipManager*                manager,
-        AtkTooltipManager.AtkTooltipType  type,
-        ushort                            parentID,
-        AtkResNode*                       targetNode,
-        AtkTooltipManager.AtkTooltipArgs* tooltipArgs,
-        long                              unkDelegate,
-        byte                              unk7,
-        byte                              unk8
-    )
-    {
-        if (modifiers.TryGetValue(typeof(TooltipShowModifierDelegate), out var bag))
-        {
-            foreach (var modifier in bag.Cast<TooltipShowModifierDelegate>())
-            {
-                try
-                {
-                    modifier(manager, type, parentID, targetNode, tooltipArgs);
+                    SetItemTooltipString(stringArrayData, field, finalText);
                 }
                 catch
                 {
@@ -697,7 +499,195 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
             }
         }
 
-        TooltipShowHook?.Original(manager, type, parentID, targetNode, tooltipArgs, unkDelegate, unk7, unk8);
+        return GenerateItemTooltipHook.Original(addon, numberArrayData, stringArrayData);
+    }
+    
+    private void* GenerateActionTooltipDetour(AtkUnitBase* addon, NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
+    {
+        if (modifiers.TryGetValue(typeof(GenerateActionTooltipModifierDelegate), out var bag))
+        {
+            foreach (var modifier in bag)
+            {
+                try
+                {
+                    ((GenerateActionTooltipModifierDelegate)modifier)(addon, numberArrayData, stringArrayData);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+        }
+
+        var actionID = AgentActionDetail.Instance()->ActionId;
+        var modifications = tooltipModifications.GetValueOrDefault(TooltipModifyType.ActionDetail, [])
+                                                .Where(m => m.ActionID == actionID)
+                                                .ToList();
+        if (modifications.Count != 0)
+        {
+            var modificationsByField = modifications.GroupBy(m => m.ActionField);
+            foreach (var group in modificationsByField)
+            {
+                try
+                {
+                    var field      = group.Key;
+                    var fieldIndex = (byte)field;
+                    if (fieldIndex >= stringArrayData->Size) continue;
+
+                    var currentText = GetSeStringFromCStringPointer(stringArrayData->StringArray[fieldIndex]);
+                    var finalText   = ApplyModifications(currentText, group);
+                    SetActionTooltipString(stringArrayData, field, finalText);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+        }
+        
+        return GenerateActionTooltipHook.Original(addon, numberArrayData, stringArrayData);
+    }
+    
+    private void OnActionDetailRequestedUpdate(AddonEvent type, AddonArgs args)
+    {
+        if (!modifiers.TryGetValue(typeof(ActionTooltipModifierDelegate), out var bag)) return;
+
+        var argsFormat = args as AddonRequestedUpdateArgs;
+        
+        foreach (var modifier in bag)
+        {
+            try
+            {
+                ((ActionTooltipModifierDelegate)modifier)
+                (
+                    args.Addon.ToStruct(),
+                    (NumberArrayData*)argsFormat.NumberArrayData,
+                    (StringArrayData*)argsFormat.StringArrayData
+                );
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+    }
+
+    private void ShowTooltipDetour
+    (
+        AtkTooltipManager*                manager,
+        AtkTooltipManager.AtkTooltipType  type,
+        ushort                            parentID,
+        AtkResNode*                       targetNode,
+        AtkTooltipManager.AtkTooltipArgs* args,
+        void*                             unkDelegate,
+        byte                              unk7,
+        byte                              unk8
+    )
+    {
+        if (modifiers.TryGetValue(typeof(TooltipShowModifierDelegate), out var bag))
+        {
+            foreach (var modifier in bag)
+            {
+                try
+                {
+                    ((TooltipShowModifierDelegate)modifier)(manager, type, parentID, targetNode, args);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+        }
+
+        // 天气
+        try
+        {
+            if (targetNode != null && NaviMap != null && parentID == NaviMap->Id)
+            {
+                var compNode = targetNode->ParentNode->GetAsAtkComponentNode();
+
+                if (compNode != null)
+                {
+                    var imageNode = compNode->Component->UldManager.SearchNodeById(3)->GetAsAtkImageNode();
+
+                    if (imageNode != null)
+                    {
+                        var iconID    = imageNode->PartsList->Parts[imageNode->PartId].UldAsset->AtkTexture.Resource->IconId;
+                        var weatherID = WeatherManager.Instance()->WeatherId;
+
+                        if (LuminaGetter.TryGetRow<Weather>(weatherID, out var weather))
+                        {
+                            if (weather.Icon == iconID)
+                            {
+                                var currentText = GetSeStringFromCStringPointer(args->TextArgs.Text);
+                                var finalText   = ApplyModifications(currentText, tooltipModifications.GetValueOrDefault(TooltipModifyType.Weather, []));
+
+                                SetSeStringToCStringPointer(ref args->TextArgs.Text, finalText);
+                                weatherTooltipText = finalText;
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+        
+        // 状态效果
+        try
+        {
+            Dictionary<uint, uint> iconStatusIDMap = [];
+
+            if (DService.Instance().ObjectTable.LocalPlayer is { } localPlayer && targetNode != null)
+            {
+                var imageNode = targetNode->GetAsAtkImageNode();
+                if (imageNode != null)
+                {
+                    var iconID = imageNode->PartsList->Parts[imageNode->PartId].UldAsset->AtkTexture.Resource->IconId;
+                    if (iconID is >= 210000 and <= 230000)
+                    {
+                        if (args->TextArgs.Text.Value != null)
+                        {
+                            var currentTarget = TargetManager.Target;
+                            if (currentTarget != null && currentTarget.Address != localPlayer.Address)
+                                AddStatusesToMap(currentTarget.ToBCStruct()->StatusManager, ref iconStatusIDMap);
+
+                            var focusTarget = TargetManager.FocusTarget;
+                            if (focusTarget != null)
+                                AddStatusesToMap(focusTarget.ToBCStruct()->StatusManager, ref iconStatusIDMap);
+
+                            var partyList = AgentHUD.Instance()->PartyMembers;
+                            foreach (var member in partyList.ToArray().Where(m => m.Index != 0))
+                            {
+                                if (member.Object != null)
+                                    AddStatusesToMap(member.Object->StatusManager, ref iconStatusIDMap);
+                            }
+
+                            AddStatusesToMap(localPlayer.ToBCStruct()->StatusManager, ref iconStatusIDMap);
+
+                            var currentText = GetSeStringFromCStringPointer(args->TextArgs.Text);
+                            var finalText = ApplyModifications
+                            (
+                                currentText,
+                                tooltipModifications.GetValueOrDefault(TooltipModifyType.Status, []),
+                                mod => iconStatusIDMap.TryGetValue(iconID, out var statuId) && statuId == mod.StatuID
+                            );
+
+                            SetSeStringToCStringPointer(ref args->TextArgs.Text, finalText);
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+
+        ShowTooltipHook?.Original(manager, type, parentID, targetNode, args, unkDelegate, unk7, unk8);
     }
 
     #endregion
