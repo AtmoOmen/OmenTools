@@ -108,7 +108,7 @@ public static partial class HelpersOm
             }
             
             if (payload.Type == PayloadType.RawText)
-                builder.AddUiForeground($"{((TextPayload)payload).Text}", 518);
+                builder.AddUiForeground($"{((TextPayload)payload).Text}", 14);
             else 
                 builder.Add(payload);
         }

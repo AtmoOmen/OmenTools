@@ -12,21 +12,35 @@ public static class IPCAttributeRegistry
 
     private static readonly Type[] FuncTypes =
     [
-        typeof(Func<>), typeof(Func<,>), typeof(Func<,,>), typeof(Func<,,,>),
-        typeof(Func<,,,,>), typeof(Func<,,,,,>), typeof(Func<,,,,,,>),
-        typeof(Func<,,,,,,,>), typeof(Func<,,,,,,,,>)
+        typeof(Func<>),
+        typeof(Func<,>),
+        typeof(Func<,,>),
+        typeof(Func<,,,>),
+        typeof(Func<,,,,>),
+        typeof(Func<,,,,,>),
+        typeof(Func<,,,,,,>),
+        typeof(Func<,,,,,,,>),
+        typeof(Func<,,,,,,,,>)
     ];
 
     private static readonly Type[] ActionTypes =
     [
-        typeof(Action), typeof(Action<>), typeof(Action<,>), typeof(Action<,,>),
-        typeof(Action<,,,>), typeof(Action<,,,,>), typeof(Action<,,,,,>),
-        typeof(Action<,,,,,,>), typeof(Action<,,,,,,,>), typeof(Action<,,,,,,,,>)
+        typeof(Action),
+        typeof(Action<>),
+        typeof(Action<,>),
+        typeof(Action<,,>),
+        typeof(Action<,,,>),
+        typeof(Action<,,,,>),
+        typeof(Action<,,,,,>),
+        typeof(Action<,,,,,,>),
+        typeof(Action<,,,,,,,>),
+        typeof(Action<,,,,,,,,>)
     ];
+
     public static void RegObjectIPCs(object instance)
     {
         if (instance == null) return;
-        
+
         var providers      = new List<ICallGateProvider>();
         var subscribers    = new List<string>();
         var type           = instance as Type ?? instance.GetType();
@@ -81,13 +95,14 @@ public static class IPCAttributeRegistry
     public static void RegStaticIPCs(Type staticType)
     {
         if (staticType == null) return;
-        
+
         var providers   = new List<ICallGateProvider>();
         var subscribers = new List<string>();
 
         foreach (var member in staticType.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
         {
             var providerAttr = member.GetCustomAttribute<IPCProviderAttribute>();
+
             if (providerAttr != null)
             {
                 var provider = CreateProvider(null, member, providerAttr);
@@ -96,6 +111,7 @@ public static class IPCAttributeRegistry
             }
 
             var subscriberAttr = member.GetCustomAttribute<IPCSubscriberAttribute>();
+
             if (subscriberAttr != null)
             {
                 if (CreateSubscriber(null, member, subscriberAttr))
@@ -166,13 +182,13 @@ public static class IPCAttributeRegistry
             return false;
         }
     }
-    
+
     private static ICallGateProvider? CreateMethodProvider(object? instance, MethodInfo method, IPCProviderAttribute attr)
     {
         var parameters = method.GetParameters();
         var returnType = method.ReturnType;
 
-        if (returnType == typeof(void)) 
+        if (returnType == typeof(void))
             return CreateActionProvider(instance, method, attr.IPCName, parameters);
 
         return CreateFuncProvider(instance, method, attr.IPCName, parameters, returnType);
@@ -215,7 +231,7 @@ public static class IPCAttributeRegistry
                         _ when paramType == typeof(string) => (Action<string>)(p => method.Invoke(null, [p])),
                         _ when paramType == typeof(float)  => (Action<float>)(p => method.Invoke(null,  [p])),
                         _ when paramType == typeof(int)    => (Action<int>)(p => method.Invoke(null,    [p])),
-                        _                              => null
+                        _                                  => null
                     };
                 }
                 else
@@ -226,7 +242,7 @@ public static class IPCAttributeRegistry
                         _ when paramType == typeof(string) => (Action<string>)(p => method.Invoke(instance, [p])),
                         _ when paramType == typeof(float)  => (Action<float>)(p => method.Invoke(instance,  [p])),
                         _ when paramType == typeof(int)    => (Action<int>)(p => method.Invoke(instance,    [p])),
-                        _                              => null
+                        _                                  => null
                     };
                 }
             }
@@ -236,8 +252,10 @@ public static class IPCAttributeRegistry
                 var genericParamCount = paramTypes.Length + 1; // +1 for return type (object)
 
                 var getProviderMethods = typeof(IDalamudPluginInterface).GetMethods()
-                                                                        .Where(m => m.Name                         == "GetIpcProvider" &&
-                                                                                    m.GetGenericArguments().Length == genericParamCount)
+                                                                        .Where
+                                                                        (m => m.Name                         == "GetIpcProvider" &&
+                                                                              m.GetGenericArguments().Length == genericParamCount
+                                                                        )
                                                                         .ToArray();
                 var getProviderMethod = getProviderMethods.FirstOrDefault();
                 if (getProviderMethod == null) return null;
@@ -270,14 +288,15 @@ public static class IPCAttributeRegistry
 
         try
         {
-            var paramTypes = parameters.Select(p => p.ParameterType).ToArray();
-            var allGenericTypes = paramTypes.Append(returnType).ToArray();
+            var paramTypes        = parameters.Select(p => p.ParameterType).ToArray();
+            var allGenericTypes   = paramTypes.Append(returnType).ToArray();
             var genericParamCount = allGenericTypes.Length;
 
             var getProviderMethods = typeof(IDalamudPluginInterface).GetMethods()
                                                                     .Where(m => m.Name == "GetIpcProvider" && m.GetGenericArguments().Length == genericParamCount)
                                                                     .ToArray();
             var getProviderMethod = getProviderMethods.FirstOrDefault();
+
             if (getProviderMethod == null)
             {
                 Error($"创建 Func Provider 失败: {ipcName} - 找不到具有 {genericParamCount} 个泛型参数的 GetIpcProvider 方法");
@@ -285,7 +304,7 @@ public static class IPCAttributeRegistry
             }
 
             var genericMethod = getProviderMethod.MakeGenericMethod(allGenericTypes);
-            var provider = genericMethod.Invoke(DService.Instance().PI, [ipcName]);
+            var provider      = genericMethod.Invoke(DService.Instance().PI, [ipcName]);
             if (provider == null) return null;
 
             var funcDelegate = CreateMultiParamFunc(method, paramTypes, returnType, instance);
@@ -406,36 +425,33 @@ public static class IPCAttributeRegistry
     {
         var fieldType = field.FieldType;
 
-        // 只支持IPCSubscriber的各种变体
         if (fieldType.IsGenericType && fieldType.Name.StartsWith("IPCSubscriber"))
             return CreateCustomFieldSubscriber(instance, field, attr);
 
-        // 不再支持旧的ICallGateSubscriber
         return false;
     }
 
     private static bool CreateCustomFieldSubscriber(object? instance, FieldInfo field, IPCSubscriberAttribute attr)
     {
-        var fieldType = field.FieldType;
+        var fieldType   = field.FieldType;
         var genericArgs = fieldType.GetGenericArguments();
-        
+
         try
         {
-            // 创建默认值工厂函数（只对单参数版本有效）
             object? defaultValueFactory = null;
+
             if (genericArgs.Length == 1 && !string.IsNullOrEmpty(attr.DefaultValue))
             {
                 try
                 {
-                    var valueType = genericArgs[0];
-                    // 使用反射调用正确的泛型方法
-                    var getTypedDefaultValueMethod = typeof(IPCSubscriberAttribute).GetMethod(nameof(IPCSubscriberAttribute.GetTypedDefaultValue));
+                    var valueType                         = genericArgs[0];
+                    var getTypedDefaultValueMethod        = typeof(IPCSubscriberAttribute).GetMethod(nameof(IPCSubscriberAttribute.GetTypedDefaultValue));
                     var genericGetTypedDefaultValueMethod = getTypedDefaultValueMethod!.MakeGenericMethod(valueType);
-                    var typedDefaultValue = genericGetTypedDefaultValueMethod.Invoke(attr, null);
-                    
+                    var typedDefaultValue                 = genericGetTypedDefaultValueMethod.Invoke(attr, null);
+
                     if (typedDefaultValue != null)
                     {
-                        var method = typeof(IPCAttributeRegistry).GetMethod(nameof(CreateDefaultValueFunc), BindingFlags.NonPublic | BindingFlags.Static);
+                        var method        = typeof(IPCAttributeRegistry).GetMethod(nameof(CreateDefaultValueFunc), BindingFlags.NonPublic | BindingFlags.Static);
                         var genericMethod = method!.MakeGenericMethod(valueType);
                         defaultValueFactory = genericMethod.Invoke(null, [typedDefaultValue]);
                     }
@@ -446,21 +462,20 @@ public static class IPCAttributeRegistry
                 }
             }
 
-            // 根据泛型参数数量创建相应的IPCSubscriber实例
             var subscriber = genericArgs.Length switch
             {
-                1 => Activator.CreateInstance(typeof(IPCSubscriber<>).MakeGenericType(genericArgs), attr.IPCName, defaultValueFactory),
-                2 => Activator.CreateInstance(typeof(IPCSubscriber<,>).MakeGenericType(genericArgs), attr.IPCName, defaultValueFactory),
-                3 => Activator.CreateInstance(typeof(IPCSubscriber<,,>).MakeGenericType(genericArgs), attr.IPCName, defaultValueFactory),
-                4 => Activator.CreateInstance(typeof(IPCSubscriber<,,,>).MakeGenericType(genericArgs), attr.IPCName, defaultValueFactory),
-                5 => Activator.CreateInstance(typeof(IPCSubscriber<,,,,>).MakeGenericType(genericArgs), attr.IPCName, defaultValueFactory),
-                6 => Activator.CreateInstance(typeof(IPCSubscriber<,,,,,>).MakeGenericType(genericArgs), attr.IPCName, defaultValueFactory),
-                7 => Activator.CreateInstance(typeof(IPCSubscriber<,,,,,,>).MakeGenericType(genericArgs), attr.IPCName, defaultValueFactory),
-                8 => Activator.CreateInstance(typeof(IPCSubscriber<,,,,,,,>).MakeGenericType(genericArgs), attr.IPCName, defaultValueFactory),
+                1 => Activator.CreateInstance(typeof(IPCSubscriber<>).MakeGenericType(genericArgs),         attr.IPCName, defaultValueFactory),
+                2 => Activator.CreateInstance(typeof(IPCSubscriber<,>).MakeGenericType(genericArgs),        attr.IPCName, defaultValueFactory),
+                3 => Activator.CreateInstance(typeof(IPCSubscriber<,,>).MakeGenericType(genericArgs),       attr.IPCName, defaultValueFactory),
+                4 => Activator.CreateInstance(typeof(IPCSubscriber<,,,>).MakeGenericType(genericArgs),      attr.IPCName, defaultValueFactory),
+                5 => Activator.CreateInstance(typeof(IPCSubscriber<,,,,>).MakeGenericType(genericArgs),     attr.IPCName, defaultValueFactory),
+                6 => Activator.CreateInstance(typeof(IPCSubscriber<,,,,,>).MakeGenericType(genericArgs),    attr.IPCName, defaultValueFactory),
+                7 => Activator.CreateInstance(typeof(IPCSubscriber<,,,,,,>).MakeGenericType(genericArgs),   attr.IPCName, defaultValueFactory),
+                8 => Activator.CreateInstance(typeof(IPCSubscriber<,,,,,,,>).MakeGenericType(genericArgs),  attr.IPCName, defaultValueFactory),
                 9 => Activator.CreateInstance(typeof(IPCSubscriber<,,,,,,,,>).MakeGenericType(genericArgs), attr.IPCName, defaultValueFactory),
                 _ => null
             };
-            
+
             if (subscriber == null) return false;
 
             // 设置AutoInitialize属性
@@ -469,14 +484,14 @@ public static class IPCAttributeRegistry
 
             // 设置字段值
             field.SetValue(instance, subscriber);
-            
+
             // 如果AutoInitialize为true，尝试立即初始化
             if (attr.AutoInitialize)
             {
                 var initMethod = subscriber.GetType().GetMethod("Initialize");
                 initMethod?.Invoke(subscriber, null);
             }
-            
+
             return true;
         }
         catch (Exception ex)
@@ -498,11 +513,11 @@ public static class IPCAttributeRegistry
 
                 // 如果默认值为null，返回类型默认值
                 if (defaultValue == null)
-                    return default(T)!;
+                    return default!;
 
                 // 尝试安全的类型转换
                 var targetType = typeof(T);
-                
+
                 // 处理可空类型
                 if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
                 {
@@ -521,7 +536,7 @@ public static class IPCAttributeRegistry
             catch (Exception ex)
             {
                 Error($"类型转换失败: 无法将 {defaultValue?.GetType().Name ?? "null"} 转换为 {typeof(T).Name}", ex);
-                return default(T)!;
+                return default!;
             }
         };
     }
