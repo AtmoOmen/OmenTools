@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Application.Network;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Network;
 using OmenTools.Abstracts;
@@ -13,11 +14,11 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 {
     #region 事件定义
 
-    public delegate void PreSendPacketDelegate(ref bool isPrevented, int   opcode, ref byte* packet, ref ushort priority);
-    public delegate void PostSendPacketDelegate(int     opcode,      byte* packet, ushort    priority);
+    public delegate void PreSendPacketDelegate(ref bool isPrevented, int  opcode, ref nint packet, ref bool isPrioritize);
+    public delegate void PostSendPacketDelegate(int     opcode,      nint packet, bool     isPrioritize);
 
-    public delegate void PreReceivePacketDelegate(ref bool isPrevented, int   opcode, ref byte* packet);
-    public delegate void PostReceivePacketDelegate(int     opcode,      byte* packet);
+    public delegate void PreReceivePacketDelegate(ref bool isPrevented, int   opcode, ref nint packet);
+    public delegate void PostReceivePacketDelegate(int     opcode,      nint packet);
 
     #endregion
     
@@ -44,13 +45,11 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     private delegate void* SendPacketDelegate(NetworkModuleProxy* module, byte* packet, uint a3, uint a4);
     private static readonly SendPacketDelegate? SendPacket =
         new CompSig("E8 ?? ?? ?? ?? 48 8B D6 48 8B CF E8 ?? ?? ?? ?? 48 8B 8C 24").GetDelegate<SendPacketDelegate>();
-    
-    private static readonly CompSig SendPacketInternalSig =
-        new("48 83 EC ?? 48 8B 89 ?? ?? ?? ?? 48 85 C9 74 ?? 44 89 44 24 ?? 4C 8D 44 24 ?? 44 89 4C 24 ?? 44 0F B6 4C 24");
-    private delegate void*                             SendPacketInternalDelegate(NetworkModuleProxy* module, byte* packet, int a3, int a4, ushort priority);
+
+    private delegate bool                              SendPacketInternalDelegate(ZoneClient* zoneClient, nint packet, uint a3, uint a4, bool isPrioritize);
     private          Hook<SendPacketInternalDelegate>? SendPacketInternalHook;
     
-    private delegate void                                 ReceivePacketInternalDelegate(PacketDispatcher* dispatcher, uint targetID, byte* packet);
+    private delegate void                                 ReceivePacketInternalDelegate(PacketDispatcher* dispatcher, uint targetID, nint packet);
     private          Hook<ReceivePacketInternalDelegate>? ReceivePacketInternalHook;
     
     private delegate void PacketLogger(byte* packet);
@@ -61,7 +60,10 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     {
         Config = LoadConfig<GamePacketManagerConfig>() ?? new();
         
-        SendPacketInternalHook ??= SendPacketInternalSig.GetHook<SendPacketInternalDelegate>(SendPacketInternalDetour);
+        SendPacketInternalHook ??= DService.Instance().Hook.HookFromMemberFunction(
+            typeof(ZoneClient.MemberFunctionPointers),
+            "SendPacket", 
+            (SendPacketInternalDelegate)SendPacketInternalDetour);
         ReceivePacketInternalHook ??=
             PacketDispatcher.StaticVirtualTablePointer->HookVFuncFromName("OnReceivePacket", (ReceivePacketInternalDelegate)ReceivePacketInternalDetour);
         
@@ -93,10 +95,10 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     private void OnLogout() => 
         ToggleHooks(false);
     
-    private void* SendPacketInternalDetour(NetworkModuleProxy* module, byte* packet, int a3, int a4, ushort priority)
+    private bool SendPacketInternalDetour(ZoneClient* zoneClient, nint packet, uint a3, uint a4, bool isPrioritize)
     {
         var opcode = *(ushort*)packet;
-        LogKnownGamePacket(*(ushort*)packet, packet, priority);
+        LogKnownGamePacket(*(ushort*)packet, (byte*)packet, isPrioritize);
         
         var isPrevented = false;
         if (a4 != 0x9876543 && methodsCollection.TryGetValue(typeof(PreSendPacketDelegate), out var preDelegates))
@@ -104,40 +106,40 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
             foreach (var preDelegate in preDelegates)
             {
                 var preFunction = (PreSendPacketDelegate)preDelegate;
-                preFunction(ref isPrevented, opcode, ref packet, ref priority);
+                preFunction(ref isPrevented, opcode, ref packet, ref isPrioritize);
                 
                 if (isPrevented) 
-                    return (void*)nint.Zero;
+                    return false;
             }
         }
 
         if (a4 == 0x9876543)
         {
-            if (priority == 0)
-                priority = ushort.MaxValue;
+            if (!isPrioritize)
+                isPrioritize = true;
         }
         else
-            HandlePacketPriority(ref priority);
+            HandlePacketPriority(ref isPrioritize);
         
-        var original = SendPacketInternalHook.Original(module, packet, a3, a4 == 0x9876543 ? 0 : a4, priority);
+        var original = SendPacketInternalHook.Original(zoneClient, packet, a3, a4, isPrioritize);
 
         if (a4 != 0x9876543 && methodsCollection.TryGetValue(typeof(PostSendPacketDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
             {
                 var postFunction = (PostSendPacketDelegate)postDelegate;
-                postFunction(*(ushort*)packet, packet, priority);
+                postFunction(*(ushort*)packet, packet, isPrioritize);
             }
         }
         
         return original;
     }
     
-    private void ReceivePacketInternalDetour(PacketDispatcher* dispatcher, uint targetID, byte* packet)
+    private void ReceivePacketInternalDetour(PacketDispatcher* dispatcher, uint targetID, nint packet)
     {
         packet -= 16;
 
-        var opcode = Marshal.ReadInt16((nint)packet, 18);
+        var opcode = Marshal.ReadInt16(packet, 18);
         LogKnownReceivedPacket(opcode, targetID);
         
         var isPrevented = false;
@@ -173,10 +175,10 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
             Debug($"[Game Packet Manager] [下行] 操作码: {opcode} / 目标: 0x{targetID:X8}");
     }
 
-    private void LogKnownGamePacket(int opcode, byte* packet, ushort priority)
+    private void LogKnownGamePacket(int opcode, byte* packet, bool isPrioritize)
     {
         if (Config.ShowGamePacketOpcodeLog)
-            Debug($"[Game Packet Manager] [上行] 操作码: {opcode} / 长度: {*(uint*)(packet + 8)} / 优先级: {priority}");
+            Debug($"[Game Packet Manager] [上行] 操作码: {opcode} / 长度: {*(uint*)(packet + 8)} / 优先级: {isPrioritize}");
         
         if (PacketHandlers.TryGetValue(opcode, out var handler) && handler.ShouldLog())
             handler.Log(packet);
@@ -191,15 +193,15 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
         ReceivePacketInternalHook?.Toggle(isEnabled);
     }
     
-    private static void HandlePacketPriority(ref ushort priority)
+    private static void HandlePacketPriority(ref bool isPrioritize)
     {
-        if (priority > 0) return;
+        if (isPrioritize) return;
         // 采集状态
         if (Conditions.Instance()->Gathering) return;
         // 部队储物柜
         if (FreeCompanyChest != null) return;
 
-        priority = ushort.MaxValue;
+        isPrioritize = true;
     }
 
     #region 注册 (私有)
