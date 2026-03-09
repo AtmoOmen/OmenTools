@@ -62,8 +62,8 @@ public class EorzeaDate
         return new EorzeaDate(etY, etM, etD, etH, etm, ets, timeEorzea);
     }
 
-    public static unsafe uint GetWeather(uint? zoneID = null)
-        => zoneID == null
-               ? WeatherManager.Instance()->GetCurrentWeather()
-               : WeatherManager.Instance()->GetWeatherForDaytime((ushort)zoneID, GetTime().Hour);
+    public static unsafe uint GetWeather(uint? zoneID = null) =>
+        zoneID == null
+            ? WeatherManager.Instance()->GetCurrentWeather()
+            : WeatherManager.Instance()->GetWeatherForDaytime((ushort)zoneID, 0);
 }
