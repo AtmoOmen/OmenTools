@@ -7,13 +7,9 @@ using System.Text;
 using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.String;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.Text;
-using FFXIVClientStructs.Interop;
 using InteropGenerator.Runtime;
-using Lumina.Excel.Sheets;
-using Lumina.Text.ReadOnly;
 using OmenTools.Abstracts;
 using CSCharacter = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 
@@ -32,6 +28,9 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
     public LogMessageManagerConfig Config { get; private set; } = null!;
 
     private delegate void UpdateDelegate(RaptureLogModule* module);
+    
+    [ThreadStatic]
+    private static StringBuilder? LogMessageDebugBuilder;
 
     // ReSharper disable once InconsistentNaming
     private Hook<UpdateDelegate>? UpdateHook;
@@ -100,75 +99,83 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
     {
         if (Config.ShowLogMessageLog)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine("[Log Message Manager]");
-            sb.AppendLine($"ID: {item.LogMessageId}");
-            sb.AppendLine("预览:");
-            sb.AppendLine($"\t{item.ToReadOnlySeString()}");
-            
-            if (item.SourceKind != EntityRelationKind.None)
+            var sb = RentLogMessageDebugBuilder();
+            try
             {
-                sb.AppendLine("来源:");
-                sb.AppendLine($"\t分类: {item.SourceKind}");
-                sb.AppendLine($"\t名称: {item.SourceNameString}");
-                sb.AppendLine($"\t服务器: {LuminaWrapper.GetWorldName(item.SourceHomeWorld)} ({item.SourceHomeWorld})");
-                sb.AppendLine($"\t玩家: {item.SourceIsPlayer}");
-                sb.AppendLine($"\t性别: {item.SourceSex}");
-                sb.AppendLine($"\tObjStrID: {item.SourceObjStrId} {item.SourceObjStrId.FromObjStrID()}");
-            }
-            
-            if (item.TargetKind != EntityRelationKind.None)
-            {
-                sb.AppendLine("目标:");
-                sb.AppendLine($"\t分类: {item.TargetKind}");
-                sb.AppendLine($"\t名称: {item.TargetNameString}");
-                sb.AppendLine($"\t服务器: {LuminaWrapper.GetWorldName(item.TargetHomeWorld)} ({item.TargetHomeWorld})");
-                sb.AppendLine($"\t玩家: {item.TargetIsPlayer}");
-                sb.AppendLine($"\t性别: {item.TargetSex}");
-                sb.AppendLine($"\tObjStrID: {item.TargetObjStrId} {item.TargetObjStrId.FromObjStrID()}");
-            }
+                sb.AppendLine("[Log Message Manager]");
+                sb.Append("ID: ").Append(item.LogMessageId).AppendLine();
+                sb.AppendLine("预览:");
+                sb.Append('\t').Append(item.ToReadOnlySeString()).AppendLine();
 
-            if (item.Parameters.Count > 0)
-            {
-                sb.AppendLine("参数:");
-
-                for (var i = 0; i < item.Parameters.Count; i++)
+                if (item.SourceKind != EntityRelationKind.None)
                 {
-                    var param = item.Parameters[i];
+                    sb.AppendLine("来源:");
+                    sb.Append("\t分类: ").Append(item.SourceKind).AppendLine();
+                    sb.Append("\t名称: ").Append(item.SourceNameString).AppendLine();
+                    sb.Append("\t服务器: ").Append(LuminaWrapper.GetWorldName(item.SourceHomeWorld)).Append(" (").Append(item.SourceHomeWorld).AppendLine(")");
+                    sb.Append("\t玩家: ").Append(item.SourceIsPlayer).AppendLine();
+                    sb.Append("\t性别: ").Append(item.SourceSex).AppendLine();
+                    sb.Append("\tObjStrID: ").Append(item.SourceObjStrId).Append(' ').Append(item.SourceObjStrId.FromObjStrID()).AppendLine();
+                }
 
-                    switch (param.Type)
+                if (item.TargetKind != EntityRelationKind.None)
+                {
+                    sb.AppendLine("目标:");
+                    sb.Append("\t分类: ").Append(item.TargetKind).AppendLine();
+                    sb.Append("\t名称: ").Append(item.TargetNameString).AppendLine();
+                    sb.Append("\t服务器: ").Append(LuminaWrapper.GetWorldName(item.TargetHomeWorld)).Append(" (").Append(item.TargetHomeWorld).AppendLine(")");
+                    sb.Append("\t玩家: ").Append(item.TargetIsPlayer).AppendLine();
+                    sb.Append("\t性别: ").Append(item.TargetSex).AppendLine();
+                    sb.Append("\tObjStrID: ").Append(item.TargetObjStrId).Append(' ').Append(item.TargetObjStrId.FromObjStrID()).AppendLine();
+                }
+
+                if (item.Parameters.Count > 0)
+                {
+                    sb.AppendLine("参数:");
+
+                    for (var i = 0; i < item.Parameters.Count; i++)
                     {
-                        case TextParameterType.Uninitialized:
-                            continue;
-                        case TextParameterType.ReferencedUtf8String:
-                            if (param.ReferencedUtf8StringValue != null && param.ReferencedUtf8StringValue->RefCount > 0)
-                            {
-                                sb.AppendLine($"\t[{i}] ({param.Type}):");
+                        var param = item.Parameters[i];
 
-                                for (var d = 0; d < param.ReferencedUtf8StringValue->RefCount; d++)
+                        switch (param.Type)
+                        {
+                            case TextParameterType.Uninitialized:
+                                continue;
+                            case TextParameterType.ReferencedUtf8String:
+                                if (param.ReferencedUtf8StringValue != null && param.ReferencedUtf8StringValue->RefCount > 0)
                                 {
-                                    var utf8String = param.ReferencedUtf8StringValue[d];
-                                    if (utf8String.Utf8String.IsEmpty || !utf8String.Utf8String.StringPtr.HasValue) continue;
-                                    sb.AppendLine($"\t\t[{i}]: {utf8String.Utf8String.StringPtr.ExtractText()}");
+                                    sb.Append("\t[").Append(i).Append("] (").Append(param.Type).AppendLine("):");
+
+                                    for (var d = 0; d < param.ReferencedUtf8StringValue->RefCount; d++)
+                                    {
+                                        var utf8String = param.ReferencedUtf8StringValue[d];
+                                        if (utf8String.Utf8String.IsEmpty || !utf8String.Utf8String.StringPtr.HasValue) continue;
+                                        sb.Append("\t\t[").Append(i).Append("]: ").Append(utf8String.Utf8String.StringPtr.ExtractText()).AppendLine();
+                                    }
                                 }
-                            }
 
-                            break;
-                        case TextParameterType.String:
-                            if (param.StringValue.HasValue)
-                            {
-                                sb.AppendLine($"\t[{i}] ({param.Type}): {param.StringValue.ExtractText()}");
-                            }
+                                break;
+                            case TextParameterType.String:
+                                if (param.StringValue.HasValue)
+                                {
+                                    sb.Append("\t[").Append(i).Append("] (").Append(param.Type).Append("): ").Append(param.StringValue.ExtractText()).AppendLine();
+                                }
 
-                            break;
-                        default:
-                            sb.AppendLine($"\t[{i}] ({param.Type}): {param.IntValue}");
-                            break;
+                                break;
+                            default:
+                                sb.Append("\t[").Append(i).Append("] (").Append(param.Type).Append("): ").Append(param.IntValue).AppendLine();
+                                break;
+                        }
                     }
                 }
+
+                TrimEndingNewLine(sb);
+                Debug(sb.ToString());
             }
-            
-            Debug(sb.ToString().Trim());
+            finally
+            {
+                ReturnLogMessageDebugBuilder(sb);
+            }
         }
 
         var isPrevented = false;
@@ -184,6 +191,40 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         }
 
         return true;
+    }
+
+    private static StringBuilder RentLogMessageDebugBuilder()
+    {
+        var sb = LogMessageDebugBuilder;
+        if (sb == null)
+            return new(1024);
+
+        LogMessageDebugBuilder = null;
+        sb.Clear();
+        return sb;
+    }
+
+    private static void ReturnLogMessageDebugBuilder(StringBuilder sb)
+    {
+        if (sb.Capacity > 32 * 1024)
+            return;
+
+        sb.Clear();
+        LogMessageDebugBuilder = sb;
+    }
+
+    private static void TrimEndingNewLine(StringBuilder sb)
+    {
+        if (sb.Length == 0)
+            return;
+
+        var end = sb.Length - 1;
+        if (sb[end] != '\n')
+            return;
+
+        sb.Length = end;
+        if (sb.Length > 0 && sb[^1] == '\r')
+            sb.Length--;
     }
 
     private void OnPostReceiveLogMessage(LogMessageQueueItem item)
