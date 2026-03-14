@@ -26,10 +26,10 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         texture = null;
         return false;
     }
-    
+
     public IDalamudTextureWrap? GetGameLangIcon(uint iconID, bool isHQ = false) =>
         TryGetGameLangIcon(iconID, out var texture, isHQ) ? texture : null;
-    
+
     public IDalamudTextureWrap? GetImage(string urlOrPath) =>
         TryGetImage(urlOrPath, out var texture) ? texture : null;
 
@@ -46,11 +46,10 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
         result = new ImageLoadingResult
         {
-            ImmediateTexture = DService.Instance().Texture.GetFromGame(GetIconTexturePath(icon, GameState.ClientLanguge)),
-            IsCompleted      = true
+            ImmediateTexture = DService.Instance().Texture.GetFromGame(GetIconTexturePath(icon, GameState.ClientLanguge))
         };
 
-        result.CompletionSource.TrySetResult(result.Texture);
+        result.TryCompleteByTexture(StandardTimeManager.Instance().UTCNow, FailedCacheTTL);
 
         if (cachedIcons.TryAdd(key, result))
             AddToExpirationQueue(key);
@@ -58,43 +57,54 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         texture = result.Texture;
         return texture != null;
     }
-    
+
     public bool TryGetImage(string url, [NotNullWhen(true)] out IDalamudTextureWrap? texture)
     {
         texture = null;
         if (string.IsNullOrWhiteSpace(url)) return false;
 
-        if (cachedTextures.TryGetValue(url, out var result))
+        while (true)
         {
-            result.RefreshAccess();
-            texture = result.Texture;
-            return texture != null;
-        }
+            var now = StandardTimeManager.Instance().UTCNow;
 
-        var newResult = new ImageLoadingResult();
-
-        if (cachedTextures.TryAdd(url, newResult))
-        {
-            AddToExpirationQueue(url);
-            downloadChannel.Writer.TryWrite(url);
-        }
-        else
-        {
-            if (cachedTextures.TryGetValue(url, out result))
+            if (cachedTextures.TryGetValue(url, out var result))
             {
                 result.RefreshAccess();
+
+                if (result.State == ImageLoadState.Failed && !result.IsFailureCooldownActive(now))
+                {
+                    var retryResult = new ImageLoadingResult();
+                    retryResult.RefreshAccess();
+
+                    if (cachedTextures.TryUpdate(url, retryResult, result))
+                    {
+                        AddToExpirationQueue(url);
+                        QueueDownload(url, retryResult);
+                        return false;
+                    }
+
+                    continue;
+                }
+
                 texture = result.Texture;
                 return texture != null;
             }
-        }
 
-        return false;
+            var created = new ImageLoadingResult();
+
+            if (cachedTextures.TryAdd(url, created))
+            {
+                AddToExpirationQueue(url);
+                QueueDownload(url, created);
+                return false;
+            }
+        }
     }
 
     public async Task<IDalamudTextureWrap?> GetImageAsync(string urlOrPath)
     {
         if (string.IsNullOrWhiteSpace(urlOrPath)) return null;
-        
+
         if (!cachedTextures.TryGetValue(urlOrPath, out var result))
         {
             TryGetImage(urlOrPath, out _);
@@ -103,9 +113,9 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         }
 
         result.RefreshAccess();
-        
+
         if (result.IsCompleted) return result.Texture;
-        
+
         try
         {
             return await result.CompletionSource.Task;
@@ -130,23 +140,53 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
     }
 
 
-    private static readonly TimeSpan CacheTTL = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan CacheTTL       = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan FailedCacheTTL = TimeSpan.FromSeconds(5);
 
-    private readonly Channel<string> downloadChannel = Channel.CreateUnbounded<string>(new UnboundedChannelOptions
-    {
-        SingleReader = true,
-        SingleWriter = false
-    });
+    private readonly Channel<string> downloadChannel = Channel.CreateUnbounded<string>
+    (
+        new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = false
+        }
+    );
 
-    private readonly Channel<ExpirationCommand> expirationChannel = Channel.CreateUnbounded<ExpirationCommand>(new UnboundedChannelOptions
-    {
-        SingleReader = true,
-        SingleWriter = false
-    });
+    private readonly Channel<ExpirationCommand> expirationChannel = Channel.CreateUnbounded<ExpirationCommand>
+    (
+        new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = false
+        }
+    );
 
     private abstract record ExpirationCommand;
 
-    private record AddCommand(object Key, long Ticks) : ExpirationCommand;
+    private readonly record struct ExpirationKey
+    {
+        public string?                                TextureURL { get; init; }
+        public (uint ID, bool HQ, Language Language)? IconKey    { get; init; }
+        public bool                                   IsTexture  => TextureURL != null;
+
+        public static ExpirationKey FromTexture(string textureURL) =>
+            new()
+            {
+                TextureURL = textureURL
+            };
+
+        public static ExpirationKey FromIcon((uint ID, bool HQ, Language Language) iconKey) =>
+            new()
+            {
+                IconKey = iconKey
+            };
+    }
+
+    private record AddCommand
+    (
+        ExpirationKey Key,
+        long          Ticks
+    ) : ExpirationCommand;
 
     private record ClearCommand : ExpirationCommand;
 
@@ -175,8 +215,17 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         httpClient.Dispose();
     }
 
-    private void AddToExpirationQueue(object key) =>
-        expirationChannel.Writer.TryWrite(new AddCommand(key, StandardTimeManager.Instance().UTCNow.Ticks + CacheTTL.Ticks));
+    private void AddToExpirationQueue(string textureURL) =>
+        expirationChannel.Writer.TryWrite(new AddCommand(ExpirationKey.FromTexture(textureURL), StandardTimeManager.Instance().UTCNow.Ticks + CacheTTL.Ticks));
+
+    private void AddToExpirationQueue((uint ID, bool HQ, Language Language) iconKey) =>
+        expirationChannel.Writer.TryWrite(new AddCommand(ExpirationKey.FromIcon(iconKey), StandardTimeManager.Instance().UTCNow.Ticks + CacheTTL.Ticks));
+
+    private void QueueDownload(string url, ImageLoadingResult result)
+    {
+        if (!result.TryQueueDownload()) return;
+        downloadChannel.Writer.TryWrite(url);
+    }
 
     private async Task ProcessDownloadsAsync(CancellationToken ct)
     {
@@ -184,42 +233,46 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
         try
         {
-            await Parallel.ForEachAsync(reader.ReadAllAsync(ct), new ParallelOptions
-            {
-                MaxDegreeOfParallelism = 8,
-                CancellationToken      = ct
-            }, async (url, token) =>
-            {
-                if (!cachedTextures.TryGetValue(url, out var result) || result.IsCompleted)
-                    return;
-
-                try
+            await Parallel.ForEachAsync
+            (
+                reader.ReadAllAsync(ct),
+                new ParallelOptions
                 {
-                    if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+                    MaxDegreeOfParallelism = 8,
+                    CancellationToken      = ct
+                },
+                async (url, token) =>
+                {
+                    if (!cachedTextures.TryGetValue(url, out var result))
+                        return;
+
+                    if (!result.TryMarkLoading())
+                        return;
+
+                    try
                     {
-                        var content = await httpClient.GetByteArrayAsync(uri, token);
+                        if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+                        {
+                            var content = await httpClient.GetByteArrayAsync(uri, token);
 
-                        result.TextureWrap = await DService.Instance().Texture.CreateFromImageAsync(content, url, token);
+                            result.TextureWrap = await DService.Instance().Texture.CreateFromImageAsync(content, url, token);
+                        }
+                        else
+                        {
+                            result.ImmediateTexture = File.Exists(url)
+                                                          ? DService.Instance().Texture.GetFromFile(url)
+                                                          : DService.Instance().Texture.GetFromGame(url);
+                        }
+
+                        result.TryCompleteByTexture(StandardTimeManager.Instance().UTCNow, FailedCacheTTL);
                     }
-                    else
+                    catch (Exception ex) when (ex is not OperationCanceledException)
                     {
-                        result.ImmediateTexture = File.Exists(url)
-                                                      ? DService.Instance().Texture.GetFromFile(url)
-                                                      : DService.Instance().Texture.GetFromGame(url);
+                        Error($"[ImageHelper] 加载资源失败: {url}", ex);
+                        result.TryCompleteFailure(StandardTimeManager.Instance().UTCNow, FailedCacheTTL);
                     }
-
-                    result.CompletionSource.TrySetResult(result.Texture);
                 }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    Error($"[ImageHelper] 加载资源失败: {url}", ex);
-                    result.CompletionSource.TrySetResult(null);
-                }
-                finally
-                {
-                    result.IsCompleted = true;
-                }
-            });
+            );
         }
         catch (OperationCanceledException)
         {
@@ -229,7 +282,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
     private async Task CleanupLoopAsync(CancellationToken ct)
     {
-        var localQueue   = new PriorityQueue<object, long>();
+        var localQueue   = new PriorityQueue<ExpirationKey, long>();
         var reader       = expirationChannel.Reader;
         var readWaitTask = reader.WaitToReadAsync(ct).AsTask();
 
@@ -303,18 +356,18 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         }
     }
 
-    private void CheckAndProcessItem(object key, PriorityQueue<object, long> queue)
+    private void CheckAndProcessItem(ExpirationKey key, PriorityQueue<ExpirationKey, long> queue)
     {
         ImageLoadingResult? result  = null;
         var                 removed = false;
 
-        if (key is string urlKey)
+        if (key is { IsTexture: true, TextureURL: not null })
         {
-            if (cachedTextures.TryGetValue(urlKey, out result))
+            if (cachedTextures.TryGetValue(key.TextureURL, out result))
             {
                 if (StandardTimeManager.Instance().UTCNow - result.LastAccessTime > CacheTTL)
                 {
-                    if (cachedTextures.TryRemove(urlKey, out var removedItem))
+                    if (cachedTextures.TryRemove(key.TextureURL, out var removedItem))
                     {
                         removedItem.Dispose();
                         removed = true;
@@ -322,13 +375,13 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
                 }
             }
         }
-        else if (key is ValueTuple<uint, bool, Language> iconKey)
+        else if (key.IconKey.HasValue)
         {
-            if (cachedIcons.TryGetValue(iconKey, out result))
+            if (cachedIcons.TryGetValue(key.IconKey.Value, out result))
             {
                 if (StandardTimeManager.Instance().UTCNow - result.LastAccessTime > CacheTTL)
                 {
-                    if (cachedIcons.TryRemove(iconKey, out var removedItem))
+                    if (cachedIcons.TryRemove(key.IconKey.Value, out var removedItem))
                     {
                         removedItem.Dispose();
                         removed = true;
@@ -353,26 +406,61 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
             Language.ChineseTraditional => "cht",
             Language.Korean             => "ko",
             Language.TraditionalChinese => "tc",
-            _                           => ""
+            _                           => string.Empty
         };
 
-        if (variant.Length == 0) return string.Empty;
+        if (variant.Length == 0)
+            return string.Empty;
 
         return $"ui/icon/{iconID / 1000 * 1000:D6}/{variant}/{iconID:D6}_hr1.tex";
     }
 
     private class ImageLoadingResult : IDisposable
     {
-        public          ISharedImmediateTexture? ImmediateTexture { get; set; }
-        public          IDalamudTextureWrap?     TextureWrap      { get; set; }
-        public volatile bool                     IsCompleted;
+        private long lastAccessTimeTicks = StandardTimeManager.Instance().UTCNow.Ticks;
+        private int  stateValue          = (int)ImageLoadState.Pending;
+        private int  downloadQueued;
+        private long failedUntilTicks;
+        
+        public ISharedImmediateTexture? ImmediateTexture { get; set; }
+        public IDalamudTextureWrap?     TextureWrap      { get; set; }
 
         public readonly TaskCompletionSource<IDalamudTextureWrap?> CompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        private long     lastAccessTimeTicks = StandardTimeManager.Instance().UTCNow.Ticks;
-        public  DateTime LastAccessTime => new(lastAccessTimeTicks);
+        public  DateTime       LastAccessTime => new(lastAccessTimeTicks);
+        public  ImageLoadState State          => (ImageLoadState)Volatile.Read(ref stateValue);
+        public  bool           IsCompleted    => State is ImageLoadState.Ready or ImageLoadState.Failed or ImageLoadState.Disposed;
 
-        public void RefreshAccess() => Interlocked.Exchange(ref lastAccessTimeTicks, StandardTimeManager.Instance().UTCNow.Ticks);
+        public void RefreshAccess() =>
+            Interlocked.Exchange(ref lastAccessTimeTicks, StandardTimeManager.Instance().UTCNow.Ticks);
+
+        public bool TryQueueDownload() =>
+            Interlocked.CompareExchange(ref downloadQueued, 1, 0) == 0;
+
+        public bool TryMarkLoading() =>
+            Interlocked.CompareExchange(ref stateValue, (int)ImageLoadState.Loading, (int)ImageLoadState.Pending) == (int)ImageLoadState.Pending;
+
+        public bool IsFailureCooldownActive(DateTime nowUTC) =>
+            State == ImageLoadState.Failed && nowUTC.Ticks < Volatile.Read(ref failedUntilTicks);
+
+        public void TryCompleteByTexture(DateTime nowUTC, TimeSpan failedTtl)
+        {
+            if (Texture != null)
+            {
+                Volatile.Write(ref stateValue, (int)ImageLoadState.Ready);
+                CompletionSource.TrySetResult(Texture);
+                return;
+            }
+
+            TryCompleteFailure(nowUTC, failedTtl);
+        }
+
+        public void TryCompleteFailure(DateTime nowUTC, TimeSpan failedTtl)
+        {
+            Volatile.Write(ref failedUntilTicks, nowUTC.Ticks + failedTtl.Ticks);
+            Volatile.Write(ref stateValue,       (int)ImageLoadState.Failed);
+            CompletionSource.TrySetResult(null);
+        }
 
         public IDalamudTextureWrap? Texture
         {
@@ -385,6 +473,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
         public void Dispose()
         {
+            Volatile.Write(ref stateValue, (int)ImageLoadState.Disposed);
             CompletionSource.TrySetCanceled();
 
             try
@@ -399,5 +488,14 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
             ImmediateTexture = null;
             TextureWrap      = null;
         }
+    }
+
+    private enum ImageLoadState : byte
+    {
+        Pending  = 0,
+        Loading  = 1,
+        Ready    = 2,
+        Failed   = 3,
+        Disposed = 4
     }
 }
