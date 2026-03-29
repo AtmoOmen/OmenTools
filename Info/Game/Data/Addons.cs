@@ -31,6 +31,9 @@ public static unsafe class Addons
     public static AtkUnitBase* ScreenText             => AddonHelper.GetByName("_ScreenText");
     public static AtkUnitBase* FlyText                => AddonHelper.GetByName("_FlyText");
     public static AtkUnitBase* NotificationLoot       => AddonHelper.GetByName("_NotificationLoot");
+    public static AtkUnitBase* ChatLogPanel0          => AddonHelper.GetByName("ChatLogPanel_0");
+    public static AtkUnitBase* ChatLogPanel1          => AddonHelper.GetByName("ChatLogPanel_1");
+    public static AtkUnitBase* ChatLogPanel2          => AddonHelper.GetByName("ChatLogPanel_2");
 
     #endregion
 
