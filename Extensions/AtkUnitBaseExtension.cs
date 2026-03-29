@@ -10,6 +10,16 @@ public static unsafe class AtkUnitBaseExtension
 {
     extension(scoped ref AtkUnitBase addon)
     {
+        public T* As<T>() where T : unmanaged
+        {
+            fixed (AtkUnitBase* addonPtr = &addon)
+            {
+                if (addonPtr == null) return null;
+
+                return (T*)addonPtr;
+            }
+        }
+        
         public void CallbackNoUpdate(params object[] args)
         {
             fixed (AtkUnitBase* addonPtr = &addon)
@@ -17,6 +27,16 @@ public static unsafe class AtkUnitBaseExtension
                 if (addonPtr == null) return;
 
                 using var atkValues = new AtkValueArray(args);
+                addonPtr->FireCallback((uint)atkValues.Length, atkValues.Pointer);
+            }
+        }
+        
+        /// <remarks>请自行处理处理传入的 AtkValueArray 生命周期</remarks>
+        public void CallbackNoUpdate(scoped in AtkValueArray atkValues)
+        {
+            fixed (AtkUnitBase* addonPtr = &addon)
+            {
+                if (addonPtr == null) return;
                 addonPtr->FireCallback((uint)atkValues.Length, atkValues.Pointer);
             }
         }
@@ -28,6 +48,17 @@ public static unsafe class AtkUnitBaseExtension
                 if (addonPtr == null) return;
 
                 using var atkValues = new AtkValueArray(args);
+                addonPtr->FireCallback((uint)atkValues.Length, atkValues.Pointer, true);
+            }
+        }
+        
+        /// <remarks>请自行处理处理传入的 AtkValueArray 生命周期</remarks>
+        public void Callback(scoped in AtkValueArray atkValues)
+        {
+            fixed (AtkUnitBase* addonPtr = &addon)
+            {
+                if (addonPtr == null) return;
+
                 addonPtr->FireCallback((uint)atkValues.Length, atkValues.Pointer, true);
             }
         }
