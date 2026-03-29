@@ -12,7 +12,7 @@ public static class CommonExtension
             Convert.ToBase64String(Encoding.UTF8.GetBytes(config.ToJSON()));
 
         public string ToJSON() =>
-            JsonConvert.SerializeObject(config, JSONSettings);
+            JsonConvert.SerializeObject(config, JsonSerializerSettings.GetShared());
     }
 
     extension(string textData)
@@ -21,7 +21,7 @@ public static class CommonExtension
         {
             if (string.IsNullOrEmpty(textData)) return null;
 
-            return JsonConvert.DeserializeObject<T>(textData, JSONSettings);
+            return JsonConvert.DeserializeObject<T>(textData, JsonSerializerSettings.GetShared());
         }
 
         public T? FromJSONBase64<T>() where T : class
@@ -43,10 +43,8 @@ public static class CommonExtension
             {
                 var k = 0;
                 for (; k < len; k++)
-                {
                     if (needle[k] != haystack[i + k])
                         break;
-                }
 
                 if (k == len)
                 {

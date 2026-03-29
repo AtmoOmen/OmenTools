@@ -14,7 +14,7 @@ public static unsafe class ZoneClientExtension
             if (field != 0) return field;
 
             return field = GetFieldOffset(nameof(ZoneClient)) ?? 0;
-            
+
             static int? GetFieldOffset(string fieldName)
             {
                 var fieldInfo = typeof(NetworkModule).GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -36,8 +36,8 @@ public static unsafe class ZoneClientExtension
 
             var instancePtr = (nint)Framework.Instance()->NetworkModuleProxy;
             return (ZoneClient*)(instancePtr + ZoneClientOffset);
-            
-            
+
+
         }
     }
 }

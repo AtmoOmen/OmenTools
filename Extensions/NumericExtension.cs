@@ -5,6 +5,7 @@ using System.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Lumina.Data;
 using Lumina.Text.ReadOnly;
+using OmenTools.OmenService;
 
 namespace OmenTools.Extensions;
 
@@ -30,7 +31,7 @@ public static class NumericExtension
                 return new ReadOnlySeString(number.ToString());
 
             const string STR_ZHAO = "兆";
-            string       strYi   = "亿", strWan = "万", strZero = "零";
+            string       strYi    = "亿", strWan = "万", strZero = "零";
 
             switch (GameState.ClientLanguge)
             {

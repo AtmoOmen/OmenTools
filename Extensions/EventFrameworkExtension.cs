@@ -1,6 +1,7 @@
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using OmenTools.Interop.Game.Lumina;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 using LuminaAetheryte = Lumina.Excel.Sheets.Aetheryte;
 

@@ -2,6 +2,8 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using OmenTools.Info.Game.Enums;
+using OmenTools.OmenService;
 
 namespace OmenTools.Extensions;
 

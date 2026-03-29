@@ -20,18 +20,18 @@ public static unsafe class AtkExtension
 
                 var parts = partList->Parts;
                 if (parts == null) return 0;
-                
+
                 var asset = parts[ptr->PartId].UldAsset;
                 if (asset == null) return 0;
 
                 var resource = asset->AtkTexture.Resource;
                 if (resource == null) return 0;
-                
+
                 return resource->IconId;
             }
         }
     }
-    
+
     extension(scoped ref AtkTextNode node)
     {
         public Vector2 GetTextDrawSize(bool considerScale = false)
@@ -48,7 +48,7 @@ public static unsafe class AtkExtension
             }
         }
     }
-    
+
     extension(scoped ref AtkCollisionNode target)
     {
         public void Click(AtkEvent* eventData)

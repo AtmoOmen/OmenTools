@@ -1,26 +1,30 @@
 using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
+using OmenTools.Interop.Windows.Helpers;
 
 namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
     private static readonly Dictionary<(string text, float width), string> wrappedTextCache = [];
-    
+
     /// <summary>
-    /// 可选中的文本，支持链接识别和点击
+    ///     可选中的文本，支持链接识别和点击
     /// </summary>
     /// <param name="text">要显示的文本</param>
     /// <param name="lineLength">单行长度</param>
     /// <param name="links">要识别的链接类型</param>
     /// <param name="colorBG">背景颜色</param>
     /// <param name="id">控件ID</param>
-    public static void TextSelectable(string text, 
-                                      float lineLength, 
-                                      List<TextSelectableLinkTypeInfo>? links = null, 
-                                      uint? colorBG = null, 
-                                      string? id = null)
+    public static void TextSelectable
+    (
+        string                            text,
+        float                             lineLength,
+        List<TextSelectableLinkTypeInfo>? links   = null,
+        uint?                             colorBG = null,
+        string?                           id      = null
+    )
     {
         if (string.IsNullOrWhiteSpace(text)) return;
 
@@ -29,7 +33,7 @@ public static partial class ImGuiOm
 
         var lines      = wrappedText.Split('\n');
         var lineHeight = ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
-        var finalSize  = new Vector2(lineLength + (2 * ImGui.GetStyle().FramePadding.X), lines.Length * lineHeight);
+        var finalSize  = new Vector2(lineLength + 2 * ImGui.GetStyle().FramePadding.X, lines.Length * lineHeight);
 
         var textTemp   = wrappedText;
         var textLength = wrappedText.Length + 1;
@@ -40,15 +44,21 @@ public static partial class ImGuiOm
         using (ImRaii.PushColor(ImGuiCol.FrameBg, colorBG ?? ImGui.GetColorU32(ImGuiCol.WindowBg)))
         {
             ImGui.SetCursorPos(startPos - ImGui.GetStyle().FramePadding);
-            ImGui.InputTextMultiline(uniqueID, ref textTemp, textLength, finalSize,
-                                     ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.NoHorizontalScroll);
+            ImGui.InputTextMultiline
+            (
+                uniqueID,
+                ref textTemp,
+                textLength,
+                finalSize,
+                ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.NoHorizontalScroll
+            );
         }
 
         // 不禁用会崩
         if (ImGui.IsItemActivated())
-            DisableIME();
+            IMEHelper.Disable();
         if (ImGui.IsItemDeactivated())
-            EnableIME();
+            IMEHelper.Enable();
 
         if (links is { Count: > 0 })
             ProcessLinks(links, wrappedText, screenStartPos);
@@ -68,22 +78,28 @@ public static partial class ImGuiOm
 
                 foreach (var (lineIndex, startX, endX) in linkPositions)
                 {
-                    var linkStart = new Vector2(
+                    var linkStart = new Vector2
+                    (
                         screenStartPos.X + startX,
-                        screenStartPos.Y + (lineIndex * ImGui.GetTextLineHeightWithSpacing()));
+                        screenStartPos.Y + lineIndex * ImGui.GetTextLineHeightWithSpacing()
+                    );
 
-                    var linkEnd = new Vector2(
+                    var linkEnd = new Vector2
+                    (
                         screenStartPos.X + endX,
-                        linkStart.Y      + ImGui.GetTextLineHeightWithSpacing());
+                        linkStart.Y      + ImGui.GetTextLineHeightWithSpacing()
+                    );
 
                     var basicYOffset = (lineIndex + 1) * ImGui.GetStyle().ItemSpacing.Y;
 
                     // 下划线
-                    drawList.AddLine(
+                    drawList.AddLine
+                    (
                         new(linkStart.X, linkStart.Y + ImGui.GetTextLineHeightWithSpacing() - basicYOffset),
-                        new(linkEnd.X,   linkEnd.Y                                          - basicYOffset),
+                        new(linkEnd.X, linkEnd.Y                                            - basicYOffset),
                         linkType.UnderlineColor,
-                        1.0f);
+                        1.0f
+                    );
 
                     if (ImGui.IsMouseHoveringRect(linkStart, linkEnd))
                     {
@@ -96,13 +112,18 @@ public static partial class ImGuiOm
         }
     }
 
-    private static List<(int lineIndex, float startX, float endX)> FindLinkPositionsInWrappedText(
-        string wrappedText, int linkStartIndex, int linkLength)
+    private static List<(int lineIndex, float startX, float endX)> FindLinkPositionsInWrappedText
+    (
+        string wrappedText,
+        int    linkStartIndex,
+        int    linkLength
+    )
     {
         var result = new List<(int lineIndex, float startX, float endX)>();
         var lines  = wrappedText.Split('\n');
 
         var currentIndex = 0;
+
         for (var i = 0; i < lines.Length; i++)
         {
             var lineLength   = lines[i].Length;
@@ -124,7 +145,7 @@ public static partial class ImGuiOm
 
         return result;
     }
-    
+
     private static string WrapMixedText(string text, float maxWidth)
     {
         if (string.IsNullOrEmpty(text))
@@ -142,6 +163,7 @@ public static partial class ImGuiOm
 
         var i        = 0;
         var textSpan = text.AsSpan();
+
         while (i < textSpan.Length)
         {
             // 英文单词
@@ -173,6 +195,7 @@ public static partial class ImGuiOm
                 if (i < textSpan.Length && textSpan[i] == ' ')
                 {
                     var spaceWidth = GetCharWidth(' ');
+
                     if (currentLineWidth + spaceWidth <= maxWidth)
                     {
                         result.Append(' ');
@@ -236,21 +259,28 @@ public static partial class ImGuiOm
 
         return finalResult;
 
-        bool IsLatinChar(char c) =>
-            (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '@' || c == '&';
+        bool IsLatinChar(char c)
+        {
+            return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-' || c == '@' || c == '&';
+        }
 
-        float GetCharWidth(char c) => ImGui.CalcTextSize(c.ToString()).X;
+        float GetCharWidth(char c)
+        {
+            return ImGui.CalcTextSize(c.ToString()).X;
+        }
 
-        float GetWordWidth(ReadOnlySpan<char> word) =>
-            ImGui.CalcTextSize(word.ToString()).X;
+        float GetWordWidth(ReadOnlySpan<char> word)
+        {
+            return ImGui.CalcTextSize(word.ToString()).X;
+        }
     }
 }
 
 public class TextSelectableLinkTypeInfo
 {
-    public Regex               Pattern        { get; }
-    public Action<Match>       ClickCallback  { get; }
-    public uint                UnderlineColor { get; }
+    public Regex         Pattern        { get; }
+    public Action<Match> ClickCallback  { get; }
+    public uint          UnderlineColor { get; }
 
     public TextSelectableLinkTypeInfo(string pattern, Action<Match> clickCallback, uint underlineColor)
     {

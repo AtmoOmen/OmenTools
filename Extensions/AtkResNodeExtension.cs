@@ -2,6 +2,8 @@ using System.Numerics;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using OmenTools.Info.Models;
+using OmenTools.Interop.Game.Models;
 
 namespace OmenTools.Extensions;
 

@@ -4,14 +4,16 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
-    public static void CircleOutlined(
+    public static void CircleOutlined
+    (
         Vector2        center,
         float          radius,
         Vector4        fillColor,
         Vector4        outlineColor     = default,
         float          outlineThickness = 1.5f,
         float          opacity          = 1f,
-        ImDrawListPtr? drawList         = null)
+        ImDrawListPtr? drawList         = null
+    )
     {
         drawList ??= ImGui.GetBackgroundDrawList();
 

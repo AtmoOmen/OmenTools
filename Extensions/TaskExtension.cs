@@ -7,14 +7,14 @@ public static class TaskExtension
         public static async ValueTask WaitForConditionAsync(Func<bool> condition, TimeSpan? timeout = null, CancellationToken? token = null)
         {
             if (condition()) return;
-            
+
             token ??= CancellationToken.None;
 
             long deadlineTick = 0;
             if (timeout.HasValue)
                 deadlineTick = Environment.TickCount64 + (long)timeout.Value.TotalMilliseconds;
 
-            var interval = TimeSpan.FromMilliseconds(100); 
+            var interval = TimeSpan.FromMilliseconds(100);
 
             while (!token.Value.IsCancellationRequested)
             {

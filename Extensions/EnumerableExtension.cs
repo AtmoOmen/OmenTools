@@ -41,7 +41,7 @@ public static class EnumerableExtension
             foreach (var x in values)
                 collection.Remove(x);
         }
-        
+
         public void RemoveRange(IEnumerable<T> values)
         {
             foreach (var x in values)

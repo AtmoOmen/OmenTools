@@ -74,7 +74,6 @@ public static class ReflectionExtension
             var stringLeaIndex = -1;
 
             for (var i = 0; i <= functionBytes.Length - 7; i++)
-            {
                 if (functionBytes[i]     == leaStringPattern[0] &&
                     functionBytes[i + 1] == leaStringPattern[1] &&
                     functionBytes[i + 2] == leaStringPattern[2])
@@ -92,7 +91,6 @@ public static class ReflectionExtension
                         break;
                     }
                 }
-            }
 
             if (stringLeaIndex == -1)
                 return nint.Zero;
@@ -100,7 +98,6 @@ public static class ReflectionExtension
             var searchLimit = Math.Max(0, stringLeaIndex - 100);
 
             for (var i = stringLeaIndex - 1; i >= searchLimit; i--)
-            {
                 // lea r9, [rip + ...]
                 if (i + 7                < functionBytes.Length   &&
                     functionBytes[i]     == leaFunctionPattern[0] &&
@@ -114,7 +111,6 @@ public static class ReflectionExtension
 
                     return (nint)targetFunctionAddress;
                 }
-            }
 
             return nint.Zero;
         }

@@ -1,6 +1,7 @@
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using OmenTools.Interop.Game.Models;
 
 namespace OmenTools.Extensions;
 

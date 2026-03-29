@@ -85,5 +85,4 @@ public static unsafe class LogMessageExtension
             }
         }
     }
-
 }

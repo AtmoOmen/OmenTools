@@ -6,9 +6,9 @@ public static partial class ImGuiOm
     {
         if (string.IsNullOrWhiteSpace(text)) return;
         if (!ImGui.IsItemHovered()) return;
-        
+
         using var id = ImRaii.PushId($"TooltipHover_{text}_{warpPos}");
-        
+
         using (ImRaii.Tooltip())
         using (ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos))
             ImGui.TextUnformatted(text);

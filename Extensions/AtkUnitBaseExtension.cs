@@ -1,6 +1,8 @@
 using System.Numerics;
 using Dalamud.Game.NativeWrapper;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using OmenTools.Info.Models;
+using OmenTools.Interop.Game.Models;
 
 namespace OmenTools.Extensions;
 
@@ -206,7 +208,7 @@ public static unsafe class AtkUnitBaseExtension
     {
         public AtkUnitBase* ToStruct() =>
             (AtkUnitBase*)addon.Address;
-        
+
         public T* ToStruct<T>() where T : unmanaged =>
             (T*)addon.Address;
     }

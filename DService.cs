@@ -1,168 +1,261 @@
 using System.Reflection;
-using Dalamud.Interface.Textures;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
-using OmenTools.Abstracts;
+using OmenTools.Dalamud.Services.AetheryteList;
+using OmenTools.Dalamud.Services.ObjectTable;
+using OmenTools.Interop.Game;
+using OmenTools.Interop.Game.Models;
+using OmenTools.OmenService.Abstractions;
+using OmenTools.Threading.TaskHelper;
 
 namespace OmenTools;
 
 public sealed class DService
 {
-    public static bool Initialized { get; private set; }
+    #region 公开接口
 
-    private static DService? InternalInstance { get; set; }
-    
-    public static void Init(IDalamudPluginInterface pluginInterface)
+    public static void Init(IDalamudPluginInterface pluginInterface, Func<DServiceInitOptions>? optionsFunc = null)
     {
-        if (Initialized) return;
-        Initialized = true;
-        
-        pluginInterface.Inject(Instance());
+        if (IsInitialized) return;
 
-        Instance().PI            = pluginInterface;
-        Instance().UIBuilder     = pluginInterface.UiBuilder;
-        Instance().ObjectTable   = new ObjectTable();
-        Instance().AetheryteList = new AetheryteList();
+        var instance = Instance();
+        pluginInterface.Inject(instance);
 
-        var services = Assembly.GetExecutingAssembly().GetTypes()
-                               .Where(t => typeof(OmenServiceBase).IsAssignableFrom(t) && !t.IsAbstract)
-                               .ToList();
+        instance.ResetServiceState();
 
-        foreach (var serviceType in services)
+        instance.InitOptions = optionsFunc != null ? optionsFunc() : new();
+
+        instance.PI            = pluginInterface;
+        instance.UIBuilder     = pluginInterface.UiBuilder;
+        instance.ObjectTable   = new ObjectTable();
+        instance.AetheryteList = new AetheryteList();
+
+        try
         {
-            if (Activator.CreateInstance(serviceType) is not OmenServiceBase serviceInstance) continue;
-            Instance().OmenServices.TryAdd(serviceType, serviceInstance);
+            var serviceTypes = instance.DiscoverEnabledServiceTypes();
+            instance.InstantiateServices(serviceTypes);
+
+            foreach (var serviceType in serviceTypes)
+            {
+                var service = instance.OmenServices[serviceType];
+                service.PublicInit();
+                instance.initializedServiceOrder.Add(serviceType);
+            }
+
+            IsInitialized = true;
         }
-
-        var invalidServices = new List<OmenServiceBase>();
-        foreach (var instance in Instance().OmenServices)
+        catch
         {
-            if (instance.Value.IsDisposed) continue;
-
-            try
-            {
-                instance.Value.Init();
-            }
-            catch (Exception ex)
-            {
-                Error($"在加载 OmenService {instance.Value} 的过程中发生错误", ex);
-
-                invalidServices.Add(instance.Value);
-            }
-        }
-
-        foreach (var instance in invalidServices)
-        {
-            if (instance.IsDisposed) continue;
-
-            try
-            {
-                instance.Uninit();
-            }
-            catch
-            {
-                // ignored
-            }
+            instance.UninitOmenServices();
+            instance.ResetServiceState();
+            IsInitialized = false;
+            throw;
         }
     }
 
     public static void Uninit()
     {
-        if (!Initialized) return;
+        var instance = InternalInstance;
+        if (instance is null)
+            return;
 
-        foreach (var instance in Instance().OmenServices)
-        {
-            if (instance.Value.IsDisposed) continue;
-
-            try
-            {
-                instance.Value.Uninit();
-                instance.Value.SetDisposed();
-            }
-            catch (Exception ex)
-            {
-                Error($"在卸载 OmenService {instance.Value} 的过程中发生错误", ex);
-            }
-        }
+        instance.UninitOmenServices();
 
         TaskHelper.DisposeAll();
         MemoryPatch.DisposeAll();
-        ThrottlerHelper.Uninit();
-        
-        if (Instance().TrayNotification is { } trayNotification)
-        {
-            trayNotification.Dispose();
-            Instance().TrayNotification = null;
-        }
-        
+
         CompSig.DisposeAllHooks();
-        
-        Initialized = false;
+
+        instance.ResetServiceState();
+        IsInitialized = false;
     }
 
-    public static DService Instance() => 
+    public static DService Instance() =>
         InternalInstance ??= new();
-    
-    private Dictionary<Type, OmenServiceBase> OmenServices { get; set; } = [];
-    
+
     public T? GetOmenService<T>() where T : OmenServiceBase =>
         (T?)OmenServices.GetValueOrDefault(typeof(T));
 
-    [PluginService] public IAddonEventManager           AddonEvent          { get; private set; } = null!;
-    [PluginService] public IAddonLifecycle              AddonLifecycle      { get; private set; } = null!;
-    [PluginService] public IAgentLifecycle              AgentLifecycle      { get; private set; } = null!; 
-    [PluginService] public IBuddyList                   BuddyList           { get; private set; } = null!;
-    [PluginService] public IChatGui                     Chat                { get; private set; } = null!;
-    [PluginService] public IClientState                 ClientState         { get; private set; } = null!;
-    [PluginService] public ICommandManager              Command             { get; private set; } = null!;
-    [PluginService] public ICondition                   Condition           { get; private set; } = null!;
-    [PluginService] public IContextMenu                 ContextMenu         { get; private set; } = null!;
-    [PluginService] public IDataManager                 Data                { get; private set; } = null!;
-    [PluginService] public IDtrBar                      DTRBar              { get; private set; } = null!;
-    [PluginService] public IDutyState                   DutyState           { get; private set; } = null!;
-    [PluginService] public IFateTable                   Fate                { get; private set; } = null!;
-    [PluginService] public IFlyTextGui                  FlyText             { get; private set; } = null!;
-    [PluginService] public IFramework                   Framework           { get; private set; } = null!;
-    [PluginService] public IGameConfig                  GameConfig          { get; private set; } = null!;
-    [PluginService] public IGameGui                     GameGUI             { get; private set; } = null!;
-    [PluginService] public IGameInteropProvider         Hook                { get; private set; } = null!;
-    [PluginService] public IGameInventory               GameInventory       { get; private set; } = null!;
-    [PluginService] public IGameLifecycle               GameLifecycle       { get; private set; } = null!;
-    [PluginService] public IGamepadState                Gamepad             { get; private set; } = null!;
-    [PluginService] public IJobGauges                   JobGauges           { get; private set; } = null!;
-    [PluginService] public IKeyState                    KeyState            { get; private set; } = null!;
-    [PluginService] public IMarketBoard                 MarketBoard         { get; private set; } = null!;
-    [PluginService] public INamePlateGui                NamePlate           { get; private set; } = null!;
-    [PluginService] public INotificationManager         DalamudNotification { get; private set; } = null!;
-    [PluginService] public IPartyFinderGui              PartyFinder         { get; private set; } = null!;
-    [PluginService] public IPartyList                   PartyList           { get; private set; } = null!;
-    [PluginService] public IPlayerState                 PlayerState         { get; private set; } = null!;
-    [PluginService] public IPluginLog                   Log                 { get; private set; } = null!;
-    [PluginService] public ISeStringEvaluator           SeStringEvaluator   { get; private set; } = null!;
-    [PluginService] public ISelfTestRegistry            SelfTestRegistry    { get; private set; }
-    [PluginService] public ISigScanner                  SigScanner          { get; private set; }
-    [PluginService] public ITextureProvider             Texture             { get; private set; } = null!;
-    [PluginService] public ITextureReadbackProvider     TextureReadback     { get; private set; } = null!;
-    [PluginService] public ITextureSubstitutionProvider TextureSubstitution { get; private set; } = null!;
-    [PluginService] public ITitleScreenMenu             TitleScreenMenu     { get; private set; } = null!;
-    [PluginService] public IToastGui                    Toast               { get; private set; } = null!;
-    [PluginService] public IUnlockState                 UnlockState         { get; private set; } = null!;
-    
+    #endregion
+
+    #region 生命周期
+
+    public static bool IsDisposed { get; private set; }
+
+    public static bool IsInitialized { get; private set; }
+
+    private static DService? InternalInstance { get; set; }
+
+    #endregion
+
+    #region 私有
+
+    private DServiceInitOptions InitOptions { get; set; } = new();
+
+    private Dictionary<Type, OmenServiceBase> OmenServices { get; set; } = [];
+
+    private List<Type> initializedServiceOrder = [];
+
+    private List<Type> DiscoverEnabledServiceTypes() =>
+        Assembly.GetExecutingAssembly()
+                .GetTypes()
+                .Where(t => typeof(OmenServiceBase).IsAssignableFrom(t) && !t.IsAbstract)
+                .Where(t => !InitOptions.IsDisabled(t))
+                .ToList();
+
+    private void InstantiateServices(IEnumerable<Type> serviceTypes)
+    {
+        foreach (var serviceType in serviceTypes)
+        {
+            if (Activator.CreateInstance(serviceType) is not OmenServiceBase serviceInstance)
+                throw new InvalidOperationException($"无法创建 OmenService 实例: {serviceType.FullName}");
+
+            OmenServices.TryAdd(serviceType, serviceInstance);
+        }
+    }
+
+    private void UninitOmenServices()
+    {
+        foreach (var serviceType in initializedServiceOrder.AsEnumerable().Reverse())
+        {
+            if (OmenServices.TryGetValue(serviceType, out var service))
+                service.PublicUninit();
+        }
+    }
+
+    private void ResetServiceState()
+    {
+        OmenServices            = [];
+        initializedServiceOrder = [];
+        InitOptions             = new();
+    }
+
+    #endregion
+
+    #region Dalamud 服务
+
+    [PluginService]
+    public IAddonEventManager AddonEvent { get; private set; } = null!;
+
+    [PluginService]
+    public IAddonLifecycle AddonLifecycle { get; private set; } = null!;
+
+    [PluginService]
+    public IAgentLifecycle AgentLifecycle { get; private set; } = null!;
+
+    [PluginService]
+    public IBuddyList BuddyList { get; private set; } = null!;
+
+    [PluginService]
+    public IChatGui Chat { get; private set; } = null!;
+
+    [PluginService]
+    public IClientState ClientState { get; private set; } = null!;
+
+    [PluginService]
+    public ICommandManager Command { get; private set; } = null!;
+
+    [PluginService]
+    public ICondition Condition { get; private set; } = null!;
+
+    [PluginService]
+    public IContextMenu ContextMenu { get; private set; } = null!;
+
+    [PluginService]
+    public IDataManager Data { get; private set; } = null!;
+
+    [PluginService]
+    public IDtrBar DTRBar { get; private set; } = null!;
+
+    [PluginService]
+    public IDutyState DutyState { get; private set; } = null!;
+
+    [PluginService]
+    public IFateTable Fate { get; private set; } = null!;
+
+    [PluginService]
+    public IFlyTextGui FlyText { get; private set; } = null!;
+
+    [PluginService]
+    public IFramework Framework { get; private set; } = null!;
+
+    [PluginService]
+    public IGameConfig GameConfig { get; private set; } = null!;
+
+    [PluginService]
+    public IGameGui GameGUI { get; private set; } = null!;
+
+    [PluginService]
+    public IGameInteropProvider Hook { get; private set; } = null!;
+
+    [PluginService]
+    public IGameInventory GameInventory { get; private set; } = null!;
+
+    [PluginService]
+    public IGameLifecycle GameLifecycle { get; private set; } = null!;
+
+    [PluginService]
+    public IGamepadState Gamepad { get; private set; } = null!;
+
+    [PluginService]
+    public IJobGauges JobGauges { get; private set; } = null!;
+
+    [PluginService]
+    public IKeyState KeyState { get; private set; } = null!;
+
+    [PluginService]
+    public IMarketBoard MarketBoard { get; private set; } = null!;
+
+    [PluginService]
+    public INamePlateGui NamePlate { get; private set; } = null!;
+
+    [PluginService]
+    public INotificationManager DalamudNotification { get; private set; } = null!;
+
+    [PluginService]
+    public IPartyFinderGui PartyFinder { get; private set; } = null!;
+
+    [PluginService]
+    public IPartyList PartyList { get; private set; } = null!;
+
+    [PluginService]
+    public IPlayerState PlayerState { get; private set; } = null!;
+
+    [PluginService]
+    public IPluginLog Log { get; private set; } = null!;
+
+    [PluginService]
+    public ISeStringEvaluator SeStringEvaluator { get; private set; } = null!;
+
+    [PluginService]
+    public ISelfTestRegistry SelfTestRegistry { get; private set; }
+
+    [PluginService]
+    public ISigScanner SigScanner { get; private set; }
+
+    [PluginService]
+    public ITextureProvider Texture { get; private set; } = null!;
+
+    [PluginService]
+    public ITextureReadbackProvider TextureReadback { get; private set; } = null!;
+
+    [PluginService]
+    public ITextureSubstitutionProvider TextureSubstitution { get; private set; } = null!;
+
+    [PluginService]
+    public ITitleScreenMenu TitleScreenMenu { get; private set; } = null!;
+
+    [PluginService]
+    public IToastGui Toast { get; private set; } = null!;
+
+    [PluginService]
+    public IUnlockState UnlockState { get; private set; } = null!;
+
     public IDalamudPluginInterface PI            { get; private set; } = null!;
     public IUiBuilder              UIBuilder     { get; private set; } = null!;
     public IAetheryteList          AetheryteList { get; private set; } = null!;
     public IObjectTable            ObjectTable   { get; private set; } = null!;
 
-    public TrayNotification? TrayNotification
-    {
-        get;
-        set
-        {
-            field?.Dispose();
-            field = value;
-        }
-    }
-    
-    public ISharedImmediateTexture? DalamudNotificationIcon { get; set; }
+    #endregion
 }

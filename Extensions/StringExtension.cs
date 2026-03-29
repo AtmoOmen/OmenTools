@@ -173,12 +173,14 @@ public static partial class StringExtension
                             var count = matchIdx - currentPos;
 
                             if (count > 0)
+                            {
                                 Unsafe.CopyBlockUnaligned
                                 (
                                     ref Unsafe.As<char, byte>(ref Unsafe.Add(ref destRef, currentPos)),
                                     ref Unsafe.As<char, byte>(ref Unsafe.Add(ref srcRef,  currentPos)),
                                     (uint)(count * 2)
                                 );
+                            }
 
                             rSpan.CopyTo(span[matchIdx..]);
 
@@ -195,12 +197,14 @@ public static partial class StringExtension
                         var remaining = srcSpan.Length - currentPos;
 
                         if (remaining > 0)
+                        {
                             Unsafe.CopyBlockUnaligned
                             (
                                 ref Unsafe.As<char, byte>(ref Unsafe.Add(ref destRef, currentPos)),
                                 ref Unsafe.As<char, byte>(ref Unsafe.Add(ref srcRef,  currentPos)),
                                 (uint)(remaining * 2)
                             );
+                        }
                     }
                 );
                 return true;
@@ -358,7 +362,7 @@ public static partial class StringExtension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string? NullIfEmpty() =>
             string.IsNullOrEmpty(input) ? null : input;
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string? NullIfWhitespace() =>
             string.IsNullOrWhiteSpace(input) ? null : input;

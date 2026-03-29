@@ -3,6 +3,9 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Excel.Sheets;
+using OmenTools.Info.Game.Data.Icons;
+using OmenTools.Interop.Game.Lumina;
+using OmenTools.OmenService;
 using Aetheryte = Lumina.Excel.Sheets.Aetheryte;
 using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
 using GameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
@@ -13,7 +16,7 @@ namespace OmenTools.Extensions;
 public static class GameObjectExtension
 {
     private static readonly HashSet<ObjectKind> ValidMTQObjectKinds = [ObjectKind.EventObj, ObjectKind.EventNpc];
-    
+
     extension(IGameObject? gameObject)
     {
         public unsafe bool TargetInteract()
@@ -33,7 +36,7 @@ public static class GameObjectExtension
             if (gameObject == null) return false;
             return gameObject.ToStruct()->IsMTQ();
         }
-        
+
         public unsafe bool IsReachable()
         {
             if (gameObject == null) return false;
@@ -48,13 +51,13 @@ public static class GameObjectExtension
             fixed (GameObject* ptr = &gameObject)
             {
                 if (ptr == null) return false;
-                
-                if (ptr->RenderFlags != 0    ||
-                    !ptr->GetIsTargetable()  ||
+
+                if (ptr->RenderFlags != 0   ||
+                    !ptr->GetIsTargetable() ||
                     !ValidMTQObjectKinds.Contains(ptr->ObjectKind))
                     return false;
 
-                return QuestIcon.IsQuest(ptr->NamePlateIconId) ||
+                return QuestIcons.IsQuest(ptr->NamePlateIconId) ||
                        ptr->ObjectKind == ObjectKind.EventObj && ptr->TargetStatus == 15;
             }
         }
@@ -67,7 +70,7 @@ public static class GameObjectExtension
 
                 var localPlayer = Control.GetLocalPlayer();
                 if (localPlayer == null) return false;
-                
+
                 return EventFramework.Instance()->CheckInteractRange((GameObject*)localPlayer, ptr, 23, false);
             }
         }

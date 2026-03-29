@@ -1,5 +1,6 @@
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
+using OmenTools.Dalamud.Helpers;
 
 namespace OmenTools.Extensions;
 
@@ -9,7 +10,7 @@ public static class HookExtension
     {
         public Hook<T> HookFromMemberFunction<T>(Type memberFunctions, string name, T detour)
             where T : Delegate =>
-            hook.HookFromAddress(GetMemberFuncByName(memberFunctions, name), detour);
+            hook.HookFromAddress(DalamudReflector.GetMemberFuncByName(memberFunctions, name), detour);
 
         public unsafe Hook<T> HookFromVirtualTable<T, TVTable>(TVTable* vTable, string name, T detour)
             where T : Delegate

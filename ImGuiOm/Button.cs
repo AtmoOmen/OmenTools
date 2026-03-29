@@ -158,7 +158,7 @@ public static partial class ImGuiOm
         var padding         = ImGui.GetStyle().FramePadding.X;
         var spacing         = 3f * ImGuiHelpers.GlobalScale;
         var buttonWidth     = MathF.Max(iconSize.X, textSize.X) + padding              * 2;
-        var buttonHeight    = iconSize.Y                       + textSize.Y + padding * 2 + spacing;
+        var buttonHeight    = iconSize.Y                        + textSize.Y + padding * 2 + spacing;
 
         var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
 
@@ -214,7 +214,7 @@ public static partial class ImGuiOm
         var cursorScreenPos = ImGui.GetCursorScreenPos();
         var padding         = ImGui.GetStyle().FramePadding.X;
         var spacing         = ImGui.GetStyle().ItemSpacing.X;
-        var buttonWidth     = iconSize.X                       + textSize.X + padding * 2 + spacing;
+        var buttonWidth     = iconSize.X                        + textSize.X + padding * 2 + spacing;
         var buttonHeight    = MathF.Max(iconSize.Y, textSize.Y) + padding              * 2;
 
         var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
@@ -267,7 +267,7 @@ public static partial class ImGuiOm
         var padding      = ImGui.GetStyle().FramePadding.X;
         var spacing      = 3f * ImGuiHelpers.GlobalScale;
         var buttonWidth  = MathF.Max(iconSize.X, textSize.X) + padding              * 2;
-        var buttonHeight = iconSize.Y                       + textSize.Y + padding * 2 + spacing;
+        var buttonHeight = iconSize.Y                        + textSize.Y + padding * 2 + spacing;
 
         var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
 

@@ -38,7 +38,7 @@ public static partial class ImGuiOm
             )
         );
     }
-    
+
     public static void AddGlowRect
     (
         ImDrawListPtr drawList,

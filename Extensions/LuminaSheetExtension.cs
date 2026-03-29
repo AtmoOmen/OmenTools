@@ -5,11 +5,26 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
+using OmenTools.Info.Game.Enums;
+using OmenTools.Interop.Game.Helpers;
+using OmenTools.Interop.Game.Lumina;
 
 namespace OmenTools.Extensions;
 
 public static unsafe class LuminaSheetExtension
 {
+    extension(scoped in TerritoryType zone)
+    {
+        public List<MapMarker> GetMapMarkers()
+        {
+            var rowID = zone.RowId;
+            return LuminaGetter.Get<Map>()
+                               .Where(x => x.TerritoryType.RowId == rowID)
+                               .SelectMany(x => x.GetMapMarkers())
+                               .ToList();
+        }
+    }
+
     extension(scoped in Map map)
     {
         public string GetTexturePath()
@@ -36,7 +51,7 @@ public static unsafe class LuminaSheetExtension
             var mapRow = aetheryte.Territory.ValueNullable?.Map.ValueNullable;
             if (mapRow == null) return Vector2.Zero;
 
-            return MapToWorld(aetheryte.GetPositionMap(), (Map)mapRow);
+            return PositionHelper.MapToWorld(aetheryte.GetPositionMap(), (Map)mapRow);
         }
 
         public Vector2 GetPositionMap()
@@ -51,7 +66,7 @@ public static unsafe class LuminaSheetExtension
             var result = LuminaGetter.GetSub<MapMarker>()
                                      .SelectMany(x => x)
                                      .Where(x => x.DataType == 3 && x.RowId == mapRow.MapMarkerRange && x.DataKey.RowId == aetheryteRowID)
-                                     .Select(x => TextureToMap(x.X, x.Y, mapRow.SizeFactor))
+                                     .Select(x => PositionHelper.TextureToMap(x.X, x.Y, mapRow.SizeFactor))
                                      .FirstOrDefault();
 
             return result;
@@ -90,7 +105,7 @@ public static unsafe class LuminaSheetExtension
             };
         }
 
-        public uint GetIcon(ClassJobIconType type = ClassJobIconType.Framed) => 
+        public uint GetIcon(ClassJobIconType type = ClassJobIconType.Framed) =>
             job.RowId + (uint)type;
     }
 
@@ -105,7 +120,7 @@ public static unsafe class LuminaSheetExtension
         public Vector3 GetPosition() =>
             new(level.X, level.Y, level.Z);
     }
-    
+
     extension(scoped in ClassJob job)
     {
         public ClassJobType ToJobType()
@@ -123,22 +138,22 @@ public static unsafe class LuminaSheetExtension
             {
                 case 1:
                     return ClassJobType.Tank;
-                
+
                 case 2:
                     return ClassJobType.PureHealer;
-                
+
                 case 3:
                     return ClassJobType.Melee;
-                
+
                 case 4:
                     return ClassJobType.PhysicalRanged;
-                
+
                 case 5:
                     return ClassJobType.MagicalRanged;
-                
+
                 case 6:
-                    return  ClassJobType.ShieldHealer;
-                
+                    return ClassJobType.ShieldHealer;
+
                 default:
                     return ClassJobType.None;
             }

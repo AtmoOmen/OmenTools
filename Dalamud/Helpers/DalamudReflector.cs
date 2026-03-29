@@ -1,0 +1,223 @@
+﻿using System.Collections;
+using System.Reflection;
+using System.Runtime.Loader;
+using Dalamud.Plugin;
+
+namespace OmenTools.Dalamud.Helpers;
+
+public static class DalamudReflector
+{
+    private const BindingFlags ALL_FLAGS = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+
+    /// <summary>
+    ///     直接调用过不了混淆, 所以反射
+    /// </summary>
+    public static nint GetMemberFuncByName(Type staticType, string propertyName) =>
+        (nint)(staticType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ??
+               throw new MissingMemberException(staticType.FullName, propertyName));
+
+    public static object GetPluginManager() =>
+        DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Service`1", true)
+                ?.MakeGenericType(DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Plugin.Internal.PluginManager", true)!).GetMethod("Get")
+                ?.Invoke(null, BindingFlags.Default, null, [], null);
+
+    public static async Task<List<object>> GetPluginMaster(string masterURL)
+    {
+        List<object> plugins = null;
+
+        try
+        {
+            var happyHTTPClient = GetService("Dalamud.Networking.Http.HappyHttpClient");
+            var pluginRepository = Activator.CreateInstance
+            (
+                DService.Instance().PI.GetType().Assembly
+                        .GetType("Dalamud.Plugin.Internal.Types.PluginRepository")!,
+                happyHTTPClient,
+                masterURL,
+                true
+            );
+
+            if (pluginRepository == null) return null;
+
+            // 临时性, 等 API15 换成 ReloadAsync 不赛马
+            var reloadPluginMasterTask = TryReload(pluginRepository, "ReloadPluginMasterAsync");
+            var reloadAsyncTask        = TryReload(pluginRepository, "ReloadAsync");
+            var firstCompleted         = await Task.WhenAny(reloadPluginMasterTask, reloadAsyncTask);
+
+            if (!await firstCompleted)
+            {
+                var secondTask = ReferenceEquals(firstCompleted, reloadPluginMasterTask) ? reloadAsyncTask : reloadPluginMasterTask;
+                if (!await secondTask) return null;
+            }
+
+            var pluginMaster = pluginRepository.GetType()
+                                               .GetProperty("PluginMaster")!
+                                               .GetValue(pluginRepository) as IEnumerable;
+
+            plugins = pluginMaster?.Cast<object>().ToList();
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+
+        return plugins;
+
+        static async Task<bool> TryReload(object repository, string methodName)
+        {
+            try
+            {
+                var reloadTask = repository.Call<Task>(methodName, []);
+                if (reloadTask == null) return false;
+                await reloadTask;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    public static object GetService(string serviceFullName) =>
+        DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Service`1", true)
+                ?.MakeGenericType(DService.Instance().PI.GetType().Assembly.GetType(serviceFullName, true)!).GetMethod("Get")
+                ?.Invoke(null, BindingFlags.Default, null, [], null);
+
+    public static bool TryGetLocalPlugin(IDalamudPlugin instance, out object localPlugin, out AssemblyLoadContext context, out Type type)
+    {
+        type        = null;
+        context     = null;
+        localPlugin = null;
+
+        try
+        {
+            var pluginManager    = GetPluginManager();
+            var installedPlugins = (IList)pluginManager.GetType().GetProperty("InstalledPlugins")?.GetValue(pluginManager);
+            if (installedPlugins == null) return false;
+
+            foreach (var t in installedPlugins)
+            {
+                type = t.GetType().Name == "LocalDevPlugin" ? t.GetType().BaseType : t.GetType();
+                if (type == null) continue;
+
+                var plugin = (IDalamudPlugin)type
+                                             .GetField("instance", BindingFlags.NonPublic | BindingFlags.Instance)
+                                             ?.GetValue(t);
+
+                if (plugin == instance)
+                {
+                    localPlugin = t;
+                    context = type.GetField("loader", ALL_FLAGS)
+                                  ?.GetValue(t)
+                                  ?.GetFieldOrProperty<AssemblyLoadContext>("context");
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        catch
+        {
+            // ignored
+        }
+
+        return false;
+    }
+
+    public static bool HasRepo(string repoURL)
+    {
+        var conf     = GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
+        var repoList = (IEnumerable)conf.GetFieldOrProperty("ThirdRepoList");
+
+        if (repoList != null)
+        {
+            foreach (var r in repoList)
+            {
+                if ((string)r.GetFieldOrProperty("Url") == repoURL)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static void AddRepo(string repoURL, bool enabled)
+    {
+        var conf     = GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
+        var repoList = (IEnumerable)conf.GetFieldOrProperty("ThirdRepoList");
+
+        if (repoList != null)
+        {
+            foreach (var r in repoList)
+            {
+                if ((string)r.GetFieldOrProperty("Url") == repoURL)
+                    return;
+            }
+        }
+
+        var instance = Activator.CreateInstance(DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Configuration.ThirdPartyRepoSettings")!);
+        if (instance == null) return;
+
+        instance.SetFieldOrProperty("Url",       repoURL);
+        instance.SetFieldOrProperty("IsEnabled", enabled);
+        conf.GetFieldOrProperty<IList>("ThirdRepoList").Add(instance);
+    }
+
+    public static async Task<bool> AddPlugin(string masterURL, string pluginInternalName)
+    {
+        var plugins = await GetPluginMaster(masterURL);
+        if (plugins == null || plugins.Count == 0) return false;
+
+        var pluginManifest = plugins.FirstOrDefault(x => (string)x.GetFieldOrProperty("InternalName") == pluginInternalName);
+        if (pluginManifest == null) return false;
+
+        object pm    = null;
+        var    error = string.Empty;
+
+        try
+        {
+            pm = GetPluginManager();
+        }
+        catch (Exception e)
+        {
+            error = e.Message;
+        }
+
+        if (pm == null || !string.IsNullOrWhiteSpace(error))
+            return false;
+
+        try
+        {
+            if (!HasRepo(masterURL)) AddRepo(masterURL, true);
+            ReloadPluginMasters();
+
+            var installCall = pm.Call<Task>("InstallPluginAsync", [pluginManifest, false, PluginLoadReason.Installer, null]);
+            await installCall;
+
+            var localPlugin = installCall.GetFieldOrProperty("Result");
+            if ((bool?)localPlugin?.GetFieldOrProperty("IsLoaded") ?? false)
+                return true;
+        }
+        catch
+        {
+            // ignored
+        }
+
+        return false;
+    }
+
+    public static void ReloadPluginMasters()
+    {
+        var mgr          = GetService("Dalamud.Plugin.Internal.PluginManager");
+        var pluginReload = mgr?.GetType().GetMethod("SetPluginReposFromConfigAsync", BindingFlags.Instance | BindingFlags.Public);
+        pluginReload?.Invoke(mgr, [true]);
+    }
+
+    public static void SaveDalamudConfig()
+    {
+        var conf       = GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
+        var configSave = conf?.GetType().GetMethod("QueueSave", BindingFlags.Instance | BindingFlags.Public);
+        configSave?.Invoke(conf, null);
+    }
+}

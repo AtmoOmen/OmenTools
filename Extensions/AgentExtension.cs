@@ -1,6 +1,7 @@
 using Dalamud.Game.NativeWrapper;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using OmenTools.Interop.Game.Models;
 
 namespace OmenTools.Extensions;
 
@@ -30,12 +31,12 @@ public static unsafe class AgentExtension
             return returnValue;
         }
     }
-    
+
     extension(scoped in AgentInterfacePtr agent)
     {
         public AgentInterface* ToStruct() =>
             (AgentInterface*)agent.Address;
-        
+
         public T* ToStruct<T>() where T : unmanaged =>
             (T*)agent.Address;
     }

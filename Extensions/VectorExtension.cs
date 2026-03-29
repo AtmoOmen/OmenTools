@@ -23,6 +23,6 @@ public static class VectorExtension
             new(vector2.X, y, vector2.Y);
 
         public Vector2 Scale() =>
-            vector2 * GlobalFontScale;
+            vector2 * GlobalUIScale;
     }
 }
