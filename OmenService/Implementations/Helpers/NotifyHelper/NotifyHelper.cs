@@ -42,9 +42,9 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     public SeString? ChatPrefix { get; set; }
 
-    public ushort ChatErrorTextColor { get; set; }
+    public ushort ChatErrorTextColor { get; set; } = 17;
 
-    public ushort ChatErrorSeStringTextColor { get; set; }
+    public ushort ChatErrorSeStringTextColor { get; set; } = 17;
 
     protected override void Uninit()
     {
