@@ -86,7 +86,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     显示游戏内悬浮文本提示。
     /// </summary>
-    public static unsafe void ContentHint
+    public unsafe void ContentHint
     (
         string                                message,
         RaptureAtkModule.TextGimmickHintStyle style    = RaptureAtkModule.TextGimmickHintStyle.Info,
@@ -95,14 +95,14 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var hundredMilliseconds = ToHundredMilliseconds(duration ?? Instance().ContentHintDuration);
+        var hundredMilliseconds = ToHundredMilliseconds(duration ?? ContentHintDuration);
         RaptureAtkModule.Instance()->ShowTextGimmickHint(message, style, hundredMilliseconds);
     }
 
-    public static void ContentHintBlue(string message, TimeSpan? duration = null) =>
+    public void ContentHintBlue(string message, TimeSpan? duration = null) =>
         ContentHint(message, RaptureAtkModule.TextGimmickHintStyle.Info, duration);
 
-    public static void ContentHintRed(string message, TimeSpan? duration = null) =>
+    public void ContentHintRed(string message, TimeSpan? duration = null) =>
         ContentHint(message, RaptureAtkModule.TextGimmickHintStyle.Warning, duration);
 
     #endregion
@@ -112,7 +112,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     发送 Dalamud 通知，并按需补充系统托盘提醒。
     /// </summary>
-    public static void Notify
+    public void Notify
     (
         string               message,
         NotificationType     type    = NotificationType.Info,
@@ -122,8 +122,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var helper = Instance();
-        var plan   = BuildNotificationPlan(helper, message, type, title, options);
+        var plan   = BuildNotificationPlan(this, message, type, title, options);
 
         DService.Instance().DalamudNotification.AddNotification
         (
@@ -146,19 +145,19 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             }
         );
 
-        TryShowTrayNotification(helper, plan);
+        TryShowTrayNotification(this, plan);
     }
 
-    public static void NotificationSuccess(string message, string? title = null, NotificationOptions? options = null) =>
+    public void NotificationSuccess(string message, string? title = null, NotificationOptions? options = null) =>
         Notify(message, NotificationType.Success, title, options);
 
-    public static void NotificationWarning(string message, string? title = null, NotificationOptions? options = null) =>
+    public void NotificationWarning(string message, string? title = null, NotificationOptions? options = null) =>
         Notify(message, NotificationType.Warning, title, options);
 
-    public static void NotificationError(string message, string? title = null, NotificationOptions? options = null) =>
+    public void NotificationError(string message, string? title = null, NotificationOptions? options = null) =>
         Notify(message, NotificationType.Error, title, options);
 
-    public static void NotificationInfo(string message, string? title = null, NotificationOptions? options = null) =>
+    public void NotificationInfo(string message, string? title = null, NotificationOptions? options = null) =>
         Notify(message, NotificationType.Info, title, options);
 
     #endregion
@@ -168,7 +167,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     输出错误聊天文本，可选前缀与颜色。
     /// </summary>
-    public static void ChatError(string message, SeString? prefix = null, ushort? textColor = null)
+    public void ChatError(string message, SeString? prefix = null, ushort? textColor = null)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -178,7 +177,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     输出带富文本的错误聊天消息，仅对纯文本片段着色。
     /// </summary>
-    public static void ChatError(SeString message, SeString? prefix = null, ushort? rawTextColor = null)
+    public void ChatError(SeString message, SeString? prefix = null, ushort? rawTextColor = null)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -188,7 +187,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     输出普通聊天文本，可选前缀与颜色。
     /// </summary>
-    public static void Chat(string message, SeString? prefix = null, ushort? textColor = null)
+    public void Chat(string message, SeString? prefix = null, ushort? textColor = null)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -198,7 +197,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     输出带富文本的普通聊天消息。
     /// </summary>
-    public static void Chat(SeString message, SeString? prefix = null, ushort? rawTextColor = null)
+    public void Chat(SeString message, SeString? prefix = null, ushort? rawTextColor = null)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -260,10 +259,10 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         _                        => ToolTipIcon.Info
     };
 
-    private static void PrintChat(string message, SeString? prefix, bool isError, ushort? textColor)
+    private void PrintChat(string message, SeString? prefix, bool isError, ushort? textColor)
     {
         var builder = new SeStringBuilder();
-        AppendPrefix(builder, prefix ?? Instance().ChatPrefix);
+        AppendPrefix(builder, prefix ?? ChatPrefix);
 
         if (textColor is { } color)
             builder.AddUiForeground(message, color);
@@ -277,10 +276,10 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             chat.Print(builder.Build());
     }
 
-    private static void PrintChat(SeString message, SeString? prefix, bool isError, ushort? rawTextColor)
+    private void PrintChat(SeString message, SeString? prefix, bool isError, ushort? rawTextColor)
     {
         var builder = new SeStringBuilder();
-        AppendPrefix(builder, prefix ?? Instance().ChatPrefix);
+        AppendPrefix(builder, prefix ?? ChatPrefix);
 
         foreach (var payload in message.Payloads)
         {

@@ -96,7 +96,7 @@ public static class UpstreamOpcode
         catch (Exception ex)
         {
             DLog.Error($"尝试读取 OPCODE {name} 时发生错误", ex);
-            NotifyHelper.Chat
+            NotifyHelper.Instance().Chat
             (
                 $"尝试读取 OPCODE {name} 发生错误, 请在 Discord 内上报\n" +
                 $"Error while reading OPCODE {name}. Please report on Discord."
@@ -122,7 +122,7 @@ public static class UpstreamOpcode
         }
 
         DLog.Error($"尝试读取 OPCODE {name} 时发生错误", exception);
-        NotifyHelper.Chat
+        NotifyHelper.Instance().Chat
         (
             $"尝试读取 OPCODE {name} 发生错误, 请在 Discord 内上报\n" +
             $"Error while reading OPCODE {name}. Please report on Discord."

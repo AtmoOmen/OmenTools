@@ -115,7 +115,7 @@ public class FontManager : OmenServiceBase<FontManager>
         if (task.IsFaulted)
         {
             fontTasks.TryRemove(size, out _);
-            NotifyHelper.NotificationError($"字体 (大小: {size}) 构建失败");
+            NotifyHelper.Instance().NotificationError($"字体 (大小: {size}) 构建失败");
             DLog.Error($"字体 (大小: {size}) 构建失败", task.Exception);
         }
 
@@ -147,7 +147,7 @@ public class FontManager : OmenServiceBase<FontManager>
                 }
                 catch (Exception ex)
                 {
-                    NotifyHelper.NotificationError($"字体 (大小: {size}) 预构建失败");
+                    NotifyHelper.Instance().NotificationError($"字体 (大小: {size}) 预构建失败");
                     DLog.Error($"字体 (大小: {size}) 预构建失败", ex);
                 }
             }
@@ -294,7 +294,7 @@ public class FontManager : OmenServiceBase<FontManager>
         }
         catch (Exception ex)
         {
-            NotifyHelper.NotificationError($"字体 (大小: {size}) 构建失败");
+            NotifyHelper.Instance().NotificationError($"字体 (大小: {size}) 构建失败");
             DLog.Error($"构建字体 (大小: {size}) 失败", ex);
             throw;
         }
