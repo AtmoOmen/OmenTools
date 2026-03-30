@@ -17,20 +17,6 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     private static int                     LifecycleState = LIFECYCLE_ACTIVE;
     private static int                     PendingAcquireCount;
 
-    protected override void Init()
-    {
-        if (Volatile.Read(ref LifecycleState) == LIFECYCLE_ACTIVE && !Volatile.Read(ref SharedCancellationSource).IsCancellationRequested)
-            return;
-
-        var nextSource = new CancellationTokenSource();
-        var oldSource  = Interlocked.Exchange(ref SharedCancellationSource, nextSource);
-
-        Volatile.Write(ref PendingAcquireCount, 0);
-        Volatile.Write(ref LifecycleState,      LIFECYCLE_ACTIVE);
-
-        TryDispose(oldSource);
-    }
-
     protected override void Uninit()
     {
         if (Interlocked.Exchange(ref LifecycleState, LIFECYCLE_UNINITIALIZING) != LIFECYCLE_ACTIVE)
