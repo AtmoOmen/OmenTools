@@ -9,32 +9,13 @@ namespace OmenTools.Threading.TaskHelper;
 
 public partial class TaskHelper : IDisposable
 {
-    private static readonly ConcurrentDictionary<TaskHelper, byte> Instances = [];
-
-    internal static void DisposeAll()
-    {
-        var disposedCount = 0;
-
-        foreach (var instance in Instances.Keys)
-        {
-            if (instance is not { IsDisposed: false }) continue;
-
-            instance.Dispose();
-            disposedCount++;
-        }
-
-        if (disposedCount > 0)
-            DLog.Debug($"[TaskHelper] 已自动清理了 {disposedCount} 个队列管理器");
-
-        Instances.Clear();
-    }
-
     private static Channel<ITaskHelperMessage> CreateTaskChannel() =>
         Channel.CreateUnbounded<ITaskHelperMessage>(new() { SingleReader = true });
 
     public TaskHelper()
     {
-        Instances.TryAdd(this, 0);
+        DService.Instance().RegTaskHelper(this);
+        
         QueueCounts.TryAdd(1, 0);
         QueueCounts.TryAdd(0, 0);
         _ = ProcessChannelAsync(CancelSource.Token);
@@ -45,7 +26,7 @@ public partial class TaskHelper : IDisposable
         if (IsDisposed) return;
         IsDisposed = true;
 
-        Instances.TryRemove(this, out _);
+        DService.Instance().UnregTaskHelper(this);
 
         try
         {

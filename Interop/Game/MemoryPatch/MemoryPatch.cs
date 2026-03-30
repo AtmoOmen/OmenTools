@@ -13,8 +13,6 @@ public class MemoryPatch : IDisposable
 
     public bool IsValid => Address != nint.Zero;
 
-    private static readonly List<MemoryPatch> MemoryPatches = [];
-
     public MemoryPatch(nint address, IReadOnlyCollection<byte?> bytes, bool startEnabled = false)
     {
         if (address == nint.Zero) return;
@@ -25,7 +23,7 @@ public class MemoryPatch : IDisposable
         OldBytes = oldBytes;
         NewBytes = MergeBytes(trimmedBytes, OldBytes);
 
-        MemoryPatches.Add(this);
+        DService.Instance().RegMemoryPatch(this);
         if (startEnabled)
             Enable();
     }
@@ -67,11 +65,9 @@ public class MemoryPatch : IDisposable
     public virtual void Dispose()
     {
         Disable();
+        DService.Instance().UnregMemoryPatch(this);
         GC.SuppressFinalize(this);
     }
-
-    internal static void DisposeAll() =>
-        MemoryPatches.ForEach(patch => patch.Dispose());
 
     #region 私有
 

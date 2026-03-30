@@ -1,12 +1,14 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.Loader;
+using Dalamud.Hooking;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using OmenTools.Dalamud;
 using OmenTools.Dalamud.Services.AetheryteList;
 using OmenTools.Dalamud.Services.ObjectTable;
 using OmenTools.Interop.Game;
-using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
 using OmenTools.Threading.TaskHelper;
 
@@ -18,7 +20,7 @@ public sealed class DService
 
     public static void Init(IDalamudPluginInterface pluginInterface, Func<DServiceInitOptions>? optionsFunc = null)
     {
-        if (IsInitialized) return;
+        if (IsInitialized || IsDisposed) return;
 
         var instance = Instance();
         pluginInterface.Inject(instance);
@@ -46,34 +48,50 @@ public sealed class DService
 
             IsInitialized = true;
         }
-        catch
+        catch (Exception ex)
         {
-            instance.UninitOmenServices();
-            instance.ResetServiceState();
-            IsInitialized = false;
+            DLog.Error("[OmenTools] 初始化各 OmenService 时发生错误", ex);
+            Uninit();
+
             throw;
         }
-        
+
         var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
-        var owner = Instance().PI.GetPlugin(alc!);
-        Instance().Log.Information($"OmenTools ALC: {alc}, Owner: {owner?.InternalName ?? "<shared>"}");
+        var owner = pluginInterface.GetPlugin(alc);
+        DLog.Debug($"[OmenTools] 初始化完成\nALC: {alc}; 持有方: {owner?.InternalName ?? "<shared>"}");
     }
 
     public static void Uninit()
     {
-        var instance = InternalInstance;
-        if (instance is null)
+        if (IsDisposed)
             return;
+        
+        if (InternalInstance == null) 
+            return;
+        
+        try
+        {
+            InternalInstance.UninitOmenServices();
 
-        instance.UninitOmenServices();
+            InternalInstance.DisposeTrackedTaskHelpers();
+            InternalInstance.DisposeTrackedMemoryPatches();
+            InternalInstance.DisposeTrackedHooks();
 
-        TaskHelper.DisposeAll();
-        MemoryPatch.DisposeAll();
-
-        CompSig.DisposeAllHooks();
-
-        instance.ResetServiceState();
-        IsInitialized = false;
+            InternalInstance.ResetServiceState();
+        }
+        catch (Exception ex)
+        {
+            DLog.Error("[OmenTools] 卸载各 OmenService 时发生错误", ex);
+            throw;
+        }
+        finally
+        {
+            IsDisposed = true;
+        }
+        
+        var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
+        var owner = Instance().PI.GetPlugin(alc);
+        DLog.Debug($"[OmenTools] 卸载完成\nALC: {alc}; 持有方: {owner?.InternalName ?? "<shared>"}");
     }
 
     public static DService Instance() =>
@@ -99,6 +117,10 @@ public sealed class DService
     private DServiceInitOptions InitOptions { get; set; } = new();
 
     private Dictionary<Type, OmenServiceBase> OmenServices { get; set; } = [];
+    
+    private ConcurrentDictionary<TaskHelper, byte>   TaskHelpers   { get; set; } = [];
+    private ConcurrentDictionary<MemoryPatch, byte>  MemoryPatches { get; set; } = [];
+    private ConcurrentDictionary<IDalamudHook, byte> Hooks         { get; set; } = [];
 
     private List<Type> initializedServiceOrder = [];
 
@@ -114,7 +136,7 @@ public sealed class DService
         foreach (var serviceType in serviceTypes)
         {
             if (Activator.CreateInstance(serviceType) is not OmenServiceBase serviceInstance)
-                throw new InvalidOperationException($"无法创建 OmenService 实例: {serviceType.FullName}");
+                throw new InvalidOperationException($"鏃犳硶鍒涘缓 OmenService 瀹炰緥: {serviceType.FullName}");
 
             OmenServices.TryAdd(serviceType, serviceInstance);
         }
@@ -131,9 +153,73 @@ public sealed class DService
 
     private void ResetServiceState()
     {
-        OmenServices            = [];
+        OmenServices  = [];
+        TaskHelpers   = [];
+        MemoryPatches = [];
+        Hooks         = [];
+        
         initializedServiceOrder = [];
         InitOptions             = new();
+    }
+
+    internal void RegTaskHelper(TaskHelper taskHelper)
+    {
+        ArgumentNullException.ThrowIfNull(taskHelper);
+        TaskHelpers.TryAdd(taskHelper, 0);
+    }
+
+    internal void UnregTaskHelper(TaskHelper taskHelper)
+    {
+        ArgumentNullException.ThrowIfNull(taskHelper);
+        TaskHelpers.TryRemove(taskHelper, out _);
+    }
+
+    internal void RegMemoryPatch(MemoryPatch memoryPatch)
+    {
+        ArgumentNullException.ThrowIfNull(memoryPatch);
+        MemoryPatches.TryAdd(memoryPatch, 0);
+    }
+
+    internal void UnregMemoryPatch(MemoryPatch memoryPatch)
+    {
+        ArgumentNullException.ThrowIfNull(memoryPatch);
+        MemoryPatches.TryRemove(memoryPatch, out _);
+    }
+
+    internal void RegHook(IDalamudHook hook)
+    {
+        ArgumentNullException.ThrowIfNull(hook);
+        Hooks.TryAdd(hook, 0);
+    }
+
+    private void DisposeTrackedTaskHelpers()
+    {
+        foreach (var taskHelper in TaskHelpers.Keys)
+        {
+            if (taskHelper is not { IsDisposed: false }) continue;
+            taskHelper.Dispose();
+        }
+
+        TaskHelpers.Clear();
+    }
+
+    private void DisposeTrackedMemoryPatches()
+    {
+        foreach (var memoryPatch in MemoryPatches.Keys)
+            memoryPatch.Dispose();
+
+        MemoryPatches.Clear();
+    }
+
+    private void DisposeTrackedHooks()
+    {
+        foreach (var hook in Hooks.Keys)
+        {
+            if (hook is not { IsDisposed: false }) continue;
+            hook.Dispose();
+        }
+
+        Hooks.Clear();
     }
 
     #endregion

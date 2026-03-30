@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using Dalamud.Hooking;
 using OmenTools.Dalamud;
@@ -10,19 +9,6 @@ namespace OmenTools.Interop.Game.Models;
 /// </summary>
 public record CompSig
 {
-    private static readonly ConcurrentDictionary<IDalamudHook, byte> Hooks = [];
-
-    public static void DisposeAllHooks()
-    {
-        foreach (var hook in Hooks.Keys)
-        {
-            if (hook is not { IsDisposed: false }) continue;
-            hook.Dispose();
-        }
-
-        Hooks.Clear();
-    }
-
     public string Signature { get; init; }
 
     public CompSig(string signature) =>
@@ -70,7 +56,7 @@ public record CompSig
     public Hook<T> GetHook<T>(T detour) where T : Delegate
     {
         var hook = DService.Instance().Hook.HookFromSignature(Signature, detour);
-        Hooks.TryAdd(hook, 0);
+        DService.Instance().RegHook(hook);
         return hook;
     }
 }
