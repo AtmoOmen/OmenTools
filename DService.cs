@@ -58,7 +58,7 @@ public sealed class DService
 
         var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
         var owner = pluginInterface.GetPlugin(alc);
-        DLog.Debug($"[OmenTools] 初始化完成\nALC: {alc}; 持有方: {owner?.InternalName ?? "<shared>"}");
+        DLog.Debug($"[OmenTools] 初始化完成\tALC: {alc}; 持有方: {owner?.InternalName ?? "<shared>"}");
     }
 
     public static void Uninit()
@@ -91,7 +91,7 @@ public sealed class DService
         
         var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
         var owner = Instance().PI.GetPlugin(alc);
-        DLog.Debug($"[OmenTools] 卸载完成\nALC: {alc}; 持有方: {owner?.InternalName ?? "<shared>"}");
+        DLog.Debug($"[OmenTools] 卸载完成\tALC: {alc}; 持有方: {owner?.InternalName ?? "<shared>"}");
     }
 
     public static DService Instance() =>
