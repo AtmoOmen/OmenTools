@@ -9,27 +9,27 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     private const int LIFECYCLE_ACTIVE         = 0;
     private const int LIFECYCLE_UNINITIALIZING = 1;
 
-    private static readonly ConcurrentDictionary<string, HttpClient>            Clients                  = [];
-    private static readonly ConcurrentDictionary<long, CancellationTokenSource> SharedCancellationLeases = [];
+    private readonly ConcurrentDictionary<string, HttpClient>            clients                  = [];
+    private readonly ConcurrentDictionary<long, CancellationTokenSource> sharedCancellationLeases = [];
 
-    private static CancellationTokenSource SharedCancellationSource = new();
-    private static long                    SharedCancellationLeaseIdentity;
-    private static int                     LifecycleState = LIFECYCLE_ACTIVE;
-    private static int                     PendingAcquireCount;
+    private CancellationTokenSource sharedCancellationSource = new();
+    private long                    sharedCancellationLeaseIdentity;
+    private int                     lifecycleState = LIFECYCLE_ACTIVE;
+    private int                     pendingAcquireCount;
 
     protected override void Uninit()
     {
-        if (Interlocked.Exchange(ref LifecycleState, LIFECYCLE_UNINITIALIZING) != LIFECYCLE_ACTIVE)
+        if (Interlocked.Exchange(ref lifecycleState, LIFECYCLE_UNINITIALIZING) != LIFECYCLE_ACTIVE)
             return;
 
-        var rootSource = Interlocked.Exchange(ref SharedCancellationSource, CreateCanceledSource());
+        var rootSource = Interlocked.Exchange(ref sharedCancellationSource, CreateCanceledSource());
         WaitPendingAcquireCompleted();
 
-        CancellationTokenSource[] leaseSources = [.. SharedCancellationLeases.Values];
-        SharedCancellationLeases.Clear();
+        CancellationTokenSource[] leaseSources = [.. sharedCancellationLeases.Values];
+        sharedCancellationLeases.Clear();
 
-        HttpClient[] clients = [.. Clients.Values];
-        Clients.Clear();
+        HttpClient[] existedClients = [.. clients.Values];
+        clients.Clear();
 
         TryCancel(rootSource);
 
@@ -41,7 +41,7 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
 
         TryDispose(rootSource);
 
-        foreach (var client in clients)
+        foreach (var client in existedClients)
             client.Dispose();
     }
 
@@ -51,29 +51,29 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     /// </summary>
     /// <param name="cancellationToken">可选的外部取消令牌，会与共享令牌自动联动。</param>
     /// <returns>请使用 <c>using var</c> 保存返回值，并通过 <see cref="SharedCancellationLease.Token" /> 取出令牌。</returns>
-    public static SharedCancellationLease AcquireSharedCancellation(CancellationToken cancellationToken = default)
+    public SharedCancellationLease AcquireSharedCancellation(CancellationToken cancellationToken = default)
     {
-        if (Volatile.Read(ref LifecycleState) != LIFECYCLE_ACTIVE)
+        if (Volatile.Read(ref lifecycleState) != LIFECYCLE_ACTIVE)
             return SharedCancellationLease.Canceled;
 
-        Interlocked.Increment(ref PendingAcquireCount);
+        Interlocked.Increment(ref pendingAcquireCount);
 
         try
         {
-            if (Volatile.Read(ref LifecycleState) != LIFECYCLE_ACTIVE)
+            if (Volatile.Read(ref lifecycleState) != LIFECYCLE_ACTIVE)
                 return SharedCancellationLease.Canceled;
 
-            var rootSource = Volatile.Read(ref SharedCancellationSource);
+            var rootSource = Volatile.Read(ref sharedCancellationSource);
             var leaseSource = cancellationToken.CanBeCanceled
                                   ? CancellationTokenSource.CreateLinkedTokenSource(rootSource.Token, cancellationToken)
                                   : CancellationTokenSource.CreateLinkedTokenSource(rootSource.Token);
 
-            var leaseID = Interlocked.Increment(ref SharedCancellationLeaseIdentity);
-            SharedCancellationLeases[leaseID] = leaseSource;
+            var leaseID = Interlocked.Increment(ref sharedCancellationLeaseIdentity);
+            sharedCancellationLeases[leaseID] = leaseSource;
 
-            if (Volatile.Read(ref LifecycleState) != LIFECYCLE_ACTIVE)
+            if (Volatile.Read(ref lifecycleState) != LIFECYCLE_ACTIVE)
             {
-                if (SharedCancellationLeases.TryRemove(leaseID, out var removedSource))
+                if (sharedCancellationLeases.TryRemove(leaseID, out var removedSource))
                 {
                     TryCancel(removedSource);
                     TryDispose(removedSource);
@@ -87,7 +87,7 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
                 leaseSource.Token,
                 () =>
                 {
-                    SharedCancellationLeases.TryRemove(leaseID, out _);
+                    sharedCancellationLeases.TryRemove(leaseID, out _);
                     TryDispose(leaseSource);
                 }
             );
@@ -98,7 +98,7 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
         }
         finally
         {
-            Interlocked.Decrement(ref PendingAcquireCount);
+            Interlocked.Decrement(ref pendingAcquireCount);
         }
     }
 
@@ -106,24 +106,24 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     ///     获取一个 <see cref="HttpClient" /> 实例；如无特殊需求，尽量使用默认实例。
     /// </summary>
     /// <param name="name">建议带上前缀与用途，例如 <c>AutoAntiCensorShip.Default</c>。</param>
-    public static HttpClient Get(string name = "default") =>
-        Clients.GetOrAdd(name, static _ => CreateClient());
+    public HttpClient Get(string name = "default") =>
+        clients.GetOrAdd(name, static _ => CreateClient());
 
     /// <summary>
     ///     获取一个 <see cref="HttpClient" /> 实例；如无特殊需求，尽量使用默认实例。
     /// </summary>
     /// <param name="handler">自定义的 <see cref="HttpClientHandler" />。</param>
     /// <param name="name">建议带上前缀与用途，建议使用短横线分隔，例如 <c>AutoAntiCensorShip-Default</c>。</param>
-    public static HttpClient Get(HttpClientHandler handler, string name = "default") =>
-        Clients.GetOrAdd(name, static (_, state) => CreateClient(state), handler);
+    public HttpClient Get(HttpClientHandler handler, string name = "default") =>
+        clients.GetOrAdd(name, static (_, state) => CreateClient(state), handler);
 
     /// <summary>
     ///     获取一个 <see cref="HttpClient" /> 实例，并在首次创建时执行额外配置。
     /// </summary>
     /// <param name="name">实例名称。</param>
     /// <param name="configure">首次创建实例时的配置逻辑。</param>
-    public static HttpClient Get(string name, Action<HttpClient> configure) =>
-        Clients.GetOrAdd(name, static (_, state) => CreateClient(configure: state), configure);
+    public HttpClient Get(string name, Action<HttpClient> configure) =>
+        clients.GetOrAdd(name, static (_, state) => CreateClient(configure: state), configure);
 
     /// <summary>
     ///     获取一个 <see cref="HttpClient" /> 实例，并在首次创建时执行额外配置。
@@ -131,8 +131,10 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     /// <param name="handler">自定义的 <see cref="HttpClientHandler" />。</param>
     /// <param name="name">实例名称。</param>
     /// <param name="configure">首次创建实例时的配置逻辑。</param>
-    public static HttpClient Get(HttpClientHandler handler, string name, Action<HttpClient> configure) =>
-        Clients.GetOrAdd(name, static (_, state) => CreateClient(state.Handler, state.Configure), (Handler: handler, Configure: configure));
+    public HttpClient Get(HttpClientHandler handler, string name, Action<HttpClient> configure) =>
+        clients.GetOrAdd(name, static (_, state) => CreateClient(state.Handler, state.Configure), (Handler: handler, Configure: configure));
+
+    #region 辅助方法
 
     private static HttpClient CreateClient(HttpMessageHandler? handler = null, Action<HttpClient>? configure = null)
     {
@@ -151,11 +153,11 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
         return source;
     }
 
-    private static void WaitPendingAcquireCompleted()
+    private void WaitPendingAcquireCompleted()
     {
         var spinner = new SpinWait();
 
-        while (Volatile.Read(ref PendingAcquireCount) > 0)
+        while (Volatile.Read(ref pendingAcquireCount) > 0)
             spinner.SpinOnce();
     }
 
@@ -170,30 +172,17 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
         }
     }
 
-    private static void TryDispose(IDisposable disposable)
+    private static void TryDispose(CancellationTokenSource source)
     {
         try
         {
-            disposable.Dispose();
+            source.Dispose();
         }
         catch (ObjectDisposedException)
         {
+            // ignored
         }
     }
 
-    public sealed class SharedCancellationLease
-    (
-        CancellationToken token,
-        Action?           release = null
-    ) : IDisposable
-    {
-        private Action? release = release;
-
-        internal static SharedCancellationLease Canceled { get; } = new(new(true));
-
-        public CancellationToken Token { get; } = token;
-
-        public void Dispose() =>
-            Interlocked.Exchange(ref release, null)?.Invoke();
-    }
+    #endregion
 }

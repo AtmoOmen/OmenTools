@@ -125,80 +125,52 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         }
     }
 
-    public void ClearAll()
-    {
-        expirationChannel.Writer.TryWrite(new ClearCommand());
-
-        foreach (var value in cachedTextures.Values)
-            value.Dispose();
-        cachedTextures.Clear();
-
-        foreach (var value in cachedIcons.Values)
-            value.Dispose();
-        cachedIcons.Clear();
-    }
-
+    #region 私有
 
     private static readonly TimeSpan CacheTTL       = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan FailedCacheTTL = TimeSpan.FromSeconds(5);
-
-    private readonly Channel<string> downloadChannel = Channel.CreateUnbounded<string>
-    (
-        new UnboundedChannelOptions
-        {
-            SingleReader = true,
-            SingleWriter = false
-        }
-    );
-
-    private readonly Channel<ExpirationCommand> expirationChannel = Channel.CreateUnbounded<ExpirationCommand>
-    (
-        new UnboundedChannelOptions
-        {
-            SingleReader = true,
-            SingleWriter = false
-        }
-    );
-
-    private abstract record ExpirationCommand;
-
-    private readonly record struct ExpirationKey
-    {
-        public string?                                TextureURL { get; init; }
-        public (uint ID, bool HQ, Language Language)? IconKey    { get; init; }
-        public bool                                   IsTexture  => TextureURL != null;
-
-        public static ExpirationKey FromTexture(string textureURL) =>
-            new()
+        private static readonly TimeSpan FailedCacheTTL = TimeSpan.FromSeconds(5);
+    
+        private readonly Channel<string> downloadChannel = Channel.CreateUnbounded<string>
+        (
+            new UnboundedChannelOptions
             {
-                TextureURL = textureURL
-            };
-
-        public static ExpirationKey FromIcon((uint ID, bool HQ, Language Language) iconKey) =>
-            new()
+                SingleReader = true,
+                SingleWriter = false
+            }
+        );
+    
+        private readonly Channel<ExpirationCommand> expirationChannel = Channel.CreateUnbounded<ExpirationCommand>
+        (
+            new UnboundedChannelOptions
             {
-                IconKey = iconKey
-            };
-    }
+                SingleReader = true,
+                SingleWriter = false
+            }
+        );
+        
+        private readonly ConcurrentDictionary<string, ImageLoadingResult>                                cachedTextures = [];
+        private readonly ConcurrentDictionary<(uint ID, bool HQ, Language Language), ImageLoadingResult> cachedIcons    = [];
+    
+        private HttpClient HTTPClient {
+            get
+            {
+                if (field != null)
+                    return field;
+                
+                return field = HTTPClientHelper.Instance().Get
+                       (
+                           "OmenTools.ImageHelper",
+                           client => client.Timeout = TimeSpan.FromSeconds(30)
+                       );
+            }
+            
+        }
+    
+        private readonly CancellationTokenSource globalCancelSource = new();
 
-    private record AddCommand
-    (
-        ExpirationKey Key,
-        long          Ticks
-    ) : ExpirationCommand;
-
-    private record ClearCommand : ExpirationCommand;
-
-    private readonly ConcurrentDictionary<string, ImageLoadingResult>                                cachedTextures = [];
-    private readonly ConcurrentDictionary<(uint ID, bool HQ, Language Language), ImageLoadingResult> cachedIcons    = [];
-
-    private readonly HttpClient httpClient = new()
-    {
-        Timeout               = TimeSpan.FromSeconds(30),
-        DefaultRequestHeaders = { { "User-Agent", "OmenTools/1.0" } }
-    };
-
-    private readonly CancellationTokenSource globalCancelSource = new();
+    #endregion
+    
+    #region 继承
 
     protected override void Init()
     {
@@ -211,7 +183,24 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         globalCancelSource.Cancel();
         ClearAll();
         globalCancelSource.Dispose();
-        httpClient.Dispose();
+        HTTPClient.Dispose();
+    }
+
+    #endregion
+
+    #region 辅助方法
+
+    private void ClearAll()
+    {
+        expirationChannel.Writer.TryWrite(new ClearCommand());
+
+        foreach (var value in cachedTextures.Values)
+            value.Dispose();
+        cachedTextures.Clear();
+
+        foreach (var value in cachedIcons.Values)
+            value.Dispose();
+        cachedIcons.Clear();
     }
 
     private void AddToExpirationQueue(string textureURL) =>
@@ -252,7 +241,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
                     {
                         if (Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
                         {
-                            var content = await httpClient.GetByteArrayAsync(uri, token);
+                            var content = await HTTPClient.GetByteArrayAsync(uri, token);
 
                             result.TextureWrap = await DService.Instance().Texture.CreateFromImageAsync(content, url, token);
                         }
@@ -414,6 +403,10 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         return $"ui/icon/{iconID / 1000 * 1000:D6}/{variant}/{iconID:D6}_hr1.tex";
     }
 
+    #endregion
+
+    #region 辅助类
+
     private class ImageLoadingResult : IDisposable
     {
         private long lastAccessTimeTicks = StandardTimeManager.Instance().UTCNow.Ticks;
@@ -489,6 +482,35 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         }
     }
 
+    private readonly record struct ExpirationKey
+    {
+        public string?                                TextureURL { get; init; }
+        public (uint ID, bool HQ, Language Language)? IconKey    { get; init; }
+        public bool                                   IsTexture  => TextureURL != null;
+
+        public static ExpirationKey FromTexture(string textureURL) =>
+            new()
+            {
+                TextureURL = textureURL
+            };
+
+        public static ExpirationKey FromIcon((uint ID, bool HQ, Language Language) iconKey) =>
+            new()
+            {
+                IconKey = iconKey
+            };
+    }
+
+    private record AddCommand
+    (
+        ExpirationKey Key,
+        long          Ticks
+    ) : ExpirationCommand;
+
+    private record ClearCommand : ExpirationCommand;
+
+    private abstract record ExpirationCommand;
+    
     private enum ImageLoadState : byte
     {
         Pending  = 0,
@@ -497,4 +519,6 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         Failed   = 3,
         Disposed = 4
     }
+
+    #endregion
 }
