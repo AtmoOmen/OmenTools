@@ -36,7 +36,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     public bool EnableTrayNotification { get; set; }
 
-    public TimeSpan ContentHintDuration { get; set; }
+    public TimeSpan ContentHintDuration { get; set; } = TimeSpan.FromSeconds(3);
 
     public TrayNotifier? TrayNotifier { get; set; }
 
