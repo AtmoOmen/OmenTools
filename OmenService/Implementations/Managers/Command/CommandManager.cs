@@ -20,12 +20,12 @@ public sealed class CommandManager : OmenServiceBase<CommandManager>
             {
                 if (field != null)
                     RemoveCommand(field.Command);
-                
+
                 return;
             }
-            
+
             field = value;
-            
+
             RefreshCommandDetails();
         }
     }
@@ -47,7 +47,7 @@ public sealed class CommandManager : OmenServiceBase<CommandManager>
     private unsafe void OnMainCommand(string command, string args)
     {
         DLog.Debug($"[CommandManager] [MainCommand] {command} {args}");
-        
+
         if (string.IsNullOrEmpty(args))
         {
             MainCommand.Info.Handler(command, args);
