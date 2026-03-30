@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.Loader;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -52,6 +53,10 @@ public sealed class DService
             IsInitialized = false;
             throw;
         }
+        
+        var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
+        var owner = Instance().PI.GetPlugin(alc!);
+        Instance().Log.Information($"OmenTools ALC: {alc}, Owner: {owner?.InternalName ?? "<shared>"}");
     }
 
     public static void Uninit()
