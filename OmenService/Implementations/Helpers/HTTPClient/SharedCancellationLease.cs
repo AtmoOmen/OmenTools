@@ -1,4 +1,4 @@
-﻿namespace OmenTools.OmenService;
+namespace OmenTools.OmenService;
 
 public sealed class SharedCancellationLease
 (

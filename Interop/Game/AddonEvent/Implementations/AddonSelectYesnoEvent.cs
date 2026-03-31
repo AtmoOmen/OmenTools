@@ -1,4 +1,4 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using OmenTools.Interop.Game.AddonEvent.Abstractions;
 
 namespace OmenTools.Interop.Game.AddonEvent;

@@ -1,4 +1,4 @@
-﻿using Lumina.Excel;
+using Lumina.Excel;
 using Lumina.Excel.Sheets;
 
 namespace OmenTools.Dalamud.Services.AetheryteList.Abstractions;

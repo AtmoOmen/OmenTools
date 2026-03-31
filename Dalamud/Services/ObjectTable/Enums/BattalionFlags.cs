@@ -1,4 +1,4 @@
-﻿namespace OmenTools.Dalamud.Services.ObjectTable.Enums;
+namespace OmenTools.Dalamud.Services.ObjectTable.Enums;
 
 public enum BattalionFlags : byte
 {

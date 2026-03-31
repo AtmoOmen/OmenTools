@@ -1,4 +1,4 @@
-﻿namespace OmenTools.Dalamud.Services.ObjectTable.Abstractions;
+namespace OmenTools.Dalamud.Services.ObjectTable.Abstractions;
 
 using IGameObject = IGameObject;
 

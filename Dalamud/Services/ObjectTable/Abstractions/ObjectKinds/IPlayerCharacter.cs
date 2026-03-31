@@ -1,4 +1,4 @@
-﻿using OmenTools.Dalamud.Services.ObjectTable.ObjectKinds;
+using OmenTools.Dalamud.Services.ObjectTable.ObjectKinds;
 
 namespace OmenTools.Dalamud.Services.ObjectTable.Abstractions.ObjectKinds;
 

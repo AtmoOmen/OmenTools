@@ -1,4 +1,4 @@
-﻿using Dalamud.Interface.Style;
+using Dalamud.Interface.Style;
 
 namespace OmenTools.Info.Dalamud;
 

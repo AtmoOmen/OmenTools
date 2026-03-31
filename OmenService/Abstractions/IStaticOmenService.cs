@@ -1,4 +1,4 @@
-﻿namespace OmenTools.OmenService.Abstractions;
+namespace OmenTools.OmenService.Abstractions;
 
 public interface IStaticOmenService
 {

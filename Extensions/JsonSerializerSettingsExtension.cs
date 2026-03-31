@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using OmenTools.Info.Json.Converters;
 
 namespace OmenTools.Extensions;

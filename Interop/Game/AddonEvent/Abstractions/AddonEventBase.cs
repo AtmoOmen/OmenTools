@@ -1,3 +1,3 @@
-﻿namespace OmenTools.Interop.Game.AddonEvent.Abstractions;
+namespace OmenTools.Interop.Game.AddonEvent.Abstractions;
 
 public abstract class AddonEventBase;

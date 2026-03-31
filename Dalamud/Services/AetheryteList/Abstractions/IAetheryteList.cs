@@ -1,4 +1,4 @@
-﻿namespace OmenTools.Dalamud.Services.AetheryteList.Abstractions;
+namespace OmenTools.Dalamud.Services.AetheryteList.Abstractions;
 
 public interface IAetheryteList : IReadOnlyCollection<IAetheryteEntry>
 {

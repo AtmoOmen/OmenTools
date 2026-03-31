@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Lumina.Excel;
 using OmenTools.Dalamud.Services.StatusList.Abstractions;
 

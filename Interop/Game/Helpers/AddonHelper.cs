@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Interop.Game.Helpers;

@@ -1,4 +1,4 @@
-﻿namespace OmenTools.Dalamud;
+namespace OmenTools.Dalamud;
 
 /// <summary>
 ///     对 Dalamud 日志信息输出的包装

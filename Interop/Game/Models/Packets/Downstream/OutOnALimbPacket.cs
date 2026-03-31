@@ -1,4 +1,4 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using OmenTools.Interop.Game.Models.Packets.Abstractions;
 
 namespace OmenTools.Interop.Game.Models.Packets.Downstream;

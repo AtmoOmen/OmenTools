@@ -1,4 +1,4 @@
-﻿namespace OmenTools.OmenService;
+namespace OmenTools.OmenService;
 
 public readonly record struct DrawScopesHandle(int ID)
 {

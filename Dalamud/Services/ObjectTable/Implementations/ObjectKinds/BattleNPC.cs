@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.Enums;
 
 namespace OmenTools.Dalamud.Services.ObjectTable.ObjectKinds;
 

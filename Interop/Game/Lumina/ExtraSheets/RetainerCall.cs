@@ -1,4 +1,4 @@
-﻿using Lumina.Excel;
+using Lumina.Excel;
 using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Interop.Game.Lumina.ExtraSheets;

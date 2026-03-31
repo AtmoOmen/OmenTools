@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using Lumina.Excel.Sheets;
 
 namespace OmenTools.Interop.Game.Helpers;

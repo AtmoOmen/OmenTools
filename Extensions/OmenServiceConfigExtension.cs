@@ -1,4 +1,4 @@
-﻿using OmenTools.OmenService.Abstractions;
+using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.Extensions;
 

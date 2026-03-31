@@ -1,4 +1,4 @@
-﻿namespace OmenTools.Info.Game.Enums;
+namespace OmenTools.Info.Game.Enums;
 
 public enum ClassJobType
 {

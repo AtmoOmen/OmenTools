@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using OmenTools.Interop.Game.Models.Packets.Abstractions;
 
