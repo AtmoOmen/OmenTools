@@ -203,8 +203,6 @@ public class FontManager : OmenServiceBase<FontManager>
 
         if (!File.Exists(fontPath))
         {
-            DLog.Warning("字体获取失败, 已转为 Dalamud 内置字体");
-
             return FontAtlas.NewDelegateFontHandle
             (e =>
                 {
@@ -406,7 +404,7 @@ public class FontManager : OmenServiceBase<FontManager>
     public sealed class FontManagerConfig : OmenServiceConfig
     {
         public float  FontSize     = 20f;
-        public string FontFileName = @"C:\Windows\Fonts\msyh.ttc";
+        public string FontFileName = string.Empty;
 
         public void Save() =>
             this.Save(Instance());
