@@ -7,8 +7,9 @@ namespace OmenTools.ImGuiOm.Widgets;
 
 public class DatePicker
 {
+    private const float NAVIGATION_BUTTON_SPACING = 2f;
+
     private CultureInfo cultureInfo;
-    private float       currentWidth = 200f;
     private bool        isYearView;
     private DateTime    viewDate = StandardTimeManager.Instance().Now;
 
@@ -26,6 +27,8 @@ public class DatePicker
 
     public string DateFormat { get; set; } = "yyyy.MM";
 
+    public float Width { get; set; }
+
     /// <summary>
     ///     绘制日期选择器。
     /// </summary>
@@ -35,20 +38,28 @@ public class DatePicker
     /// <returns>如果日期发生改变返回 true</returns>
     public bool Draw(string label, ref DateTime currentDate, ImGuiSelectableFlags flags = ImGuiSelectableFlags.None)
     {
-        var changed = false;
+        var changed     = false;
+        var pickerWidth = ResolvePickerWidth();
 
+        using var id = ImRaii.PushId(label);
+        CenterWithinAvailableWidth(pickerWidth);
         using var group = ImRaii.Group();
-        using var id    = ImRaii.PushId(label);
 
-        DrawHeader();
+        DrawHeader(pickerWidth);
 
         ImGui.Spacing();
 
         if (isYearView)
-            changed |= DrawYearPicker();
+            changed |= DrawYearPicker(pickerWidth);
         else
         {
-            using var table = ImRaii.Table("CalendarBody", 7, ImGuiTableFlags.NoBordersInBody | ImGuiTableFlags.SizingStretchSame);
+            using var table = ImRaii.Table
+            (
+                "CalendarBody",
+                7,
+                ImGuiTableFlags.NoBordersInBody | ImGuiTableFlags.SizingStretchSame,
+                new Vector2(pickerWidth, 0f)
+            );
 
             if (table)
             {
@@ -57,45 +68,39 @@ public class DatePicker
             }
         }
 
-        currentWidth = ImGui.GetItemRectSize().X;
-
         return changed;
     }
 
-    private void DrawHeader()
+    private void DrawHeader(float pickerWidth)
     {
-        CenterAlignFor(currentWidth);
-
         using var group = ImRaii.Group();
 
-        var buttonSize = new Vector2(ImGui.GetFrameHeight());
+        var buttonSize    = new Vector2(ImGui.GetFrameHeight());
+        var navGroupWidth = GetNavigationGroupWidth(buttonSize.X);
+        var startX        = ImGui.GetCursorPosX();
 
         if (ButtonIcon("##PrevYear", FontAwesomeIcon.AngleDoubleLeft, buttonSize))
             viewDate = viewDate.AddYears(-1);
-        ImGui.SameLine(0, 2);
+        ImGui.SameLine(0, NAVIGATION_BUTTON_SPACING);
         if (ButtonIcon("##PrevMonth", FontAwesomeIcon.AngleLeft, buttonSize))
             viewDate = viewDate.AddMonths(-1);
 
-        ImGui.SameLine();
-
         var title          = viewDate.ToString(DateFormat, cultureInfo);
         var titleWidth     = ImGui.CalcTextSize(title).X;
-        var availableWidth = ImGui.GetContentRegionAvail().X - (buttonSize.X * 2 + 8);
+        var titleAreaWidth = MathF.Max(0f, pickerWidth - navGroupWidth                            * 2);
+        var titleStartX    = startX + navGroupWidth + MathF.Max(0f, (titleAreaWidth - titleWidth) / 2f);
 
-        var spaceSides = (availableWidth - titleWidth) / 2;
-        if (spaceSides > 0)
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + spaceSides);
-
-        if (ImGui.Selectable(title, isYearView, ImGuiSelectableFlags.None, new Vector2(titleWidth, 0)))
+        ImGui.SameLine();
+        ImGui.SetCursorPosX(titleStartX);
+        if (ImGui.Selectable(title, isYearView, ImGuiSelectableFlags.DontClosePopups, new Vector2(titleWidth, 0)))
             isYearView = !isYearView;
 
         ImGui.SameLine();
-
-        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + spaceSides);
+        ImGui.SetCursorPosX(startX + pickerWidth - navGroupWidth);
 
         if (ButtonIcon("##NextMonth", FontAwesomeIcon.AngleRight, buttonSize))
             viewDate = viewDate.AddMonths(1);
-        ImGui.SameLine(0, 2);
+        ImGui.SameLine(0, NAVIGATION_BUTTON_SPACING);
         if (ButtonIcon("##NextYear", FontAwesomeIcon.AngleDoubleRight, buttonSize))
             viewDate = viewDate.AddYears(1);
     }
@@ -147,13 +152,19 @@ public class DatePicker
         return changed;
     }
 
-    private bool DrawYearPicker()
+    private bool DrawYearPicker(float pickerWidth)
     {
         var currentYear = viewDate.Year;
 
         var startYear = currentYear - 5;
 
-        using var table = ImRaii.Table("YearPicker", 4, ImGuiTableFlags.NoBordersInBody);
+        using var table = ImRaii.Table
+        (
+            "YearPicker",
+            4,
+            ImGuiTableFlags.NoBordersInBody | ImGuiTableFlags.SizingStretchSame,
+            new Vector2(pickerWidth, 0f)
+        );
         if (!table) return false;
 
         for (var i = 0; i < 12; i++)
@@ -195,5 +206,39 @@ public class DatePicker
                 rotated[i] = weekDays[(i + firstDay) % 7];
             weekDays = rotated;
         }
+    }
+
+    private float ResolvePickerWidth()
+    {
+        if (Width > 0f)
+            return Width;
+
+        var titleWidth  = ImGui.CalcTextSize(viewDate.ToString(DateFormat, cultureInfo)).X;
+        var buttonWidth = ImGui.GetFrameHeight();
+        var cellWidth   = GetCalendarCellWidth();
+
+        return MathF.Max(titleWidth + GetNavigationGroupWidth(buttonWidth) * 2, cellWidth * 7f);
+    }
+
+    private float GetCalendarCellWidth()
+    {
+        var maxTextWidth = ImGui.CalcTextSize("0000").X;
+        foreach (var day in weekDays)
+            maxTextWidth = MathF.Max(maxTextWidth, ImGui.CalcTextSize(day).X);
+
+        maxTextWidth = MathF.Max(maxTextWidth, ImGui.CalcTextSize("30").X);
+
+        var style = ImGui.GetStyle();
+        return maxTextWidth + style.FramePadding.X * 2f + style.CellPadding.X * 2f;
+    }
+
+    private static float GetNavigationGroupWidth(float buttonWidth) =>
+        buttonWidth * 2f + NAVIGATION_BUTTON_SPACING;
+
+    private static void CenterWithinAvailableWidth(float itemWidth)
+    {
+        var remainingWidth = ImGui.GetContentRegionAvail().X - itemWidth;
+        if (remainingWidth > 0f)
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + remainingWidth / 2f);
     }
 }
