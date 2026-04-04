@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using System.Text.Json;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Data.Files;
 using Lumina.Data.Parsing.Layer;
@@ -16,6 +17,10 @@ public class ItemSourceInfo
     private static bool IsDataInitialized { get; set; }
     private static bool IsDataLoaded      { get; set; }
 
+    private static IReadOnlyDictionary<uint, ItemSourceInfo>? CachedItemInfos   { get; set; }
+    
+    private const string ITEM_SHOP_INFO_CACHE_KEY = "OmenTools.Info.Game.ItemSourceInfo";
+
     private static readonly EventHandlerType[] EventHandlerTypes = Enum.GetValues<EventHandlerType>();
 
     public uint               ItemID                 { get; init; }
@@ -26,8 +31,9 @@ public class ItemSourceInfo
 
     static ItemSourceInfo()
     {
-        if (DService.Instance().PI.TryGetData("OmenTools.Infos.ItemShopInfo.ItemToItemShopInfos", out Dictionary<uint, ItemSourceInfo> _))
+        if (TryLoadCachedItemInfos(out var cachedItemInfos))
         {
+            CachedItemInfos   = cachedItemInfos;
             IsDataInitialized = IsDataLoaded = true;
             return;
         }
@@ -68,8 +74,12 @@ public class ItemSourceInfo
                     timer.Stop();
                     DLog.Debug($"[ItemShopInfo] 构建完毕, 构建时间: {timer.Elapsed}");
 
+                    CachedItemInfos = itemToItemShopInfos;
                     DService.Instance().PI.GetOrCreateData
-                        ("OmenTools.Infos.ItemShopInfo.ItemToItemShopInfos", () => itemToItemShopInfos.ToDictionary(x => x.Key, x => x.Value));
+                    (
+                        ITEM_SHOP_INFO_CACHE_KEY,
+                        () => itemToItemShopInfos.ToDictionary(static x => x.Key, static x => SerializeItemSourceInfo(x.Value))
+                    );
 
                     IsDataLoaded = true;
                 }
@@ -80,7 +90,123 @@ public class ItemSourceInfo
     public static ItemSourceInfo? GetItemInfo(uint itemID) =>
         !IsDataLoaded
             ? null
-            : DService.Instance().PI.GetData<Dictionary<uint, ItemSourceInfo>>("OmenTools.Infos.ItemShopInfo.ItemToItemShopInfos")?.GetValueOrDefault(itemID);
+            : CachedItemInfos?.GetValueOrDefault(itemID);
+
+    private static bool TryLoadCachedItemInfos(out IReadOnlyDictionary<uint, ItemSourceInfo>? cachedItemInfos)
+    {
+        cachedItemInfos = null;
+
+        if (!DService.Instance().PI.TryGetData(ITEM_SHOP_INFO_CACHE_KEY, out Dictionary<uint, string>? serializedItemInfos))
+            return false;
+
+        try
+        {
+            cachedItemInfos = serializedItemInfos.ToDictionary(static x => x.Key, static x => DeserializeItemSourceInfo(x.Value));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            DLog.Warning("[ItemShopInfo] 读取 DataShare 缓存失败，准备重新构建", ex);
+            return false;
+        }
+    }
+
+    private static string SerializeItemSourceInfo(ItemSourceInfo itemInfo) =>
+        JsonSerializer.Serialize
+        (
+            new
+            {
+                itemId                 = itemInfo.ItemID,
+                name                   = itemInfo.Name,
+                shopType               = (int)itemInfo.ShopType,
+                achievementDescription = itemInfo.AchievementDescription,
+                npcInfos               = itemInfo.NPCInfos.Select
+                (
+                    static npcInfo => new
+                    {
+                        id        = npcInfo.ID,
+                        name      = npcInfo.Name,
+                        shopName  = npcInfo.ShopName,
+                        location  = new { x = npcInfo.Location.X, y = npcInfo.Location.Y, territoryId = npcInfo.Location.TerritoryID, mapId = npcInfo.Location.MapID },
+                        costInfos = npcInfo.CostInfos.Select(static costInfo => new { cost = costInfo.Cost, itemId = costInfo.ItemID, collectablity = costInfo.Collectablity })
+                    }
+                )
+            }
+        );
+
+    private static ItemSourceInfo DeserializeItemSourceInfo(string serializedItemInfo)
+    {
+        using var document = JsonDocument.Parse(serializedItemInfo);
+        var root = document.RootElement;
+
+        return new()
+        {
+            ItemID                 = GetUInt32Property(root, "itemId"),
+            Name                   = GetStringProperty(root, "name"),
+            ShopType               = (ItemShopType)GetInt32Property(root, "shopType"),
+            AchievementDescription = GetStringProperty(root, "achievementDescription"),
+            NPCInfos =
+            [
+                ..root.TryGetProperty("npcInfos", out var npcInfos)
+                    ? npcInfos.EnumerateArray().Select(DeserializeShopNPCInfo)
+                    : []
+            ]
+        };
+    }
+
+    private static ShopNPCInfos DeserializeShopNPCInfo(JsonElement npcInfo)
+    {
+        var location = npcInfo.GetProperty("location");
+
+        return new()
+        {
+            ID       = GetUInt32Property(npcInfo, "id"),
+            Name     = GetStringProperty(npcInfo, "name"),
+            ShopName = GetNullableStringProperty(npcInfo, "shopName"),
+            Location = new(GetSingleProperty(location, "x"), GetSingleProperty(location, "y"), GetUInt32Property(location, "territoryId"), GetUInt32Property(location, "mapId")),
+            CostInfos =
+            [
+                ..npcInfo.TryGetProperty("costInfos", out var costInfos)
+                    ? costInfos.EnumerateArray().Select(DeserializeShopItemCostInfo)
+                    : []
+            ]
+        };
+    }
+
+    private static ShopItemCostInfo DeserializeShopItemCostInfo(JsonElement costInfo) =>
+        new
+        (
+            GetUInt32Property(costInfo, "cost"),
+            GetUInt32Property(costInfo, "itemId"),
+            costInfo.TryGetProperty("collectablity", out var collectablity) && collectablity.ValueKind is not JsonValueKind.Null
+                ? collectablity.GetUInt32()
+                : null
+        );
+
+    private static string GetStringProperty(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var propertyValue)
+            ? propertyValue.GetString() ?? string.Empty
+            : string.Empty;
+
+    private static string? GetNullableStringProperty(JsonElement element, string propertyName) =>
+        !element.TryGetProperty(propertyName, out var propertyValue) || propertyValue.ValueKind is JsonValueKind.Null
+            ? null
+            : propertyValue.GetString();
+
+    private static int GetInt32Property(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var propertyValue)
+            ? propertyValue.GetInt32()
+            : 0;
+
+    private static uint GetUInt32Property(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var propertyValue)
+            ? propertyValue.GetUInt32()
+            : 0;
+
+    private static float GetSingleProperty(JsonElement element, string propertyName) =>
+        element.TryGetProperty(propertyName, out var propertyValue)
+            ? propertyValue.GetSingle()
+            : 0;
 
     private static void BuildNPCLocations(ref Dictionary<uint, ShopNPCLocation> npcIDToLocations)
     {
@@ -1258,7 +1384,7 @@ public class ShopNPCInfos
 {
     public uint                   ID        { get; init; }
     public string                 Name      { get; init; }
-    public string                 ShopName  { get; init; }
+    public string?                ShopName  { get; init; }
     public List<ShopItemCostInfo> CostInfos { get; init; }
     public ShopNPCLocation        Location  { get; init; }
 }
