@@ -7,7 +7,7 @@ namespace OmenTools.Dalamud;
 // ReSharper disable once InconsistentNaming
 public static class vnavmeshIPC
 {
-    public const string InternalName = "vnavmesh";
+    public const string INTERNAL_NAME = "vnavmesh";
 
     [IPCSubscriber("vnavmesh.Nav.IsReady", DefaultValue = "false")]
     private static IPCSubscriber<bool>? NavIsReady;

@@ -5,7 +5,7 @@ namespace OmenTools.Dalamud;
 
 public static class RaphaelIPC
 {
-    public const string InternalName = "Raphael.Dalamud";
+    public const string INTERNAL_NAME = "Raphael.Dalamud";
 
     [IPCSubscriber("Raphael.Dalamud.StartCalculation")]
     private static IPCSubscriber<uint> StartCalculationSubscriber;
