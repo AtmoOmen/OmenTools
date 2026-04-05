@@ -11,7 +11,7 @@ using GrandCompany = FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany;
 
 namespace OmenTools.Info.Game;
 
-public class ItemSourceInfo
+public sealed class ItemSourceInfo
 {
     private static EventHandlerType[] EventHandlerTypes { get; } = Enum.GetValues<EventHandlerType>();
     
