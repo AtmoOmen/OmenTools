@@ -4,8 +4,9 @@ namespace OmenTools.Info.Models;
 
 public class Polygon
 {
+    private const float EPSILON = 1e-6f;
+    
     private readonly Vector2[] vertices;
-    private const    float     Epsilon = 1e-6f;
 
     /// <summary>
     ///     创建一个多边形
@@ -68,13 +69,14 @@ public class Polygon
                 return candidate;
         }
 
-        const float shrinkFactor = 0.1f;
-        var         innerPoint   = centroid;
+        const float SHRINK_FACTOR = 0.1f;
+
+        var innerPoint = centroid;
 
         foreach (var t in vertices)
         {
             var direction = t - centroid;
-            direction  = Vector2.Normalize(direction) * shrinkFactor * Vector2.Distance(centroid, t);
+            direction  = Vector2.Normalize(direction) * SHRINK_FACTOR * Vector2.Distance(centroid, t);
             innerPoint = centroid + direction;
 
             if (IsPointInPolygon(innerPoint) && !IsPointOnBoundary(innerPoint))
@@ -103,7 +105,7 @@ public class Polygon
     {
         var crossProduct = (point.Y - start.Y) * (end.X - start.X) - (point.X - start.X) * (end.Y - start.Y);
 
-        if (Math.Abs(crossProduct) > Epsilon)
+        if (Math.Abs(crossProduct) > EPSILON)
             return false;
 
         var dotProduct = (point.X - start.X) * (end.X - start.X) + (point.Y - start.Y) * (end.Y - start.Y);
@@ -138,7 +140,7 @@ public class Polygon
 
         signedArea *= 0.5f;
 
-        if (Math.Abs(signedArea) < Epsilon)
+        if (Math.Abs(signedArea) < EPSILON)
         {
             return new Vector2
             (
@@ -170,7 +172,7 @@ public class Polygon
 
             foreach (var existing in uniqueVertices)
             {
-                if (Vector2.Distance(existing, point) < Epsilon * 10)
+                if (Vector2.Distance(existing, point) < EPSILON * 10)
                 {
                     isDuplicate = true;
                     break;
@@ -283,7 +285,7 @@ public class Polygon
         var pivot = 0;
         for (var i = 1; i < n; i++)
             if (points[i].Y < points[pivot].Y ||
-                Math.Abs(points[i].Y - points[pivot].Y) < Epsilon && points[i].X < points[pivot].X)
+                Math.Abs(points[i].Y - points[pivot].Y) < EPSILON && points[i].X < points[pivot].X)
                 pivot = i;
 
         (points[0], points[pivot]) = (points[pivot], points[0]);
@@ -345,14 +347,14 @@ public class Polygon
     /// </summary>
     private class PolarAngleComparer
     (
-        Vector2 Pivot
+        Vector2 pivot
     ) : IComparer<Vector2>
     {
         public int Compare(Vector2 p1, Vector2 p2)
         {
-            var cross = CrossProduct(Pivot, p1, p2);
+            var cross = CrossProduct(pivot, p1, p2);
 
-            if (Math.Abs(cross) < Epsilon) return SquaredDistance(Pivot, p1).CompareTo(SquaredDistance(Pivot, p2));
+            if (Math.Abs(cross) < EPSILON) return SquaredDistance(pivot, p1).CompareTo(SquaredDistance(pivot, p2));
 
             return cross > 0 ? -1 : 1;
         }

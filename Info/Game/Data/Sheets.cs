@@ -1,6 +1,8 @@
 using Lumina.Excel.Sheets;
 using OmenTools.Dalamud.DataShare.Attributes;
+using OmenTools.Info.Models;
 using OmenTools.Interop.Game.Lumina;
+using OmenTools.OmenService;
 using Action = Lumina.Excel.Sheets.Action;
 using Status = Lumina.Excel.Sheets.Status;
 
@@ -10,48 +12,6 @@ public static class Sheets
 {
     [DataShareTag]
     private const string DISPELLABLE_STATUSES_TAG = "OmenTools.Info.Game.Data.Sheets.DispellableStatuses";
-
-    [DataShareTag]
-    private const string PLAYER_ACTIONS_TAG = "OmenTools.Info.Game.Data.Sheets.PlayerActions";
-
-    [DataShareTag]
-    private const string STATUSES_TAG = "OmenTools.Info.Game.Data.Sheets.Statuses";
-
-    [DataShareTag]
-    private const string CONTENTS_TAG = "OmenTools.Info.Game.Data.Sheets.Contents";
-
-    [DataShareTag]
-    private const string GEARS_TAG = "OmenTools.Info.Game.Data.Sheets.Gears";
-
-    [DataShareTag]
-    private const string DYES_TAG = "OmenTools.Info.Game.Data.Sheets.Dyes";
-
-    [DataShareTag]
-    private const string WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.Worlds";
-
-    [DataShareTag]
-    private const string CN_WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.CNWorlds";
-
-    [DataShareTag]
-    private const string ZONES_TAG = "OmenTools.Info.Game.Data.Sheets.Zones";
-
-    [DataShareTag]
-    private const string MOUNTS_TAG = "OmenTools.Info.Game.Data.Sheets.Mounts";
-
-    [DataShareTag]
-    private const string FOOD_TAG = "OmenTools.Info.Game.Data.Sheets.Food";
-
-    [DataShareTag]
-    private const string SEEDS_TAG = "OmenTools.Info.Game.Data.Sheets.Seeds";
-
-    [DataShareTag]
-    private const string SOILS_TAG = "OmenTools.Info.Game.Data.Sheets.Soils";
-
-    [DataShareTag]
-    private const string FERTILIZERS_TAG = "OmenTools.Info.Game.Data.Sheets.Fertilizers";
-
-    [DataShareTag]
-    private const string MATERIAS_TAG = "OmenTools.Info.Game.Data.Sheets.Materias";
     
     public static Dictionary<uint, Status> DispellableStatuses { get; } =
         DService.Instance().PI.GetOrCreateData
@@ -62,6 +22,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, s => s)
         );
 
+    [DataShareTag]
+    private const string PLAYER_ACTIONS_TAG = "OmenTools.Info.Game.Data.Sheets.PlayerActions";
+    
     public static Dictionary<uint, Action> PlayerActions { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -85,6 +48,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x)
         );
 
+    [DataShareTag]
+    private const string STATUSES_TAG = "OmenTools.Info.Game.Data.Sheets.Statuses";
+    
     public static Dictionary<uint, Status> Statuses { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -93,6 +59,9 @@ public static class Sheets
                               .Where(x => !string.IsNullOrEmpty(x.Name.ToString()))
                               .ToDictionary(x => x.RowId, x => x)
         );
+    
+    [DataShareTag]
+    private const string CONTENTS_TAG = "OmenTools.Info.Game.Data.Sheets.Contents";
 
     public static Dictionary<uint, ContentFinderCondition> Contents { get; } =
         DService.Instance().PI.GetOrCreateData
@@ -106,6 +75,9 @@ public static class Sheets
                               .ToDictionary(x => x.TerritoryType.RowId, x => x)
         );
 
+    [DataShareTag]
+    private const string GEARS_TAG = "OmenTools.Info.Game.Data.Sheets.Gears";
+    
     public static Dictionary<uint, Item> Gears { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -116,6 +88,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x)
         );
 
+    [DataShareTag]
+    private const string DYES_TAG = "OmenTools.Info.Game.Data.Sheets.Dyes";
+    
     public static Dictionary<uint, Item> Dyes { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -125,6 +100,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x.Item1.Value)
         );
 
+    [DataShareTag]
+    private const string WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.Worlds";
+    
     public static Dictionary<uint, World> Worlds { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -146,6 +124,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x)
         );
 
+    [DataShareTag]
+    private const string CN_WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.CNWorlds";
+    
     public static Dictionary<uint, World> CNWorlds { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -161,6 +142,9 @@ public static class Sheets
                   .ToDictionary(x => x.Key, x => x.Value)
         );
 
+    [DataShareTag]
+    private const string ZONES_TAG = "OmenTools.Info.Game.Data.Sheets.Zones";
+    
     public static Dictionary<uint, TerritoryType> Zones { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -169,6 +153,9 @@ public static class Sheets
                               .Where(x => x.PlaceName.RowId > 0)
                               .ToDictionary(x => x.RowId, x => x)
         );
+    
+    [DataShareTag]
+    private const string MOUNTS_TAG = "OmenTools.Info.Game.Data.Sheets.Mounts";
 
     public static Dictionary<uint, Mount> Mounts { get; } =
         DService.Instance().PI.GetOrCreateData
@@ -179,6 +166,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x)
         );
 
+    [DataShareTag]
+    private const string FOOD_TAG = "OmenTools.Info.Game.Data.Sheets.Food";
+    
     public static Dictionary<uint, Item> Food { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -188,6 +178,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x)
         );
 
+    [DataShareTag]
+    private const string SEEDS_TAG = "OmenTools.Info.Game.Data.Sheets.Seeds";
+    
     public static Dictionary<uint, Item> Seeds { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -197,6 +190,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x)
         );
 
+    [DataShareTag]
+    private const string SOILS_TAG = "OmenTools.Info.Game.Data.Sheets.Soils";
+    
     public static Dictionary<uint, Item> Soils { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -206,6 +202,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x)
         );
 
+    [DataShareTag]
+    private const string FERTILIZERS_TAG = "OmenTools.Info.Game.Data.Sheets.Fertilizers";
+    
     public static Dictionary<uint, Item> Fertilizers { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -215,6 +214,9 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x)
         );
 
+    [DataShareTag]
+    private const string MATERIAS_TAG = "OmenTools.Info.Game.Data.Sheets.Materias";
+    
     public static Dictionary<uint, Item> Materias { get; } =
         DService.Instance().PI.GetOrCreateData
         (
@@ -222,5 +224,23 @@ public static class Sheets
             () => LuminaGetter.Get<Item>()
                               .Where(x => !string.IsNullOrEmpty(x.Name.ToString()) && x.FilterGroup == 13)
                               .ToDictionary(x => x.RowId, x => x)
+        );
+    
+    [DataShareTag]
+    private const string SPEED_DETECTION_ZONES_TAG = "OmenTools.Info.Game.Data.Sheets.SpeedDetectionZones";
+
+    public static Dictionary<uint, TerritoryType> SpeedDetectionZones { get; } =
+        DService.Instance().PI.GetOrCreateData
+        (
+            SPEED_DETECTION_ZONES_TAG,
+            () =>
+            {
+                HashSet<uint> limitedIntendedUse = GameState.IsCN || GameState.IsTC
+                                                       ? [1, 18, 31, 41, 47, 48, 52, 53, 61]
+                                                       : [18, 31, 41, 48, 52, 53];
+                return LuminaGetter.Get<TerritoryType>()
+                                                  .Where(x => limitedIntendedUse.Contains(x.TerritoryIntendedUse.RowId))
+                                                  .ToDictionary(x => x.RowId, x => x);
+            }
         );
 }
