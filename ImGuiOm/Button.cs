@@ -82,8 +82,8 @@ public static partial class ImGuiOm
         var windowDrawList = ImGui.GetWindowDrawList();
         var cursorPos      = ImGui.GetCursorScreenPos();
         var padding        = style.FramePadding;
-        var buttonWidth    = iconSize.X + padding.X * 2;
-        var buttonHeight   = ImGui.GetTextLineHeightWithSpacing();
+        var buttonWidth    = iconSize.X                           + padding.X * 2;
+        var buttonHeight   = ImGui.GetTextLineHeightWithSpacing() + 2         * padding.Y;
         var result         = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
         var iconPos        = new Vector2(cursorPos.X + (buttonWidth - iconSize.X + padding.X / 3) / 2, cursorPos.Y + style.FramePadding.Y);
 
@@ -212,15 +212,15 @@ public static partial class ImGuiOm
         var textSize        = ImGui.CalcTextSize(displaySpan);
         var windowDrawList  = ImGui.GetWindowDrawList();
         var cursorScreenPos = ImGui.GetCursorScreenPos();
-        var padding         = ImGui.GetStyle().FramePadding.X;
+        var padding         = ImGui.GetStyle().FramePadding;
         var spacing         = ImGui.GetStyle().ItemSpacing.X;
-        var buttonWidth     = iconSize.X                        + textSize.X + padding * 2 + spacing;
-        var buttonHeight    = MathF.Max(iconSize.Y, textSize.Y) + padding              * 2;
+        var buttonWidth     = iconSize.X                        + textSize.X + padding.X * 2 + spacing;
+        var buttonHeight    = MathF.Max(iconSize.Y, textSize.Y) + padding.Y              * 2;
 
         var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
 
-        var iconPos = new Vector2(cursorScreenPos.X + padding, cursorScreenPos.Y + (buttonHeight                              - iconSize.Y) / 2);
-        var textPos = new Vector2(iconPos.X         + iconSize.X                 + spacing, cursorScreenPos.Y + (buttonHeight - textSize.Y) / 2);
+        var iconPos = new Vector2(cursorScreenPos.X + padding.X, cursorScreenPos.Y + (buttonHeight                              - iconSize.Y) / 2);
+        var textPos = new Vector2(iconPos.X         + iconSize.X                   + spacing, cursorScreenPos.Y + (buttonHeight - textSize.Y) / 2);
 
         using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
             windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
@@ -349,6 +349,18 @@ public static partial class ImGuiOm
                                     .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered])
                                     .Push(ImGuiCol.Button,        0);
 
+        var result = ImGui.Button(text, size);
+
+        return result;
+    }
+
+    public static bool ButtonStretch(string text)
+    {
+        var style    = ImGui.GetStyle();
+        var padding  = style.FramePadding;
+        var textSize = ImGui.CalcTextSize(text);
+
+        var size   = new Vector2(MathF.Max(ImGui.GetContentRegionAvail().X, textSize.X + 2 * padding.X), textSize.Y + 2 * padding.Y);
         var result = ImGui.Button(text, size);
 
         return result;
