@@ -83,7 +83,7 @@ public static partial class ImGuiOm
         var cursorPos      = ImGui.GetCursorScreenPos();
         var padding        = style.FramePadding;
         var buttonWidth    = iconSize.X                           + padding.X * 2;
-        var buttonHeight   = ImGui.GetTextLineHeightWithSpacing() + 2         * padding.Y;
+        var buttonHeight   = ImGui.GetTextLineHeightWithSpacing() + padding.Y;
         var result         = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
         var iconPos        = new Vector2(cursorPos.X + (buttonWidth - iconSize.X + padding.X / 3) / 2, cursorPos.Y + style.FramePadding.Y);
 
@@ -118,30 +118,7 @@ public static partial class ImGuiOm
 
         return result;
     }
-
-    public static bool ButtonCompact(string id, string text)
-    {
-        using var idPush = ImRaii.PushId($"{id}_{text}");
-
-        var displaySpan = GetDisplaySpan(text);
-        var textSize    = ImGui.CalcTextSize(displaySpan);
-        var cursorPos   = ImGui.GetCursorScreenPos();
-        var padding     = ImGui.GetStyle().FramePadding;
-        var buttonWidth = MathF.Max(ImGui.GetContentRegionMax().X, textSize.X + padding.X * 2);
-        var result      = ImGui.Button(string.Empty, new(buttonWidth, textSize.Y + padding.Y * 2));
-
-        ImGui.GetWindowDrawList().AddText
-        (
-            new(cursorPos.X + (buttonWidth - textSize.X) / 2, cursorPos.Y + padding.Y),
-            ImGui.GetColorU32(ImGuiCol.Text),
-            displaySpan
-        );
-
-        ImGui.SetWindowFontScale(1);
-
-        return result;
-    }
-
+    
     public static bool ButtonIconWithTextVertical(FontAwesomeIcon icon, string text, bool useStaticFont = false)
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
