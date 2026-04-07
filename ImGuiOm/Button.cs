@@ -337,7 +337,7 @@ public static partial class ImGuiOm
         var padding  = style.FramePadding;
         var textSize = ImGui.CalcTextSize(text);
 
-        var size   = new Vector2(MathF.Max(ImGui.GetContentRegionAvail().X, textSize.X + 2 * padding.X), textSize.Y + 2 * padding.Y);
+        var size   = new Vector2(ImGui.GetContentRegionAvail().X, textSize.Y + 2 * padding.Y);
         var result = ImGui.Button(text, size);
 
         return result;
