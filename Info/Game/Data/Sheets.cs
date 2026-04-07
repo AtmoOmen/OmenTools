@@ -243,4 +243,16 @@ public static class Sheets
                                                   .ToDictionary(x => x.RowId, x => x);
             }
         );
+    
+    [DataShareTag]
+    private const string AETHERYTES_TAG = "OmenTools.Info.Game.Data.Sheets.Aetherytes";
+    
+    public static Dictionary<uint, Aetheryte> Aetherytes { get; } =
+        DService.Instance().PI.GetOrCreateData
+        (
+            AETHERYTES_TAG,
+            () => LuminaGetter.Get<Aetheryte>()
+                              .Where(x => !string.IsNullOrEmpty(x.PlaceName.ValueNullable?.Name.ExtractText()))
+                              .ToDictionary(x => x.RowId, x => x)
+        );
 }
