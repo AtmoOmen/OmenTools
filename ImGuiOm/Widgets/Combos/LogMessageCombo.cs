@@ -25,189 +25,62 @@ public class LogMessageCombo : LuminaComboBase<LogMessage>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    public override bool DrawRadio()
+    protected override string GetPreviewText(ComboSelectionMode mode)
     {
-        using var drawID = ImRaii.PushId($"{ID}");
-
-        var selectState = false;
-
-        var preview = SelectedItem.RowId == 0
-                          ? string.Empty
-                          : $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItem.RowId)} " +
-                            $"({SelectedItem.RowId})";
-        if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
-            ImGui.EndCombo();
-
-        if (ImGui.IsItemClicked())
-            ImGui.OpenPopup($"###Popup_{ID}");
-
-        ImGui.SetNextWindowSize(ScaledVector2(600f, 400f));
-        using var popup = ImRaii.Popup($"###Popup_{ID}");
-
-        if (popup)
+        if (mode == ComboSelectionMode.Radio)
         {
-            ImGui.SetNextItemWidth(-1f);
-            if (ImGui.InputTextWithHint("###Search", LuminaWrapper.GetAddonText(8128), ref SearchWord, 128))
-                Searcher.Search(SearchWord);
-
-            ImGui.Separator();
-
-            var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-            using var table     = ImRaii.Table("###Table", 2, ImGuiTableFlags.Borders, tableSize);
-
-            if (table)
-            {
-                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
-                ImGui.TableSetupColumn("Text",        ImGuiTableColumnFlags.WidthStretch);
-
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-                ImGui.TableNextColumn();
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(2581));
-
-                if (SelectedItem is { RowId: > 0 })
-                    Render(SelectedItem);
-
-                foreach (var logMessage in Searcher.SearchResult)
-                {
-                    if (logMessage.RowId == SelectedID) continue;
-                    Render(logMessage);
-                }
-            }
+            return SelectedItem.RowId == 0
+                       ? string.Empty
+                       : $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItem.RowId)} ({SelectedItem.RowId})";
         }
 
-        return selectState;
-
-        void Render(LogMessage logMessage)
-        {
-            using var id = ImRaii.PushId($"LogMessage_{logMessage.RowId}");
-
-            ImGui.TableNextRow();
-
-            ImGui.TableNextColumn();
-            ImGui.RadioButton(string.Empty, SelectedItem.RowId == logMessage.RowId);
-
-            ImGui.TableNextColumn();
-
-            var cursorPos = ImGui.GetCursorPos();
-
-            if (ImGui.Selectable
-                (
-                    $"##LogMessage_{logMessage.RowId}",
-                    SelectedItem.RowId == logMessage.RowId,
-                    ImGuiSelectableFlags.SpanAllColumns
-                ))
-            {
-                SelectedID  = logMessage.RowId;
-                selectState = true;
-            }
-
-            ImGuiOm.TooltipHover
-            (
-                $"{LuminaWrapper.GetAddonText(4098)}:\n\t{logMessage.LogKind.Value.Format.ToMacroString().Trim()}\n\n{LuminaWrapper.GetAddonText(2581)}:\n\t{logMessage.Text.ToMacroString()}",
-                40f * GlobalUIScale
-            );
-
-            ImGui.SameLine();
-            ImGui.SetCursorPos(cursorPos);
-            ImGuiHelpers.SeStringWrapped(DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(logMessage.RowId));
-        }
+        return SelectedItems.Count == 0
+                   ? string.Empty
+                   : $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItems.First().RowId)} ({SelectedItems.First().RowId})...";
     }
 
-    public override bool DrawCheckbox()
+    protected override Vector2 GetPopupSize() =>
+        ScaledVector2(600f, 400f);
+
+    protected override int GetTableColumnCount() =>
+        2;
+
+    protected override void SetupColumns(ComboSelectionMode mode)
     {
-        using var drawID = ImRaii.PushId($"{ID}");
+        ImGui.TableSetupColumn
+            (mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
+        ImGui.TableSetupColumn("Text", ImGuiTableColumnFlags.WidthStretch);
+    }
 
-        var selectState = false;
+    protected override void DrawHeaders()
+    {
+        ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+        ImGui.TableNextColumn();
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(LuminaWrapper.GetAddonText(2581));
+    }
 
-        var preview = SelectedItems.Count == 0
-                          ? string.Empty
-                          : $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItems.First().RowId)} " +
-                            $"({SelectedItems.First().RowId})...";
-        if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
-            ImGui.EndCombo();
+    protected override bool DrawDataColumns(LogMessage logMessage, ComboSelectionMode mode, bool isSelected)
+    {
+        ImGui.TableNextColumn();
 
-        if (ImGui.IsItemClicked())
-            ImGui.OpenPopup($"###Popup_{ID}");
+        var cursorPos = ImGui.GetCursorPos();
+        var clicked = ImGui.Selectable
+        (
+            $"##LogMessage_{logMessage.RowId}",
+            isSelected,
+            GetSelectableFlags(mode)
+        );
 
-        ImGui.SetNextWindowSize(ScaledVector2(600f, 400f));
-        using var popup = ImRaii.Popup($"###Popup_{ID}");
+        ImGuiOm.TooltipHover
+        (
+            $"{LuminaWrapper.GetAddonText(4098)}:\n\t{logMessage.LogKind.Value.Format.ToMacroString().Trim()}\n\n{LuminaWrapper.GetAddonText(2581)}:\n\t{logMessage.Text.ToMacroString()}",
+            40f * GlobalUIScale
+        );
 
-        if (popup)
-        {
-            ImGui.SetNextItemWidth(-1f);
-            if (ImGui.InputTextWithHint("###Search", LuminaWrapper.GetAddonText(8128), ref SearchWord, 128))
-                Searcher.Search(SearchWord);
-
-            ImGui.Separator();
-
-            var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-            using var table     = ImRaii.Table("###Table", 2, ImGuiTableFlags.Borders, tableSize);
-
-            if (table)
-            {
-                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
-                ImGui.TableSetupColumn("Text",     ImGuiTableColumnFlags.WidthStretch);
-
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-                ImGui.TableNextColumn();
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(2581));
-
-                foreach (var logMessage in SelectedItems)
-                    Render(logMessage);
-
-                foreach (var logMessage in Searcher.SearchResult)
-                {
-                    if (SelectedIDs.Contains(logMessage.RowId)) continue;
-                    Render(logMessage);
-                }
-            }
-        }
-
-        return selectState;
-
-        void Render(LogMessage logMessage)
-        {
-            using var id = ImRaii.PushId($"LogMessage_{logMessage.RowId}");
-
-            ImGui.TableNextRow();
-
-            ImGui.TableNextColumn();
-            var isSelected = SelectedIDs.Contains(logMessage.RowId);
-
-            if (ImGui.Checkbox(string.Empty, ref isSelected))
-            {
-                if (!SelectedIDs.Remove(logMessage.RowId))
-                    SelectedIDs.Add(logMessage.RowId);
-                selectState = true;
-            }
-
-            ImGui.TableNextColumn();
-
-            var cursorPos = ImGui.GetCursorPos();
-
-            if (ImGui.Selectable
-                (
-                    $"##LogMessage_{logMessage.RowId}",
-                    isSelected,
-                    ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups
-                ))
-            {
-                if (!SelectedIDs.Remove(logMessage.RowId))
-                    SelectedIDs.Add(logMessage.RowId);
-                selectState = true;
-            }
-
-            ImGuiOm.TooltipHover
-            (
-                $"{LuminaWrapper.GetAddonText(4098)}:\n\t{logMessage.LogKind.Value.Format.ToMacroString().Trim()}\n\n{LuminaWrapper.GetAddonText(2581)}:\n\t{logMessage.Text.ToMacroString()}",
-                40f * GlobalUIScale
-            );
-
-            ImGui.SameLine();
-            ImGui.SetCursorPos(cursorPos);
-            ImGuiHelpers.SeStringWrapped(DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(logMessage.RowId));
-        }
+        ImGui.SameLine();
+        ImGui.SetCursorPos(cursorPos);
+        ImGuiHelpers.SeStringWrapped(DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(logMessage.RowId));
+        return clicked;
     }
 }

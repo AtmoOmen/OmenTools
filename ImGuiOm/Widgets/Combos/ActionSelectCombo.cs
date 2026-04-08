@@ -25,199 +25,72 @@ public class ActionSelectCombo : LuminaComboBase<Action>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    public override bool DrawRadio()
+    protected override string GetPreviewText(ComboSelectionMode mode)
     {
-        using var drawID = ImRaii.PushId($"{ID}");
-
-        var selectState = false;
-
-        var preview = SelectedItem.RowId == 0
-                          ? string.Empty
-                          : $"[{SelectedItem.ClassJobCategory.ValueNullable?.Name.ToString()}] {SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
-        if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
-            ImGui.EndCombo();
-
-        if (ImGui.IsItemClicked())
-            ImGui.OpenPopup($"###Popup_{ID}");
-
-        ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup($"###Popup_{ID}");
-
-        if (popup)
+        if (mode == ComboSelectionMode.Radio)
         {
-            ImGui.SetNextItemWidth(-1f);
-            if (ImGui.InputTextWithHint("###Search", LuminaWrapper.GetAddonText(8128), ref SearchWord, 128))
-                Searcher.Search(SearchWord);
-
-            ImGui.Separator();
-
-            var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-            using var table     = ImRaii.Table("###Table", 4, ImGuiTableFlags.Borders, tableSize);
-
-            if (table)
-            {
-                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
-                ImGui.TableSetupColumn("Job",         ImGuiTableColumnFlags.WidthStretch, 20);
-                ImGui.TableSetupColumn("Level",       ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize("1234").X);
-                ImGui.TableSetupColumn("Action",      ImGuiTableColumnFlags.WidthStretch, 50);
-
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-                ImGui.TableNextColumn();
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(294));
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(335));
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(1340));
-
-                if (SelectedItem is { RowId: > 0 })
-                    Render(SelectedItem);
-
-                foreach (var action in Searcher.SearchResult)
-                {
-                    if (action.RowId == SelectedID) continue;
-                    Render(action);
-                }
-            }
+            return SelectedItem.RowId == 0
+                       ? string.Empty
+                       : $"[{SelectedItem.ClassJobCategory.ValueNullable?.Name.ToString()}] {SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
         }
 
-        return selectState;
-
-        void Render(Action action)
-        {
-            if (!DService.Instance().Texture.TryGetFromGameIcon(new(action.Icon), out var texture)) return;
-
-            var actionName = action.Name.ToString();
-            var jobName    = action.ClassJobCategory.ValueNullable?.Name.ToString() ?? string.Empty;
-
-            using var id = ImRaii.PushId($"Action_{action.RowId}");
-
-            ImGui.TableNextRow();
-
-            ImGui.TableNextColumn();
-            ImGui.RadioButton(string.Empty, SelectedItem.RowId == action.RowId);
-
-            ImGui.TableNextColumn();
-
-            if (ImGui.Selectable
-                (
-                    $"{jobName}##Action_{action.RowId}_{action.Name.ToString()}",
-                    false,
-                    ImGuiSelectableFlags.SpanAllColumns
-                ))
-            {
-                SelectedID  = action.RowId;
-                selectState = true;
-            }
-
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted(action.ClassJobLevel.ToString());
-
-            ImGui.TableNextColumn();
-            ImGuiOm.TextImage($"{actionName} ({action.RowId})", texture.GetWrapOrEmpty().Handle, new(ImGui.GetTextLineHeightWithSpacing()));
-        }
+        return SelectedItems.Count == 0
+                   ? string.Empty
+                   : $"[{SelectedItems.First().ClassJobCategory.ValueNullable?.Name.ToString()}] " +
+                     $"{SelectedItems.First().Name.ToString()} "                                   +
+                     $"({SelectedItems.First().RowId})...";
     }
 
-    public override bool DrawCheckbox()
+    protected override Vector2 GetPopupSize() =>
+        ScaledVector2(500f, 400f);
+
+    protected override int GetTableColumnCount() =>
+        4;
+
+    protected override bool CanDrawItem(Action item) =>
+        DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out _);
+
+    protected override void SetupColumns(ComboSelectionMode mode)
     {
-        using var drawID = ImRaii.PushId($"{ID}");
+        ImGui.TableSetupColumn
+            (mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
+        ImGui.TableSetupColumn("Job",    ImGuiTableColumnFlags.WidthStretch, 20);
+        ImGui.TableSetupColumn("Level",  ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize("1234").X);
+        ImGui.TableSetupColumn("Action", ImGuiTableColumnFlags.WidthStretch, 50);
+    }
 
-        var selectState = false;
+    protected override void DrawHeaders()
+    {
+        ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+        ImGui.TableNextColumn();
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(LuminaWrapper.GetAddonText(294));
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(LuminaWrapper.GetAddonText(335));
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(LuminaWrapper.GetAddonText(1340));
+    }
 
-        var preview = SelectedItems.Count == 0
-                          ? string.Empty
-                          : $"[{SelectedItems.First().ClassJobCategory.ValueNullable?.Name.ToString()}] " +
-                            $"{SelectedItems.First().Name.ToString()} "                                   +
-                            $"({SelectedItems.First().RowId})...";
-        if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
-            ImGui.EndCombo();
+    protected override bool DrawDataColumns(Action action, ComboSelectionMode mode, bool isSelected)
+    {
+        DService.Instance().Texture.TryGetFromGameIcon(new(action.Icon), out var texture);
 
-        if (ImGui.IsItemClicked())
-            ImGui.OpenPopup($"###Popup_{ID}");
+        var actionName = action.Name.ToString();
+        var jobName    = action.ClassJobCategory.ValueNullable?.Name.ToString() ?? string.Empty;
 
-        ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup($"###Popup_{ID}");
+        ImGui.TableNextColumn();
+        var clicked = ImGui.Selectable
+        (
+            $"{jobName}##Action_{action.RowId}_{action.Name.ToString()}",
+            mode == ComboSelectionMode.Checkbox && isSelected,
+            GetSelectableFlags(mode)
+        );
 
-        if (popup)
-        {
-            ImGui.SetNextItemWidth(-1f);
-            if (ImGui.InputTextWithHint("###Search", LuminaWrapper.GetAddonText(8128), ref SearchWord, 128))
-                Searcher.Search(SearchWord);
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(action.ClassJobLevel.ToString());
 
-            ImGui.Separator();
-
-            var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-            using var table     = ImRaii.Table("###Table", 4, ImGuiTableFlags.Borders, tableSize);
-
-            if (table)
-            {
-                ImGui.TableSetupColumn("Checkbox", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
-                ImGui.TableSetupColumn("Job",      ImGuiTableColumnFlags.WidthStretch, 20);
-                ImGui.TableSetupColumn("Level",    ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize("1234").X);
-                ImGui.TableSetupColumn("Action",   ImGuiTableColumnFlags.WidthStretch, 50);
-
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-                ImGui.TableNextColumn();
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(294));
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(335));
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(1340));
-
-                foreach (var action in SelectedItems)
-                    Render(action);
-
-                foreach (var action in Searcher.SearchResult)
-                {
-                    if (SelectedIDs.Contains(action.RowId)) continue;
-                    Render(action);
-                }
-            }
-        }
-
-        return selectState;
-
-        void Render(Action action)
-        {
-            if (!DService.Instance().Texture.TryGetFromGameIcon(new(action.Icon), out var texture)) return;
-
-            var actionName = action.Name.ToString();
-            var jobName    = action.ClassJobCategory.ValueNullable?.Name.ToString() ?? string.Empty;
-
-            using var id = ImRaii.PushId($"Action_{action.RowId}");
-
-            ImGui.TableNextRow();
-
-            ImGui.TableNextColumn();
-            var isSelected = SelectedIDs.Contains(action.RowId);
-
-            if (ImGui.Checkbox(string.Empty, ref isSelected))
-            {
-                if (!SelectedIDs.Remove(action.RowId))
-                    SelectedIDs.Add(action.RowId);
-                selectState = true;
-            }
-
-            ImGui.TableNextColumn();
-
-            if (ImGui.Selectable
-                (
-                    $"{jobName}##Action_{action.RowId}_{action.Name.ToString()}",
-                    isSelected,
-                    ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups
-                ))
-            {
-                if (!SelectedIDs.Remove(action.RowId))
-                    SelectedIDs.Add(action.RowId);
-                selectState = true;
-            }
-
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted(action.ClassJobLevel.ToString());
-
-            ImGui.TableNextColumn();
-            ImGuiOm.TextImage(actionName, texture.GetWrapOrEmpty().Handle, new(ImGui.GetTextLineHeightWithSpacing()));
-        }
+        ImGui.TableNextColumn();
+        ImGuiOm.TextImage($"{actionName} ({action.RowId})", texture.GetWrapOrEmpty().Handle, new(ImGui.GetTextLineHeightWithSpacing()));
+        return clicked;
     }
 }

@@ -27,185 +27,60 @@ public class WorldSelectCombo : LuminaComboBase<World>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    public override bool DrawRadio()
+    protected override string GetPreviewText(ComboSelectionMode mode)
     {
-        using var drawID = ImRaii.PushId($"{ID}");
-
-        var selectState = false;
-
-        var preview = SelectedItem.RowId == 0
-                          ? string.Empty
-                          : $"[{SelectedItem.DataCenter.Value.Name.ToString()}] {SelectedItem.Name.ToString()}";
-        if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
-            ImGui.EndCombo();
-
-        if (ImGui.IsItemClicked())
-            ImGui.OpenPopup($"###Popup_{ID}");
-
-        ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup($"###Popup_{ID}");
-
-        if (popup)
+        if (mode == ComboSelectionMode.Radio)
         {
-            ImGui.SetNextItemWidth(-1f);
-            if (ImGui.InputTextWithHint("###Search", LuminaWrapper.GetAddonText(8128), ref SearchWord, 128))
-                Searcher.Search(SearchWord);
-
-            ImGui.Separator();
-
-            var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-            using var table     = ImRaii.Table("###Table", 3, ImGuiTableFlags.Borders, tableSize);
-
-            if (table)
-            {
-                ImGui.TableSetupColumn("RadioButton", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
-                ImGui.TableSetupColumn("World",       ImGuiTableColumnFlags.WidthStretch, 50);
-                ImGui.TableSetupColumn("DataCenter",  ImGuiTableColumnFlags.WidthStretch, 40);
-
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-                ImGui.TableNextColumn();
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(16222));
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetLobbyText(802));
-
-                if (SelectedItem is { RowId: > 0 })
-                    Render(SelectedItem);
-
-                foreach (var world in Searcher.SearchResult)
-                {
-                    if (world.RowId == SelectedID) continue;
-                    Render(world);
-                }
-            }
+            return SelectedItem.RowId == 0
+                       ? string.Empty
+                       : $"[{SelectedItem.DataCenter.Value.Name.ToString()}] {SelectedItem.Name.ToString()}";
         }
 
-        return selectState;
-
-        void Render(World world)
-        {
-            var worldName = world.Name.ToString();
-            var dcName    = world.DataCenter.Value.Name.ToString();
-
-            using var id = ImRaii.PushId($"World_{world.RowId}");
-
-            ImGui.TableNextRow();
-
-            ImGui.TableNextColumn();
-            ImGui.RadioButton(string.Empty, SelectedItem.RowId == world.RowId);
-
-            ImGui.TableNextColumn();
-
-            if (ImGui.Selectable
-                (
-                    $"{worldName}##World_{world.RowId}",
-                    false,
-                    ImGuiSelectableFlags.SpanAllColumns
-                ))
-            {
-                SelectedID  = world.RowId;
-                selectState = true;
-            }
-
-            ImGuiOm.TooltipHover(worldName);
-
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted(dcName);
-        }
+        return SelectedItems.Count == 0
+                   ? string.Empty
+                   : $"[{SelectedItems.First().DataCenter.Value.Name.ToString()}] {SelectedItems.First().Name.ToString()}...";
     }
 
-    public override bool DrawCheckbox()
+    protected override Vector2 GetPopupSize() =>
+        ScaledVector2(500f, 400f);
+
+    protected override int GetTableColumnCount() =>
+        3;
+
+    protected override void SetupColumns(ComboSelectionMode mode)
     {
-        using var drawID = ImRaii.PushId($"{ID}");
+        ImGui.TableSetupColumn
+            (mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
+        ImGui.TableSetupColumn("World",      ImGuiTableColumnFlags.WidthStretch, 50);
+        ImGui.TableSetupColumn("DataCenter", ImGuiTableColumnFlags.WidthStretch, 40);
+    }
 
-        var selectState = false;
+    protected override void DrawHeaders()
+    {
+        ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+        ImGui.TableNextColumn();
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(LuminaWrapper.GetAddonText(16222));
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(LuminaWrapper.GetLobbyText(802));
+    }
 
-        var preview = SelectedItems.Count == 0
-                          ? string.Empty
-                          : $"[{SelectedItems.First().DataCenter.Value.Name.ToString()}] {SelectedItems.First().Name.ToString()}...";
-        if (ImGui.BeginCombo("###Combo", preview, ImGuiComboFlags.HeightLarge))
-            ImGui.EndCombo();
+    protected override bool DrawDataColumns(World world, ComboSelectionMode mode, bool isSelected)
+    {
+        var worldName = world.Name.ToString();
 
-        if (ImGui.IsItemClicked())
-            ImGui.OpenPopup($"###Popup_{ID}");
+        ImGui.TableNextColumn();
+        var clicked = ImGui.Selectable
+        (
+            $"{worldName}##World_{world.RowId}",
+            isSelected,
+            GetSelectableFlags(mode)
+        );
 
-        ImGui.SetNextWindowSize(ScaledVector2(500f, 400f));
-        using var popup = ImRaii.Popup($"###Popup_{ID}");
+        ImGuiOm.TooltipHover(worldName);
 
-        if (popup)
-        {
-            ImGui.SetNextItemWidth(-1f);
-            if (ImGui.InputTextWithHint("###Search", LuminaWrapper.GetAddonText(8128), ref SearchWord, 128))
-                Searcher.Search(SearchWord);
-
-            ImGui.Separator();
-
-            var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0);
-            using var table     = ImRaii.Table("###Table", 3, ImGuiTableFlags.Borders, tableSize);
-
-            if (table)
-            {
-                ImGui.TableSetupColumn("Checkbox",   ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
-                ImGui.TableSetupColumn("World",      ImGuiTableColumnFlags.WidthStretch, 50);
-                ImGui.TableSetupColumn("DataCenter", ImGuiTableColumnFlags.WidthStretch, 40);
-
-                ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
-                ImGui.TableNextColumn();
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetAddonText(16222));
-                ImGui.TableNextColumn();
-                ImGui.TextUnformatted(LuminaWrapper.GetLobbyText(802));
-
-                foreach (var world in SelectedItems)
-                    Render(world);
-
-                foreach (var world in Searcher.SearchResult)
-                {
-                    if (SelectedIDs.Contains(world.RowId)) continue;
-                    Render(world);
-                }
-            }
-        }
-
-        return selectState;
-
-        void Render(World world)
-        {
-            var worldName = world.Name.ToString();
-            var dcName    = world.DataCenter.Value.Name.ToString();
-
-            using var id = ImRaii.PushId($"World_{world.RowId}");
-
-            ImGui.TableNextRow();
-
-            ImGui.TableNextColumn();
-            var isSelected = SelectedIDs.Contains(world.RowId);
-
-            if (ImGui.Checkbox(string.Empty, ref isSelected))
-            {
-                if (!SelectedIDs.Remove(world.RowId))
-                    SelectedIDs.Add(world.RowId);
-                selectState = true;
-            }
-
-            ImGui.TableNextColumn();
-
-            if (ImGui.Selectable
-                (
-                    $"{worldName}##World_{world.RowId}",
-                    isSelected,
-                    ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups
-                ))
-            {
-                if (!SelectedIDs.Remove(world.RowId))
-                    SelectedIDs.Add(world.RowId);
-                selectState = true;
-            }
-
-            ImGuiOm.TooltipHover(worldName);
-
-            ImGui.TableNextColumn();
-            ImGui.TextUnformatted(dcName);
-        }
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(world.DataCenter.Value.Name.ToString());
+        return clicked;
     }
 }
