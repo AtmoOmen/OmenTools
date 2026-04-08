@@ -1,4 +1,3 @@
-using System.Numerics;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Lumina;
 
@@ -37,9 +36,6 @@ public class MountSelectCombo : LuminaComboBase<Mount>
                    ? string.Empty
                    : $"[{SelectedItems.Count}] {SelectedItems.First().Singular.ToString()} ({SelectedItems.First().RowId})...";
     }
-
-    protected override Vector2 GetPopupSize() =>
-        ScaledVector2(500f, 400f);
 
     protected override int GetTableColumnCount() =>
         2;

@@ -1,4 +1,3 @@
-using System.Numerics;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Lumina;
@@ -40,9 +39,6 @@ public class WorldSelectCombo : LuminaComboBase<World>
                    ? string.Empty
                    : $"[{SelectedItems.First().DataCenter.Value.Name.ToString()}] {SelectedItems.First().Name.ToString()}...";
     }
-
-    protected override Vector2 GetPopupSize() =>
-        ScaledVector2(500f, 400f);
 
     protected override int GetTableColumnCount() =>
         3;

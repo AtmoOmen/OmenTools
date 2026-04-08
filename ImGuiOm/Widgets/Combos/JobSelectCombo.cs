@@ -1,4 +1,3 @@
-using System.Numerics;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService;
@@ -46,9 +45,6 @@ public class JobSelectCombo : LuminaComboBase<ClassJob>
                      $"{SelectedItems.First().Name.ToString()} "                                   +
                      $"({SelectedItems.First().RowId})...";
     }
-
-    protected override Vector2 GetPopupSize() =>
-        ScaledVector2(500f, 400f);
 
     protected override int GetTableColumnCount() =>
         4;

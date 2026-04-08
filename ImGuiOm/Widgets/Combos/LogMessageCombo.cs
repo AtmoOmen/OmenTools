@@ -1,4 +1,3 @@
-using System.Numerics;
 using Dalamud.Interface.Utility;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Lumina;
@@ -38,9 +37,6 @@ public class LogMessageCombo : LuminaComboBase<LogMessage>
                    ? string.Empty
                    : $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItems.First().RowId)} ({SelectedItems.First().RowId})...";
     }
-
-    protected override Vector2 GetPopupSize() =>
-        ScaledVector2(600f, 400f);
 
     protected override int GetTableColumnCount() =>
         2;

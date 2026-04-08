@@ -1,4 +1,3 @@
-using System.Numerics;
 using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Lumina;
 using Action = Lumina.Excel.Sheets.Action;
@@ -40,9 +39,6 @@ public class ActionSelectCombo : LuminaComboBase<Action>
                      $"{SelectedItems.First().Name.ToString()} "                                   +
                      $"({SelectedItems.First().RowId})...";
     }
-
-    protected override Vector2 GetPopupSize() =>
-        ScaledVector2(500f, 400f);
 
     protected override int GetTableColumnCount() =>
         4;

@@ -11,6 +11,8 @@ public abstract class LuminaComboBase<T>
 )
     where T : struct, IExcelRow<T>
 {
+    private static readonly Vector2 PopupSize = ScaledVector2(600f, 400f);
+
     protected enum ComboSelectionMode
     {
         Radio,
@@ -20,6 +22,7 @@ public abstract class LuminaComboBase<T>
     protected string            SearchWord = string.Empty;
     protected LuminaSearcher<T> Searcher { get; init; } = searcher;
     protected string            ID       { get; init; } = id;
+    private   bool              IsSelectedOnly;
 
     public abstract uint          SelectedID  { get; set; }
     public abstract HashSet<uint> SelectedIDs { get; set; }
@@ -40,12 +43,10 @@ public abstract class LuminaComboBase<T>
 
     protected abstract string GetPreviewText(ComboSelectionMode mode);
 
-    protected abstract Vector2 GetPopupSize();
-
     protected abstract int GetTableColumnCount();
 
     protected virtual ImGuiTableFlags GetTableFlags() =>
-        ImGuiTableFlags.Borders;
+        ImGuiTableFlags.Borders | ImGuiTableFlags.ScrollY;
 
     protected virtual bool CanDrawItem(T item) =>
         true;
@@ -71,21 +72,25 @@ public abstract class LuminaComboBase<T>
         if (ImGui.IsItemClicked())
             ImGui.OpenPopup($"###Popup_{ID}");
 
-        ImGui.SetNextWindowSize(GetPopupSize());
+        ImGui.SetNextWindowSize(PopupSize);
         using var popup = ImRaii.Popup($"###Popup_{ID}");
         if (!popup) return false;
 
+        var selectedOnlyLabel = $"##SelectedOnly_{ID}";
+        ImGui.Checkbox(selectedOnlyLabel, ref IsSelectedOnly);
+        ImGui.SameLine();
         ImGui.SetNextItemWidth(-1f);
         if (ImGui.InputTextWithHint("###Search", LuminaWrapper.GetAddonText(8128), ref SearchWord, 128))
             Searcher.Search(SearchWord);
 
         ImGui.Separator();
 
-        var       tableSize = new Vector2(ImGui.GetContentRegionAvail().X, 0f);
+        var       tableSize = ImGui.GetContentRegionAvail();
         using var table     = ImRaii.Table("###Table", GetTableColumnCount(), GetTableFlags(), tableSize);
         if (!table) return false;
 
         SetupColumns(mode);
+        ImGui.TableSetupScrollFreeze(0, 1);
         DrawHeaders();
 
         var visibleItems = BuildVisibleItems(mode);
@@ -122,20 +127,21 @@ public abstract class LuminaComboBase<T>
         var result = new List<T>();
         var seen   = new HashSet<uint>();
 
-        if (mode == ComboSelectionMode.Radio)
+        if (!IsSelectedOnly)
         {
-            AppendVisibleItem(SelectedItem, seen, result);
-
             foreach (var item in Searcher.SearchResult)
                 AppendVisibleItem(item, seen, result);
 
             return result;
         }
 
-        foreach (var item in SelectedItems)
-            AppendVisibleItem(item, seen, result);
+        if (mode == ComboSelectionMode.Radio)
+        {
+            AppendVisibleItem(SelectedItem, seen, result);
+            return result;
+        }
 
-        foreach (var item in Searcher.SearchResult)
+        foreach (var item in SelectedItems)
             AppendVisibleItem(item, seen, result);
 
         return result;
