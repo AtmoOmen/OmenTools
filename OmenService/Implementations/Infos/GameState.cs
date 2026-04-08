@@ -7,6 +7,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Data;
 using Lumina.Excel.Sheets;
+using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
@@ -43,7 +44,7 @@ public unsafe class GameState : OmenServiceBase<GameState>
         DService.Instance().ClientState.Login  -= OnDalamudLogin;
         DService.Instance().ClientState.Logout -= OnDalamudLogout;
 
-        taskHelper.Abort();
+        taskHelper.Dispose();
         taskHelper = null;
 
         FateDirectorSetupHook?.Dispose();
@@ -71,6 +72,14 @@ public unsafe class GameState : OmenServiceBase<GameState>
         return original;
     }
 
+    /// <summary>
+    ///     当前是否位于可以使用 PVE 战斗技能的区域
+    /// </summary>
+    public static bool IsInPVEActonZone =>
+        !IsInPVPArea &&
+        (ContentFinderConditionData.RowId == 0 ||
+         !ContentTypes.NotPVE.Contains(ContentFinderConditionData.ContentType.RowId));
+    
     /// <summary>
     ///     当前窗口是否位于前台
     /// </summary>
