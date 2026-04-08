@@ -1,10 +1,11 @@
+using System.Collections.Frozen;
 using FFXIVClientStructs.FFXIV.Client.Game;
 
 namespace OmenTools.Info.Game.Data;
 
 public static class Inventories
 {
-    public static readonly List<InventoryType> Player =
+    public static FrozenSet<InventoryType> Player { get; } =
     [
         InventoryType.Inventory1,
         InventoryType.Inventory2,
@@ -12,7 +13,7 @@ public static class Inventories
         InventoryType.Inventory4
     ];
 
-    public static readonly List<InventoryType> PlayerWithArmory =
+    public static FrozenSet<InventoryType> PlayerWithArmory { get; } =
     [
         InventoryType.EquippedItems,
         InventoryType.ArmoryMainHand,
@@ -33,7 +34,7 @@ public static class Inventories
         InventoryType.Inventory4
     ];
 
-    public static readonly List<InventoryType> Retainer =
+    public static FrozenSet<InventoryType> Retainer { get; } =
     [
         InventoryType.RetainerPage1,
         InventoryType.RetainerPage2,
@@ -44,7 +45,7 @@ public static class Inventories
         InventoryType.RetainerPage7
     ];
 
-    public static readonly List<InventoryType> RetainerAll =
+    public static FrozenSet<InventoryType> RetainerAll { get; } =
     [
         InventoryType.RetainerPage1,
         InventoryType.RetainerPage2,

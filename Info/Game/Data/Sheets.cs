@@ -255,4 +255,16 @@ public static class Sheets
                               .Where(x => !string.IsNullOrEmpty(x.PlaceName.ValueNullable?.Name.ExtractText()))
                               .ToDictionary(x => x.RowId, x => x)
         );
+    
+    [DataShareTag]
+    private const string TARGET_AREA_ACTIONS_TAG = "OmenTools.Info.Game.Data.Sheets.TargetAreaActions";
+    
+    public static Dictionary<uint, Action> TargetAreaActions { get; } =
+        DService.Instance().PI.GetOrCreateData
+        (
+            TARGET_AREA_ACTIONS_TAG,
+            () => LuminaGetter.Get<Action>()
+                              .Where(x => x.TargetArea)
+                              .ToDictionary(x => x.RowId, x => x)
+        );
 }

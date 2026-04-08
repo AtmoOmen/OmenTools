@@ -1,4 +1,5 @@
-﻿using OmenTools.Info.Models;
+﻿using System.Collections.Frozen;
+using OmenTools.Info.Models;
 
 namespace OmenTools.Info.Game.Data;
 
@@ -7,7 +8,7 @@ public static class Positions
     /// <summary>
     ///     可潜水区域
     /// </summary>
-    public static Dictionary<uint, Polygon[]> DivableAreas { get; } = new()
+    public static FrozenDictionary<uint, Polygon[]> DivableAreas { get; } = new Dictionary<uint, Polygon[]>
     {
         // 拉诺西亚高地
         [139] =
@@ -253,5 +254,5 @@ public static class Positions
                 ]
             )
         ]
-    };
+    }.ToFrozenDictionary();
 }
