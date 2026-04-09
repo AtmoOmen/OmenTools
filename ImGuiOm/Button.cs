@@ -73,22 +73,14 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId($"{id}_{icon}");
 
-        var iconText = icon.ToIconString();
-        var iconSize = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            iconSize = ImGui.CalcTextSize(iconText) + Vector2.One;
+        var iconText   = icon.ToIconString();
+        var iconSize   = CalcIconSize(iconText, useStaticFont);
+        var buttonSize = new Vector2(GetSingleLineHeight());
+        var result     = ImGui.Button(string.Empty, buttonSize);
+        var (min, size) = GetItemRect();
+        var iconPos     = GetCenteredPosition(min, size, iconSize);
 
-        var style          = ImGui.GetStyle();
-        var windowDrawList = ImGui.GetWindowDrawList();
-        var cursorPos      = ImGui.GetCursorScreenPos();
-        var padding        = style.FramePadding;
-        var buttonWidth    = iconSize.X                           + padding.X * 2;
-        var buttonHeight   = ImGui.GetTextLineHeightWithSpacing() + padding.Y;
-        var result         = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
-        var iconPos        = new Vector2(cursorPos.X + (buttonWidth - iconSize.X + padding.X / 3) / 2, cursorPos.Y + style.FramePadding.Y);
-
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
+        DrawIconText(iconPos, iconText, useStaticFont);
 
         if (!tooltip.IsNullOrEmpty())
             TooltipHover(tooltip);
@@ -101,17 +93,12 @@ public static partial class ImGuiOm
         using var idPush = ImRaii.PushId($"{id}_{icon}");
 
         var iconText = icon.ToIconString();
-        var iconSize = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            iconSize = ImGui.CalcTextSize(iconText);
+        var iconSize = CalcIconSize(iconText, useStaticFont);
+        var result      = ImGui.Button(string.Empty, buttonSize);
+        var (min, size) = GetItemRect();
+        var iconPos     = GetCenteredPosition(min, size, iconSize);
 
-        var windowDrawList = ImGui.GetWindowDrawList();
-        var cursorPos      = ImGui.GetCursorScreenPos();
-        var result         = ImGui.Button(string.Empty, buttonSize);
-        var iconPos        = new Vector2(cursorPos.X + (buttonSize.X - iconSize.X) / 2, cursorPos.Y + (buttonSize.Y - iconSize.Y) / 2);
-
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
+        DrawIconText(iconPos, iconText, useStaticFont);
 
         if (!tooltip.IsNullOrEmpty())
             TooltipHover(tooltip);
@@ -123,28 +110,19 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
 
-        var iconText = icon.ToIconString();
-        var iconSize = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            iconSize = ImGui.CalcTextSize(iconText);
+        var iconText    = icon.ToIconString();
+        var iconSize    = CalcIconSize(iconText, useStaticFont);
+        var displaySpan = GetDisplaySpan(text);
+        var textSize    = ImGui.CalcTextSize(displaySpan);
+        var padding     = ImGui.GetStyle().FramePadding.X;
+        var spacing     = 3f * ImGuiHelpers.GlobalScale;
+        var buttonSize  = new Vector2(MathF.Max(iconSize.X, textSize.X) + padding * 2, GetDoubleLineHeight());
+        var result      = ImGui.Button(string.Empty, buttonSize);
+        var (contentMin, contentSize) = GetButtonContentRect();
+        var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
 
-        var displaySpan     = GetDisplaySpan(text);
-        var textSize        = ImGui.CalcTextSize(displaySpan);
-        var windowDrawList  = ImGui.GetWindowDrawList();
-        var cursorScreenPos = ImGui.GetCursorScreenPos();
-        var padding         = ImGui.GetStyle().FramePadding.X;
-        var spacing         = 3f * ImGuiHelpers.GlobalScale;
-        var buttonWidth     = MathF.Max(iconSize.X, textSize.X) + padding              * 2;
-        var buttonHeight    = iconSize.Y                        + textSize.Y + padding * 2 + spacing;
-
-        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
-
-        var iconPos = new Vector2(cursorScreenPos.X + (buttonWidth - iconSize.X) / 2, cursorScreenPos.Y + padding);
-        var textPos = new Vector2(cursorScreenPos.X + (buttonWidth - textSize.X) / 2, iconPos.Y         + iconSize.Y + spacing);
-
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
-        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
+        DrawIconText(iconPos, iconText, useStaticFont);
+        ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
     }
@@ -153,25 +131,17 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
 
-        var iconText = icon.ToIconString();
-        var iconSize = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            iconSize = ImGui.CalcTextSize(iconText);
+        var iconText    = icon.ToIconString();
+        var iconSize    = CalcIconSize(iconText, useStaticFont);
+        var displaySpan = GetDisplaySpan(text);
+        var textSize    = ImGui.CalcTextSize(displaySpan);
+        var spacing     = 3f * ImGuiHelpers.GlobalScale;
+        var result      = ImGui.Button(string.Empty, buttonSize);
+        var (contentMin, contentSize) = GetButtonContentRect();
+        var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
 
-        var displaySpan     = GetDisplaySpan(text);
-        var textSize        = ImGui.CalcTextSize(displaySpan);
-        var totalHeight     = iconSize.Y + textSize.Y + 3f * ImGuiHelpers.GlobalScale;
-        var windowDrawList  = ImGui.GetWindowDrawList();
-        var cursorScreenPos = ImGui.GetCursorScreenPos();
-
-        var result = ImGui.Button(string.Empty, buttonSize);
-
-        var iconPos = new Vector2(cursorScreenPos.X + (buttonSize.X - iconSize.X) / 2, cursorScreenPos.Y + (buttonSize.Y - totalHeight) / 2);
-        var textPos = new Vector2(cursorScreenPos.X + (buttonSize.X - textSize.X) / 2, iconPos.Y         + iconSize.Y + 3f              * ImGuiHelpers.GlobalScale);
-
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
-        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
+        DrawIconText(iconPos, iconText, useStaticFont);
+        ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
     }
@@ -180,28 +150,19 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
 
-        var iconText = icon.ToIconString();
-        var iconSize = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            iconSize = ImGui.CalcTextSize(iconText);
+        var iconText    = icon.ToIconString();
+        var iconSize    = CalcIconSize(iconText, useStaticFont);
+        var displaySpan = GetDisplaySpan(text);
+        var textSize    = ImGui.CalcTextSize(displaySpan);
+        var padding     = ImGui.GetStyle().FramePadding;
+        var spacing     = ImGui.GetStyle().ItemSpacing.X;
+        var buttonSize  = new Vector2(iconSize.X + textSize.X + padding.X * 2 + spacing, GetSingleLineHeight());
+        var result      = ImGui.Button(string.Empty, buttonSize);
+        var (contentMin, contentSize) = GetButtonContentRect();
+        var (iconPos, textPos)        = GetHorizontalLayout(contentMin, contentSize, iconSize, textSize, spacing);
 
-        var displaySpan     = GetDisplaySpan(text);
-        var textSize        = ImGui.CalcTextSize(displaySpan);
-        var windowDrawList  = ImGui.GetWindowDrawList();
-        var cursorScreenPos = ImGui.GetCursorScreenPos();
-        var padding         = ImGui.GetStyle().FramePadding;
-        var spacing         = ImGui.GetStyle().ItemSpacing.X;
-        var buttonWidth     = iconSize.X                        + textSize.X + padding.X * 2 + spacing;
-        var buttonHeight    = MathF.Max(iconSize.Y, textSize.Y) + padding.Y              * 2;
-
-        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
-
-        var iconPos = new Vector2(cursorScreenPos.X + padding.X, cursorScreenPos.Y + (buttonHeight                              - iconSize.Y) / 2);
-        var textPos = new Vector2(iconPos.X         + iconSize.X                   + spacing, cursorScreenPos.Y + (buttonHeight - textSize.Y) / 2);
-
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
-        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
+        DrawIconText(iconPos, iconText, useStaticFont);
+        ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
     }
@@ -210,26 +171,17 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
 
-        var iconText = icon.ToIconString();
-        var iconSize = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            iconSize = ImGui.CalcTextSize(iconText);
+        var iconText    = icon.ToIconString();
+        var iconSize    = CalcIconSize(iconText, useStaticFont);
+        var displaySpan = GetDisplaySpan(text);
+        var textSize    = ImGui.CalcTextSize(displaySpan);
+        var spacing     = ImGui.GetStyle().ItemSpacing.X;
+        var result      = ImGui.Button(string.Empty, buttonSize);
+        var (contentMin, contentSize) = GetButtonContentRect();
+        var (iconPos, textPos)        = GetHorizontalLayout(contentMin, contentSize, iconSize, textSize, spacing);
 
-        var displaySpan     = GetDisplaySpan(text);
-        var textSize        = ImGui.CalcTextSize(displaySpan);
-        var windowDrawList  = ImGui.GetWindowDrawList();
-        var cursorScreenPos = ImGui.GetCursorScreenPos();
-        var padding         = ImGui.GetStyle().FramePadding.X;
-        var spacing         = ImGui.GetStyle().ItemSpacing.X;
-
-        var result = ImGui.Button(string.Empty, buttonSize);
-
-        var iconPos = new Vector2(cursorScreenPos.X + padding, cursorScreenPos.Y + (buttonSize.Y                              - iconSize.Y) / 2);
-        var textPos = new Vector2(iconPos.X         + iconSize.X                 + spacing, cursorScreenPos.Y + (buttonSize.Y - textSize.Y) / 2);
-
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
-        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
+        DrawIconText(iconPos, iconText, useStaticFont);
+        ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
     }
@@ -238,27 +190,18 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.Handle}");
 
-        var iconSize     = icon.Size;
-        var displaySpan  = GetDisplaySpan(text);
-        var textSize     = ImGui.CalcTextSize(displaySpan);
-        var padding      = ImGui.GetStyle().FramePadding.X;
-        var spacing      = 3f * ImGuiHelpers.GlobalScale;
-        var buttonWidth  = MathF.Max(iconSize.X, textSize.X) + padding              * 2;
-        var buttonHeight = iconSize.Y                        + textSize.Y + padding * 2 + spacing;
+        var iconSize    = icon.Size;
+        var displaySpan = GetDisplaySpan(text);
+        var textSize    = ImGui.CalcTextSize(displaySpan);
+        var padding     = ImGui.GetStyle().FramePadding.X;
+        var spacing     = 3f * ImGuiHelpers.GlobalScale;
+        var buttonSize  = new Vector2(MathF.Max(iconSize.X, textSize.X) + padding * 2, GetDoubleLineHeight());
+        var result      = ImGui.Button(string.Empty, buttonSize);
+        var (contentMin, contentSize) = GetButtonContentRect();
+        var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
+        var windowDrawList            = ImGui.GetWindowDrawList();
 
-        var result = ImGui.Button(string.Empty, new Vector2(buttonWidth, buttonHeight));
-
-        var cursorScreenPos = ImGui.GetCursorScreenPos();
-
-        var totalContentHeight = iconSize.Y + textSize.Y + spacing;
-        var verticalOffset     = (buttonHeight - totalContentHeight) / 2;
-
-        var iconStartPos = new Vector2(cursorScreenPos.X + (buttonWidth - iconSize.X) / 2, cursorScreenPos.Y + verticalOffset);
-        var iconEndPos   = iconStartPos + iconSize;
-        var textPos      = new Vector2(cursorScreenPos.X + (buttonWidth - textSize.X) / 2, iconStartPos.Y + iconSize.Y + spacing);
-
-        var windowDrawList = ImGui.GetWindowDrawList();
-        windowDrawList.AddImage(icon.Handle, iconStartPos, iconEndPos);
+        windowDrawList.AddImage(icon.Handle, iconPos, iconPos + iconSize);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
@@ -268,19 +211,16 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.Handle}");
 
-        var iconSize        = icon.Size;
-        var displaySpan     = GetDisplaySpan(text);
-        var textSize        = ImGui.CalcTextSize(displaySpan);
-        var windowDrawList  = ImGui.GetWindowDrawList();
-        var cursorScreenPos = ImGui.GetCursorScreenPos();
+        var iconSize    = icon.Size;
+        var displaySpan = GetDisplaySpan(text);
+        var textSize    = ImGui.CalcTextSize(displaySpan);
+        var spacing     = 3f * ImGuiHelpers.GlobalScale;
+        var result      = ImGui.Button(string.Empty, buttonSize);
+        var (contentMin, contentSize) = GetButtonContentRect();
+        var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
+        var windowDrawList            = ImGui.GetWindowDrawList();
 
-        var result = ImGui.Button(string.Empty, buttonSize);
-
-        var iconPos    = new Vector2(cursorScreenPos.X + (buttonSize.X - iconSize.X) / 2, cursorScreenPos.Y + (buttonSize.Y - (iconSize.Y + textSize.Y)) / 2);
-        var iconEndPos = iconPos + iconSize;
-        var textPos    = new Vector2(cursorScreenPos.X + (buttonSize.X - textSize.X) / 2, iconPos.Y + iconSize.Y);
-
-        windowDrawList.AddImage(icon.Handle, iconPos, iconEndPos);
+        windowDrawList.AddImage(icon.Handle, iconPos, iconPos + iconSize);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
@@ -290,14 +230,9 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId(id);
 
-        var style    = ImGui.GetStyle();
-        var padding  = style.FramePadding.X;
-        var colors   = style.Colors;
+        var colors   = ImGui.GetStyle().Colors;
         var iconText = icon.ToIconString();
-
-        var size = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            size = new(ImGui.GetContentRegionAvail().X, ImGui.CalcTextSize(iconText).Y + 2 * padding);
+        var size     = new Vector2(ImGui.GetContentRegionAvail().X, GetSingleLineHeight());
 
         using var colorPush = ImRaii.PushColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive])
                                     .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered])
@@ -320,7 +255,7 @@ public static partial class ImGuiOm
         var colors   = style.Colors;
         var textSize = ImGui.CalcTextSize(text);
 
-        var size = new Vector2(MathF.Max(ImGui.GetContentRegionAvail().X, textSize.X + 2 * padding.X), textSize.Y + 2 * padding.Y);
+        var size = new Vector2(MathF.Max(ImGui.GetContentRegionAvail().X, textSize.X + 2 * padding.X), GetSingleLineHeight());
 
         using var colorPush = ImRaii.PushColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive])
                                     .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered])
@@ -333,11 +268,7 @@ public static partial class ImGuiOm
 
     public static bool ButtonStretch(string text)
     {
-        var style    = ImGui.GetStyle();
-        var padding  = style.FramePadding;
-        var textSize = ImGui.CalcTextSize(text);
-
-        var size   = new Vector2(ImGui.GetContentRegionAvail().X, textSize.Y + 2 * padding.Y);
+        var size   = new Vector2(ImGui.GetContentRegionAvail().X, GetSingleLineHeight());
         var result = ImGui.Button(text, size);
 
         return result;
