@@ -13,6 +13,23 @@ public static class Inventories
         InventoryType.Inventory4
     ];
 
+    public static FrozenSet<InventoryType> Armory { get; } =
+    [
+        InventoryType.EquippedItems,
+        InventoryType.ArmoryMainHand,
+        InventoryType.ArmoryOffHand,
+        InventoryType.ArmoryHead,
+        InventoryType.ArmoryBody,
+        InventoryType.ArmoryHands,
+        InventoryType.ArmoryWaist,
+        InventoryType.ArmoryLegs,
+        InventoryType.ArmoryFeets,
+        InventoryType.ArmoryEar,
+        InventoryType.ArmoryNeck,
+        InventoryType.ArmoryWrist,
+        InventoryType.ArmoryRings,
+    ];
+    
     public static FrozenSet<InventoryType> PlayerWithArmory { get; } =
     [
         InventoryType.EquippedItems,
