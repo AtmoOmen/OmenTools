@@ -1,264 +1,65 @@
+using System.Collections.Frozen;
 using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.InteropServices;
-using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Data.Files;
 using Lumina.Data.Parsing.Layer;
 using Lumina.Excel.Sheets;
 using OmenTools.Dalamud;
-using OmenTools.Dalamud.DataShare.Attributes;
+using OmenTools.Info.Game.ItemSource.Enums;
+using OmenTools.Info.Game.ItemSource.Models;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService;
-using GrandCompany = FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany;
 
-namespace OmenTools.Info.Game;
+namespace OmenTools.Info.Game.ItemSource;
 
 public sealed class ItemSourceInfo
 {
-    [DataShareTag]
-    private const string DATA_SHARE_TAG = "OmenTools.ItemSourceInfo";
-    
     private const string DEFAULT_SHOP_NAME = "アイテムの購入";
-
-    private static bool IsDataInitialized { get; set; }
-    private static bool IsDataLoaded      { get; set; }
 
     private static BuildState? ActiveBuildState { get; set; }
 
-    private static Dictionary<uint, ItemSourceInfo> CachedItemInfos { get; set; } = [];
-
     public uint               ItemID                 { get; init; }
-    public string             Name                   { get; init; }
-    public List<ShopNPCInfos> NPCInfos               { get; private set; } = [];
-    public ItemShopType       ShopType               { get; private set; }
-    public string             AchievementDescription { get; private set; }
+    public List<ShopNPCInfos> NPCInfos               { get; internal set; } = [];
+    public ItemShopType       ShopType               { get; internal set; }
+    public string             AchievementDescription { get; internal set; } = string.Empty;
 
-    static ItemSourceInfo()
+    public static ItemSourceQueryResult Query(uint itemID) =>
+        ItemSourceManager.Instance().Query(itemID);
+
+    internal static Dictionary<uint, ItemSourceInfo> BuildAllItems()
     {
-        if (IsDataInitialized || IsDataLoaded) return;
-        
-        if (DService.Instance().PI.TryGetData(DATA_SHARE_TAG, out Dictionary<uint, ItemSourceInfo> data) &&
-            data is { Count: > 0 })
+        var timer = Stopwatch.StartNew();
+        DLog.Debug("[ItemSourceInfo] 开始构建快照源数据");
+
+        Dictionary<uint, ItemSourceInfo>  itemToItemShopInfos = [];
+        Dictionary<uint, ShopNPCLocation> npcIDToLocations    = [];
+
+        try
         {
-            IsDataInitialized = IsDataLoaded = true;
-            CachedItemInfos   = data;
-            return;
+            ActiveBuildState = new(itemToItemShopInfos);
+
+            BuildNPCLocations(ref npcIDToLocations);
+            CorrectNPCLocations(ref npcIDToLocations);
+
+            foreach (var npcBase in LuminaGetter.Get<ENpcBase>())
+                BuildNPCInfo(npcBase, ref itemToItemShopInfos, ref npcIDToLocations);
+
+            AddAchievementItem(ref itemToItemShopInfos, ref npcIDToLocations);
+            return itemToItemShopInfos;
         }
-
-        CachedItemInfos = DService.Instance().PI.GetOrCreateData(DATA_SHARE_TAG, () => new Dictionary<uint, ItemSourceInfo>());
-        
-        IsDataInitialized = true;
-        IsDataLoaded      = false;
-
-        Task.Run
-        (() =>
-            {
-                var timer = new Stopwatch();
-                timer.Start();
-                DLog.Debug("[ItemShopInfo] 开始构建数据");
-
-                Dictionary<uint, ItemSourceInfo>  itemToItemShopInfos = [];
-                Dictionary<uint, ShopNPCLocation> npcIDToLocations    = [];
-
-                try
-                {
-                    ActiveBuildState = new(itemToItemShopInfos);
-
-                    BuildNPCLocations(ref npcIDToLocations);
-                    CorrectNPCLocations(ref npcIDToLocations);
-
-                    foreach (var npcBase in LuminaGetter.Get<ENpcBase>())
-                        BuildNPCInfo(npcBase, ref itemToItemShopInfos, ref npcIDToLocations);
-
-                    AddAchievementItem(ref itemToItemShopInfos, ref npcIDToLocations);
-                }
-                finally
-                {
-                    ActiveBuildState = null;
-                    timer.Stop();
-                    DLog.Debug($"[ItemShopInfo] 构建完毕, 构建时间: {timer.Elapsed}");
-
-                    foreach (var itemToItemShopInfo in itemToItemShopInfos)
-                        CachedItemInfos.Add(itemToItemShopInfo.Key, itemToItemShopInfo.Value);
-
-                    IsDataLoaded = true;
-                }
-            }
-        );
+        finally
+        {
+            ActiveBuildState = null;
+            timer.Stop();
+            DLog.Debug($"[ItemSourceInfo] 快照源数据构建完毕, 用时: {timer.Elapsed}");
+        }
     }
-    
-    public static ItemSourceInfo? GetItemInfo(uint itemID) =>
-        !IsDataLoaded
-            ? null
-            : CachedItemInfos?.GetValueOrDefault(itemID);
 
     private static BuildContext CurrentBuildContext =>
         ActiveBuildState?.Context ?? throw new InvalidOperationException("ItemSourceInfo 构建上下文尚未初始化");
 
     private static ItemSourceAccumulator CurrentItemAccumulator =>
         ActiveBuildState?.Accumulator ?? throw new InvalidOperationException("ItemSourceInfo 构建器尚未初始化");
-
-    private sealed class BuildState
-    (
-        Dictionary<uint, ItemSourceInfo> itemInfos
-    )
-    {
-        public BuildContext Context { get; } = BuildContext.Create();
-
-        public ItemSourceAccumulator Accumulator { get; } = new(itemInfos);
-    }
-
-    private sealed class BuildContext
-    {
-        private BuildContext
-        (
-            Dictionary<uint, string>                    achievementDescriptions,
-            Dictionary<ulong, uint>                     mapRowIds,
-            Dictionary<uint, uint>                      tomestoneItemIds,
-            Dictionary<uint, List<GCScripShopCategory>> gcCategories,
-            bool                                        shouldHideDefaultShopName
-        )
-        {
-            AchievementDescriptions   = achievementDescriptions;
-            MapRowIds                 = mapRowIds;
-            TomestoneItemIds          = tomestoneItemIds;
-            GcCategories              = gcCategories;
-            ShouldHideDefaultShopName = shouldHideDefaultShopName;
-        }
-
-        public Dictionary<uint, string> AchievementDescriptions { get; }
-
-        public Dictionary<ulong, uint> MapRowIds { get; }
-
-        public Dictionary<uint, uint> TomestoneItemIds { get; }
-
-        public Dictionary<uint, List<GCScripShopCategory>> GcCategories { get; }
-
-        public bool ShouldHideDefaultShopName { get; }
-
-        public static BuildContext Create()
-        {
-            Dictionary<uint, string>                    achievementDescriptions = [];
-            Dictionary<ulong, uint>                     mapRowIds               = [];
-            Dictionary<uint, uint>                      tomestoneItemIds        = [];
-            Dictionary<uint, List<GCScripShopCategory>> gcCategories            = [];
-
-            foreach (var achievement in LuminaGetter.Get<Achievement>())
-            {
-                var itemID = achievement.Item.RowId;
-                if (itemID == 0 || achievementDescriptions.ContainsKey(itemID))
-                    continue;
-
-                achievementDescriptions.Add(itemID, achievement.Description.ToString());
-            }
-
-            foreach (var map in LuminaGetter.Get<Map>())
-                mapRowIds.TryAdd(GetMapKey(map.TerritoryType.RowId, unchecked((uint)map.MapIndex)), map.RowId);
-
-            foreach (var tomestonesItem in LuminaGetter.Get<TomestonesItem>())
-            {
-                var tomestoneID = tomestonesItem.Tomestones.Value.RowId;
-                var itemID      = tomestonesItem.Item.RowId;
-                if (tomestoneID == 0 || itemID == 0)
-                    continue;
-
-                tomestoneItemIds.TryAdd(tomestoneID, itemID);
-            }
-
-            foreach (var category in LuminaGetter.Get<GCScripShopCategory>())
-            {
-                var gcRowID = category.GrandCompany.RowId;
-                if (gcRowID == 0)
-                    continue;
-
-                ref var categories = ref CollectionsMarshal.GetValueRefOrAddDefault(gcCategories, gcRowID, out var exists);
-                if (!exists || categories == null)
-                    categories = [];
-
-                categories.Add(category);
-            }
-
-            return new
-            (
-                achievementDescriptions,
-                mapRowIds,
-                tomestoneItemIds,
-                gcCategories,
-                DService.Instance().ClientState.ClientLanguage != ClientLanguage.Japanese
-            );
-        }
-
-        public bool TryGetMapRowID(uint territoryID, uint mapIndex, out uint mapRowID) =>
-            MapRowIds.TryGetValue(GetMapKey(territoryID, mapIndex), out mapRowID);
-
-        private static ulong GetMapKey(uint territoryID, uint mapIndex) =>
-            (ulong)territoryID << 32 | mapIndex;
-    }
-
-    private sealed class ItemSourceAccumulator
-    (
-        Dictionary<uint, ItemSourceInfo> itemInfos
-    )
-    {
-        private readonly Dictionary<uint, Dictionary<uint, int>> npcIndexByItemID = [];
-
-        public void AddItem
-        (
-            uint                   itemID,
-            string                 itemName,
-            uint                   npcID,
-            string                 npcName,
-            string?                shopName,
-            List<ShopItemCostInfo> cost,
-            ShopNPCLocation        npcLocation,
-            ItemShopType           shopType,
-            string                 achievementDesc
-        )
-        {
-            ref var itemInfo = ref CollectionsMarshal.GetValueRefOrAddDefault(itemInfos, itemID, out var exists);
-
-            if (!exists || itemInfo == null)
-            {
-                itemInfo = new()
-                {
-                    ItemID                 = itemID,
-                    Name                   = itemName,
-                    NPCInfos               = [],
-                    ShopType               = shopType,
-                    AchievementDescription = achievementDesc
-                };
-            }
-
-            if (shopType == ItemShopType.Achievement && itemInfo.ShopType != ItemShopType.Achievement)
-            {
-                itemInfo.ShopType               = ItemShopType.Achievement;
-                itemInfo.AchievementDescription = achievementDesc;
-            }
-
-            ref var npcIndex = ref CollectionsMarshal.GetValueRefOrAddDefault(npcIndexByItemID, itemID, out var hasNpcIndex);
-            if (!hasNpcIndex || npcIndex == null)
-                npcIndex = [];
-
-            if (!npcIndex.TryAdd(npcID, itemInfo.NPCInfos.Count))
-                return;
-
-            itemInfo.NPCInfos.Add(new() { ID = npcID, Location = npcLocation, Name = npcName, CostInfos = cost, ShopName = shopName });
-        }
-
-        public void AddCost(uint itemID, uint npcID, List<ShopItemCostInfo> cost)
-        {
-            if (!itemInfos.TryGetValue(itemID, out var itemInfo))
-                return;
-
-            if (!npcIndexByItemID.TryGetValue(itemID, out var npcIndex))
-                return;
-
-            if (!npcIndex.TryGetValue(npcID, out var index))
-                return;
-
-            itemInfo.NPCInfos[index].CostInfos.AddRange(cost);
-        }
-    }
 
     private static void BuildNPCLocations(ref Dictionary<uint, ShopNPCLocation> npcIDToLocations)
     {
@@ -1343,39 +1144,166 @@ public sealed class ItemSourceInfo
 
     #endregion
 
-    public bool HasShopNames() =>
-        NPCInfos.Any(i => i.ShopName != null);
-
-    public void ApplyFilters()
+    private sealed class BuildState
+    (
+        Dictionary<uint, ItemSourceInfo> itemInfos
+    )
     {
-        FilterDuplicates();
-        FilterNoLocationNPCs();
-        FilterGCResults();
+        public BuildContext Context { get; } = BuildContext.Create();
+
+        public ItemSourceAccumulator Accumulator { get; } = new(itemInfos);
     }
 
-    public unsafe void FilterGCResults()
+    private sealed class BuildContext
     {
-        var otherGcVendorIds = GrandCompanyVendors.Values.Where(i => i != GrandCompanyVendors[LocalPlayerState.GrandCompany]);
-        if (NPCInfos.Any(i => !otherGcVendorIds.Contains(i.ID)))
-            NPCInfos.RemoveAll(i => otherGcVendorIds.Contains(i.ID));
+        private BuildContext
+        (
+            Dictionary<uint, string>                    achievementDescriptions,
+            Dictionary<ulong, uint>                     mapRowIds,
+            Dictionary<uint, uint>                      tomestoneItemIds,
+            Dictionary<uint, List<GCScripShopCategory>> gcCategories,
+            bool                                        shouldHideDefaultShopName
+        )
+        {
+            AchievementDescriptions   = achievementDescriptions;
+            MapRowIds                 = mapRowIds;
+            TomestoneItemIds          = tomestoneItemIds;
+            GcCategories              = gcCategories;
+            ShouldHideDefaultShopName = shouldHideDefaultShopName;
+        }
 
-        var freeCompanyFC     = InfoProxyFreeCompany.Instance()->GrandCompany;
-        var otherOicVendorIds = OICVendors.Values.Where(i => i != OICVendors[freeCompanyFC]);
+        public Dictionary<uint, string> AchievementDescriptions { get; }
 
-        if (otherOicVendorIds != null && NPCInfos.Any(i => !otherOicVendorIds.Contains(i.ID)))
-            NPCInfos.RemoveAll(i => otherOicVendorIds.Contains(i.ID));
+        public Dictionary<ulong, uint> MapRowIds { get; }
+
+        public Dictionary<uint, uint> TomestoneItemIds { get; }
+
+        public Dictionary<uint, List<GCScripShopCategory>> GcCategories { get; }
+
+        public bool ShouldHideDefaultShopName { get; }
+
+        public static BuildContext Create()
+        {
+            Dictionary<uint, string>                    achievementDescriptions = [];
+            Dictionary<ulong, uint>                     mapRowIds               = [];
+            Dictionary<uint, uint>                      tomestoneItemIds        = [];
+            Dictionary<uint, List<GCScripShopCategory>> gcCategories            = [];
+
+            foreach (var achievement in LuminaGetter.Get<Achievement>())
+            {
+                var itemID = achievement.Item.RowId;
+                if (itemID == 0 || achievementDescriptions.ContainsKey(itemID))
+                    continue;
+
+                achievementDescriptions.Add(itemID, achievement.Description.ToString());
+            }
+
+            foreach (var map in LuminaGetter.Get<Map>())
+                mapRowIds.TryAdd(GetMapKey(map.TerritoryType.RowId, unchecked((uint)map.MapIndex)), map.RowId);
+
+            foreach (var tomestonesItem in LuminaGetter.Get<TomestonesItem>())
+            {
+                var tomestoneID = tomestonesItem.Tomestones.Value.RowId;
+                var itemID      = tomestonesItem.Item.RowId;
+                if (tomestoneID == 0 || itemID == 0)
+                    continue;
+
+                tomestoneItemIds.TryAdd(tomestoneID, itemID);
+            }
+
+            foreach (var category in LuminaGetter.Get<GCScripShopCategory>())
+            {
+                var gcRowID = category.GrandCompany.RowId;
+                if (gcRowID == 0)
+                    continue;
+
+                ref var categories = ref CollectionsMarshal.GetValueRefOrAddDefault(gcCategories, gcRowID, out var exists);
+                if (!exists || categories == null)
+                    categories = [];
+
+                categories.Add(category);
+            }
+
+            return new
+            (
+                achievementDescriptions,
+                mapRowIds,
+                tomestoneItemIds,
+                gcCategories,
+                DService.Instance().ClientState.ClientLanguage != ClientLanguage.Japanese
+            );
+        }
+
+        public bool TryGetMapRowID(uint territoryID, uint mapIndex, out uint mapRowID) =>
+            MapRowIds.TryGetValue(GetMapKey(territoryID, mapIndex), out mapRowID);
+
+        private static ulong GetMapKey(uint territoryID, uint mapIndex) =>
+            (ulong)territoryID << 32 | mapIndex;
     }
 
-    public void FilterNoLocationNPCs() =>
-        NPCInfos.RemoveAll(i => i.Location == null);
+    private sealed class ItemSourceAccumulator
+    (
+        Dictionary<uint, ItemSourceInfo> itemInfos
+    )
+    {
+        private readonly Dictionary<uint, Dictionary<uint, int>> npcIndexByItemID = [];
 
-    public void FilterDuplicates() =>
-        NPCInfos = NPCInfos.GroupBy(i => new { i.Name, i.Location.TerritoryID, i.Location.X, i.Location.Y })
-                           .Select(i => i.First())
-                           .ToList();
+        public void AddItem
+        (
+            uint                   itemID,
+            string                 itemName,
+            uint                   npcID,
+            string                 npcName,
+            string?                shopName,
+            List<ShopItemCostInfo> cost,
+            ShopNPCLocation        npcLocation,
+            ItemShopType           shopType,
+            string                 achievementDesc
+        )
+        {
+            ref var itemInfo = ref CollectionsMarshal.GetValueRefOrAddDefault(itemInfos, itemID, out var exists);
 
-    public Item GetItem() =>
-        LuminaGetter.GetRowOrDefault<Item>(ItemID);
+            if (!exists || itemInfo == null)
+            {
+                itemInfo = new()
+                {
+                    ItemID                 = itemID,
+                    NPCInfos               = [],
+                    ShopType               = shopType,
+                    AchievementDescription = achievementDesc
+                };
+            }
+
+            if (shopType == ItemShopType.Achievement && itemInfo.ShopType != ItemShopType.Achievement)
+            {
+                itemInfo.ShopType               = ItemShopType.Achievement;
+                itemInfo.AchievementDescription = achievementDesc;
+            }
+
+            ref var npcIndex = ref CollectionsMarshal.GetValueRefOrAddDefault(npcIndexByItemID, itemID, out var hasNpcIndex);
+            if (!hasNpcIndex || npcIndex == null)
+                npcIndex = [];
+
+            if (!npcIndex.TryAdd(npcID, itemInfo.NPCInfos.Count))
+                return;
+
+            itemInfo.NPCInfos.Add(new() { ID = npcID, Location = npcLocation, Name = npcName, CostInfos = cost, ShopName = shopName });
+        }
+
+        public void AddCost(uint itemID, uint npcID, List<ShopItemCostInfo> cost)
+        {
+            if (!itemInfos.TryGetValue(itemID, out var itemInfo))
+                return;
+
+            if (!npcIndexByItemID.TryGetValue(itemID, out var npcIndex))
+                return;
+
+            if (!npcIndex.TryGetValue(npcID, out var index))
+                return;
+
+            itemInfo.NPCInfos[index].CostInfos.AddRange(cost);
+        }
+    }
 
     private enum EventHandlerType : uint
     {
@@ -1390,16 +1318,18 @@ public sealed class ItemSourceInfo
         CollectablesShop = 0x003B
     }
 
-    private static readonly Dictionary<uint, uint> Currencies = new()
+    #region 常量
+
+    private static readonly FrozenDictionary<uint, uint> Currencies = new Dictionary<uint, uint>
     {
         [1] = 28,
         [2] = 33913,
         [4] = 33914,
         [6] = 41784,
         [7] = 41785
-    };
+    }.ToFrozenDictionary();
 
-    private static readonly Dictionary<uint, uint> SHBFateShopNPC = new()
+    private static readonly FrozenDictionary<uint, uint> SHBFateShopNPC = new Dictionary<uint, uint>
     {
         [1027998] = 1769957,
         [1027538] = 1769958,
@@ -1409,9 +1339,9 @@ public sealed class ItemSourceInfo
         [1027665] = 1769962,
         [1027709] = 1769963,
         [1027766] = 1769964
-    };
+    }.ToFrozenDictionary();
 
-    private static readonly Dictionary<string, string> MJISpecialShopNames = new()
+    private static readonly FrozenDictionary<string, string> MJISpecialShopNames = new Dictionary<string, string>
     {
         ["0"]  = "TEXT_CTSMJISPECIALSHOP_00789_TALK_ACTOR",
         ["1"]  = "TEXT_CTSMJISPECIALSHOP_00789_SYSTEM_000_000",
@@ -1430,106 +1360,10 @@ public sealed class ItemSourceInfo
         ["14"] = "TEXT_CTSMJISPECIALSHOP_00789_OMISE_100_000",
         ["15"] = "TEXT_CTSMJISPECIALSHOP_00789_SYSTEM_100_000",
         ["16"] = "TEXT_CTSMJISPECIALSHOP_00789_OMISE_200_000"
-    };
-
-    private static readonly Dictionary<GrandCompany, uint> GrandCompanyVendors = new()
-    {
-        [GrandCompany.None]           = 0,
-        [GrandCompany.Maelstrom]      = 1002387,
-        [GrandCompany.TwinAdder]      = 1002393,
-        [GrandCompany.ImmortalFlames] = 1002390
-    };
-
-    private static readonly Dictionary<GrandCompany, uint> OICVendors = new()
-    {
-        [GrandCompany.Maelstrom]      = 1002389,
-        [GrandCompany.TwinAdder]      = 1000165,
-        [GrandCompany.ImmortalFlames] = 1003925,
-        [GrandCompany.None]           = 0
-    };
+    }.ToFrozenDictionary();
 
     private static readonly List<Item> GrandCompanySeals =
         LuminaGetter.Get<Item>().Where(i => i.RowId is >= 20 and <= 22).Select(i => i).ToList();
-}
 
-public class ShopNPCInfos
-{
-    public uint                   ID        { get; init; }
-    public string                 Name      { get; init; }
-    public string?                ShopName  { get; init; }
-    public List<ShopItemCostInfo> CostInfos { get; init; }
-    public ShopNPCLocation        Location  { get; init; }
-}
-
-public class ShopNPCLocation
-{
-    public ShopNPCLocation(float x, float y, uint territoryID, uint? map = null)
-    {
-        TexturePosition = new Vector2(x, y);
-        TerritoryID     = territoryID;
-        MapID           = map ?? LuminaGetter.GetRowOrDefault<TerritoryType>(territoryID).Map.RowId;
-
-        var mapInfo = LuminaGetter.GetRowOrDefault<Map>(MapID);
-        MapPosition = ToMapPos(TexturePosition, mapInfo.SizeFactor, new(mapInfo.OffsetX, mapInfo.OffsetY));
-    }
-
-    public Vector2 TexturePosition { get; }
-    public Vector2 MapPosition     { get; }
-    public uint    TerritoryID     { get; }
-    public uint    MapID           { get; }
-
-    public float X => TexturePosition.X;
-    public float Y => TexturePosition.Y;
-
-    public TerritoryType GetTerritory() =>
-        LuminaGetter.GetRowOrDefault<TerritoryType>(TerritoryID);
-
-    public Map GetMap() =>
-        LuminaGetter.GetRowOrDefault<Map>(MapID);
-
-    private static Vector2 ToMapPos(Vector2 pos, float scale, Vector2 offset)
-    {
-        var x = ToMapPos(pos.X, scale, (short)offset.X);
-        var y = ToMapPos(pos.Y, scale, (short)offset.Y);
-        return new(x, y);
-    }
-
-    private static float ToMapPos(float val, float scale, short offset)
-    {
-        var c = scale / 100.0f;
-
-        val = (val + offset) * c;
-
-        return 41.0f / c * ((val + 1024.0f) / 2048.0f) + 1;
-    }
-}
-
-public record ShopItemCostInfo
-(
-    uint  Cost,
-    uint  ItemID,
-    uint? Collectablity = null
-)
-{
-    public string GetItemName() =>
-        LuminaWrapper.GetItemName(ItemID);
-
-    public override string ToString()
-    {
-        if (Collectablity != null)
-            return $"{GetItemName()} \ue03d ({Collectablity.Value}~)";
-
-        return $"{GetItemName()} x{Cost}";
-    }
-}
-
-public enum ItemShopType
-{
-    GilShop,
-    SpecialShop,
-    GcShop,
-    Achievement,
-    FcShop,
-    QuestReward,
-    CollectableExchange
+    #endregion
 }
