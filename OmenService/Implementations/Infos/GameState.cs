@@ -92,10 +92,20 @@ public unsafe class GameState : OmenServiceBase<GameState>
     public static Language ClientLanguge =>
         ClientLangaugeLazy.Value;
 
+    /// <summary>
+    ///     当前游戏客户端版本
+    /// </summary>
+    public static string ClientVersion =>
+        ClientVersionLazy.Value;
+
     // 因为生命周期里不会变更, 因此只需要懒加载一次即可
     // 因为枚举前面多定义了一个 None, 所以要 + 1
     private static readonly Lazy<Language> ClientLangaugeLazy =
         new(() => (Language)(Framework.Instance()->ClientLanguage + 1));
+
+    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
+    private static readonly Lazy<string> ClientVersionLazy =
+        new(() => Framework.Instance()->GameVersionString.ToString());
 
     // 因为生命周期里不会变更, 因此只需要懒加载一次即可
     private static readonly Lazy<bool> IsGLLazy =
