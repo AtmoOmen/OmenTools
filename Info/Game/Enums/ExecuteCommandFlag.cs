@@ -1033,7 +1033,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 操作 (0 - 再想想)</para>
     ///     <para><c>param2</c>: 索引 (从左到右从上到下, 从 0 开始)</para>
     /// </remarks>
-    WondrousTailsOperate = 2253,
+    WondrousTailsOperate = 2254,
 
     /// <summary>
     ///     请求投影台数据
