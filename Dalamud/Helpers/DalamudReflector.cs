@@ -220,4 +220,11 @@ public static class DalamudReflector
         var configSave = conf?.GetType().GetMethod("QueueSave", BindingFlags.Instance | BindingFlags.Public);
         configSave?.Invoke(conf, null);
     }
+
+    public static void MarkCurrentThreadAsMainThread()
+    {
+        var threadSafetyType = DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Utility.ThreadSafety", true);
+        var markMainThread   = threadSafetyType?.GetMethod("MarkMainThread", BindingFlags.Static | BindingFlags.NonPublic);
+        markMainThread?.Invoke(null, null);
+    }
 }
