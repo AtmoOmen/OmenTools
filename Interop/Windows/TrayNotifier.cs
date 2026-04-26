@@ -23,7 +23,7 @@ public sealed class TrayNotifier : IDisposable
     /// </summary>
     public required Icon Icon
     {
-        get => trayIcon.Icon ?? throw new InvalidOperationException("托盘图标尚未初始化。");
+        get => Volatile.Read(ref icon) ?? throw new InvalidOperationException("托盘图标尚未初始化。");
         set
         {
             if (IsDisposed)
@@ -31,14 +31,8 @@ public sealed class TrayNotifier : IDisposable
 
             ArgumentNullException.ThrowIfNull(value);
 
-            try
-            {
-                trayIcon.Icon = value;
-            }
-            catch (ObjectDisposedException)
-            {
-                // ignored
-            }
+            Volatile.Write(ref icon, value);
+            trayIconThread.SetIcon(value);
         }
     }
 
@@ -59,14 +53,14 @@ public sealed class TrayNotifier : IDisposable
 
     private readonly CancellationTokenSource disposalTokenSource = new();
     private readonly Task                    processingTask;
-    private readonly NotifyIcon              trayIcon;
+    private readonly TrayIconThread          trayIconThread;
 
-    private int isDisposed;
+    private int   isDisposed;
+    private Icon? icon;
 
     public TrayNotifier()
     {
-        trayIcon = new() { Visible = false };
-
+        trayIconThread = new();
         processingTask = Task.Run(ProcessLoopAsync);
     }
 
@@ -87,8 +81,7 @@ public sealed class TrayNotifier : IDisposable
             // ignored
         }
 
-        trayIcon.Visible = false;
-        trayIcon.Dispose();
+        trayIconThread.Dispose();
         disposalTokenSource.Dispose();
     }
 
@@ -125,12 +118,13 @@ public sealed class TrayNotifier : IDisposable
 
                 if (ShouldSkipCurrentBatch())
                 {
-                    trayIcon.Visible = false;
+                    trayIconThread.Hide();
                     continue;
                 }
 
                 ShowBatch(buffer);
                 await Task.Delay(DisplayWindow, token).ConfigureAwait(false);
+                trayIconThread.Hide();
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -139,27 +133,165 @@ public sealed class TrayNotifier : IDisposable
         }
         finally
         {
-            trayIcon.Visible = false;
+            trayIconThread.Hide();
         }
     }
 
     private void ShowBatch(List<BalloonTipMessage> buffer)
     {
-        trayIcon.Visible = true;
-
         if (buffer.Count > 1)
         {
             var summary = string.Format(CultureInfo.CurrentCulture, MultiMessageTemplate, buffer.Count);
-            trayIcon.ShowBalloonTip(5000, summary, summary, ToolTipIcon.Info);
+            trayIconThread.ShowBalloonTip(5000, summary, summary, ToolTipIcon.Info);
             return;
         }
 
         var message = buffer[0];
-        trayIcon.ShowBalloonTip(5000, message.Title, message.Message, message.Icon);
+        trayIconThread.ShowBalloonTip(5000, message.Title, message.Message, message.Icon);
     }
 
     private bool ShouldSkipCurrentBatch() =>
         OnlyBackground && GameState.IsForeground;
+
+    private sealed class TrayIconThread : IDisposable
+    {
+        private readonly ManualResetEventSlim initialized = new();
+        private readonly Thread               thread;
+
+        private WindowsFormsSynchronizationContext? context;
+        private NotifyIcon?                         trayIcon;
+        private Exception?                          initializationException;
+        private int                                 isDisposed;
+
+        public TrayIconThread()
+        {
+            thread = new(Run)
+            {
+                IsBackground = true,
+                Name         = nameof(TrayNotifier)
+            };
+
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+
+            initialized.Wait();
+
+            if (initializationException is not null)
+                throw new InvalidOperationException("无法初始化托盘通知线程。", initializationException);
+        }
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref isDisposed, 1) != 0)
+                return;
+
+            if (Thread.CurrentThread == thread)
+            {
+                Application.ExitThread();
+                return;
+            }
+
+            Volatile.Read(ref context)?.Post
+            (
+                static state =>
+                {
+                    var owner = (TrayIconThread)state!;
+
+                    if (owner.trayIcon is { } icon)
+                        icon.Visible = false;
+
+                    Application.ExitThread();
+                },
+                this
+            );
+
+            thread.Join();
+            initialized.Dispose();
+        }
+
+        public void SetIcon(Icon icon) =>
+            Post
+            (() =>
+                {
+                    if (trayIcon is not null)
+                        trayIcon.Icon = icon;
+                }
+            );
+
+        public void ShowBalloonTip(int timeout, string title, string message, ToolTipIcon tooltipIcon)
+        {
+            var resolvedMessage = string.IsNullOrWhiteSpace(message) ? title : message;
+            if (string.IsNullOrWhiteSpace(resolvedMessage))
+                return;
+
+            Post
+            (() =>
+                {
+                    if (trayIcon is not { Icon: not null } icon)
+                        return;
+
+                    icon.Visible = true;
+                    icon.ShowBalloonTip(timeout, title, resolvedMessage, tooltipIcon);
+                }
+            );
+        }
+
+        public void Hide() =>
+            Post
+            (() =>
+                {
+                    if (trayIcon is not null)
+                        trayIcon.Visible = false;
+                }
+            );
+
+        private void Run()
+        {
+            try
+            {
+                using var synchronizationContext = new WindowsFormsSynchronizationContext();
+                SynchronizationContext.SetSynchronizationContext(synchronizationContext);
+
+                context  = synchronizationContext;
+                trayIcon = new() { Visible = false };
+
+                initialized.Set();
+                Application.Run();
+            }
+            catch (Exception ex)
+            {
+                initializationException = ex;
+                initialized.Set();
+            }
+            finally
+            {
+                trayIcon?.Dispose();
+                trayIcon = null;
+
+                SynchronizationContext.SetSynchronizationContext(null);
+            }
+        }
+
+        private void Post(Action action)
+        {
+            if (Volatile.Read(ref isDisposed) != 0)
+                return;
+
+            Volatile.Read(ref context)?.Post
+            (
+                static state =>
+                {
+                    var (owner, callback) = ((TrayIconThread Owner, Action Callback))state!;
+
+                    if (Volatile.Read(ref owner.isDisposed) != 0)
+                        return;
+
+                    callback();
+                },
+                (this, action)
+            );
+        }
+    }
 
     private readonly record struct BalloonTipMessage
     (
