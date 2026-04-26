@@ -1,3 +1,4 @@
+using System.Media;
 using System.Runtime.CompilerServices;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Game.Text.SeStringHandling;
@@ -339,6 +340,19 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         bool                     TrayOnlyWhenBackground,
         ToolTipIcon              TrayIcon
     );
+
+    #endregion
+
+    #region System Sound
+
+    public static void SystemInformation() => 
+        SystemSounds.Asterisk.Play();
+    
+    public static void SystemWarning() => 
+        SystemSounds.Hand.Play();
+    
+    public static void SystemBeep(int frequency = 1000, int duration = 500) => 
+        Task.Run(() => Console.Beep(frequency, duration));
 
     #endregion
 }
