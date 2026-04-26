@@ -241,8 +241,8 @@ public static unsafe class RaycastHelper
         RaycastOptions options      = default
     )
     {
-        var hasDownHit = TryRaycast(position, -Vector3.UnitY, out var downHit, downDistance, options);
-        var hasUpHit   = TryRaycast(position, Vector3.UnitY,  out var upHit,   upDistance,   options);
+        var hasDownHit = TryRaycast(position + new Vector3(0, DEFAULT_GROUND_ORIGIN_LIFT, 0), -Vector3.UnitY, out var downHit, downDistance, options);
+        var hasUpHit   = TryRaycast(position,                                                 Vector3.UnitY,  out var upHit,   upDistance,   options);
 
         if (hasDownHit && hasUpHit)
         {
