@@ -43,6 +43,7 @@ public partial class TaskHelper : IDisposable
 
         try
         {
+            CurrentTask?.SuppressCancellationException();
             CurrentTask?.CancelToken?.Cancel();
             CurrentTask?.CancelToken?.Dispose();
         }
@@ -57,6 +58,7 @@ public partial class TaskHelper : IDisposable
             {
                 try
                 {
+                    task.SuppressCancellationException();
                     task.CancelToken?.Cancel();
                     task.CancelToken?.Dispose();
                 }
@@ -96,7 +98,7 @@ public partial class TaskHelper : IDisposable
     /// <summary>
     ///     当单一任务执行出现异常时的全局控制逻辑
     ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.ExceptionBehaviour" />) 则以任务的为判断标准 <br />
-    ///     注: 异步任务被取消将被视为发生异常
+    ///     注: 异步任务被取消将被视为发生异常, Dispose 与 AbortAll 触发的取消除外
     /// </summary>
     public TaskAbortBehaviour ExceptionBehaviour { get; set; } = TaskAbortBehaviour.AbortAll;
 
@@ -274,15 +276,24 @@ public partial class TaskHelper : IDisposable
 
     private async Task ExecuteCurrentTaskAsync()
     {
+        var task        = CurrentTask;
+        var cancelToken = task?.CancelToken?.Token ?? CancellationToken.None;
+
         try
         {
+            if (task == null) return;
             if (CheckAndHandleTimeout()) return;
 
-            if (await CurrentTask.AsyncAction(CurrentTask.CancelToken.Token).ConfigureAwait(false))
+            if (await task.AsyncAction(cancelToken).ConfigureAwait(false))
             {
-                Log($"已完成任务: {CurrentTask.GetName()}");
+                Log($"已完成任务: {task.GetName()}");
                 CurrentTask = null;
             }
+        }
+        catch (OperationCanceledException) when (cancelToken.IsCancellationRequested && task.SuppressesCancellationException)
+        {
+            if (CurrentTask == task)
+                CurrentTask = null;
         }
         catch (Exception ex)
         {
@@ -408,6 +419,7 @@ public partial class TaskHelper : IDisposable
         queueTaskCount = 0;
         QueueCounts.Clear();
 
+        CurrentTask?.SuppressCancellationException();
         CurrentTask?.CancelToken?.Cancel();
         CurrentTask?.CancelToken?.Dispose();
 

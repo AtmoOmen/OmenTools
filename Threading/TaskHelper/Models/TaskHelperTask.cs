@@ -56,11 +56,16 @@ public record TaskHelperTask
     ///     任务取消令牌源 <br />
     /// </summary>
     public CancellationTokenSource? CancelToken { get; }
-
+    
     /// <summary>
     ///     任务名称
     /// </summary>
     private string? Name { get; }
+
+    /// <summary>
+    ///     是否压制取消异常
+    /// </summary>
+    internal bool SuppressesCancellationException { get; private set; }
 
     /// <summary>
     ///     任务开始时间 (时间戳)
@@ -156,4 +161,7 @@ public record TaskHelperTask
     /// <returns>任务名称，若未设置则返回 "(无名称)"</returns>
     public string GetName() =>
         Name ?? "(无名称)";
+
+    internal void SuppressCancellationException() =>
+        SuppressesCancellationException = true;
 }

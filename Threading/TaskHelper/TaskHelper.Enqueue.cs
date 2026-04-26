@@ -1,3 +1,4 @@
+using OmenTools.Dalamud;
 using OmenTools.Threading.TaskHelper.Enums;
 using OmenTools.Threading.TaskHelper.Models;
 
@@ -338,5 +339,20 @@ public partial class TaskHelper
             $"{uniqueName} (延迟 {delayMS} 毫秒)",
             weight: weight
         );
+    }
+
+    /// <summary>
+    ///     随机延迟执行下一个任务
+    /// </summary>
+    /// <param name="minDelayMS">最小延迟时间 (毫秒)</param>
+    /// <param name="maxDelayMS">最大延迟时间 (毫秒)</param>
+    /// <param name="uniqueName">任务名称后缀 (将显示为 "uniqueName (延迟 X 毫秒)")</param>
+    /// <param name="weight">队列权重</param>
+    public void DelayNext(int minDelayMS, int maxDelayMS, string? uniqueName = null, int weight = 0)
+    {
+        if (maxDelayMS < minDelayMS)
+            throw new ArgumentOutOfRangeException(nameof(maxDelayMS));
+
+        DelayNext((int)Random.Shared.NextInt64(minDelayMS, (long)maxDelayMS + 1), uniqueName, weight);
     }
 }
