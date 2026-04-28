@@ -66,7 +66,7 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
     private Hook<GenerateActionTooltipDelegate>? GenerateActionTooltipHook;
 
     private static readonly CompSig HandleActionHoverSig = new
-        ("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 41 54 41 55 41 56 41 57 48 83 EC ?? 45 8B F1 41 8B D8");
+        ("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 41 54 41 55 41 56 41 57 48 83 EC ?? 45 33 E4 41 8B E9");
 
     private delegate void HandleActionHoverDelegate
     (
@@ -74,12 +74,14 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
         ActionKind         actionKind,
         uint               actionID,
         int                flag,
-        byte               isLovmActionDetail
+        byte               isLovmActionDetail,
+        int                a6,
+        int                a7
     );
 
     private Hook<HandleActionHoverDelegate>? HandleActionHoverHook;
 
-    private static readonly CompSig ShowTooltipSig = new("66 44 89 44 24 ?? 55 53 41 54");
+    private static readonly CompSig ShowTooltipSig = new("4C 89 4C 24 ?? 66 44 89 44 24");
 
     private delegate void ShowTooltipDelegate
     (
@@ -450,13 +452,13 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
 
     #region 事件处理
 
-    private void HandleActionHoverDetour(AgentActionDetail* agent, ActionKind actionKind, uint actionID, int flag, byte isLovmActionDetail)
+    private void HandleActionHoverDetour(AgentActionDetail* agent, ActionKind actionKind, uint actionID, int flag, byte isLovmActionDetail, int a6, int a7)
     {
         hoveredActionDetail.Category           = actionKind;
         hoveredActionDetail.ID                 = actionID;
         hoveredActionDetail.Flag               = flag;
         hoveredActionDetail.IsLovmActionDetail = isLovmActionDetail != 0;
-        HandleActionHoverHook?.Original(agent, actionKind, actionID, flag, isLovmActionDetail);
+        HandleActionHoverHook?.Original(agent, actionKind, actionID, flag, isLovmActionDetail, a6, a7);
     }
 
 
