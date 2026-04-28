@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace OmenTools.Interop.Game.Models;
 
@@ -26,7 +25,7 @@ public unsafe class AtkValueArray : IDisposable
     public void Dispose()
     {
         for (var i = 0; i < Length; i++)
-            if (Pointer[i].Type == ValueType.String)
+            if (Pointer[i].Type == AtkValueType.String)
                 Marshal.FreeHGlobal((nint)Pointer[i].String.Value);
 
         Marshal.FreeHGlobal(Address);
@@ -37,22 +36,22 @@ public unsafe class AtkValueArray : IDisposable
         switch (value)
         {
             case uint uintValue:
-                Pointer[index] = new AtkValue { Type = ValueType.UInt, UInt = uintValue };
+                Pointer[index] = new AtkValue { Type = AtkValueType.UInt, UInt = uintValue };
                 break;
             case int intValue:
-                Pointer[index] = new AtkValue { Type = ValueType.Int, Int = intValue };
+                Pointer[index] = new AtkValue { Type = AtkValueType.Int, Int = intValue };
                 break;
             case float floatValue:
-                Pointer[index] = new AtkValue { Type = ValueType.Float, Float = floatValue };
+                Pointer[index] = new AtkValue { Type = AtkValueType.Float, Float = floatValue };
                 break;
             case bool boolValue:
-                Pointer[index] = new AtkValue { Type = ValueType.Bool, Byte = Convert.ToByte(boolValue) };
+                Pointer[index] = new AtkValue { Type = AtkValueType.Bool, Byte = Convert.ToByte(boolValue) };
                 break;
             case string stringValue:
                 var stringBytes = Encoding.UTF8.GetBytes(stringValue + '\0');
                 var stringAlloc = Marshal.AllocHGlobal(stringBytes.Length);
                 Marshal.Copy(stringBytes, 0, stringAlloc, stringBytes.Length);
-                Pointer[index] = new AtkValue { Type = ValueType.String, String = (byte*)stringAlloc };
+                Pointer[index] = new AtkValue { Type = AtkValueType.String, String = (byte*)stringAlloc };
                 break;
             case AtkValue atkValue:
                 Pointer[index] = atkValue;

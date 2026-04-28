@@ -2,7 +2,6 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Hooking;
-using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -13,7 +12,6 @@ using OmenTools.Interop.Game.AddonEvent;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
 using OmenTools.Threading.TaskHelper;
-using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace OmenTools.OmenService;
 
@@ -193,7 +191,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
 
         var nextAtkValue = values + 1;
 
-        if (nextAtkValue->Type != ValueType.UInt)
+        if (nextAtkValue->Type != AtkValueType.UInt)
             return MiragePrismBoxReceiveEventHook.Original(agent, returnValue, values, valueCount, eventKind);
 
         var data = agent->Data;

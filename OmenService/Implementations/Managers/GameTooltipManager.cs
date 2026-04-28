@@ -15,7 +15,6 @@ using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
-using ActionKind = FFXIVClientStructs.FFXIV.Client.UI.Agent.ActionKind;
 using RowStatus = Lumina.Excel.Sheets.Status;
 
 namespace OmenTools.OmenService;
@@ -33,7 +32,7 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
     public delegate void TooltipShowModifierDelegate
     (
         AtkTooltipManager*                manager,
-        AtkTooltipManager.AtkTooltipType  type,
+        AtkTooltipType                    type,
         ushort                            parentID,
         AtkResNode*                       targetNode,
         AtkTooltipManager.AtkTooltipArgs* args
@@ -86,7 +85,7 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
     private delegate void ShowTooltipDelegate
     (
         AtkTooltipManager*                manager,
-        AtkTooltipManager.AtkTooltipType  type,
+        AtkTooltipType                    type,
         ushort                            parentID,
         AtkResNode*                       targetNode,
         AtkTooltipManager.AtkTooltipArgs* tooltipArgs,
@@ -592,7 +591,7 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
     private void ShowTooltipDetour
     (
         AtkTooltipManager*                manager,
-        AtkTooltipManager.AtkTooltipType  type,
+        AtkTooltipType                    type,
         ushort                            parentID,
         AtkResNode*                       targetNode,
         AtkTooltipManager.AtkTooltipArgs* args,

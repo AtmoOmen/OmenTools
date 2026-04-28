@@ -138,7 +138,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
                 Name        = ceData.Name.ToString();
                 NameDisplay = Name;
                 IconID      = ceData.EventType.Value.IconObjective0;
-                Radius      = ceData.Unknown4;
+                Radius      = ceData.LGBMapRange;
             }
         }
         else

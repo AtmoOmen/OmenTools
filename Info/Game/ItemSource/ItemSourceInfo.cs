@@ -736,7 +736,7 @@ public sealed class ItemSourceInfo
         ref Dictionary<uint, ShopNPCLocation> npcIDToLocations
     )
     {
-        var prefix = inclusionShop.Unknown0.ToString();
+        var prefix = inclusionShop.ShopName.ToString();
 
         foreach (var category in inclusionShop.Category)
         {

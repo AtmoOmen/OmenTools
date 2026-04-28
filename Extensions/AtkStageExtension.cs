@@ -41,7 +41,7 @@ public static unsafe class AtkStageExtension
         {
             using var stringBuffer = new Utf8String();
 
-            var tooltipType = AtkTooltipManager.AtkTooltipType.Action;
+            var tooltipType = AtkTooltipType.Action;
 
             var tooltipArgs = stackalloc AtkTooltipManager.AtkTooltipArgs[1];
             tooltipArgs->Ctor();
@@ -51,7 +51,7 @@ public static unsafe class AtkStageExtension
 
             if (textLabel is not null)
             {
-                tooltipType |= AtkTooltipManager.AtkTooltipType.Text;
+                tooltipType |= AtkTooltipType.Text;
                 stringBuffer.SetString(textLabel);
                 tooltipArgs->TextArgs.Text = stringBuffer.StringPtr;
             }
@@ -80,7 +80,7 @@ public static unsafe class AtkStageExtension
 
             atkStage.TooltipManager.ShowTooltip
             (
-                AtkTooltipManager.AtkTooltipType.Item,
+                AtkTooltipType.Item,
                 addon->Id,
                 node,
                 tooltipArgs
@@ -102,7 +102,7 @@ public static unsafe class AtkStageExtension
 
             atkStage.TooltipManager.ShowTooltip
             (
-                AtkTooltipManager.AtkTooltipType.Item,
+                AtkTooltipType.Item,
                 addon->Id,
                 node,
                 tooltipArgs

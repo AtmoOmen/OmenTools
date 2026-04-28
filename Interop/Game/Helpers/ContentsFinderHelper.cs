@@ -104,10 +104,10 @@ public static class ContentsFinderHelper
                                   .Select
                                   (x => new
                                       {
-                                          QuestMember = LuminaGetter.GetRow<DawnQuestMember>(x.Unknown0),
+                                          QuestMember = x.DawnQuestMember.ValueNullable,
                                           JobInfo = LuminaGetter.GetRow<DawnMember>
                                           (
-                                              LuminaGetter.GetRow<DawnQuestMember>(x.Unknown0).GetValueOrDefault().Unknown0
+                                              x.DawnQuestMember.Value.Unknown0
                                           )
                                       }
                                   )
@@ -123,7 +123,7 @@ public static class ContentsFinderHelper
                                   (x => new
                                       {
                                           // Class 实际为 DawnMemberUIParam, Unknown0 为 UI 显示的人物名称
-                                          Name     = x.QuestMember.Class.Value.Unknown0,
+                                          Name     = x.QuestMember.Class.Value.Name,
                                           ID       = x.QuestMember.RowId,
                                           ClassJob = LuminaGetter.GetRow<ClassJob>(x.JobInfo.Unknown0)
                                       }
