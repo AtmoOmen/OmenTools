@@ -101,6 +101,7 @@ public static unsafe class LuminaSheetExtension
                 < 1      => BitmapFontIcon.NewAdventurer,
                 < 41     => (BitmapFontIcon)job.RowId + 127,
                 41 or 42 => (BitmapFontIcon)job.RowId + 129,
+                43       => (BitmapFontIcon)183,
                 _        => BitmapFontIcon.NewAdventurer
             };
         }
