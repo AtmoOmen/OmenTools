@@ -81,7 +81,6 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
     public delegate void PostOpenObjectInteractionDelegate
     (
-        ulong        result,
         IGameObject? target
     );
 
@@ -105,7 +104,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
     private Hook<InteractWithObjectDelegate>? InteractWithObjectHook;
 
-    private delegate ulong OpenObjectInteractionDelegate(TargetSystem* system, CSGameObject* target);
+    private delegate void OpenObjectInteractionDelegate(TargetSystem* system, CSGameObject* target);
 
     private Hook<OpenObjectInteractionDelegate>? OpenObjectInteractionHook;
 
@@ -429,7 +428,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         return original;
     }
 
-    private ulong OpenObjectInteractionDetour(TargetSystem* system, CSGameObject* target)
+    private void OpenObjectInteractionDetour(TargetSystem* system, CSGameObject* target)
     {
         var gameObj = DService.Instance().ObjectTable.CreateObjectReference((nint)target);
 
@@ -451,40 +450,38 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
             foreach (var preDelegate in preDelegates)
             {
                 ((PreOpenObjectInteractionDelegate)preDelegate)(ref isPrevented, ref targetRef);
-                if (isPrevented) return 0;
+                if (isPrevented) return;
             }
         }
 
         var targetPtr = targetRef == null ? null : (CSGameObject*)targetRef.Address;
-        var original  = OpenObjectInteractionHook.Original(system, targetPtr);
+        OpenObjectInteractionHook.Original(system, targetPtr);
 
         if (methodsCollection.TryGetValue(typeof(PostOpenObjectInteractionDelegate), out var postDelegates))
         {
             foreach (var postDelegate in postDelegates)
-                ((PostOpenObjectInteractionDelegate)postDelegate)(original, targetRef);
+                ((PostOpenObjectInteractionDelegate)postDelegate)(targetRef);
         }
-
-        return original;
     }
 
     #endregion
 
     #region Invokes
 
-    public bool SetHardTarget(IGameObject? target, bool ignoreTargetModes = false, bool a4 = false, int a5 = 0)
-        => SetHardTargetHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address, ignoreTargetModes, a4, a5);
+    public bool SetHardTarget(IGameObject? target, bool ignoreTargetModes = false, bool a4 = false, int a5 = 0) =>
+        SetHardTargetHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address, ignoreTargetModes, a4, a5);
 
-    public bool SetSoftTarget(IGameObject? target)
-        => SetSoftTargetHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address);
+    public bool SetSoftTarget(IGameObject? target) => 
+        SetSoftTargetHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address);
 
-    public void SetFocusTarget(GameObjectId gameObjectID)
-        => SetFocusTargetHook.Original(TargetSystem.Instance(), gameObjectID);
+    public void SetFocusTarget(GameObjectId gameObjectID) => 
+        SetFocusTargetHook.Original(TargetSystem.Instance(), gameObjectID);
 
-    public ulong InteractWithObject(IGameObject? target, bool checkLoS = true)
-        => InteractWithObjectHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address, checkLoS);
+    public ulong InteractWithObject(IGameObject? target, bool checkLoS = true) => 
+        InteractWithObjectHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address, checkLoS);
 
-    public ulong OpenObjectInteraction(IGameObject? target)
-        => OpenObjectInteractionHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address);
+    public void OpenObjectInteraction(IGameObject? target) => 
+        OpenObjectInteractionHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address);
 
     #endregion
 

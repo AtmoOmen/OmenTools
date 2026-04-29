@@ -7,6 +7,7 @@ using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Memory;
+using FFXIVClientStructs.FFXIV.Client.Enums;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -70,10 +71,10 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
     private delegate void HandleActionHoverDelegate
     (
         AgentActionDetail* agent,
-        ActionKind         actionKind,
+        DetailKind         detailKind,
         uint               actionID,
         int                flag,
-        byte               isLovmActionDetail,
+        bool               isLovmActionDetail,
         int                a6,
         int                a7
     );
@@ -451,13 +452,22 @@ public unsafe class GameTooltipManager : OmenServiceBase<GameTooltipManager>
 
     #region 事件处理
 
-    private void HandleActionHoverDetour(AgentActionDetail* agent, ActionKind actionKind, uint actionID, int flag, byte isLovmActionDetail, int a6, int a7)
+    private void HandleActionHoverDetour
+    (
+        AgentActionDetail* agent,
+        DetailKind         detailKind,
+        uint               actionID,
+        int                flag,
+        bool               isLovmActionDetail,
+        int                a6,
+        int                a7
+    )
     {
-        hoveredActionDetail.Category           = actionKind;
+        hoveredActionDetail.Category           = detailKind;
         hoveredActionDetail.ID                 = actionID;
         hoveredActionDetail.Flag               = flag;
-        hoveredActionDetail.IsLovmActionDetail = isLovmActionDetail != 0;
-        HandleActionHoverHook?.Original(agent, actionKind, actionID, flag, isLovmActionDetail, a6, a7);
+        hoveredActionDetail.IsLovmActionDetail = isLovmActionDetail;
+        HandleActionHoverHook?.Original(agent, detailKind, actionID, flag, isLovmActionDetail, a6, a7);
     }
 
 
@@ -729,7 +739,7 @@ public class TooltipModification
 
 public class TooltipActionDetail
 {
-    public ActionKind Category;
+    public DetailKind Category;
     public uint       ID;
     public int        Flag;
     public bool       IsLovmActionDetail;

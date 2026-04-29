@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.System.Resource;
+using FFXIVClientStructs.FFXIV.Client.System.Resource.Handle;
 using InteropGenerator.Runtime;
 using OmenTools.Dalamud;
 using OmenTools.OmenService.Abstractions;
@@ -97,31 +98,8 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
         RegeneratePaths();
     }
 
-
-    private delegate void* GetResourceSyncDelegate
-    (
-        nint  pFileManager,
-        uint* pCategoryID,
-        char* pResourceType,
-        uint* pResourceHash,
-        byte* pPath,
-        void* pUnknown
-    );
-
-    private Hook<GetResourceSyncDelegate>? GetResourceSyncHook;
-
-    private delegate void* GetResourceAsyncDelegate
-    (
-        nint  pFileManager,
-        uint* pCategoryID,
-        char* pResourceType,
-        uint* pResourceHash,
-        byte* pPath,
-        void* pUnknown,
-        bool  isUnknown
-    );
-
-    private Hook<GetResourceAsyncDelegate>? GetResourceAsyncHook;
+    private Hook<ResourceManager.Delegates.GetResourceSync>?  GetResourceSyncHook;
+    private Hook<ResourceManager.Delegates.GetResourceAsync>? GetResourceAsyncHook;
 
     private readonly CRC32 hashGenerator = new();
 
@@ -136,13 +114,13 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
         (
             typeof(ResourceManager.MemberFunctionPointers),
             "GetResourceSync",
-            (GetResourceSyncDelegate)GetResourceSyncDetour
+            (ResourceManager.Delegates.GetResourceSync)GetResourceSyncDetour
         );
         GetResourceAsyncHook ??= DService.Instance().Hook.HookFromMemberFunction
         (
             typeof(ResourceManager.MemberFunctionPointers),
             "GetResourceAsync",
-            (GetResourceAsyncDelegate)GetResourceAsyncDetour
+            (ResourceManager.Delegates.GetResourceAsync)GetResourceAsyncDetour
         );
 
         GameState.Instance().Login  += OnLogin;
@@ -175,47 +153,51 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
     private void OnLogout() =>
         Toggle(false);
 
-    private void* GetResourceSyncDetour
+    private ResourceHandle* GetResourceSyncDetour
     (
-        nint  pFileManager,
-        uint* pCategoryID,
-        char* pResourceType,
-        uint* pResourceHash,
-        byte* pPath,
-        void* pUnknown
+        ResourceManager*  manager,
+        ResourceCategory* category,
+        uint*             type,
+        uint*             hash,
+        CStringPointer    path,
+        void*             unknown,
+        void*             unkDebugPtr,
+        uint              unkDebugInt
     ) =>
-        GetResourceHandler(true, pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown, false);
+        GetResourceHandler(true, manager, category, type, hash, path, unknown, false, unkDebugPtr, unkDebugInt);
 
-    private void* GetResourceAsyncDetour
+    private ResourceHandle* GetResourceAsyncDetour
     (
-        nint  pFileManager,
-        uint* pCategoryID,
-        char* pResourceType,
-        uint* pResourceHash,
-        byte* pPath,
-        void* pUnknown,
-        bool  isUnknown
+        ResourceManager*  manager,
+        ResourceCategory* category,
+        uint*             type,
+        uint*             hash,
+        CStringPointer    path,
+        void*             unknown,
+        bool              isUnknown,
+        void*             unkDebugPtr,
+        uint              unkDebugInt
     ) =>
-        GetResourceHandler(false, pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown, isUnknown);
+        GetResourceHandler(false, manager, category, type, hash, path, unknown, isUnknown, unkDebugPtr, unkDebugInt);
 
-    private void* GetResourceHandler
+    private ResourceHandle* GetResourceHandler
     (
-        bool  isSync,
-        nint  pFileManager,
-        uint* pCategoryID,
-        char* pResourceType,
-        uint* pResourceHash,
-        byte* pPath,
-        void* pUnknown,
-        bool  isUnknown
+        bool              isSync,
+        ResourceManager*  manager,
+        ResourceCategory* category,
+        uint*             type,
+        uint*             hash,
+        CStringPointer    path,
+        void*             unknown,
+        bool              isUnknown,
+        void*             unkDebugPtr,
+        uint              unkDebugInt
     )
     {
-        var gamePath = new CStringPointer(pPath);
-
-        if (!gamePath.HasValue)
+        if (!path.HasValue)
             return InvokeOriginal();
 
-        var gamePathString = gamePath.ToString().Trim();
+        var gamePathString = path.ToString().Trim();
         if (string.IsNullOrEmpty(gamePathString))
             return InvokeOriginal();
 
@@ -228,22 +210,22 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
 
         if (blacklistedPaths.ContainsKey(gamePathString))
         {
-            var        path  = "vfx/path/nothing.avfx"u8;
-            Span<byte> bPath = stackalloc byte[path.Length + 1];
-            path.CopyTo(bPath);
-            pPath = (byte*)Unsafe.AsPointer(ref bPath.GetPinnableReference());
+            var        nothingPath = "vfx/path/nothing.avfx"u8;
+            Span<byte> bPath       = stackalloc byte[nothingPath.Length + 1];
+            nothingPath.CopyTo(bPath);
+            path = (byte*)Unsafe.AsPointer(ref bPath.GetPinnableReference());
             hashGenerator.Init();
-            hashGenerator.Update(path);
-            *pResourceHash = hashGenerator.Checksum;
+            hashGenerator.Update(nothingPath);
+            *hash = hashGenerator.Checksum;
         }
 
         return InvokeOriginal();
 
-        void* InvokeOriginal()
+        ResourceHandle* InvokeOriginal()
         {
             return isSync
-                       ? GetResourceSyncHook.Original(pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown)
-                       : GetResourceAsyncHook.Original(pFileManager, pCategoryID, pResourceType, pResourceHash, pPath, pUnknown, isUnknown);
+                       ? GetResourceSyncHook.Original(manager, category, type, hash, path, unknown, unkDebugPtr, unkDebugInt)
+                       : GetResourceAsyncHook.Original(manager, category, type, hash, path, unknown, isUnknown, unkDebugPtr, unkDebugInt);
         }
     }
 
