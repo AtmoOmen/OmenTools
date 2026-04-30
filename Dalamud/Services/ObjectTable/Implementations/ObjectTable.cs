@@ -139,13 +139,13 @@ internal sealed partial class ObjectTable : IObjectTable
         var objKind = (ObjectKind)obj->ObjectKind;
         return objKind switch
         {
-            ObjectKind.Player    => new PlayerCharacter(address),
+            ObjectKind.Pc        => new PlayerCharacter(address),
             ObjectKind.BattleNpc => new BattleNPC(address),
             ObjectKind.EventNpc  => new NPC(address),
             ObjectKind.Retainer  => new NPC(address),
             ObjectKind.EventObj  => new EventObj(address),
             ObjectKind.Companion => new NPC(address),
-            ObjectKind.MountType => new NPC(address),
+            ObjectKind.Mount     => new NPC(address),
             ObjectKind.Ornament  => new NPC(address),
             _                    => new GameObject(address)
         };
@@ -212,13 +212,13 @@ internal sealed partial class ObjectTable : IObjectTable
 
             var activeObject = (ObjectKind)address->ObjectKind switch
             {
-                ObjectKind.Player    => playerCharacter,
+                ObjectKind.Pc        => playerCharacter,
                 ObjectKind.BattleNpc => battleNPC,
                 ObjectKind.EventNpc  => npc,
                 ObjectKind.Retainer  => npc,
                 ObjectKind.EventObj  => eventObj,
                 ObjectKind.Companion => npc,
-                ObjectKind.MountType => npc,
+                ObjectKind.Mount     => npc,
                 ObjectKind.Ornament  => npc,
                 _                    => gameObject
             };
