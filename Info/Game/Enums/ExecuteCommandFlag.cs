@@ -313,19 +313,14 @@ public enum ExecuteCommandFlag
     ///     取消魔晶石镶嵌委托
     /// </summary>
     CancelMateriaMeldRequest = 419,
-
-    /// <summary>
-    ///     请求收藏柜的数据
-    /// </summary>
-    RequestCabinet = 424,
-
+    
     /// <summary>
     ///     存入物品至收藏柜
     /// </summary>
     /// <remarks>
     ///     <para><c>param1</c>: 物品在 Cabinet.csv 中的对应索引</para>
     /// </remarks>
-    StoreToCabinet = 425,
+    StoreToCabinet = 424,
 
     /// <summary>
     ///     从收藏柜中取回物品
@@ -333,7 +328,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 物品在 Cabinet.csv 中的对应索引</para>
     /// </remarks>
-    RestoreFromCabinet = 426,
+    RestoreFromCabinet = 425,
 
     /// <summary>
     ///     维修装备
