@@ -508,16 +508,18 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
         if (addon == null) return false;
 
         var dyeTab = addon->AtkValues[18].Int;
-        var dyeIndex = dyeTab switch
+        var dyeRow = dyeTab switch
         {
             0 => addon->AtkValues[14].UInt,
             1 => addon->AtkValues[15].UInt,
             _ => 0U
         };
 
-        if (!Sheets.Dyes.TryGetValue(dyeIndex, out var item)) return false;
-        LastItem = item;
-
+        if (!LuminaGetter.TryGetRow(dyeRow, out Stain stainRow) ||
+            stainRow.Item[0] is not { IsValid: true, RowId: > 0 } stainItem)
+            return false;
+        
+        LastItem = stainItem.Value;
         return true;
     }
 

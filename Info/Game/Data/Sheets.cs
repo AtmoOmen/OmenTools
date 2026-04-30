@@ -89,18 +89,6 @@ public static class Sheets
         );
 
     [DataShareTag]
-    private const string DYES_TAG = "OmenTools.Info.Game.Data.Sheets.Dyes";
-    
-    public static Dictionary<uint, Item> Dyes { get; } =
-        DService.Instance().PI.GetOrCreateData
-        (
-            DYES_TAG,
-            () => LuminaGetter.Get<StainTransient>()
-                              .Where(x => x.Item1.ValueNullable != null)
-                              .ToDictionary(x => x.RowId, x => x.Item1.Value)
-        );
-
-    [DataShareTag]
     private const string WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.Worlds";
     
     public static Dictionary<uint, World> Worlds { get; } =
@@ -126,18 +114,18 @@ public static class Sheets
 
     [DataShareTag]
     private const string CN_WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.CNWorlds";
-    
+
     public static Dictionary<uint, World> CNWorlds { get; } =
         DService.Instance().PI.GetOrCreateData
         (
             CN_WORLDS_TAG,
             () => Worlds
                   .Where
-                  (x => x.Key is > 1000 and < 2000           &&
-                        x.Value.DataCenter.RowId        != 0 &&
-                        x.Value.Region                  == 2 &&
-                        x.Value.DataCenter.Value.Region == 5 &&
-                        x.Value.UserType                == 101
+                  (x => x.Key is > 1000 and < 2000                 &&
+                        x.Value.DataCenter.RowId              != 0 &&
+                        x.Value.Region                        == 2 &&
+                        x.Value.DataCenter.Value.Region.RowId == 5 &&
+                        x.Value.UserType                      == 101
                   )
                   .ToDictionary(x => x.Key, x => x.Value)
         );
