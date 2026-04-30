@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using OmenTools.Dalamud.Abstractions;
 using OmenTools.Dalamud.Attributes;
 
@@ -9,6 +11,12 @@ public static class RaphaelIPC
 
     [IPCSubscriber("Raphael.Dalamud.StartCalculation")]
     private static IPCSubscriber<uint> StartCalculationSubscriber;
+
+    [IPCSubscriber("Raphael.Dalamud.StartCalculationWithRecipe")]
+    private static IPCSubscriber<uint, uint> StartCalculationWithRecipeSubscriber;
+
+    [IPCSubscriber("Raphael.Dalamud.StartCalculationWithConfig")]
+    private static IPCSubscriber<uint, string, uint> StartCalculationWithConfigSubscriber;
 
     [IPCSubscriber("Raphael.Dalamud.GetCalculationStatus")]
     private static IPCSubscriber<uint, Tuple<uint, string, string, List<uint>>> GetCalculationStatusSubscriber;
@@ -26,6 +34,12 @@ public static class RaphaelIPC
     public static uint StartCalculation() =>
         StartCalculationSubscriber.InvokeFunc();
 
+    public static uint StartCalculation(uint recipeID) =>
+        StartCalculationWithRecipeSubscriber.InvokeFunc(recipeID);
+
+    public static uint StartCalculation(uint recipeID, RaphaelCalculationConfig config) =>
+        StartCalculationWithConfigSubscriber.InvokeFunc(recipeID, config.ToJSON());
+
     public static RaphaelCaculationResponse GetCalculationStatus(uint requestID)
     {
         var result = GetCalculationStatusSubscriber.InvokeFunc(requestID);
@@ -37,6 +51,32 @@ public static class RaphaelIPC
             result.Item4
         );
     }
+}
+
+public sealed class RaphaelCalculationConfig
+{
+    public bool? EnsureReliability    { get; init; }
+    public bool? BackloadProgress     { get; init; }
+    public bool? AllowHeartAndSoul    { get; init; }
+    public bool? AllowQuickInnovation { get; init; }
+    public int?  MaxThreads           { get; init; }
+    public int?  TimeoutSeconds       { get; init; }
+    public int?  TargetQuality        { get; init; }
+    public int?  InitialQuality       { get; init; }
+    public uint? FoodItemID           { get; init; }
+    public bool? FoodHQ               { get; init; }
+    public uint? PotionItemID         { get; init; }
+    public bool? PotionHQ             { get; init; }
+    public int?  StellarSteadyHand    { get; init; }
+
+    internal string ToJSON() =>
+        JsonConvert.SerializeObject(this, JSONSettings);
+
+    private static readonly JsonSerializerSettings JSONSettings = new()
+    {
+        NullValueHandling = NullValueHandling.Ignore,
+        ContractResolver  = new CamelCasePropertyNamesContractResolver()
+    };
 }
 
 public class RaphaelCaculationResponse
