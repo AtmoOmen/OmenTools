@@ -238,7 +238,6 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 过场剧情在 Cutscene.csv 中的对应索引</para>
     /// </remarks>
-    /// <seealso cref="RequestCutscene307Command"/>
     RequestCutscene307 = 307,
 
     /// <summary>
@@ -647,7 +646,6 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 过场剧情在 Cutscene.csv 中的对应索引</para>
     /// </remarks>
-    /// <seealso cref="RequestCutscene831Command"/>
     RequestCutscene831 = 831,
 
     /// <summary>
