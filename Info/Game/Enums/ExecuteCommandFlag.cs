@@ -312,7 +312,7 @@ public enum ExecuteCommandFlag
     /// <summary>
     ///     取消魔晶石镶嵌委托
     /// </summary>
-    CancelMateriaMeldRequest = 419,
+    CancelMateriaMeldRequest = 418,
     
     /// <summary>
     ///     存入物品至收藏柜
