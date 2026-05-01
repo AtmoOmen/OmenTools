@@ -1,3 +1,5 @@
+using OmenTools.Interop.Game.ExecuteCommand.Implementations;
+
 namespace OmenTools.Info.Game.Enums;
 
 // ReSharper disable InconsistentNaming
@@ -10,7 +12,8 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 1 - 拔出, 0 - 收回</para>
     ///     <para><c>param2</c>: 未知, 固定为 1</para>
     /// </remarks>
-    DrawOrSheatheWeapon = 1,
+    /// <seealso cref="WeaponCommand"/>
+    Weapon = 1,
 
     /// <summary>
     ///     自动攻击
@@ -329,32 +332,6 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 物品在 Cabinet.csv 中的对应索引</para>
     /// </remarks>
     RestoreFromCabinet = 425,
-
-    /// <summary>
-    ///     维修装备
-    /// </summary>
-    /// <remarks>
-    ///     <para><c>param1</c>: Inventory Type</para>
-    ///     <para><c>param2</c>: Inventory Slot</para>
-    ///     <para><c>param3</c>: Item ID</para>
-    /// </remarks>
-    RepairItem = 434,
-
-    /// <summary>
-    ///     批量维修装备中装备
-    /// </summary>
-    /// <remarks>
-    ///     <para><c>param1</c>: Inventory Type (固定为 1000)</para>
-    /// </remarks>
-    RepairEquippedItems = 435,
-
-    /// <summary>
-    ///     批量维修装备
-    /// </summary>
-    /// <remarks>
-    ///     <para><c>param1</c>: 分类 (0 - 主手/副手; 1 - 头部/身体/手臂; 2 - 腿部/脚部; 3 - 耳部;颈部; 4 - 腕部;戒指; 5 - 物品)</para>
-    /// </remarks>
-    RepairAllItems = 436,
 
     /// <summary>
     ///     精制魔晶石
@@ -1114,15 +1091,17 @@ public enum ExecuteCommandFlag
     SendDutySupport = 2654,
 
     /// <summary>
-    ///     分解指定的物品 / 回收指定物品的魔晶石 / 精选指定物品
+    ///     EventFramework 动作
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 分解: 3735552; 回收魔晶石: 3735553; 精选: 3735554; 修理: 3735555</para>
-    ///     <para><c>param2</c>: Inventory Type</para>
-    ///     <para><c>param3</c>: Inventory Slot</para>
-    ///     <para><c>param4</c>: 物品 ID</para>
+    ///     <para><c>param1</c>：事件ID - 分解：3735552；回收魔晶石：3735553；精选：3735554；修理：3735555</para>
+    ///     <br />
+    ///     <para>修理（3735555)</para>
+    ///     <para><c>param2</c>：类型- 修理装备中物品：2；修理分页物品：3；修理单独物品：物品（InventorySlot &lt;&lt; 16）| 1</para>
+    ///     <para><c>param3</c>：修理装备中物品 - 固定为 InventoryType 1000；修理分页物品 - 分页索引；修理单独物品 - Inventory Type</para>
+    ///     <para><c>param4</c>：修理单独物品 - 物品ID, HQ时增加 100_0000</para>
     /// </remarks>
-    Desynthesize = 2800,
+    EventFrameworkAction = 2800,
 
     /// <summary>
     ///     博兹雅分配失传技能库到技能槽
