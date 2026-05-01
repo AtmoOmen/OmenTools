@@ -16,14 +16,14 @@ public sealed class WKSChooseLotteryCommand : ExecuteCommandBase
 
     public enum CurrencyKind : uint
     {
-        LunarCredit = 0,
+        LunarCredit   = 0,
         PhaennaCredit = 1,
-        OccultCredit = 2
+        OccultCredit  = 2
     }
 
     public enum WheelKind : uint
     {
-        Left = 0,
+        Left  = 0,
         Right = 1
     }
 }

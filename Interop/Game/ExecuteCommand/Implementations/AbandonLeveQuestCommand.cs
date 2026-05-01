@@ -1,3 +1,4 @@
+using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Enums;
 using OmenTools.Interop.Game.ExecuteCommand.Abstractions;
 using OmenTools.OmenService;
@@ -11,6 +12,7 @@ public sealed class AbandonLeveQuestCommand : ExecuteCommandBase
     /// <summary>
     ///     放弃理符任务
     /// </summary>
-    public void Abandon(uint levequestID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, levequestID);
+    /// <seealso cref="Leve" />
+    public void Abandon(uint leveID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(Flag, leveID);
 }

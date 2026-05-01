@@ -21,10 +21,10 @@ public sealed class SendDutySupportCommand : ExecuteCommandBase
     private static uint Pack(ReadOnlySpan<byte> values, int start, int count)
     {
         uint result = 0;
-        var end = Math.Min(values.Length, start + count);
+        var  end    = Math.Min(values.Length, start + count);
 
         for (var i = start; i < end; i++)
-            result |= (uint)values[i] << ((i - start) * 8);
+            result |= (uint)values[i] << (i - start) * 8;
 
         return result;
     }

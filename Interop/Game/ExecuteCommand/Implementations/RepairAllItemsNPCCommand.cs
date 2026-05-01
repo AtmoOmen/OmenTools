@@ -17,10 +17,10 @@ public sealed class RepairAllItemsNPCCommand : ExecuteCommandBase
     public enum RepairCategory : uint
     {
         MainHandAndOffHand = 0,
-        HeadBodyHands = 1,
-        LegsAndFeet = 2,
-        EarAndNeck = 3,
-        WristAndRings = 4,
-        Inventory = 5
+        HeadBodyHands      = 1,
+        LegsAndFeet        = 2,
+        EarAndNeck         = 3,
+        WristAndRings      = 4,
+        Inventory          = 5
     }
 }

@@ -16,11 +16,11 @@ public sealed class HouseInteriorDesignChangeCommand : ExecuteCommandBase
 
     public enum InteriorDesignStyle : uint
     {
-        Mist = 3,
+        Mist         = 3,
         LavenderBeds = 6,
-        Goblet = 9,
-        Shirogane = 12,
-        Empyreum = 15,
-        Simple = 18
+        Goblet       = 9,
+        Shirogane    = 12,
+        Empyreum     = 15,
+        Simple       = 18
     }
 }

@@ -1,3 +1,4 @@
+using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Enums;
 using OmenTools.Interop.Game.ExecuteCommand.Abstractions;
 using OmenTools.OmenService;
@@ -11,6 +12,7 @@ public sealed class BuddyEquipCommand : ExecuteCommandBase
     /// <summary>
     ///     设置陆行鸟装甲
     /// </summary>
+    /// <seealso cref="BuddyEquip" />
     public void Equip(Part part, uint buddyEquipRowID) =>
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)part, buddyEquipRowID);
 

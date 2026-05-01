@@ -47,7 +47,7 @@ public sealed class EventFrameworkActionCommand : ExecuteCommandBase
         (
             Flag,
             3735555,
-            (inventorySlot << 16) | 1,
+            inventorySlot << 16 | 1,
             (uint)inventoryType,
             itemID + (isHQ ? 1000000U : 0U)
         );

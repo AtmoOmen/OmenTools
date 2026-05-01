@@ -16,7 +16,7 @@ public sealed class CollectTrophyCrystalCommand : ExecuteCommandBase
 
     public enum Season : uint
     {
-        Current = 0,
+        Current  = 0,
         Previous = 1
     }
 }

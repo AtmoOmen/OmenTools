@@ -11,18 +11,18 @@ public sealed class CraftCommand : ExecuteCommandBase
     /// <summary>
     ///     开始普通制作
     /// </summary>
-    public void Normal(uint recipeID) =>
+    public void Craft(uint recipeID) =>
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, 0, recipeID);
 
     /// <summary>
     ///     开始简易制作
     /// </summary>
-    public void Quick(uint recipeID, uint count) =>
+    public void QuickSynthesis(uint recipeID, byte count) =>
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, 1, recipeID, count);
 
     /// <summary>
     ///     开始制作练习
     /// </summary>
-    public void Trial(uint recipeID) =>
+    public void Practice(uint recipeID) =>
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, 2, recipeID);
 }

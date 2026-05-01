@@ -17,7 +17,7 @@ public sealed class AroundRangeSetModeCommand : ExecuteCommandBase
     public enum Mode : uint
     {
         Standard = 0,
-        Large = 1,
-        Maximum = 2
+        Large    = 1,
+        Maximum  = 2
     }
 }

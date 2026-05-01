@@ -16,14 +16,14 @@ public sealed class MJISetModeCommand : ExecuteCommandBase
 
     public enum Mode : uint
     {
-        Free = 0,
-        Gather = 1,
-        Sow = 2,
-        Water = 3,
-        Remove = 4,
-        Feed = 6,
-        Pet = 7,
-        Beckon = 8,
+        Free    = 0,
+        Gather  = 1,
+        Sow     = 2,
+        Water   = 3,
+        Remove  = 4,
+        Feed    = 6,
+        Pet     = 7,
+        Beckon  = 8,
         Capture = 9
     }
 }

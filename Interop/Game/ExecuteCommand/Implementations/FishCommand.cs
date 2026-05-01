@@ -12,7 +12,7 @@ public sealed class FishCommand : ExecuteCommandBase
     ///     抛竿
     /// </summary>
     public void Cast() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 0);
+        ExecuteCommandManager.Instance().ExecuteCommand(Flag);
 
     /// <summary>
     ///     收杆

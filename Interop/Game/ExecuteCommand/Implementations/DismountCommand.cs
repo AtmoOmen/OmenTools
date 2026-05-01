@@ -11,6 +11,6 @@ public sealed class DismountCommand : ExecuteCommandBase
     /// <summary>
     ///     下坐骑
     /// </summary>
-    public void Execute(bool enqueue) =>
+    public void Execute(bool enqueue = false) =>
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, enqueue ? 1U : 0U);
 }

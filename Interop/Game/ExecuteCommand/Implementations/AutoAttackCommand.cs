@@ -11,6 +11,6 @@ public sealed class AutoAttackCommand : ExecuteCommandBase
     /// <summary>
     ///     设置自动攻击状态
     /// </summary>
-    public void Set(bool isEnabled, uint targetObjectID, bool isManual) =>
+    public void Set(bool isEnabled, uint targetObjectID, bool isManual = false) =>
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, isEnabled ? 1U : 0U, targetObjectID, isManual ? 1U : 0U);
 }

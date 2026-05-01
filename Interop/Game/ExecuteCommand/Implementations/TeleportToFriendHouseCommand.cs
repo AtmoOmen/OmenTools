@@ -17,6 +17,6 @@ public sealed class TeleportToFriendHouseCommand : ExecuteCommandBase
     public enum FriendHouseAetheryteKind : uint
     {
         FreeCompanyHouse = 57,
-        PrivateHouse = 61
+        PrivateHouse     = 61
     }
 }

@@ -858,13 +858,14 @@ public enum ExecuteCommandFlag
     ViewHouseDetail = 1126,
 
     /// <summary>
-    ///     调整房间亮度
+    ///     调整室内环境设置
     /// </summary>
     /// <remarks>
     ///     <para><c>param1</c>: 亮度等级 (最亮为 0, 最暗为 5)</para>
+    ///     <para><c>param2</c>: 是否关闭环境光遮蔽 (SSAO) (关闭为 1, 开启为 0)</para>
     /// </remarks>
-    /// <seealso cref="AdjustHouseLightCommand"/>
-    AdjustHouseLight = 1137,
+    /// <seealso cref="SetIndoorEnvironmentCommand"/>
+    SetIndoorEnvironment = 1137,
 
     /// <summary>
     ///     刷新部队合建物品交纳信息

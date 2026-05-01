@@ -16,8 +16,8 @@ public sealed class WKSStartLotteryCommand : ExecuteCommandBase
 
     public enum CurrencyKind : uint
     {
-        LunarCredit = 0,
+        LunarCredit   = 0,
         PhaennaCredit = 1,
-        OccultCredit = 2
+        OccultCredit  = 2
     }
 }

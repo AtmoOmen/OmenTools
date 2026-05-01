@@ -15,5 +15,5 @@ public sealed class MJIWorkshopCancelCommand : ExecuteCommandBase
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, BuildScheduleParam(startingHour, craftobjectID), cycleDay);
 
     private static uint BuildScheduleParam(uint startingHour, uint craftobjectID) =>
-        8 * (startingHour | (32 * craftobjectID));
+        8 * (startingHour | 32 * craftobjectID);
 }

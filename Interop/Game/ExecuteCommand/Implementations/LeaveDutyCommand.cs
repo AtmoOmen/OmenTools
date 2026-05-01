@@ -16,7 +16,7 @@ public sealed class LeaveDutyCommand : ExecuteCommandBase
 
     public enum LeaveDutyKind : uint
     {
-        Normal = 0,
+        Normal   = 0,
         Inactive = 1
     }
 }

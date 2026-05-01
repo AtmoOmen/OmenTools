@@ -9,7 +9,7 @@ public sealed class BozjaUseFromHolsterCommand : ExecuteCommandBase
     public override ExecuteCommandFlag Flag => ExecuteCommandFlag.BozjaUseFromHolster;
 
     /// <summary>
-    ///     博兹雅分配失传技能库到技能槽
+    ///     分配博兹雅失传技能库到技能槽
     /// </summary>
     public void Use(uint holsterIndex, uint slotIndex) =>
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, holsterIndex, slotIndex);

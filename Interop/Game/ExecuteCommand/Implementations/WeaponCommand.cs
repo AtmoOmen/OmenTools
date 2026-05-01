@@ -7,7 +7,7 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 public sealed class WeaponCommand : ExecuteCommandBase
 {
     public override ExecuteCommandFlag Flag => ExecuteCommandFlag.Weapon;
-    
+
     /// <summary>
     ///     拔出武器
     /// </summary>
@@ -19,4 +19,10 @@ public sealed class WeaponCommand : ExecuteCommandBase
     /// </summary>
     public void Sheathe() =>
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, 0, 1);
+
+    /// <summary>
+    ///     拔出或收回武器
+    /// </summary>
+    public void Toggle(bool isDraw) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(Flag, isDraw ? 1U : 0, 1);
 }

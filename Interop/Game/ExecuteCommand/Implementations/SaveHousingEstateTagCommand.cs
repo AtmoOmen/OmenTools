@@ -1,5 +1,4 @@
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using OmenTools.Info.Game.Enums;
 using OmenTools.Interop.Game.ExecuteCommand.Abstractions;
 using OmenTools.OmenService;
@@ -24,12 +23,12 @@ public sealed unsafe class SaveHousingEstateTagCommand : ExecuteCommandBase
         if (isIndoor)
         {
             var territory = HousingManager.Instance()->IndoorTerritory;
-            var high = *(long*)((nint)territory + 38560) >> 32;
+            var high      = *(long*)((nint)territory + 38560) >> 32;
             return ((uint)high, (uint)territory->HouseId);
         }
 
         var outdoorTerritory = HousingManager.Instance()->OutdoorTerritory;
-        var outdoorHigh = *(long*)((nint)outdoorTerritory + 38560) >> 32;
+        var outdoorHigh      = *(long*)((nint)outdoorTerritory + 38560) >> 32;
         return ((uint)outdoorHigh, (uint)outdoorTerritory->HouseId);
     }
 }

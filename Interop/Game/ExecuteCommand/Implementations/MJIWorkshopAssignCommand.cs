@@ -12,7 +12,7 @@ public sealed class MJIWorkshopAssignCommand : ExecuteCommandBase
     ///     添加无人岛工房排班
     /// </summary>
     public void Add(uint startingHour, uint craftobjectID, uint cycleDay) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, BuildScheduleParam(startingHour, craftobjectID), cycleDay, 0, 0);
+        ExecuteCommandManager.Instance().ExecuteCommand(Flag, BuildScheduleParam(startingHour, craftobjectID), cycleDay);
 
     /// <summary>
     ///     删除无人岛工房排班
@@ -21,5 +21,5 @@ public sealed class MJIWorkshopAssignCommand : ExecuteCommandBase
         ExecuteCommandManager.Instance().ExecuteCommand(Flag, BuildScheduleParam(startingHour, craftobjectID), cycleDay, 0, 1);
 
     private static uint BuildScheduleParam(uint startingHour, uint craftobjectID) =>
-        8 * (startingHour | (32 * craftobjectID));
+        8 * (startingHour | 32 * craftobjectID);
 }

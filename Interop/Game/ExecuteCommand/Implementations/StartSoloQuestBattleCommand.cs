@@ -16,8 +16,8 @@ public sealed class StartSoloQuestBattleCommand : ExecuteCommandBase
 
     public enum Difficulty : uint
     {
-        Normal = 0,
-        Easy = 1,
+        Normal   = 0,
+        Easy     = 1,
         VeryEasy = 2
     }
 }
