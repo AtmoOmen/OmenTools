@@ -302,12 +302,12 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 物品 ID</para>
     /// </remarks>
-    EnterMateriaAttachState = 408,
+    EnterMateriaAttachState = 407,
 
     /// <summary>
     ///     退出镶嵌魔晶石状态
     /// </summary>
-    LeaveMateriaAttachState = 410,
+    LeaveMateriaAttachState = 409,
 
     /// <summary>
     ///     取消魔晶石镶嵌委托
