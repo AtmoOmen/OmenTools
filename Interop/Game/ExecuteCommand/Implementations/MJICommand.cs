@@ -30,13 +30,13 @@ public sealed unsafe class MJICommand : ExecuteCommandBase
     /// </summary>
     public static void OpenSettingPanel() =>
         SetSettingPanel(true);
-    
+
     /// <summary>
     ///     关闭无人岛设置面板
     /// </summary>
     public static void CloseSettingPanel() =>
         SetSettingPanel(false);
-    
+
     /// <summary>
     ///     设置无人岛设置面板开关状态
     /// </summary>

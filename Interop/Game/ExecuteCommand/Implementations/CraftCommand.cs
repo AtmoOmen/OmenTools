@@ -7,6 +7,12 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 public sealed class CraftCommand : ExecuteCommandBase
 {
     /// <summary>
+    ///     请求制作笔记数据
+    /// </summary>
+    public static void RequestCraftLog(uint jobIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestCraftLog, jobIndex);
+
+    /// <summary>
     ///     开始普通制作
     /// </summary>
     public static void Craft(uint recipeID) =>

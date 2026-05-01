@@ -19,7 +19,7 @@ public sealed class FieldMarkerCommand : ExecuteCommandBase
             (uint)(int)(position.Y * 1000f),
             (uint)(int)(position.Z * 1000f)
         );
-    
+
     /// <summary>
     ///     移除场地标点
     /// </summary>

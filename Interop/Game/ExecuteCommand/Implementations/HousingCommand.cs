@@ -12,13 +12,13 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// </summary>
     public static void SetBGM(uint orchestrionRowID) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetHouseBackgroundMusic, orchestrionRowID);
-    
+
     /// <summary>
     ///     查看房屋详情
     /// </summary>
     public static void ViewDetail(uint territoryType, uint wardIndex, uint plotIndex, uint apartmentRoomIndex = 0) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ViewHouseDetail, territoryType, wardIndex * 256 + plotIndex, apartmentRoomIndex);
-    
+
     /// <summary>
     ///     向当前房屋仓库存入指定物品
     /// </summary>
@@ -29,7 +29,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
 
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.StoreFurniture, houseIDHigh, houseID, (uint)inventoryType, inventorySlot);
     }
-    
+
     /// <summary>
     ///     调整房间环境
     /// </summary>
@@ -37,19 +37,19 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// <param name="enableSSAO">是否开启环境光遮蔽 (SSAO)</param>
     public static void SetIndoorEnvironment(BrightnessLevel light, bool enableSSAO) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetIndoorEnvironment, (uint)light, enableSSAO ? 0U : 1);
-    
+
     /// <summary>
     ///     请求门牌数据
     /// </summary>
     public static void RequestPlacard(HouseTerritory territoryType, uint wardIndex, uint houseIndex) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestPlacardData, (uint)territoryType, wardIndex * 256 + houseIndex);
-    
+
     /// <summary>
     ///     请求抽选数据
     /// </summary>
     public static void RequestLottery(HouseTerritory territoryType, uint wardIndex, uint plotIndex) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestLotteryData, (uint)territoryType, wardIndex * 256 + plotIndex);
-    
+
     /// <summary>
     ///     请求当前房屋名称设置数据
     /// </summary>
@@ -60,7 +60,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
 
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingName, houseIDHigh, houseID);
     }
-    
+
     /// <summary>
     ///     请求当前房屋访客权限设置数据
     /// </summary>
@@ -71,7 +71,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
 
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingGuestAccess, houseIDHigh, houseID);
     }
-    
+
     /// <summary>
     ///     请求当前房屋问候语设置数据
     /// </summary>
@@ -82,7 +82,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
 
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingGreeting, houseIDHigh, houseID);
     }
-    
+
     /// <summary>
     ///     保存当前房屋访客权限设置
     /// </summary>
@@ -94,7 +94,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         var flags = (allowTeleport ? 1U : 0U) | (allowEnter ? 65536U : 0U);
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SaveHousingGuestAccess, houseIDHigh, houseID, flags);
     }
-    
+
     /// <summary>
     ///     请求当前房屋宣传设置数据
     /// </summary>
@@ -105,7 +105,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
 
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingEstateTag, houseIDHigh, houseID);
     }
-    
+
     // TODO: 检查详细的 Flag
     /// <summary>
     ///     保存当前房屋宣传设置
@@ -117,19 +117,19 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
 
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SaveHousingEstateTag, houseIDHigh, houseID, tagFlags);
     }
-    
+
     /// <summary>
     ///     请求住宅区数据
     /// </summary>
     public static void RequestHousingArea(HouseTerritory territoryType, uint wardIndex) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingAreaData, (uint)territoryType, wardIndex);
-    
+
     /// <summary>
     ///     移动到庭院门前
     /// </summary>
     public static void MoveToFrontGate() =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MoveToHouseFrontGate, (uint)HousingManager.Instance()->GetCurrentPlot());
-    
+
     /// <summary>
     ///     从房屋仓库中取出布置指定物品
     /// </summary>
@@ -140,7 +140,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
 
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.PlaceFurnish, houseIDHigh, houseID, (uint)inventoryType, inventorySlot);
     }
-    
+
     /// <summary>
     ///     从当前房屋中取回指定家具
     /// </summary>
@@ -148,7 +148,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     {
         var (houseIDHigh, houseID) = GetCurrentHouseID();
         if (houseIDHigh == houseID && houseID == 0) return;
-        
+
         ExecuteCommandManager.Instance().ExecuteCommand
         (
             ExecuteCommandFlag.RestoreFurniture,
@@ -164,6 +164,12 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// </summary>
     public static void EnterFurnishState() =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FurnishState, 0, (uint)HousingManager.Instance()->GetCurrentPlot());
+
+    /// <summary>
+    ///     请求房屋内部装修风格
+    /// </summary>
+    public static void RequestInteriorDesign() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.HouseInteriorDesignRequest, 255);
 
     /// <summary>
     ///     更改房屋内部装修风格
@@ -207,7 +213,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         Shirogane    = 641,
         Empyreum     = 979
     }
-    
+
     public enum InteriorDesignStyle : uint
     {
         /// <summary>
@@ -245,7 +251,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         /// </summary>
         DarkSimple = 7 * 3
     }
-    
+
     public enum BrightnessLevel : uint
     {
         Brightest  = 0,

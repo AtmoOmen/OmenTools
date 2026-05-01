@@ -11,7 +11,7 @@ public sealed class IdlePostureCommand : ExecuteCommandBase
     /// </summary>
     public static void Change(uint postureIndex) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.IdlePostureChange, 0, postureIndex);
-    
+
     /// <summary>
     ///     进入闲置状态姿势
     /// </summary>
@@ -19,7 +19,7 @@ public sealed class IdlePostureCommand : ExecuteCommandBase
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.IdlePostureEnter, 0, postureIndex);
 
     /// <summary>
-    /// 退出闲置状态姿势
+    ///     退出闲置状态姿势
     /// </summary>
     public static void Exit() =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.IdlePostureExit);
