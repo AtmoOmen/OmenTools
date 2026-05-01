@@ -6,71 +6,69 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class FishCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.Fish;
-
     /// <summary>
     ///     抛竿
     /// </summary>
-    public void Cast() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag);
+    public static void Cast() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish);
 
     /// <summary>
     ///     收杆
     /// </summary>
-    public void Quit() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 1);
+    public static void Quit() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 1);
 
     /// <summary>
     ///     提钩
     /// </summary>
-    public void Hook() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 2);
+    public static void Hook() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 2);
 
     /// <summary>
     ///     换饵
     /// </summary>
-    public void ChangeBait(uint itemID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 4, itemID);
+    public static void ChangeBait(uint itemID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 4, itemID);
 
     /// <summary>
     ///     坐下
     /// </summary>
-    public void Sit() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 5);
+    public static void Sit() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 5);
 
     /// <summary>
     ///     强力提钩
     /// </summary>
-    public void PowerfulHookset() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 10);
+    public static void PowerfulHookset() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 10);
 
     /// <summary>
     ///     精准提钩
     /// </summary>
-    public void PrecisionHookset() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 11);
+    public static void PrecisionHookset() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 11);
 
     /// <summary>
     ///     耐心
     /// </summary>
-    public void Patience() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 13);
+    public static void Patience() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 13);
 
     /// <summary>
     ///     耐心 2
     /// </summary>
-    public void Patience2() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 14);
+    public static void Patience2() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 14);
 
     /// <summary>
     ///     熟练妙招
     /// </summary>
-    public void ThaliaksFavor() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 24);
+    public static void ThaliaksFavor() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 24);
 
     /// <summary>
     ///     游动饵
     /// </summary>
-    public void Mooch(uint baitIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 25, baitIndex);
+    public static void Mooch(uint baitIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 25, baitIndex);
 }

@@ -7,11 +7,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class SendDuelCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.SendDuel;
-
     /// <summary>
     ///     发起决斗
     /// </summary>
-    public void Send(GameObjectId targetGameObjectID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)targetGameObjectID);
+    public static void Send(GameObjectId targetGameObjectID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SendDuel, (uint)targetGameObjectID);
 }

@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class FateMobSpawnCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.FateMobSpawn;
-
     /// <summary>
     ///     发送临危受命野怪生成命令
     /// </summary>
-    public void Spawn(uint objectID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, objectID);
+    public static void Spawn(uint objectID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FateMobSpawn, objectID);
 }

@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class WKSChangeModeCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.WKSChangeMode;
-
     /// <summary>
     ///     变更宇宙探索模式
     /// </summary>
-    public void Change(uint modeIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, modeIndex);
+    public static void Change(uint modeIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.WKSChangeMode, modeIndex);
 }

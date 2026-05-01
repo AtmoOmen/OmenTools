@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class WondrousTailsOperateCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.WondrousTailsOperate;
-
     /// <summary>
     ///     天书奇谈再想想
     /// </summary>
-    public void Rethink(uint index) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 0, index);
+    public static void Rethink(uint index) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.WondrousTailsOperate, 0, index);
 }

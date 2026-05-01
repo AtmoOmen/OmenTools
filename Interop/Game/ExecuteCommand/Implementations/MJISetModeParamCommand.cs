@@ -6,17 +6,15 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class MJISetModeParamCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.MJISetModeParam;
-
     /// <summary>
     ///     设置无人岛模式参数
     /// </summary>
-    public void Set(uint param) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, param);
+    public static void Set(uint param) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJISetModeParam, param);
 
     /// <summary>
     ///     清除无人岛模式参数
     /// </summary>
-    public void Clear() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag);
+    public static void Clear() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJISetModeParam);
 }

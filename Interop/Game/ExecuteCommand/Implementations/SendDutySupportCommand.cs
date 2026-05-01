@@ -6,16 +6,14 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class SendDutySupportCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.SendDutySupport;
-
     /// <summary>
     ///     发送剧情辅助器申请请求
     /// </summary>
-    public void Send(uint dawnStoryID, ReadOnlySpan<byte> memberUIParamIDs)
+    public static void Send(uint dawnStoryID, ReadOnlySpan<byte> memberUIParamIDs)
     {
         var param2 = Pack(memberUIParamIDs, 0, 4);
         var param3 = Pack(memberUIParamIDs, 4, 3);
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, dawnStoryID, param2, param3);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SendDutySupport, dawnStoryID, param2, param3);
     }
 
     private static uint Pack(ReadOnlySpan<byte> values, int start, int count)

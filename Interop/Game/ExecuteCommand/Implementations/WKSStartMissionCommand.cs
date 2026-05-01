@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class WKSStartMissionCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.WKSStartMission;
-
     /// <summary>
     ///     宇宙探索接取任务
     /// </summary>
-    public void Start(uint missionUnitID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, missionUnitID);
+    public static void Start(uint missionUnitID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.WKSStartMission, missionUnitID);
 }

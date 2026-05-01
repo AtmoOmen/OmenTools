@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class SummonPetCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.SummonPet;
-
     /// <summary>
     ///     召唤宠物
     /// </summary>
-    public void Summon(uint petID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, petID);
+    public static void Summon(uint petID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SummonPet, petID);
 }

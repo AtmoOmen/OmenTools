@@ -7,11 +7,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class RepairItemNPCCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.RepairItemNPC;
-
     /// <summary>
     ///     在 NPC 处维修装备
     /// </summary>
-    public void Repair(InventoryType inventoryType, uint inventorySlot, uint itemID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)inventoryType, inventorySlot, itemID);
+    public static void Repair(InventoryType inventoryType, uint inventorySlot, uint itemID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RepairItemNPC, (uint)inventoryType, inventorySlot, itemID);
 }

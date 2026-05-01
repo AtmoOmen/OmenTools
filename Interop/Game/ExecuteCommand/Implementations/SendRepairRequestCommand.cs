@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class SendRepairRequestCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.SendRepairRequest;
-
     /// <summary>
     ///     发送修理委托
     /// </summary>
-    public void Send(uint targetEntityID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, targetEntityID);
+    public static void Send(uint targetEntityID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SendRepairRequest, targetEntityID);
 }

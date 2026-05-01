@@ -6,17 +6,15 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class ReviveCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.Revive;
-
     /// <summary>
     ///     接受复活
     /// </summary>
-    public void Accept() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 5);
+    public static void Accept() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Revive, 5);
 
     /// <summary>
     ///     确认返回返回点
     /// </summary>
-    public void ReturnToHomePoint() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 8);
+    public static void ReturnToHomePoint() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Revive, 8);
 }

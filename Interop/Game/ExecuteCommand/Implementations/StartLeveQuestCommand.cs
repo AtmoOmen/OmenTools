@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class StartLeveQuestCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.StartLeveQuest;
-
     /// <summary>
     ///     开始理符任务
     /// </summary>
-    public void Start(uint levequestID, uint levelIncrease) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, levequestID, levelIncrease);
+    public static void Start(uint levequestID, uint levelIncrease) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.StartLeveQuest, levequestID, levelIncrease);
 }

@@ -7,15 +7,13 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed unsafe class RequestHousingGuestAccessCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.RequestHousingGuestAccess;
-
     /// <summary>
     ///     请求当前房屋访客权限设置数据
     /// </summary>
-    public void Request(bool isIndoor = true)
+    public static void Request(bool isIndoor = true)
     {
         var (houseIDHigh, houseID) = GetCurrentHouseID(isIndoor);
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, houseIDHigh, houseID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingGuestAccess, houseIDHigh, houseID);
     }
 
     private static (uint High, uint Low) GetCurrentHouseID(bool isIndoor)

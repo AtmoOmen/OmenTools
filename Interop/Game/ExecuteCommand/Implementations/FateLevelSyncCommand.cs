@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class FateLevelSyncCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.FateLevelSync;
-
     /// <summary>
     ///     为临危受命设置等级同步状态
     /// </summary>
-    public void Set(uint fateID, bool isLevelSynced) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, fateID, isLevelSynced ? 1U : 0U);
+    public static void Set(uint fateID, bool isLevelSynced) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FateLevelSync, fateID, isLevelSynced ? 1U : 0U);
 }

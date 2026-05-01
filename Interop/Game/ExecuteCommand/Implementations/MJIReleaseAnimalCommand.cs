@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class MJIReleaseAnimalCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.MJIReleaseAnimal;
-
     /// <summary>
     ///     放生无人岛牧场动物
     /// </summary>
-    public void Release(uint animalIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, animalIndex);
+    public static void Release(uint animalIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIReleaseAnimal, animalIndex);
 }

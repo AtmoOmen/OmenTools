@@ -6,13 +6,11 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class RepairAllItemsNPCCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.RepairAllItemsNPC;
-
     /// <summary>
     ///     在 NPC 处批量维修装备
     /// </summary>
-    public void Repair(RepairCategory category) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)category);
+    public static void Repair(RepairCategory category) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RepairAllItemsNPC, (uint)category);
 
     public enum RepairCategory : uint
     {

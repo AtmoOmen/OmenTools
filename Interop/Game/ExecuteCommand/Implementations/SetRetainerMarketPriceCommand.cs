@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class SetRetainerMarketPriceCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.SetRetainerMarketPrice;
-
     /// <summary>
     ///     设置当前雇员市场出售物品价格
     /// </summary>
-    public void Set(uint slot, uint price) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, slot, price);
+    public static void Set(uint slot, uint price) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetRetainerMarketPrice, slot, price);
 }

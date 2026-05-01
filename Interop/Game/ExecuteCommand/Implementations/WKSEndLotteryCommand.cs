@@ -6,13 +6,11 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class WKSEndLotteryCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.WKSEndLottery;
-
     /// <summary>
     ///     宇宙好运道结束抽奖
     /// </summary>
-    public void End(CurrencyKind currencyKind) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)currencyKind);
+    public static void End(CurrencyKind currencyKind) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.WKSEndLottery, (uint)currencyKind);
 
     public enum CurrencyKind : uint
     {

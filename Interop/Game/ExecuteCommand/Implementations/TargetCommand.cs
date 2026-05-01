@@ -6,17 +6,15 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class TargetCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.Target;
-
     /// <summary>
     ///     选中目标
     /// </summary>
-    public void Set(uint entityID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, entityID);
+    public static void Set(uint entityID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Target, entityID);
 
     /// <summary>
     ///     清除当前目标
     /// </summary>
-    public void Clear() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 0xE0000000);
+    public static void Clear() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Target, 0xE0000000);
 }

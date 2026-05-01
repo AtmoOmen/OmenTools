@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class ApplyGlamourPlateCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.ApplyGlamourPlate;
-
     /// <summary>
     ///     应用投影模板
     /// </summary>
-    public void Apply(uint plateIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, plateIndex);
+    public static void Apply(uint plateIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ApplyGlamourPlate, plateIndex);
 }

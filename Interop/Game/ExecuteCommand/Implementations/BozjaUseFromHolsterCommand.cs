@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class BozjaUseFromHolsterCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.BozjaUseFromHolster;
-
     /// <summary>
     ///     分配博兹雅失传技能库到技能槽
     /// </summary>
-    public void Use(uint holsterIndex, uint slotIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, holsterIndex, slotIndex);
+    public static void Use(uint holsterIndex, uint slotIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BozjaUseFromHolster, holsterIndex, slotIndex);
 }

@@ -7,15 +7,13 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed unsafe class StoreFurnitureCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.StoreFurniture;
-
     /// <summary>
     ///     向当前房屋仓库存入指定物品
     /// </summary>
-    public void Store(InventoryType inventoryType, uint inventorySlot, bool isIndoor = true)
+    public static void Store(InventoryType inventoryType, uint inventorySlot, bool isIndoor = true)
     {
         var (houseIDHigh, houseID) = GetCurrentHouseID(isIndoor);
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, houseIDHigh, houseID, (uint)inventoryType, inventorySlot);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.StoreFurniture, houseIDHigh, houseID, (uint)inventoryType, inventorySlot);
     }
 
     private static (uint High, uint Low) GetCurrentHouseID(bool isIndoor)

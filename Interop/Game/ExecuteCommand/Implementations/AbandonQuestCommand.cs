@@ -7,12 +7,10 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class AbandonQuestCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.AbandonQuest;
-
     /// <summary>
     ///     放弃任务
     /// </summary>
     /// <seealso cref="Quest" />
-    public void Abandon(uint questID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, questID);
+    public static void Abandon(uint questID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.AbandonQuest, questID);
 }

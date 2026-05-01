@@ -7,15 +7,13 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed unsafe class SaveHousingEstateTagCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.SaveHousingEstateTag;
-
     /// <summary>
     ///     保存当前房屋宣传设置
     /// </summary>
-    public void Save(uint tagFlags, bool isIndoor = true)
+    public static void Save(uint tagFlags, bool isIndoor = true)
     {
         var (houseIDHigh, houseID) = GetCurrentHouseID(isIndoor);
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, houseIDHigh, houseID, tagFlags);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SaveHousingEstateTag, houseIDHigh, houseID, tagFlags);
     }
 
     private static (uint High, uint Low) GetCurrentHouseID(bool isIndoor)

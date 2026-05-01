@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class BuybackReconstrcutionItemCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.BuybackReconstrcutionItem;
-
     /// <summary>
     ///     买回多玛飞地支援物资
     /// </summary>
-    public void Buyback(uint itemIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, itemIndex);
+    public static void Buyback(uint itemIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuybackReconstrcutionItem, itemIndex);
 }

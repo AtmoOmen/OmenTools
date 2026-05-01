@@ -6,15 +6,13 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class SetIndoorEnvironmentCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.SetIndoorEnvironment;
-
     /// <summary>
     ///     调整房间环境
     /// </summary>
     /// <param name="light">房间亮度等级</param>
     /// <param name="enableSSAO">是否开启环境光遮蔽 (SSAO)</param>
-    public void Adjust(BrightnessLevel light, bool enableSSAO) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)light, enableSSAO ? 0U : 1);
+    public static void Adjust(BrightnessLevel light, bool enableSSAO) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetIndoorEnvironment, (uint)light, enableSSAO ? 0U : 1);
 
     public enum BrightnessLevel : uint
     {

@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class RequestHousingAreaDataCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.RequestHousingAreaData;
-
     /// <summary>
     ///     请求住宅区数据
     /// </summary>
-    public void Request(uint territoryType, uint wardIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, territoryType, wardIndex);
+    public static void Request(uint territoryType, uint wardIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingAreaData, territoryType, wardIndex);
 }

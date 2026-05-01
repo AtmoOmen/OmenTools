@@ -6,13 +6,11 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class TerritoryTransportCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.TerritoryTransport;
-
     /// <summary>
     ///     执行区域变更
     /// </summary>
-    public void Transport(TransportKind transportKind, InnerTransportKind innerTransportKind = 0) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)transportKind, (uint)innerTransportKind);
+    public static void Transport(TransportKind transportKind, InnerTransportKind innerTransportKind = 0) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.TerritoryTransport, (uint)transportKind, (uint)innerTransportKind);
 
     public enum TransportKind : uint
     {

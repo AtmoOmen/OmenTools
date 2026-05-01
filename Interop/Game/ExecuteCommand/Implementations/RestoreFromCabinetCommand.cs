@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class RestoreFromCabinetCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.RestoreFromCabinet;
-
     /// <summary>
     ///     从收藏柜中取回物品
     /// </summary>
-    public void Restore(uint cabinetRowID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, cabinetRowID);
+    public static void Restore(uint cabinetRowID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RestoreFromCabinet, cabinetRowID);
 }

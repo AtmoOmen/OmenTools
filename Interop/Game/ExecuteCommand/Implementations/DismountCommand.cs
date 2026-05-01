@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class DismountCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.Dismount;
-
     /// <summary>
     ///     下坐骑
     /// </summary>
-    public void Execute(bool enqueue = false) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, enqueue ? 1U : 0U);
+    public static void Execute(bool enqueue = false) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Dismount, enqueue ? 1U : 0U);
 }

@@ -7,11 +7,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed unsafe class MJICollectAllAnimalLeavingsCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.MJICollectAllAnimalLeavings;
-
     /// <summary>
     ///     收取无人岛牧场全部动物产物
     /// </summary>
-    public void Collect() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)MJIManager.Instance()->PastureHandler->AvailableMammetLeavings.Count);
+    public static void Collect() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJICollectAllAnimalLeavings, (uint)MJIManager.Instance()->PastureHandler->AvailableMammetLeavings.Count);
 }

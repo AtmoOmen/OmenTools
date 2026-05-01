@@ -7,15 +7,13 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed unsafe class FurnishCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.Furnish;
-
     /// <summary>
     ///     从当前房屋仓库中取出布置指定物品
     /// </summary>
-    public void Place(InventoryType inventoryType, uint inventorySlot, bool isIndoor = true)
+    public static void Place(InventoryType inventoryType, uint inventorySlot, bool isIndoor = true)
     {
         var (houseIDHigh, houseID) = GetCurrentHouseID(isIndoor);
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, houseIDHigh, houseID, (uint)inventoryType, inventorySlot);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Furnish, houseIDHigh, houseID, (uint)inventoryType, inventorySlot);
     }
 
     private static (uint High, uint Low) GetCurrentHouseID(bool isIndoor)

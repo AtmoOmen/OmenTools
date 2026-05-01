@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class RequestNearCompletionAchievementCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.RequestNearCompletionAchievement;
-
     /// <summary>
     ///     请求接近达成成就概览
     /// </summary>
-    public void Request() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 1);
+    public static void Request() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestNearCompletionAchievement, 1);
 }

@@ -6,15 +6,13 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class BuddyLearnSkillCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.BuddyLearnSkill;
-
     /// <summary>
     ///     陆行鸟学习技能
     /// </summary>
-    public void Learn(Category category, uint level)
+    public static void Learn(Category category, uint level)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(level, 1U);
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (level - 1) * 3 + (uint)category);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuddyLearnSkill, (level - 1) * 3 + (uint)category);
     }
 
     public enum Category : uint

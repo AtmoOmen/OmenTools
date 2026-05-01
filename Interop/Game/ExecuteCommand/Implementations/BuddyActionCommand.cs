@@ -7,14 +7,12 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class BuddyActionCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.BuddyAction;
-
     /// <summary>
     ///     使用陆行鸟技能
     /// </summary>
     /// <seealso cref="BuddyAction" />
-    public void Execute(ActionType actionType) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)actionType);
+    public static void Execute(ActionType actionType) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuddyAction, (uint)actionType);
 
     public enum ActionType : uint
     {

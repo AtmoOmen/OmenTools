@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class AutoAttackCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.AutoAttack;
-
     /// <summary>
     ///     设置自动攻击状态
     /// </summary>
-    public void Set(bool isEnabled, uint targetObjectID, bool isManual = false) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, isEnabled ? 1U : 0U, targetObjectID, isManual ? 1U : 0U);
+    public static void Set(bool isEnabled, uint targetObjectID, bool isManual = false) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.AutoAttack, isEnabled ? 1U : 0U, targetObjectID, isManual ? 1U : 0U);
 }

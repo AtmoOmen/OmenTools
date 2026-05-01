@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class RepairSubmarinePartCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.RepairSubmarinePart;
-
     /// <summary>
     ///     修理潜水艇部件
     /// </summary>
-    public void Repair(uint submarineIndex, uint partIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, submarineIndex, partIndex);
+    public static void Repair(uint submarineIndex, uint partIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RepairSubmarinePart, submarineIndex, partIndex);
 }

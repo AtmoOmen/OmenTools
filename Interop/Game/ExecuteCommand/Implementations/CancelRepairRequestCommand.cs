@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class CancelRepairRequestCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.CancelRepairRequest;
-
     /// <summary>
     ///     取消修理委托
     /// </summary>
-    public void Cancel(uint targetEntityID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, targetEntityID);
+    public static void Cancel(uint targetEntityID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CancelRepairRequest, targetEntityID);
 }

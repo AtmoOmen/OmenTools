@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class RollDiceCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.RollDice;
-
     /// <summary>
     ///     掷骰子
     /// </summary>
-    public void Roll(uint maxValue) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 0, maxValue);
+    public static void Roll(uint maxValue) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RollDice, 0, maxValue);
 }

@@ -6,13 +6,11 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class MJISetModeCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.MJISetMode;
-
     /// <summary>
     ///     切换无人岛模式
     /// </summary>
-    public void Set(Mode mode) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)mode);
+    public static void Set(Mode mode) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJISetMode, (uint)mode);
 
     public enum Mode : uint
     {

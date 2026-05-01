@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class LoadCraftLogCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.LoadCraftLog;
-
     /// <summary>
     ///     加载制作笔记数据
     /// </summary>
-    public void Load(uint jobIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, jobIndex);
+    public static void Load(uint jobIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.LoadCraftLog, jobIndex);
 }

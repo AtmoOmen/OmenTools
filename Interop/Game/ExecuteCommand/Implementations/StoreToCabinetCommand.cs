@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class StoreToCabinetCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.StoreToCabinet;
-
     /// <summary>
     ///     存入物品至收藏柜
     /// </summary>
-    public void Store(uint cabinetRowID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, cabinetRowID);
+    public static void Store(uint cabinetRowID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.StoreToCabinet, cabinetRowID);
 }

@@ -6,17 +6,15 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class WKSRequestMechaCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.WKSRequestMecha;
-
     /// <summary>
     ///     宇宙探索请求机甲数据
     /// </summary>
-    public void Request(uint wksMechaEventDataRowID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, wksMechaEventDataRowID);
+    public static void Request(uint wksMechaEventDataRowID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.WKSRequestMecha, wksMechaEventDataRowID);
 
     /// <summary>
     ///     宇宙探索请求当前未开始的机甲数据
     /// </summary>
-    public void RequestInactive() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag);
+    public static void RequestInactive() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.WKSRequestMecha);
 }

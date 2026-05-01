@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class MJIEntrustAnimalCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.MJIEntrustAnimal;
-
     /// <summary>
     ///     托管无人岛牧场动物
     /// </summary>
-    public void Entrust(uint animalIndex, uint feeditemID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, animalIndex, feeditemID);
+    public static void Entrust(uint animalIndex, uint feeditemID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIEntrustAnimal, animalIndex, feeditemID);
 }

@@ -6,23 +6,21 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class RequestDuelCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.RequestDuel;
-
     /// <summary>
     ///     确认决斗申请
     /// </summary>
-    public void Confirm() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag);
+    public static void Confirm() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestDuel);
 
     /// <summary>
     ///     取消决斗申请
     /// </summary>
-    public void Cancel() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 1);
+    public static void Cancel() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestDuel, 1);
 
     /// <summary>
     ///     强制取消决斗申请
     /// </summary>
-    public void ForceCancel() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 4);
+    public static void ForceCancel() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestDuel, 4);
 }

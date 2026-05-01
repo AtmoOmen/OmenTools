@@ -7,11 +7,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class ExtractMateriaCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.ExtractMateria;
-
     /// <summary>
     ///     精制魔晶石
     /// </summary>
-    public void Extract(InventoryType inventoryType, uint inventorySlot) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)inventoryType, inventorySlot);
+    public static void Extract(InventoryType inventoryType, uint inventorySlot) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ExtractMateria, (uint)inventoryType, inventorySlot);
 }

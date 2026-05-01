@@ -6,23 +6,21 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class CraftCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.Craft;
-
     /// <summary>
     ///     开始普通制作
     /// </summary>
-    public void Craft(uint recipeID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 0, recipeID);
+    public static void Craft(uint recipeID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Craft, 0, recipeID);
 
     /// <summary>
     ///     开始简易制作
     /// </summary>
-    public void QuickSynthesis(uint recipeID, byte count) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 1, recipeID, count);
+    public static void QuickSynthesis(uint recipeID, byte count) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Craft, 1, recipeID, count);
 
     /// <summary>
     ///     开始制作练习
     /// </summary>
-    public void Practice(uint recipeID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, 2, recipeID);
+    public static void Practice(uint recipeID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Craft, 2, recipeID);
 }

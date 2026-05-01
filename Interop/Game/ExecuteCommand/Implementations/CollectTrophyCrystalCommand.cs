@@ -6,13 +6,11 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class CollectTrophyCrystalCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.CollectTrophyCrystal;
-
     /// <summary>
     ///     领取战利水晶
     /// </summary>
-    public void Collect(Season season = Season.Current) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, (uint)season);
+    public static void Collect(Season season = Season.Current) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CollectTrophyCrystal, (uint)season);
 
     public enum Season : uint
     {

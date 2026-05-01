@@ -7,16 +7,14 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed unsafe class SaveHousingGuestAccessCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.SaveHousingGuestAccess;
-
     /// <summary>
     ///     保存当前房屋访客权限设置
     /// </summary>
-    public void Save(bool allowTeleport, bool allowEnter, bool isIndoor = true)
+    public static void Save(bool allowTeleport, bool allowEnter, bool isIndoor = true)
     {
         var (houseIDHigh, houseID) = GetCurrentHouseID(isIndoor);
         var flags = (allowTeleport ? 1U : 0U) | (allowEnter ? 65536U : 0U);
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, houseIDHigh, houseID, flags);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SaveHousingGuestAccess, houseIDHigh, houseID, flags);
     }
 
     private static (uint High, uint Low) GetCurrentHouseID(bool isIndoor)

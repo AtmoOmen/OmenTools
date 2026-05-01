@@ -6,11 +6,9 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class MJIRecallMinionCommand : ExecuteCommandBase
 {
-    public override ExecuteCommandFlag Flag => ExecuteCommandFlag.MJIRecallMinion;
-
     /// <summary>
     ///     召回无人岛放生的宠物
     /// </summary>
-    public void Recall(uint minionIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(Flag, minionIndex);
+    public static void Recall(uint minionIndex) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIRecallMinion, minionIndex);
 }
