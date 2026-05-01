@@ -294,7 +294,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: (int)InventoryType</para>
     /// </remarks>
-    RequestInventory = 405,
+    RequestInventory = 404,
 
     /// <summary>
     ///     进入镶嵌魔晶石状态
