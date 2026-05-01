@@ -5,6 +5,7 @@ using OmenTools.OmenService;
 
 namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
+// TODO: 需要确定是否可用
 public sealed class ExtractMateriaCommand : ExecuteCommandBase
 {
     /// <summary>

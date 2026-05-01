@@ -7,7 +7,8 @@ namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
 public sealed class EventFrameworkActionCommand : ExecuteCommandBase
 {
-    /// <summary>
+    // TODO: 之后逆向完再看看
+    /*/// <summary>
     ///     执行分解
     /// </summary>
     public static void Desynthesize() =>
@@ -23,7 +24,7 @@ public sealed class EventFrameworkActionCommand : ExecuteCommandBase
     ///     执行精选
     /// </summary>
     public static void AetherialReduction() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EventFrameworkAction, 3735554);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EventFrameworkAction, 3735554);*/
 
     /// <summary>
     ///     修理装备中物品
@@ -34,8 +35,8 @@ public sealed class EventFrameworkActionCommand : ExecuteCommandBase
     /// <summary>
     ///     修理分页物品
     /// </summary>
-    public static void RepairPage(uint pageIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EventFrameworkAction, 3735555, 3, pageIndex);
+    public static void RepairPage(RepairPageCategory category) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EventFrameworkAction, 3735555, 3, (uint)category);
 
     /// <summary>
     ///     修理单独物品
@@ -49,4 +50,37 @@ public sealed class EventFrameworkActionCommand : ExecuteCommandBase
             (uint)inventoryType,
             itemID + (isHQ ? 1000000U : 0U)
         );
+
+    public enum RepairPageCategory : uint
+    {
+        /// <summary>
+        ///     主手/副手
+        /// </summary>
+        MainOffHands = 0,
+
+        /// <summary>
+        ///     头部/身体/手臂
+        /// </summary>
+        HeadBodyArms = 1,
+
+        /// <summary>
+        ///     腿部/脚部
+        /// </summary>
+        LegsFeet = 2,
+
+        /// <summary>
+        ///     耳部/颈部
+        /// </summary>
+        EarsNeck = 3,
+
+        /// <summary>
+        ///     腕部/戒指
+        /// </summary>
+        WristsRings = 5,
+
+        /// <summary>
+        ///     物品
+        /// </summary>
+        Inventory = 6
+    }
 }

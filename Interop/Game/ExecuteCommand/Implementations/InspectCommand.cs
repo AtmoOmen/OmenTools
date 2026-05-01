@@ -9,6 +9,6 @@ public sealed class InspectCommand : ExecuteCommandBase
     /// <summary>
     ///     检查指定玩家
     /// </summary>
-    public static void Inspect(uint objectID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Inspect, objectID);
+    public static void Inspect(uint entityID) =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Inspect, entityID);
 }

@@ -69,6 +69,6 @@ public sealed class FishCommand : ExecuteCommandBase
     /// <summary>
     ///     游动饵
     /// </summary>
-    public static void Mooch(uint baitIndex) =>
+    public static void SwimBait(uint baitIndex) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Fish, 25, baitIndex);
 }

@@ -1,5 +1,3 @@
 namespace OmenTools.Interop.Game.ExecuteCommand.Abstractions;
 
-public abstract class ExecuteCommandBase
-{
-}
+public abstract class ExecuteCommandBase;
