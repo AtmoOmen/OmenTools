@@ -1,4 +1,4 @@
-﻿using OmenTools.Info.Game.Enums;
+using OmenTools.Info.Game.Enums;
 using OmenTools.Interop.Game.ExecuteCommand.Abstractions;
 using OmenTools.OmenService;
 

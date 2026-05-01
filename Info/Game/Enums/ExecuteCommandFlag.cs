@@ -23,6 +23,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: 目标对象ID</para>
     ///     <para><c>param3</c>: 是否为手动操作 (0 - 否, 1 - 是)</para>
     /// </remarks>
+    /// <seealso cref="AutoAttackCommand"/>
     AutoAttack = 2,
 
     /// <summary>
@@ -31,6 +32,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 目标 Entity ID (无目标为: 0xE0000000)</para>
     /// </remarks>
+    /// <seealso cref="TargetCommand"/>
     Target = 3,
 
     /// <summary>
@@ -41,6 +43,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: 参数 1</para>
     ///     <para><c>param3</c>: 参数 2</para>
     /// </remarks>
+    /// <seealso cref="PVPQuickChatCommand"/>
     PVPQuickChat = 5,
 
     /// <summary>
@@ -49,6 +52,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 0 - 不进入队列; 1 - 进入队列</para>
     /// </remarks>
+    /// <seealso cref="DismountCommand"/>
     Dismount = 101,
 
     /// <summary>
@@ -57,6 +61,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 宠物 ID</para>
     /// </remarks>
+    /// <seealso cref="SummonPetCommand"/>
     SummonPet = 102,
 
     /// <summary>
@@ -71,6 +76,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: Status ID</para>
     ///     <para><c>param3</c>: Status 来源的 GameObjectID，亦可用 0xE0000000 指定清除任意来源的首个该状态 </para>
     /// </remarks>
+    /// <seealso cref="StatusOffCommand"/>
     StatusOff = 104,
 
     /// <summary>
@@ -85,6 +91,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 目标 ID</para>
     ///     <para><c>param2</c>: 位置索引</para>
     /// </remarks>
+    /// <seealso cref="RidePillionCommand"/>
     RidePillion = 106,
 
     /// <summary>
@@ -103,6 +110,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 操作 (5 - 接受复活; 8 - 确认返回返回点)</para>
     /// </remarks>
+    /// <seealso cref="ReviveCommand"/>
     Revive = 200,
 
     /// <summary>
@@ -156,6 +164,7 @@ public enum ExecuteCommandFlag
     ///         </item>
     ///     </list>
     /// </remarks>
+    /// <seealso cref="TerritoryTransportCommand"/>
     TerritoryTransport = 201,
 
     /// <summary>
@@ -166,6 +175,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: 是否使用传送券 (0 - 否, 1 - 是)</para>
     ///     <para><c>param3</c>: 以太之光 Sub ID</para>
     /// </remarks>
+    /// <seealso cref="TeleportCommand"/>
     Teleport = 202,
 
     /// <summary>
@@ -191,6 +201,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param3</c>: 以太之光 ID (个人房屋 - 61, 部队房屋 - 57)</para>
     ///     <para><c>param4</c>: 以太之光 Sub ID (疑似恒定为 1)</para>
     /// </remarks>
+    /// <seealso cref="TeleportToFriendHouseCommand"/>
     TeleportToFriendHouse = 211,
 
     /// <summary>
@@ -209,6 +220,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 待对象 Object ID</para>
     /// </remarks>
+    /// <seealso cref="InspectCommand"/>
     Inspect = 300,
 
     /// <summary>
@@ -217,6 +229,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 称号 ID</para>
     /// </remarks>
+    /// <seealso cref="ChangeTitleCommand"/>
     ChangeTitle = 302,
 
     /// <summary>
@@ -225,6 +238,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 过场剧情在 Cutscene.csv 中的对应索引</para>
     /// </remarks>
+    /// <seealso cref="RequestCutscene307Command"/>
     RequestCutscene307 = 307,
 
     /// <summary>
@@ -233,6 +247,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 类别索引 (从 1 开始)</para>
     /// </remarks>
+    /// <seealso cref="RequestContentsNoteCategoryCommand"/>
     RequestContentsNoteCategory = 310,
 
     /// <summary>
@@ -248,6 +263,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: 格子序号 (从 0 开始, 小于 24)</para>
     ///     <para><c>param3</c>: 技能 ID / 格子序号 (从 0 开始, 小于 24)</para>
     /// </remarks>
+    /// <seealso cref="AssignBLUActionToSlotCommand"/>
     AssignBLUActionToSlot = 315,
 
     /// <summary>
@@ -264,6 +280,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param3</c>: 坐标 Y * 1000</para>
     ///     <para><c>param4</c>: 坐标 Z * 1000</para>
     /// </remarks>
+    /// <seealso cref="PlaceFieldMarkerCommand"/>
     PlaceFieldMarker = 317,
 
     /// <summary>
@@ -272,6 +289,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 标点索引</para>
     /// </remarks>
+    /// <seealso cref="RemoveFieldMarkerCommand"/>
     RemoveFieldMarker = 318,
 
     /// <summary>
@@ -280,6 +298,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 木人的 Object ID</para>
     /// </remarks>
+    /// <seealso cref="ResetStrikingDummyCommand"/>
     ResetStrikingDummy = 319,
 
     /// <summary>
@@ -289,6 +308,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 物品 Slot</para>
     ///     <para><c>param2</c>: 物品价格</para>
     /// </remarks>
+    /// <seealso cref="SetRetainerMarketPriceCommand"/>
     SetRetainerMarketPrice = 400,
 
     /// <summary>
@@ -297,6 +317,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: (int)InventoryType</para>
     /// </remarks>
+    /// <seealso cref="RequestInventoryCommand"/>
     RequestInventory = 404,
 
     /// <summary>
@@ -305,6 +326,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 物品 ID</para>
     /// </remarks>
+    /// <seealso cref="EnterMateriaAttachStateCommand"/>
     EnterMateriaAttachState = 407,
 
     /// <summary>
@@ -323,6 +345,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 物品在 Cabinet.csv 中的对应索引</para>
     /// </remarks>
+    /// <seealso cref="StoreToCabinetCommand"/>
     StoreToCabinet = 424,
 
     /// <summary>
@@ -331,6 +354,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 物品在 Cabinet.csv 中的对应索引</para>
     /// </remarks>
+    /// <seealso cref="RestoreFromCabinetCommand"/>
     RestoreFromCabinet = 425,
 
     /// <summary>
@@ -340,6 +364,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: Inventory Type</para>
     ///     <para><c>param1</c>: Inventory Slot</para>
     /// </remarks>
+    /// <seealso cref="ExtractMateriaCommand"/>
     ExtractMateria = 437,
 
     /// <summary>
@@ -369,6 +394,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 目标 Entity ID</para>
     /// </remarks>
+    /// <seealso cref="SendRepairRequestCommand"/>
     SendRepairRequest = 450,
 
     /// <summary>
@@ -378,6 +404,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 目标 Entity ID</para>
     /// </remarks>
+    /// <seealso cref="CancelRepairRequestCommand"/>
     CancelRepairRequest = 453,
 
     /// <summary>
@@ -396,6 +423,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param2</c>: 姿势索引</para>
     /// </remarks>
+    /// <seealso cref="IdlePostureChangeCommand"/>
     IdlePostureChange = 505,
 
     /// <summary>
@@ -404,6 +432,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param2</c>: 姿势索引</para>
     /// </remarks>
+    /// <seealso cref="IdlePostureEnterCommand"/>
     IdlePostureEnter = 506,
 
     /// <summary>
@@ -435,6 +464,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 0 - 取消; 1 - 赋予</para>
     /// </remarks>
+    /// <seealso cref="DisableMountingCommand"/>
     DisableMounting = 612,
 
     /// <summary>
@@ -450,6 +480,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: 配方 ID (在 Recipe.csv 中)</para>
     ///     <para><c>param3</c>: 额外参数 (简易制作 - 数量, 最多 255 个)</para>
     /// </remarks>
+    /// <seealso cref="CraftCommand"/>
     Craft = 700,
 
     /// <summary>
@@ -462,6 +493,7 @@ public enum ExecuteCommandFlag
     ///     </para>
     ///     <para><c>param2</c>: 额外参数 (若为换饵, 则为物品 ID; 若为游动饵, 则为饵索引)</para>
     /// </remarks>
+    /// <seealso cref="FishCommand"/>
     Fish = 701,
 
     /// <summary>
@@ -478,6 +510,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 职业索引 (从左至右, 从 0 开始, 至 7 结束)</para>
     /// </remarks>
+    /// <seealso cref="LoadCraftLogCommand"/>
     LoadCraftLog = 710,
 
     /// <summary>
@@ -491,6 +524,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 任务 ID (非 RowID)</para>
     /// </remarks>
+    /// <seealso cref="AbandonQuestCommand"/>
     AbandonQuest = 800,
 
     /// <summary>
@@ -504,6 +538,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 理符任务 ID</para>
     /// </remarks>
+    /// <seealso cref="AbandonLeveQuestCommand"/>
     AbandonLeveQuest = 802,
 
     /// <summary>
@@ -513,6 +548,7 @@ public enum ExecuteCommandFlag
     ///         <para><c>param2</c>: 要提高的等级数</para>
     ///     </remarks>
     /// </summary>
+    /// <seealso cref="StartLeveQuestCommand"/>
     StartLeveQuest = 804,
 
     /// <summary>
@@ -527,6 +563,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: FATE ID</para>
     ///     <para><c>param2</c>: 目标 Object ID</para>
     /// </remarks>
+    /// <seealso cref="FateStartCommand"/>
     FateStart = 809,
 
     /// <summary>
@@ -536,6 +573,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: FATE ID</para>
     /// </remarks>
+    /// <seealso cref="FateLoadCommand"/>
     FateLoad = 810,
 
     /// <summary>
@@ -544,6 +582,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: FATE ID</para>
     /// </remarks>
+    /// <seealso cref="FateEnterCommand"/>
     FateEnter = 812,
 
     /// <summary>
@@ -553,6 +592,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: FATE ID</para>
     ///     <para><c>param2</c>: 是否等级同步 (0 - 否, 1 - 是)</para>
     /// </remarks>
+    /// <seealso cref="FateLevelSyncCommand"/>
     FateLevelSync = 813,
 
     /// <summary>
@@ -561,6 +601,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: Object ID</para>
     /// </remarks>
+    /// <seealso cref="FateMobSpawnCommand"/>
     FateMobSpawn = 814,
 
     /// <summary>
@@ -574,6 +615,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 类型 (0 - 正常退本, 1 - 一段时间未操作)</para>
     /// </remarks>
+    /// <seealso cref="LeaveDutyCommand"/>
     LeaveDuty = 819,
 
     /// <summary>
@@ -582,6 +624,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 难度 (0 - 通常, 1 - 简单, 2 - 非常简单)</para>
     /// </remarks>
+    /// <seealso cref="StartSoloQuestBattleCommand"/>
     StartSoloQuestBattle = 823,
 
     /// <summary>
@@ -590,6 +633,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: QuestRedo.csv 中对应的昔日重现章节序号 (0 - 退出昔日重现)</para>
     /// </remarks>
+    /// <seealso cref="QuestRedoCommand"/>
     QuestRedo = 824,
 
     /// <summary>
@@ -603,6 +647,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 过场剧情在 Cutscene.csv 中的对应索引</para>
     /// </remarks>
+    /// <seealso cref="RequestCutscene831Command"/>
     RequestCutscene831 = 831,
 
     /// <summary>
@@ -611,6 +656,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 成就在 Achievement.csv 中的对应索引</para>
     /// </remarks>
+    /// <seealso cref="RequestAchievementCommand"/>
     RequestAchievement = 1000,
 
     /// <summary>
@@ -624,6 +670,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 未知, 固定为 1</para>
     /// </remarks>
+    /// <seealso cref="RequestNearCompletionAchievementCommand"/>
     RequestNearCompletionAchievement = 1002,
 
     /// <summary>
@@ -644,6 +691,7 @@ public enum ExecuteCommandFlag
     /// var position = districtOffset + houseID]]>
     /// </code>
     /// </remarks>
+    /// <seealso cref="RequestLotteryDataCommand"/>
     RequestLotteryData = 1105,
 
     /// <summary>
@@ -664,6 +712,7 @@ public enum ExecuteCommandFlag
     /// var position = districtOffset + houseID]]>
     /// </code>
     /// </remarks>
+    /// <seealso cref="RequestPlacardDataCommand"/>
     RequestPlacardData = 1106,
 
     /// <summary>
@@ -673,6 +722,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: Territory Type</para>
     ///     <para><c>param2</c>: 分区索引</para>
     /// </remarks>
+    /// <seealso cref="RequestHousingAreaDataCommand"/>
     RequestHousingAreaData = 1107,
 
     /// <summary>
@@ -685,6 +735,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param3</c>: InventoryType</para>
     ///     <para><c>param4</c>: InventorySlot</para>
     /// </remarks>
+    /// <seealso cref="StoreFurnitureCommand"/>
     StoreFurniture = 1112,
 
     /// <summary>
@@ -697,6 +748,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param3</c>: InventoryType (25000 至 25010 / 27000 至 27008)</para>
     ///     <para><c>param4</c>: InventorySlot (若 >65535 则将 slot 为 (i - 65536) 的家具收入仓库)</para>
     /// </remarks>
+    /// <seealso cref="RestoreFurnitureCommand"/>
     RestoreFurniture = 1113,
 
     /// <summary>
@@ -707,6 +759,7 @@ public enum ExecuteCommandFlag
     ///     <code>*(long*)((nint)HousingManager.Instance()->IndoorTerritory + 38560) >> 32</code>
     ///     <para><c>param2</c>: HouseManager 相关区域的 HouseID</para>
     /// </remarks>
+    /// <seealso cref="RequestHousingNameCommand"/>
     RequestHousingName = 1114,
 
     /// <summary>
@@ -717,6 +770,7 @@ public enum ExecuteCommandFlag
     ///     <code>*(long*)((nint)HousingManager.Instance()->IndoorTerritory + 38560) >> 32</code>
     ///     <para><c>param2</c>: HouseManager 相关区域的 HouseID</para>
     /// </remarks>
+    /// <seealso cref="RequestHousingGreetingCommand"/>
     RequestHousingGreeting = 1115,
 
     /// <summary>
@@ -727,6 +781,7 @@ public enum ExecuteCommandFlag
     ///     <code>*(long*)((nint)HousingManager.Instance()->IndoorTerritory + 38560) >> 32</code>
     ///     <para><c>param2</c>: HouseManager 相关区域的 HouseID</para>
     /// </remarks>
+    /// <seealso cref="RequestHousingGuestAccessCommand"/>
     RequestHousingGuestAccess = 1117,
 
     /// <summary>
@@ -738,6 +793,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: HouseManager 相关区域的 HouseID</para>
     ///     <para><c>param3</c>: 设置枚举值组合 (已知: 1 - 传送权限; 65536 - 进入权限)</para>
     /// </remarks>
+    /// <seealso cref="SaveHousingGuestAccessCommand"/>
     SaveHousingGuestAccess = 1118,
 
     /// <summary>
@@ -748,6 +804,7 @@ public enum ExecuteCommandFlag
     ///     <code>*(long*)((nint)HousingManager.Instance()->IndoorTerritory + 38560) >> 32</code>
     ///     <para><c>param2</c>: HouseManager 相关区域的 HouseID</para>
     /// </remarks>
+    /// <seealso cref="RequestHousingEstateTagCommand"/>
     RequestHousingEstateTag = 1119,
 
     /// <summary>
@@ -759,6 +816,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: HouseManager 相关区域的 HouseID</para>
     ///     <para><c>param3</c>: 设置枚举值组合 (注: 即使是相同名称的 Tag 在不同位置上对应的枚举值也不同)</para>
     /// </remarks>
+    /// <seealso cref="SaveHousingEstateTagCommand"/>
     SaveHousingEstateTag = 1120,
 
     /// <summary>
@@ -767,6 +825,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 地块索引</para>
     /// </remarks>
+    /// <seealso cref="MoveToHouseFrontGateCommand"/>
     MoveToHouseFrontGate = 1122,
 
     /// <summary>
@@ -775,6 +834,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param2</c>: 房屋地块索引 (公寓为 0)</para>
     /// </remarks>
+    /// <seealso cref="FurnishStateCommand"/>
     FurnishState = 1123,
 
     /// <summary>
@@ -796,6 +856,7 @@ public enum ExecuteCommandFlag
     /// </code>
     ///     <para><c>param3</c>: (若有)公寓房间索引</para>
     /// </remarks>
+    /// <seealso cref="ViewHouseDetailCommand"/>
     ViewHouseDetail = 1126,
 
     /// <summary>
@@ -804,6 +865,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 亮度等级 (最亮为 0, 最暗为 5)</para>
     /// </remarks>
+    /// <seealso cref="AdjustHouseLightCommand"/>
     AdjustHouseLight = 1137,
 
     /// <summary>
@@ -822,6 +884,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 管弦乐曲在 Orchestrion.csv 中的对应索引</para>
     /// </remarks>
+    /// <seealso cref="SetHouseBackgroundMusicCommand"/>
     SetHouseBackgroundMusic = 1145,
 
     /// <summary>
@@ -834,6 +897,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param3</c>: InventoryType (25000 至 25010 / 27000 至 27008)</para>
     ///     <para><c>param4</c>: InventorySlot</para>
     /// </remarks>
+    /// <seealso cref="FurnishCommand"/>
     Furnish = 1150,
 
     /// <summary>
@@ -843,6 +907,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 潜水艇索引</para>
     ///     <para><c>param2</c>: 潜水艇部件索引</para>
     /// </remarks>
+    /// <seealso cref="RepairSubmarinePartCommand"/>
     RepairSubmarinePart = 1153,
 
     /// <summary>
@@ -851,6 +916,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 房屋索引 (从 0 开始, 59 结束)</para>
     /// </remarks>
+    /// <seealso cref="HouseInteriorDesignRequestCommand"/>
     HouseInteriorDesignRequest = 1169,
 
     /// <summary>
@@ -860,6 +926,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 房屋索引 (从 0 开始, 59 结束)</para>
     ///     <para><c>param1</c>: 内部装修风格 (3 - 海雾村风格; 6 - 薰衣草苗圃风格; 9 - 高脚孤丘风格; 12 - 白银乡风格; 15 - 穹顶皓天风格; 18 - 简装风格)</para>
     /// </remarks>
+    /// <seealso cref="HouseInteriorDesignChangeCommand"/>
     HouseInteriorDesignChange = 1170,
 
     /// <summary>
@@ -868,6 +935,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 赛季 (0 - 本赛季; 1 - 上赛季)</para>
     /// </remarks>
+    /// <seealso cref="CollectTrophyCrystalCommand"/>
     CollectTrophyCrystal = 1200,
 
     /// <summary>
@@ -876,6 +944,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 职能技能索引</para>
     /// </remarks>
+    /// <seealso cref="SelectPVPRoleActionCommand"/>
     SelectPVPRoleAction = 1201,
 
     /// <summary>
@@ -896,6 +965,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: Inventory Slot</para>
     ///     <para><c>param3</c>: Item ID</para>
     /// </remarks>
+    /// <seealso cref="RepairItemNPCCommand"/>
     RepairItemNPC = 1600,
 
     /// <summary>
@@ -904,6 +974,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 分类 (0 - 主手/副手; 1 - 头部/身体/手臂; 2 - 腿部/脚部; 3 - 耳部;颈部; 4 - 腕部;戒指; 5 - 物品)</para>
     /// </remarks>
+    /// <seealso cref="RepairAllItemsNPCCommand"/>
     RepairAllItemsNPC = 1601,
 
     /// <summary>
@@ -912,6 +983,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: Inventory Type (固定为 1000)</para>
     /// </remarks>
+    /// <seealso cref="RepairEquippedItemsNPCCommand"/>
     RepairEquippedItemsNPC = 1602,
 
     /// <summary>
@@ -920,6 +992,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: BuddyAction.csv 中的对应索引</para>
     /// </remarks>
+    /// <seealso cref="BuddyActionCommand"/>
     BuddyAction = 1700,
 
     /// <summary>
@@ -929,6 +1002,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 部位 (0 - 头部, 1 - 身体, 2 - 腿部)</para>
     ///     <para><c>param2</c>: 在 BuddyEquip.csv 中对应的装备索引 (0 - 卸下装备)</para>
     /// </remarks>
+    /// <seealso cref="BuddyEquipCommand"/>
     BuddyEquip = 1701,
 
     /// <summary>
@@ -937,6 +1011,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: Skill 索引</para>
     /// </remarks>
+    /// <seealso cref="BuddyLearnSkillCommand"/>
     BuddyLearnSkill = 1702,
 
     /// <summary>
@@ -975,6 +1050,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 被决斗对象的 GameObject ID</para>
     /// </remarks>
+    /// <seealso cref="SendDuelCommand"/>
     SendDuel = 2200,
 
     /// <summary>
@@ -983,6 +1059,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 0 - 确认; 1 - 取消; 4 - 强制取消</para>
     /// </remarks>
+    /// <seealso cref="RequestDuelCommand"/>
     RequestDuel = 2201,
 
     /// <summary>
@@ -996,6 +1073,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 索引 (从左到右从上到下, 从 0 开始)</para>
     /// </remarks>
+    /// <seealso cref="WondrousTailsConfirmCommand"/>
     WondrousTailsConfirm = 2253,
 
     /// <summary>
@@ -1005,6 +1083,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 操作 (0 - 再想想)</para>
     ///     <para><c>param2</c>: 索引 (从左到右从上到下, 从 0 开始)</para>
     /// </remarks>
+    /// <seealso cref="WondrousTailsOperateCommand"/>
     WondrousTailsOperate = 2254,
 
     /// <summary>
@@ -1018,6 +1097,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 投影台内部物品 ID (MirageManager.Instance().PrismBoxItemIds)</para>
     /// </remarks>
+    /// <seealso cref="RestorePrsimBoxItemCommand"/>
     RestorePrsimBoxItem = 2352,
 
     /// <summary>
@@ -1032,6 +1112,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 0 - 退出, 1 - 进入</para>
     ///     <para><c>param2</c>: 未知, 可能为 0 或 1</para>
     /// </remarks>
+    /// <seealso cref="EnterGlamourPlateStateCommand"/>
     EnterGlamourPlateState = 2356,
 
     /// <summary>
@@ -1040,6 +1121,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 投影模板索引</para>
     /// </remarks>
+    /// <seealso cref="ApplyGlamourPlateCommand"/>
     ApplyGlamourPlate = 2357,
 
     /// <summary>
@@ -1058,6 +1140,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 物品索引</para>
     /// </remarks>
+    /// <seealso cref="BuybackReconstrcutionItemCommand"/>
     BuybackReconstrcutionItem = 2501,
 
     /// <summary>
@@ -1088,6 +1171,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: 前四位 DawnStroyMemberUIParam 序号的幂次方 (a1 * 256^0 + a2 * 256^1 + a3 * 256^2 + a4 * 256^3)</para>
     ///     <para><c>param2</c>: 后三位 DawnStroyMemberUIParam 序号的幂次方 (a1 * 256^0 + a2 * 256^1 + a3 * 256^2)</para>
     /// </remarks>
+    /// <seealso cref="SendDutySupportCommand"/>
     SendDutySupport = 2654,
 
     /// <summary>
@@ -1101,6 +1185,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param3</c>：修理装备中物品 - 固定为 InventoryType 1000；修理分页物品 - 分页索引；修理单独物品 - Inventory Type</para>
     ///     <para><c>param4</c>：修理单独物品 - 物品ID, HQ时增加 100_0000</para>
     /// </remarks>
+    /// <seealso cref="EventFrameworkActionCommand"/>
     EventFrameworkAction = 2800,
 
     /// <summary>
@@ -1110,6 +1195,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 失传技能库索引</para>
     ///     <para><c>param2</c>: 要分配的槽位</para>
     /// </remarks>
+    /// <seealso cref="BozjaUseFromHolsterCommand"/>
     BozjaUseFromHolster = 2950,
 
     /// <summary>
@@ -1123,6 +1209,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 模式 (0 - 自由; 1 - 收获; 2 - 播种; 3 - 浇水; 4 - 铲除; 6 - 喂食; 7 - 宠爱; 8 - 招呼; 9 - 捕兽)</para>
     /// </remarks>
+    /// <seealso cref="MJISetModeCommand"/>
     MJISetMode = 3250,
 
     /// <summary>
@@ -1131,6 +1218,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 参数</para>
     /// </remarks>
+    /// <seealso cref="MJISetModeParamCommand"/>
     MJISetModeParam = 3251,
 
     /// <summary>
@@ -1139,6 +1227,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 状态 (1 - 开启; 0 - 关闭)</para>
     /// </remarks>
+    /// <seealso cref="MJISettingPanelToggleCommand"/>
     MJISettingPanelToggle = 3252,
 
     /// <summary>
@@ -1147,6 +1236,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 具体天数 (0 为本周期第一天, 7 为下周期第一天)</para>
     /// </remarks>
+    /// <seealso cref="MJIWorkshopRequestCommand"/>
     MJIWorkshopRequest = 3254,
 
     /// <summary>
@@ -1162,6 +1252,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: 具体天数 (0 - 本周期第一天, 7 - 下周期第一天)</para>
     ///     <para><c>param4</c>: 添加/删除 (0 - 添加, 1 - 删除)</para>
     /// </remarks>
+    /// <seealso cref="MJIWorkshopAssignCommand"/>
     MJIWorkshopAssign = 3259,
 
     /// <summary>
@@ -1171,6 +1262,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 物品和排班时间段: (8 * (startingHour | (32 * craftObjectId)))</para>
     ///     <para><c>param2</c>: 具体天数 (0 - 本周期第一天, 7 - 下周期第一天)</para>
     /// </remarks>
+    /// <seealso cref="MJIWorkshopCancelCommand"/>
     MJIWorkshopCancel = 3260,
 
     /// <summary>
@@ -1182,6 +1274,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param3</c>: 休息日 3</para>
     ///     <para><c>param4</c>: 休息日 4</para>
     /// </remarks>
+    /// <seealso cref="MJISetRestCyclesCommand"/>
     MJISetRestCycles = 3261,
 
     /// <summary>
@@ -1190,6 +1283,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 仓库索引</para>
     /// </remarks>
+    /// <seealso cref="MJIGranaryCollectCommand"/>
     MJIGranaryCollect = 3262,
 
     /// <summary>
@@ -1198,6 +1292,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 仓库索引</para>
     /// </remarks>
+    /// <seealso cref="MJIGranaryViewDestinationsCommand"/>
     MJIGranaryViewDestinations = 3263,
 
     /// <summary>
@@ -1208,6 +1303,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param2</c>: 目的地索引</para>
     ///     <para><c>param3</c>: 探索天数</para>
     /// </remarks>
+    /// <seealso cref="MJIGranaryAssignCommand"/>
     MJIGranaryAssign = 3264,
 
     /// <summary>
@@ -1217,6 +1313,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 宠物 ID</para>
     ///     <para><c>param2</c>: 放生区域索引</para>
     /// </remarks>
+    /// <seealso cref="MJIReleaseMinionCommand"/>
     MJIReleaseMinion = 3265,
 
     /// <summary>
@@ -1225,6 +1322,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 动物索引</para>
     /// </remarks>
+    /// <seealso cref="MJIReleaseAnimalCommand"/>
     MJIReleaseAnimal = 3268,
 
     /// <summary>
@@ -1234,6 +1332,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 动物索引</para>
     ///     <para><c>param2</c>: 收集标志</para>
     /// </remarks>
+    /// <seealso cref="MJICollectAnimalLeavingsCommand"/>
     MJICollectAnimalLeavings = 3269,
 
     /// <summary>
@@ -1242,6 +1341,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 预期收集的产物数量 (MJIManager.Instance()->PastureHandler->AvailableMammetLeavings)</para>
     /// </remarks>
+    /// <seealso cref="MJICollectAllAnimalLeavingsCommand"/>
     MJICollectAllAnimalLeavings = 3271,
 
     /// <summary>
@@ -1251,6 +1351,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 动物索引</para>
     ///     <para><c>param2</c>: 喂食物品 ID</para>
     /// </remarks>
+    /// <seealso cref="MJIEntrustAnimalCommand"/>
     MJIEntrustAnimal = 3272,
 
     /// <summary>
@@ -1259,6 +1360,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 宠物索引</para>
     /// </remarks>
+    /// <seealso cref="MJIRecallMinionCommand"/>
     MJIRecallMinion = 3277,
 
     /// <summary>
@@ -1268,6 +1370,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 耕地索引</para>
     ///     <para><c>param2</c>: 种子物品 ID</para>
     /// </remarks>
+    /// <seealso cref="MJIFarmEntrustSingleCommand"/>
     MJIFarmEntrustSingle = 3279,
 
     /// <summary>
@@ -1276,6 +1379,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 耕地索引</para>
     /// </remarks>
+    /// <seealso cref="MJIFarmDismissCommand"/>
     MJIFarmDismiss = 3280,
 
     /// <summary>
@@ -1285,6 +1389,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 耕地索引</para>
     ///     <para><c>param2</c>: 收取后是否取消托管 (0 - 否, 1 - 是)</para>
     /// </remarks>
+    /// <seealso cref="MJIFarmCollectSingleCommand"/>
     MJIFarmCollectSingle = 3281,
 
     /// <summary>
@@ -1293,6 +1398,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: *(int*)MJIManager.Instance()->GranariesState</para>
     /// </remarks>
+    /// <seealso cref="MJIFarmCollectAllCommand"/>
     MJIFarmCollectAll = 3282,
 
     /// <summary>
@@ -1306,6 +1412,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 模式索引</para>
     /// </remarks>
+    /// <seealso cref="WKSChangeModeCommand"/>
     WKSChangeMode = 3400,
 
     /// <summary>
@@ -1324,6 +1431,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: Mission Unit ID</para>
     /// </remarks>
+    /// <seealso cref="WKSStartMissionCommand"/>
     WKSStartMission = 3440,
 
     /// <summary>
@@ -1342,6 +1450,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点; 2 - 俄匊斯信用点</para>
     /// </remarks>
+    /// <seealso cref="WKSStartLotteryCommand"/>
     WKSStartLottery = 3450,
 
     /// <summary>
@@ -1351,6 +1460,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点; 2 - 俄匊斯信用点</para>
     ///     <para><c>param2</c>: 转盘类型 (左边 - 0, 右边 - 1)</para>
     /// </remarks>
+    /// <seealso cref="WKSChooseLotteryCommand"/>
     WKSChooseLottery = 3451,
 
     /// <summary>
@@ -1359,6 +1469,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点; 2 - 俄匊斯信用点</para>
     /// </remarks>
+    /// <seealso cref="WKSEndLotteryCommand"/>
     WKSEndLottery = 3452,
 
     /// <summary>
@@ -1372,6 +1483,7 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: WKSMechaEventData Row ID (0 - 当前未开始)</para>
     /// </remarks>
+    /// <seealso cref="WKSRequestMechaCommand"/>
     WKSRequestMecha = 3478,
 
     /// <summary>
@@ -1381,6 +1493,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param1</c>: 类型 (固定为 0)</para>
     ///     <para><c>param2</c>: 最大值</para>
     /// </remarks>
+    /// <seealso cref="RollDiceCommand"/>
     RollDice = 9000,
 
     /// <summary>
@@ -1395,5 +1508,6 @@ public enum ExecuteCommandFlag
     /// <remarks>
     ///     <para><c>param1</c>: 类型 (0 - 标准; 1 - 较大; 2 - 最大)</para>
     /// </remarks>
+    /// <seealso cref="AroundRangeSetModeCommand"/>
     AroundRangeSetMode = 9005
 }
