@@ -110,12 +110,13 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// <summary>
     ///     保存当前房屋宣传设置
     /// </summary>
-    public static void SaveEstateTag(uint tagFlags)
+    public static void SaveEstateTag(uint tagIndexFirst, uint tagIndexSecond, uint tagIndexThird)
     {
         var (houseIDHigh, houseID) = GetCurrentHouseID();
         if (houseIDHigh == houseID && houseID == 0) return;
 
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SaveHousingEstateTag, houseIDHigh, houseID, tagFlags);
+        var flags = GetEstateTagFlag(tagIndexFirst, tagIndexSecond, tagIndexThird);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SaveHousingEstateTag, houseIDHigh, houseID, flags);
     }
 
     /// <summary>
@@ -177,6 +178,9 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     public static void ChangeInteriorDesign(InteriorDesignStyle style) =>
         ExecuteCommandManager.Instance().ExecuteCommand
             (ExecuteCommandFlag.HouseInteriorDesignChange, (uint)HousingManager.Instance()->GetCurrentPlot(), (uint)style);
+
+    private static uint GetEstateTagFlag(uint tagIndexFirst, uint tagIndexSecond, uint tagIndexThird) =>
+        tagIndexFirst << 16 | tagIndexSecond << 8 | tagIndexThird;
 
     private static (uint High, uint Low) GetCurrentHouseID()
     {

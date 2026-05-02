@@ -34,14 +34,14 @@ public sealed class RepairCommand : ExecuteCommandBase
     /// <summary>
     ///     修理单独物品
     /// </summary>
-    public static void RepairItem(InventoryType inventoryType, uint inventorySlot, uint itemID, bool isHQ = false) =>
+    public static unsafe void RepairItem(InventoryType inventoryType, uint inventorySlot) =>
         ExecuteCommandManager.Instance().ExecuteCommand
         (
             ExecuteCommandFlag.EventFrameworkAction,
             3735555,
             inventorySlot << 16 | 1,
             (uint)inventoryType,
-            itemID + (isHQ ? 1000000U : 0U)
+            InventoryManager.Instance()->GetInventorySlot(inventoryType, (int)inventorySlot)->GetItemId()
         );
 
     /// <summary>
@@ -59,8 +59,14 @@ public sealed class RepairCommand : ExecuteCommandBase
     /// <summary>
     ///     在 NPC 处维修装备
     /// </summary>
-    public static void RepairNPC(InventoryType inventoryType, uint inventorySlot, uint itemID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RepairItemNPC, (uint)inventoryType, inventorySlot, itemID);
+    public static unsafe void RepairNPC(InventoryType inventoryType, uint inventorySlot) =>
+        ExecuteCommandManager.Instance().ExecuteCommand
+        (
+            ExecuteCommandFlag.RepairItemNPC,
+            (uint)inventoryType,
+            inventorySlot,
+            InventoryManager.Instance()->GetInventorySlot(inventoryType, (int)inventorySlot)->GetItemId()
+        );
 
     public enum RepairPageCategory : uint
     {

@@ -12,4 +12,11 @@ public sealed class InventoryCommand : ExecuteCommandBase
     /// </summary>
     public static void Request(InventoryType inventoryType) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestInventory, (uint)inventoryType);
+    
+    /// <summary>
+    ///     刷新物品栏数据
+    /// </summary>
+    public static void Refresh() =>
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.InventoryRefresh);
+
 }
