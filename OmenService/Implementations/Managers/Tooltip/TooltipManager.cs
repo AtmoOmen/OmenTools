@@ -5,6 +5,7 @@ using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Enums;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using InteropGenerator.Runtime;
@@ -159,7 +160,6 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         var itemGroupFlags  = GetItemTooltipGroupFlags(numberArrayData);
 
         var currentItemInfo = GetItemInfo(AgentItemDetail.Instance()->ItemId);
-
         if (currentItemInfo != lastItemInfo)
         {
             lastItemInfo      = currentItemInfo;
@@ -178,6 +178,11 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 itemOriginalTexts[i] = new(new CStringPointer(textArray[i].Value).AsSpan());
             }
         }
+
+        // 改一下
+        var addon = (AddonItemDetail*)ItemDetail;
+        if (ItemDetail->IsAddonAndNodesReady())
+            addon->CategoryText->TextFlags &= ~TextFlags.Ellipsis;
 
         DLog.Verbose($"[{nameof(TooltipManager)}] 物品工具提示刷新: {lastItemInfo}");
 
