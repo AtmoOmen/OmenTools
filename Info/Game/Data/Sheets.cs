@@ -121,11 +121,12 @@ public static class Sheets
             CN_WORLDS_TAG,
             () => Worlds
                   .Where
-                  (x => x.Key is > 1000 and < 2000                 &&
-                        x.Value.DataCenter.RowId              != 0 &&
-                        x.Value.Region                        == 2 &&
-                        x.Value.DataCenter.Value.Region.RowId == 5 &&
-                        x.Value.UserType                      == 101
+                  (x => x.Key is > 1000 and < 2000                   &&
+                        x.Value.DataCenter.RowId              != 0   &&
+                        x.Value.Region                        == 2   &&
+                        x.Value.DataCenter.Value.Region.RowId == 5   &&
+                        x.Value.UserType                      == 101 &&
+                        x.Key                                 != 1200 // 排除“亚马乌罗提”
                   )
                   .ToDictionary(x => x.Key, x => x.Value)
         );
