@@ -11,11 +11,13 @@ public sealed class FreeCompanyCrestCommand : ExecuteCommandBase
     ///     为装备贴上或取下部队队徽
     /// </summary>
     public static void Apply(InventoryType inventoryType, uint inventorySlot, bool isAttach) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(
+        ExecuteCommandManager.Instance().ExecuteCommand
+        (
             ExecuteCommandFlag.FreeCompanyCrestDecal,
             (uint)inventoryType,
             inventorySlot,
-            isAttach ? 1U : 0U);
+            isAttach ? 1U : 0U
+        );
 
     /// <summary>
     ///     批量为装备中装备贴上或取下部队队徽
@@ -31,7 +33,7 @@ public sealed class FreeCompanyCrestCommand : ExecuteCommandBase
 
     public enum BatchTarget : uint
     {
-        Armory = 5,
+        Armory    = 5,
         Inventory = 6
     }
 }

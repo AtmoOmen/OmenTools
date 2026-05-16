@@ -17,19 +17,23 @@ public sealed class InventoryCommand : ExecuteCommandBase
     ///     在不同的物品栏间移动物品
     /// </summary>
     public static void Move(InventoryType sourceInventoryType, InventoryType targetInventoryType) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(
+        ExecuteCommandManager.Instance().ExecuteCommand
+        (
             ExecuteCommandFlag.MoveItemInventory,
             (uint)sourceInventoryType,
-            (uint)targetInventoryType);
+            (uint)targetInventoryType
+        );
 
     /// <summary>
     ///     通知物品移动操作受阻
     /// </summary>
     public static void BlockOperation(InventoryType sourceInventoryType, InventoryType targetInventoryType) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(
+        ExecuteCommandManager.Instance().ExecuteCommand
+        (
             ExecuteCommandFlag.InventoryOperationBlocked,
             (uint)sourceInventoryType,
-            (uint)targetInventoryType);
+            (uint)targetInventoryType
+        );
 
     /// <summary>
     ///     完成特定物品栏操作

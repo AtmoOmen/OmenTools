@@ -226,7 +226,7 @@ public class AhoCorasick
         {
             int candidate;
 
-            if (j >= fallback.Length || i < current.Length && current[i] < fallback[j])
+            if (j >= fallback.Length || (i < current.Length && current[i] < fallback[j]))
             {
                 candidate = current[i];
                 i++;

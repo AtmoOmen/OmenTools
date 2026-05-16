@@ -83,7 +83,7 @@ public class CrescentAetheryte
             return false;
 
         var directTime = Vector3.Distance(finalPos, localPlayer.Position) / 12f;
-        aetheryteTime = Vector3.Distance(finalPos, aetherytePos) / 12f + 10f;
+        aetheryteTime = (Vector3.Distance(finalPos, aetherytePos)         / 12f) + 10f;
         return directTime > aetheryteTime;
     }
 

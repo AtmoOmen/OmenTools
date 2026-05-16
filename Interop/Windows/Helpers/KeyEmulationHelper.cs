@@ -70,7 +70,7 @@ public static class KeyEmulationHelper
         return true;
     }
 
-    private static int MakeWParam(int l, int h) => l & 0xFFFF | h << 16;
+    private static int MakeWParam(int l, int h) => (l & 0xFFFF) | (h << 16);
 
     private enum WindowMessage : uint
     {

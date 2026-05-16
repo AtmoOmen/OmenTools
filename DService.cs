@@ -4,7 +4,6 @@ using System.Runtime.Loader;
 using Dalamud.Hooking;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using Dalamud.Plugin.Services;
 using OmenTools.Dalamud;
 using OmenTools.Dalamud.Services.AetheryteList;
 using OmenTools.Dalamud.Services.ObjectTable;
@@ -65,10 +64,10 @@ public sealed class DService
     {
         if (IsDisposed)
             return;
-        
-        if (InternalInstance == null) 
+
+        if (InternalInstance == null)
             return;
-        
+
         try
         {
             InternalInstance.UninitOmenServices();
@@ -88,7 +87,7 @@ public sealed class DService
         {
             IsDisposed = true;
         }
-        
+
         var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
         var owner = Instance().PI.GetPlugin(alc);
         DLog.Debug($"[OmenTools] 卸载完成\tALC: {alc}; 持有方: {owner?.InternalName ?? "<shared>"}");
@@ -117,7 +116,7 @@ public sealed class DService
     private DServiceInitOptions InitOptions { get; set; } = new();
 
     private Dictionary<Type, OmenServiceBase> OmenServices { get; set; } = [];
-    
+
     private ConcurrentDictionary<TaskHelper, byte>   TaskHelpers   { get; set; } = [];
     private ConcurrentDictionary<MemoryPatch, byte>  MemoryPatches { get; set; } = [];
     private ConcurrentDictionary<IDalamudHook, byte> Hooks         { get; set; } = [];
@@ -157,7 +156,7 @@ public sealed class DService
         TaskHelpers   = [];
         MemoryPatches = [];
         Hooks         = [];
-        
+
         initializedServiceOrder = [];
         InitOptions             = new();
     }

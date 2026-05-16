@@ -37,7 +37,7 @@ public sealed unsafe class ManagedAtkInputData : IDisposable
     {
         var data = new ManagedAtkInputData();
         data.Data[0] = popupMenu->List->ItemRendererList[index].AtkComponentListItemRenderer;
-        data.Data[2] = (void*)(index | (ulong)index << 48);
+        data.Data[2] = (void*)(index | ((ulong)index << 48));
         return data;
     }
 

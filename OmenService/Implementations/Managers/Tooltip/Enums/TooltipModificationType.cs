@@ -17,10 +17,10 @@ public enum TooltipModificationType
     ///     向主体信息区贡献一段内容。
     /// </summary>
     /// <remarks>
-    ///     当至少存在一个 <see cref="Contribute"/> 修改时，主体信息区将由所有贡献内容组合而成，
+    ///     当至少存在一个 <see cref="Contribute" /> 修改时，主体信息区将由所有贡献内容组合而成，
     ///     不再显示游戏原始文本。
     ///     <para>
-    ///         若不存在任何 <see cref="Contribute"/> 修改，则主体信息区显示游戏原始文本。
+    ///         若不存在任何 <see cref="Contribute" /> 修改，则主体信息区显示游戏原始文本。
     ///     </para>
     /// </remarks>
     Contribute,

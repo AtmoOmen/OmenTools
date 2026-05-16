@@ -45,7 +45,7 @@ public unsafe struct PlayerController
     public byte MoveState
     {
         get => (byte)(moveState >> 8);
-        set => moveState = (ushort)(moveState & 0x00FF | value << 8);
+        set => moveState = (ushort)((moveState & 0x00FF) | (value << 8));
     }
 
     /// <summary>

@@ -1,4 +1,3 @@
-using OmenTools.Dalamud;
 using OmenTools.Threading.TaskHelper.Enums;
 using OmenTools.Threading.TaskHelper.Models;
 

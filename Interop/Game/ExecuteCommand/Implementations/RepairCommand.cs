@@ -51,7 +51,7 @@ public sealed class RepairCommand : ExecuteCommandBase
         (
             ExecuteCommandFlag.EventFrameworkAction,
             3735555,
-            inventorySlot << 16 | 1,
+            (inventorySlot << 16) | 1,
             (uint)inventoryType,
             InventoryManager.Instance()->GetInventorySlot(inventoryType, (int)inventorySlot)->GetItemId()
         );

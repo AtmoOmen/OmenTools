@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Text;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.String;
@@ -260,9 +259,6 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
         SendMessage(bytes, saveToHistory);
     }
 
-    public void SendMessage(SeString message, bool saveToHistory = false) =>
-        SendMessage(message.Encode(), saveToHistory);
-
     public void SendMessage(ReadOnlySpan<byte> message, bool saveToHistory = false)
     {
         if (message.Length == 0) return;
@@ -276,9 +272,6 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
         var bytes = Encoding.UTF8.GetBytes(command);
         SendCommand(bytes);
     }
-
-    public void SendCommand(SeString command) =>
-        SendCommand(command.Encode());
 
     public void SendCommand(ReadOnlySpan<byte> command)
     {

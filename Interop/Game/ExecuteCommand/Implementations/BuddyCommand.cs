@@ -33,7 +33,7 @@ public sealed class BuddyCommand : ExecuteCommandBase
     public static void LearnSkill(Category category, uint level)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(level, 1U);
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuddyLearnSkill, (level - 1) * 3 + (uint)category);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuddyLearnSkill, ((level - 1) * 3) + (uint)category);
     }
 
     public enum Category : uint

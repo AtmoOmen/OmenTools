@@ -395,7 +395,7 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
     )
     {
         var location0 = location != null ? *location : Vector3.Zero;
-        
+
         if (Config.ShowUseActionLocationLog)
         {
             DLog.Debug
@@ -405,6 +405,7 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
         }
 
         var isPrevented = false;
+
         if (methodsCollection.TryGetValue(typeof(PreUseActionLocationDelegate), out var preDelegates))
         {
             foreach (var preDelegate in preDelegates)
@@ -461,7 +462,7 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
         var currentElapsed     = recastDetailForAction->Elapsed;
 
         if (canPlayerUseAction)
-            return !(currentTotal / maxCharges - currentElapsed > queueTime);
+            return !((currentTotal / maxCharges) - currentElapsed > queueTime);
         return !(currentTotal - currentElapsed > queueTime);
     }
 

@@ -123,7 +123,7 @@ public static class ContentsFinderHelper
                                   (x => new
                                       {
                                           // Class 实际为 DawnMemberUIParam, Unknown0 为 UI 显示的人物名称
-                                          Name     = x.QuestMember.Class.Value.Name,
+                                          x.QuestMember.Class.Value.Name,
                                           ID       = x.QuestMember.RowId,
                                           ClassJob = LuminaGetter.GetRow<ClassJob>(x.JobInfo.Unknown0)
                                       }

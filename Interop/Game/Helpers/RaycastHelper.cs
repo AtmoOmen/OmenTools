@@ -304,7 +304,7 @@ public static unsafe class RaycastHelper
             return false;
 
         var safeDistance = MathF.Max(0, hitInfo.Distance - MathF.Max(0, clearance));
-        safePosition = from + direction * safeDistance;
+        safePosition = from + (direction * safeDistance);
 
         var pushDirection = hitInfo.Normal with { Y = 0 };
         if (TryNormalize(pushDirection, out var normalizedPushDirection))

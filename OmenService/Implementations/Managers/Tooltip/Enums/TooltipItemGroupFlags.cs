@@ -1,5 +1,3 @@
-using System;
-
 namespace OmenTools.OmenService;
 
 [Flags]
@@ -51,7 +49,7 @@ public enum TooltipItemGroupFlags
 
     /// <summary>
     ///     特殊效果 (StringArray index 36-41)
-    ///     仅在 <see cref="HeaderStatsGroup"/> 模式时生效
+    ///     仅在 <see cref="HeaderStatsGroup" /> 模式时生效
     /// </summary>
     Effects = 1 << 8,
 
@@ -62,7 +60,7 @@ public enum TooltipItemGroupFlags
 
     /// <summary>
     ///     装备限制 — HQ / 收藏品 / HeaderStats 模式 (StringArray index 22, 23)
-    ///     仅在 <see cref="HeaderStatsGroup"/> 模式时生效
+    ///     仅在 <see cref="HeaderStatsGroup" /> 模式时生效
     /// </summary>
     EquipRestrictionHeader = 1 << 15,
 

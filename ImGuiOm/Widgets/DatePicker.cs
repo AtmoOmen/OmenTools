@@ -87,7 +87,7 @@ public class DatePicker
 
         var title          = viewDate.ToString(DateFormat, cultureInfo);
         var titleWidth     = ImGui.CalcTextSize(title).X;
-        var titleAreaWidth = MathF.Max(0f, pickerWidth - navGroupWidth                            * 2);
+        var titleAreaWidth = MathF.Max(0f, pickerWidth - (navGroupWidth * 2));
         var titleStartX    = startX + navGroupWidth + MathF.Max(0f, (titleAreaWidth - titleWidth) / 2f);
 
         ImGui.SameLine();
@@ -217,7 +217,7 @@ public class DatePicker
         var buttonWidth = ImGui.GetFrameHeight();
         var cellWidth   = GetCalendarCellWidth();
 
-        return MathF.Max(titleWidth + GetNavigationGroupWidth(buttonWidth) * 2, cellWidth * 7f);
+        return MathF.Max(titleWidth + (GetNavigationGroupWidth(buttonWidth) * 2), cellWidth * 7f);
     }
 
     private float GetCalendarCellWidth()
@@ -229,16 +229,16 @@ public class DatePicker
         maxTextWidth = MathF.Max(maxTextWidth, ImGui.CalcTextSize("30").X);
 
         var style = ImGui.GetStyle();
-        return maxTextWidth + style.FramePadding.X * 2f + style.CellPadding.X * 2f;
+        return maxTextWidth + (style.FramePadding.X * 2f) + (style.CellPadding.X * 2f);
     }
 
     private static float GetNavigationGroupWidth(float buttonWidth) =>
-        buttonWidth * 2f + NAVIGATION_BUTTON_SPACING;
+        (buttonWidth * 2f) + NAVIGATION_BUTTON_SPACING;
 
     private static void CenterWithinAvailableWidth(float itemWidth)
     {
         var remainingWidth = ImGui.GetContentRegionAvail().X - itemWidth;
         if (remainingWidth > 0f)
-            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + remainingWidth / 2f);
+            ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (remainingWidth / 2f));
     }
 }

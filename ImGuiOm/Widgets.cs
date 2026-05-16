@@ -67,7 +67,7 @@ public static partial class ImGuiOm
         using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
         {
             var origPosY = ImGui.GetCursorPosY();
-            ImGui.SetCursorPosY(origPosY + ImGui.GetStyle().FramePadding.Y * 0.5f);
+            ImGui.SetCursorPosY(origPosY + (ImGui.GetStyle().FramePadding.Y * 0.5f));
             ImGui.TextDisabled(icon.ToIconString());
             ImGui.SetCursorPosY(origPosY);
         }

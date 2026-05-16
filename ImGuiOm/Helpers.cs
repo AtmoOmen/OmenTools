@@ -21,13 +21,13 @@ public static partial class ImGuiOm
     }
 
     public static void CenterAlignFor(float itemWidth) =>
-        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (ImGui.GetContentRegionAvail().X - itemWidth) / 2);
-    
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((ImGui.GetContentRegionAvail().X - itemWidth) / 2));
+
     private static float GetSingleLineHeight() =>
         ImGui.GetFrameHeight();
 
     private static float GetDoubleLineHeight() =>
-        ImGui.GetFrameHeight() * 2 + ImGui.GetStyle().ItemSpacing.Y;
+        (ImGui.GetFrameHeight() * 2) + ImGui.GetStyle().ItemSpacing.Y;
 
     private static (Vector2 Min, Vector2 Size) GetItemRect()
     {
@@ -39,11 +39,11 @@ public static partial class ImGuiOm
     private static (Vector2 Min, Vector2 Size) GetButtonContentRect()
     {
         var (min, size) = GetItemRect();
-        var padding     = ImGui.GetStyle().FramePadding;
+        var padding = ImGui.GetStyle().FramePadding;
         var contentSize = new Vector2
         (
-            MathF.Max(size.X - padding.X * 2, 0),
-            MathF.Max(size.Y - padding.Y * 2, 0)
+            MathF.Max(size.X - (padding.X * 2), 0),
+            MathF.Max(size.Y - (padding.Y * 2), 0)
         );
 
         return (min + padding, contentSize);

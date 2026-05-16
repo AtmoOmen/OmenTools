@@ -11,6 +11,7 @@ public static class BitMapFontIconExtension
         public ClassJob ToClassJob()
         {
             var iconValue = (int)icon;
+
             switch (iconValue)
             {
                 case >= 128 and <= 167:

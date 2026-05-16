@@ -61,14 +61,14 @@ public static partial class ImGuiOm
 
         using (ImRaii.Disabled())
         using (ImRaii.PushColor(ImGuiCol.Button, 0))
-            result = ImGui.Button(string.Empty, new(iconSize.X + textSize.X + 3 * padding.X, buttonHeight + 2 * padding.Y));
+            result = ImGui.Button(string.Empty, new(iconSize.X + textSize.X + (3 * padding.X), buttonHeight + (2 * padding.Y)));
 
         var iconPos = new Vector2(cursorPos.X + padding.X, cursorPos.Y + padding.Y);
 
         using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
             windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
 
-        var textPos = new Vector2(iconPos.X + iconSize.X + 2 * padding.X, cursorPos.Y + padding.Y);
+        var textPos = new Vector2(iconPos.X + iconSize.X + (2 * padding.X), cursorPos.Y + padding.Y);
         windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         return result;

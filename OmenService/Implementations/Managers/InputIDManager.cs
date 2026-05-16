@@ -152,28 +152,42 @@ public unsafe class InputIDManager : OmenServiceBase<InputIDManager>
 
     public bool RegPrePressed(PrePressedDelegate method, params PrePressedDelegate[] methods) =>
         RegisterGeneric(method, methods);
+
     public bool RegPostPressed(PostPressedDelegate method, params PostPressedDelegate[] methods) =>
         RegisterGeneric(method, methods);
+
     public bool RegPreHeld(PreHeldDelegate method, params PreHeldDelegate[] methods) =>
         RegisterGeneric(method, methods);
+
     public bool RegPostHeld(PostHeldDelegate method, params PostHeldDelegate[] methods) =>
         RegisterGeneric(method, methods);
+
     public bool RegPreDown(PreDownDelegate method, params PreDownDelegate[] methods) =>
         RegisterGeneric(method, methods);
+
     public bool RegPostDown(PostDownDelegate method, params PostDownDelegate[] methods) =>
         RegisterGeneric(method, methods);
+
     public bool RegPreReleased(PreReleasedDelegate method, params PreReleasedDelegate[] methods) =>
         RegisterGeneric(method, methods);
+
     public bool RegPostReleased(PostReleasedDelegate method, params PostReleasedDelegate[] methods) =>
         RegisterGeneric(method, methods);
 
-    public bool UnregPrePressed(params   PrePressedDelegate[]   methods) => UnregisterGeneric(methods);
-    public bool UnregPostPressed(params  PostPressedDelegate[]  methods) => UnregisterGeneric(methods);
-    public bool UnregPreHeld(params      PreHeldDelegate[]      methods) => UnregisterGeneric(methods);
-    public bool UnregPostHeld(params     PostHeldDelegate[]     methods) => UnregisterGeneric(methods);
-    public bool UnregPreDown(params      PreDownDelegate[]      methods) => UnregisterGeneric(methods);
-    public bool UnregPostDown(params     PostDownDelegate[]     methods) => UnregisterGeneric(methods);
-    public bool UnregPreReleased(params  PreReleasedDelegate[]  methods) => UnregisterGeneric(methods);
+    public bool UnregPrePressed(params PrePressedDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool UnregPostPressed(params PostPressedDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool UnregPreHeld(params PreHeldDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool UnregPostHeld(params PostHeldDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool UnregPreDown(params PreDownDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool UnregPostDown(params PostDownDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool UnregPreReleased(params PreReleasedDelegate[] methods) => UnregisterGeneric(methods);
+
     public bool UnregPostReleased(params PostReleasedDelegate[] methods) => UnregisterGeneric(methods);
 
     #endregion

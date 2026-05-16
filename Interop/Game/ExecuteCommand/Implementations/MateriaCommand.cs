@@ -18,7 +18,7 @@ public sealed class MateriaCommand : ExecuteCommandBase
     /// </summary>
     public static void FinishAttachState() =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FinishMateriaAttach);
-    
+
     /// <summary>
     ///     离开镶嵌魔晶石状态
     /// </summary>
@@ -43,7 +43,7 @@ public sealed class MateriaCommand : ExecuteCommandBase
     /// </summary>
     public static void Extract(InventoryType inventoryType, uint inventorySlot) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ExtractMateria, (uint)inventoryType, inventorySlot);
-    
+
     /// <summary>
     ///     回收魔晶石
     /// </summary>

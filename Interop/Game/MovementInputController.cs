@@ -80,7 +80,7 @@ public unsafe class MovementInputController : IDisposable
         var canMove = bAdditiveUnk == 0 && rmiWalkIsInputEnabled1(self) && rmiWalkIsInputEnabled2(self);
         if (!canMove) return;
 
-        var shouldUpdateMovement = IsAutoMove || *sumLeft == 0 && *sumForward == 0;
+        var shouldUpdateMovement = IsAutoMove || (*sumLeft == 0 && *sumForward == 0);
         if (!shouldUpdateMovement) return;
 
         if (Angle.TryGetDirectionToDestination(DesiredPosition, false, out var realDir, Precision))

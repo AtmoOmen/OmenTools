@@ -17,7 +17,7 @@ public sealed class MountCommand : ExecuteCommandBase
     /// </summary>
     public static void RidePillion(uint targetID) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RidePillionAuto, targetID);
-    
+
     /// <summary>
     ///     共同骑乘指定目标的指定位置
     /// </summary>

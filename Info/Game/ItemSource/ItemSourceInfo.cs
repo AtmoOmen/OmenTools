@@ -1238,7 +1238,7 @@ public sealed class ItemSourceInfo
             MapRowIds.TryGetValue(GetMapKey(territoryID, mapIndex), out mapRowID);
 
         private static ulong GetMapKey(uint territoryID, uint mapIndex) =>
-            (ulong)territoryID << 32 | mapIndex;
+            ((ulong)territoryID << 32) | mapIndex;
     }
 
     private sealed class ItemSourceAccumulator

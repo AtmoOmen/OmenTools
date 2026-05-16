@@ -21,7 +21,7 @@ public static class TimeExtension
         public DateTime ToUTCDateTimeFromUnixSeconds()
         {
             var seconds = long.CreateTruncating(unixTimestamp);
-            var ticks   = seconds * 10000000L + 621355968000000000L;
+            var ticks   = (seconds * 10000000L) + 621355968000000000L;
 
             return new DateTime(ticks, DateTimeKind.Utc);
         }

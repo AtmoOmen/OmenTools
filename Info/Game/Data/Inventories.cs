@@ -27,9 +27,9 @@ public static class Inventories
         InventoryType.ArmoryEar,
         InventoryType.ArmoryNeck,
         InventoryType.ArmoryWrist,
-        InventoryType.ArmoryRings,
+        InventoryType.ArmoryRings
     ];
-    
+
     public static FrozenSet<InventoryType> PlayerWithArmory { get; } =
     [
         InventoryType.EquippedItems,

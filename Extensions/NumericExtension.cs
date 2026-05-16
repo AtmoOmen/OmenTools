@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Utility;
 using Lumina.Data;
 using Lumina.Text.ReadOnly;
 using OmenTools.OmenService;
@@ -62,15 +62,16 @@ public static class NumericExtension
             var wan  = remY          / valWan;
             var ge   = remY          % valWan;
 
-            var builder = new SeStringBuilder();
+            using var rented  = new RentedSeStringBuilder();
+            var       builder = rented.Builder;
 
             if (isNegative)
             {
                 if (minusColor != null)
-                    builder.AddUiForeground(minusColor.Value);
-                builder.AddText("-");
+                    builder.PushColorType(minusColor.Value);
+                builder.Append("-");
                 if (minusColor != null)
-                    builder.AddUiForegroundOff();
+                    builder.PopColorType();
             }
 
             var hasPrinted  = false;
@@ -78,27 +79,35 @@ public static class NumericExtension
 
             if (zhao > 0)
             {
-                builder.AddText(zhao.ToString());
+                builder.Append(zhao.ToString());
 
                 if (unitColor != null)
-                    builder.AddUiForeground(STR_ZHAO, unitColor.Value);
+                {
+                    builder.PushColorType(unitColor.Value)
+                           .Append(STR_ZHAO)
+                           .PopColorType();
+                }
                 else
-                    builder.AddText(STR_ZHAO);
+                    builder.Append(STR_ZHAO);
 
                 hasPrinted = true;
             }
 
             if (yi > 0)
             {
-                if (pendingZero || hasPrinted && yi < valQian)
-                    builder.AddText(strZero);
+                if (pendingZero || (hasPrinted && yi < valQian))
+                    builder.Append(strZero);
 
-                builder.AddText(yi.ToString());
+                builder.Append(yi.ToString());
 
                 if (unitColor != null)
-                    builder.AddUiForeground(strYi, unitColor.Value);
+                {
+                    builder.PushColorType(unitColor.Value)
+                           .Append(strYi)
+                           .PopColorType();
+                }
                 else
-                    builder.AddText(strYi);
+                    builder.Append(strYi);
 
                 hasPrinted  = true;
                 pendingZero = false;
@@ -108,15 +117,19 @@ public static class NumericExtension
 
             if (wan > 0)
             {
-                if (pendingZero || hasPrinted && wan < valQian)
-                    builder.AddText(strZero);
+                if (pendingZero || (hasPrinted && wan < valQian))
+                    builder.Append(strZero);
 
-                builder.AddText(wan.ToString());
+                builder.Append(wan.ToString());
 
                 if (unitColor != null)
-                    builder.AddUiForeground(strWan, unitColor.Value);
+                {
+                    builder.PushColorType(unitColor.Value)
+                           .Append(strWan)
+                           .PopColorType();
+                }
                 else
-                    builder.AddText(strWan);
+                    builder.Append(strWan);
 
                 hasPrinted  = true;
                 pendingZero = false;
@@ -126,13 +139,13 @@ public static class NumericExtension
 
             if (ge > 0)
             {
-                if (pendingZero || hasPrinted && ge < valQian)
-                    builder.AddText(strZero);
+                if (pendingZero || (hasPrinted && ge < valQian))
+                    builder.Append(strZero);
 
-                builder.AddText(ge.ToString());
+                builder.Append(ge.ToString());
             }
 
-            return builder.Build().Encode();
+            return builder.ToReadOnlySeString();
         }
 
         public string ToChineseString()
@@ -190,7 +203,7 @@ public static class NumericExtension
 
             if (yi > 0)
             {
-                if (pendingZero || hasPrinted && yi < valQian)
+                if (pendingZero || (hasPrinted && yi < valQian))
                     builder.Append(cZero);
 
                 builder.Append(yi);
@@ -204,7 +217,7 @@ public static class NumericExtension
 
             if (wan > 0)
             {
-                if (pendingZero || hasPrinted && wan < valQian)
+                if (pendingZero || (hasPrinted && wan < valQian))
                     builder.Append(cZero);
 
                 builder.Append(wan);
@@ -218,7 +231,7 @@ public static class NumericExtension
 
             if (ge > 0)
             {
-                if (pendingZero || hasPrinted && ge < valQian)
+                if (pendingZero || (hasPrinted && ge < valQian))
                     builder.Append(cZero);
 
                 builder.Append(ge);

@@ -1,5 +1,4 @@
 using Dalamud.Hooking;
-using Dalamud.Plugin.Services;
 using OmenTools.Dalamud.Helpers;
 
 namespace OmenTools.Extensions;

@@ -315,7 +315,7 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
                 for (; i < len; i++)
                 {
                     var b = Unsafe.Add(ref src, i);
-                    crc = Table[(crc ^ b) & 0xFF] ^ crc >> 8;
+                    crc = Table[(crc ^ b) & 0xFF] ^ (crc >> 8);
                 }
 
                 crc32 = crc;
@@ -324,7 +324,7 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
 
 
             foreach (var b in data)
-                crc = Table[(crc ^ b) & 0xFF] ^ crc >> 8;
+                crc = Table[(crc ^ b) & 0xFF] ^ (crc >> 8);
 
             crc32 = crc;
         }
@@ -344,7 +344,7 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
             {
                 var c = i;
                 for (var j = 0; j < 8; j++)
-                    c = (c & 1) != 0 ? c >> 1 ^ POLY : c >> 1;
+                    c = (c & 1) != 0 ? (c >> 1) ^ POLY : c >> 1;
                 table[i] = c;
             }
 
@@ -356,7 +356,7 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
                 for (var i = 0; i < 256; i++)
                 {
                     var c = table[prev + i];
-                    table[cur + i] = table[c & 0xFF] ^ c >> 8;
+                    table[cur + i] = table[c & 0xFF] ^ (c >> 8);
                 }
             }
 

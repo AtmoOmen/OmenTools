@@ -1,17 +1,17 @@
 using System.Media;
 using System.Runtime.CompilerServices;
 using Dalamud.Game.Gui.Toast;
-using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Textures;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using Lumina.Text;
+using Lumina.Text.ReadOnly;
 using OmenTools.Interop.Windows;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
 
-// TODO: 把全部的 SeString 改为 ReadOnlySeSrting
 public class NotifyHelper : OmenServiceBase<NotifyHelper>
 {
     public string? NotificationMinimizedText { get; set; }
@@ -42,7 +42,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     public TrayNotifier? TrayNotifier { get; set; }
 
-    public SeString? ChatPrefix { get; set; }
+    public ReadOnlySeString? ChatPrefix { get; set; }
 
     public ushort ChatErrorTextColor { get; set; } = 17;
 
@@ -66,20 +66,20 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     public static void Toast(string message, ToastOptions? options = null) =>
         DService.Instance().Toast.ShowNormal(message, options);
 
-    public static void Toast(SeString message, ToastOptions? options = null) =>
-        DService.Instance().Toast.ShowNormal(message, options);
+    public static void Toast(ReadOnlySeString message, ToastOptions? options = null) =>
+        DService.Instance().Toast.ShowNormal(message.ToDalamudString(), options);
 
     public static void ToastError(string message) =>
         DService.Instance().Toast.ShowError(message);
 
-    public static void ToastError(SeString message) =>
-        DService.Instance().Toast.ShowError(message);
+    public static void ToastError(ReadOnlySeString message) =>
+        DService.Instance().Toast.ShowError(message.ToDalamudString());
 
     public static void ToastQuest(string message, QuestToastOptions? options = null) =>
         DService.Instance().Toast.ShowQuest(message, options);
 
-    public static void ToastQuest(SeString message, QuestToastOptions? options = null) =>
-        DService.Instance().Toast.ShowQuest(message, options);
+    public static void ToastQuest(ReadOnlySeString message, QuestToastOptions? options = null) =>
+        DService.Instance().Toast.ShowQuest(message.ToDalamudString(), options);
 
     #endregion
 
@@ -124,7 +124,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var plan   = BuildNotificationPlan(this, message, type, title, options);
+        var plan = BuildNotificationPlan(this, message, type, title, options);
 
         DService.Instance().DalamudNotification.AddNotification
         (
@@ -169,7 +169,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     输出错误聊天文本，可选前缀与颜色。
     /// </summary>
-    public void ChatError(string message, SeString? prefix = null, ushort? textColor = null)
+    public void ChatError(string message, ReadOnlySeString? prefix = null, ushort? textColor = null)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -179,17 +179,13 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     输出带富文本的错误聊天消息，仅对纯文本片段着色。
     /// </summary>
-    public void ChatError(SeString message, SeString? prefix = null, ushort? rawTextColor = null)
-    {
-        ArgumentNullException.ThrowIfNull(message);
-
+    public void ChatError(ReadOnlySeString message, ReadOnlySeString? prefix = null, ushort? rawTextColor = null) =>
         PrintChat(message, prefix, true, rawTextColor ?? Instance().ChatErrorSeStringTextColor);
-    }
 
     /// <summary>
     ///     输出普通聊天文本，可选前缀与颜色。
     /// </summary>
-    public void Chat(string message, SeString? prefix = null, ushort? textColor = null)
+    public void Chat(string message, ReadOnlySeString? prefix = null, ushort? textColor = null)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -199,12 +195,8 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     输出带富文本的普通聊天消息。
     /// </summary>
-    public void Chat(SeString message, SeString? prefix = null, ushort? rawTextColor = null)
-    {
-        ArgumentNullException.ThrowIfNull(message);
-
+    public void Chat(ReadOnlySeString message, ReadOnlySeString? prefix = null, ushort? rawTextColor = null) =>
         PrintChat(message, prefix, false, rawTextColor);
-    }
 
     #endregion
 
@@ -261,52 +253,63 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         _                        => ToolTipIcon.Info
     };
 
-    private void PrintChat(string message, SeString? prefix, bool isError, ushort? textColor)
+    private void PrintChat(string message, ReadOnlySeString? prefix, bool isError, ushort? textColor)
     {
-        var builder = new SeStringBuilder();
+        using var rented  = new RentedSeStringBuilder();
+        var       builder = rented.Builder;
+
         AppendPrefix(builder, prefix ?? ChatPrefix);
 
         if (textColor is { } color)
-            builder.AddUiForeground(message, color);
+        {
+            builder.PushColorType(color)
+                   .Append(message)
+                   .PopColorType();
+        }
         else
             builder.Append(message);
 
         var chat = DService.Instance().Chat;
         if (isError)
-            chat.PrintError(builder.Build());
+            chat.PrintError(builder.ToReadOnlySeString());
         else
-            chat.Print(builder.Build());
+            chat.Print(builder.ToReadOnlySeString());
     }
 
-    private void PrintChat(SeString message, SeString? prefix, bool isError, ushort? rawTextColor)
+    private void PrintChat(ReadOnlySeString message, ReadOnlySeString? prefix, bool isError, ushort? textColor)
     {
-        var builder = new SeStringBuilder();
+        using var rented  = new RentedSeStringBuilder();
+        var       builder = rented.Builder;
+
         AppendPrefix(builder, prefix ?? ChatPrefix);
 
-        foreach (var payload in message.Payloads)
+        foreach (var payload in message)
         {
-            if (rawTextColor is { } color && payload is TextPayload textPayload)
+            if (textColor is { } color && payload.Type == ReadOnlySePayloadType.Text)
             {
-                builder.AddUiForeground(textPayload.Text, color);
+                builder.PushColorType(color)
+                       .Append(payload)
+                       .PopColorType();
+
                 continue;
             }
 
-            builder.Add(payload);
+            builder.Append(payload);
         }
 
         var chat = DService.Instance().Chat;
         if (isError)
-            chat.PrintError(builder.Build());
+            chat.PrintError(builder.ToReadOnlySeString());
         else
-            chat.Print(builder.Build());
+            chat.Print(builder.ToReadOnlySeString());
     }
 
-    private static void AppendPrefix(SeStringBuilder builder, SeString? prefix)
+    private static void AppendPrefix(SeStringBuilder builder, ReadOnlySeString? prefix)
     {
         if (prefix is null)
             return;
 
-        builder.Append(prefix).Append(" ");
+        builder.Append(prefix.Value).Append(" ");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -346,13 +349,13 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     #region System Sound
 
-    public static void SystemInformation() => 
+    public static void SystemInformation() =>
         SystemSounds.Asterisk.Play();
-    
-    public static void SystemWarning() => 
+
+    public static void SystemWarning() =>
         SystemSounds.Hand.Play();
-    
-    public static void SystemBeep(int frequency = 1000, int duration = 500) => 
+
+    public static void SystemBeep(int frequency = 1000, int duration = 500) =>
         Task.Run(() => Console.Beep(frequency, duration));
 
     #endregion

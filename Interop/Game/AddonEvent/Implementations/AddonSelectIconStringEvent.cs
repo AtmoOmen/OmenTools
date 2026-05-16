@@ -49,7 +49,7 @@ public unsafe class AddonSelectIconStringEvent : AddonEventBase
 
         for (var i = 0; i < entryCount; i++)
         {
-            ref var atkValue = ref atkValues[i * 3 + 7];
+            ref var atkValue = ref atkValues[(i * 3) + 7];
             if (atkValue.Type == 0 || !atkValue.String.HasValue) continue;
 
             var utf8Span = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(atkValue.String);
@@ -83,7 +83,7 @@ public unsafe class AddonSelectIconStringEvent : AddonEventBase
 
         for (var i = 0; i < entryCount; i++)
         {
-            ref var atkValue = ref atkValues[i * 3 + 7];
+            ref var atkValue = ref atkValues[(i * 3) + 7];
             if (atkValue.Type == 0 || !atkValue.String.HasValue) continue;
 
             var utf8Span = MemoryMarshal.CreateReadOnlySpanFromNullTerminated(atkValue.String);

@@ -128,48 +128,48 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
     #region 私有
 
     private static readonly TimeSpan CacheTTL       = TimeSpan.FromSeconds(30);
-        private static readonly TimeSpan FailedCacheTTL = TimeSpan.FromSeconds(5);
-    
-        private readonly Channel<string> downloadChannel = Channel.CreateUnbounded<string>
-        (
-            new UnboundedChannelOptions
-            {
-                SingleReader = true,
-                SingleWriter = false
-            }
-        );
-    
-        private readonly Channel<ExpirationCommand> expirationChannel = Channel.CreateUnbounded<ExpirationCommand>
-        (
-            new UnboundedChannelOptions
-            {
-                SingleReader = true,
-                SingleWriter = false
-            }
-        );
-        
-        private readonly ConcurrentDictionary<string, ImageLoadingResult>                                cachedTextures = [];
-        private readonly ConcurrentDictionary<(uint ID, bool HQ, Language Language), ImageLoadingResult> cachedIcons    = [];
-    
-        private HttpClient HTTPClient {
-            get
-            {
-                if (field != null)
-                    return field;
-                
-                return field = HTTPClientHelper.Instance().Get
-                       (
-                           "OmenTools.ImageHelper",
-                           client => client.Timeout = TimeSpan.FromSeconds(30)
-                       );
-            }
-            
+    private static readonly TimeSpan FailedCacheTTL = TimeSpan.FromSeconds(5);
+
+    private readonly Channel<string> downloadChannel = Channel.CreateUnbounded<string>
+    (
+        new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = false
         }
-    
-        private readonly CancellationTokenSource globalCancelSource = new();
+    );
+
+    private readonly Channel<ExpirationCommand> expirationChannel = Channel.CreateUnbounded<ExpirationCommand>
+    (
+        new UnboundedChannelOptions
+        {
+            SingleReader = true,
+            SingleWriter = false
+        }
+    );
+
+    private readonly ConcurrentDictionary<string, ImageLoadingResult>                                cachedTextures = [];
+    private readonly ConcurrentDictionary<(uint ID, bool HQ, Language Language), ImageLoadingResult> cachedIcons    = [];
+
+    private HttpClient HTTPClient
+    {
+        get
+        {
+            if (field != null)
+                return field;
+
+            return field = HTTPClientHelper.Instance().Get
+                   (
+                       "OmenTools.ImageHelper",
+                       client => client.Timeout = TimeSpan.FromSeconds(30)
+                   );
+        }
+    }
+
+    private readonly CancellationTokenSource globalCancelSource = new();
 
     #endregion
-    
+
     #region 继承
 
     protected override void Init()
@@ -510,7 +510,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
     private record ClearCommand : ExpirationCommand;
 
     private abstract record ExpirationCommand;
-    
+
     private enum ImageLoadState : byte
     {
         Pending  = 0,

@@ -17,7 +17,7 @@
     <PropertyGroup>
         <Use_DalamudPackager>false</Use_DalamudPackager>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <Compile Remove="bin\**"/>
         <EmbeddedResource Remove="bin\**"/>
@@ -29,8 +29,8 @@
     <ItemGroup>
         <PackageReference Include="DailyRoutines.CodeAnalysis" Version="2.3.0"
                           PrivateAssets="all"
-                          IncludeAssets="runtime;build;native;contentfiles;analyzers;buildtransitive" />
-      <PackageReference Include="GuerrillaNtp" Version="3.1.0" />
-      <PackageReference Include="TinyPinyin" Version="1.1.0" />
+                          IncludeAssets="runtime;build;native;contentfiles;analyzers;buildtransitive"/>
+        <PackageReference Include="GuerrillaNtp" Version="3.1.0"/>
+        <PackageReference Include="TinyPinyin" Version="1.1.0"/>
     </ItemGroup>
 </Project>

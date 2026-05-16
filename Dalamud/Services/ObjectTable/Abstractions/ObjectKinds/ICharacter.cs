@@ -1,8 +1,8 @@
 using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
+using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud.Services.ObjectTable.Enums;
 using Character = OmenTools.Dalamud.Services.ObjectTable.ObjectKinds.Character;
 using Companion = Lumina.Excel.Sheets.Companion;
@@ -32,7 +32,7 @@ public interface ICharacter : IGameObject
     RowRef<ClassJob>     ClassJob            { get; }
     byte                 Level               { get; }
     byte[]               Customize           { get; }
-    SeString             CompanyTag          { get; }
+    ReadOnlySeString     CompanyTag          { get; }
     float                Alpha               { get; }
     uint                 NameID              { get; }
     ulong                AccountID           { get; }

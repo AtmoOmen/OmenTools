@@ -16,7 +16,7 @@ public sealed class JavaPropertiesLocalizationParser
     {
         ArgumentNullException.ThrowIfNull(stream);
 
-        using var                  reader = new StreamReader(stream, encoding, true, leaveOpen: true);
+        using var                  reader = new StreamReader(stream, encoding, leaveOpen: true);
         Dictionary<string, string> result = new(StringComparer.Ordinal);
 
         foreach (var line in ReadLogicalLines(reader))

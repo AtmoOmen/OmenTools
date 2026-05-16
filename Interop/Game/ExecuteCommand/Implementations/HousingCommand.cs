@@ -12,7 +12,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// </summary>
     public static void Request(PageKind pageKind, uint houseIDHigh, uint houseID, uint pageIndex) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ToFlag(pageKind), houseIDHigh, houseID, pageIndex);
-    
+
     /// <summary>
     ///     建造房屋
     /// </summary>
@@ -48,7 +48,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// </summary>
     public static void RemoveFreeCompanyHouse() =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RemoveFreeCompanyHouse);
-    
+
     /// <summary>
     ///     设置房屋背景音乐
     /// </summary>
@@ -59,7 +59,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     ///     查看房屋详情
     /// </summary>
     public static void ViewDetail(uint territoryType, uint wardIndex, uint plotIndex, uint apartmentRoomIndex = 0) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ViewHouseDetail, territoryType, wardIndex * 256 + plotIndex, apartmentRoomIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ViewHouseDetail, territoryType, (wardIndex * 256) + plotIndex, apartmentRoomIndex);
 
     /// <summary>
     ///     向当前房屋仓库存入指定物品
@@ -84,13 +84,13 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     ///     请求门牌数据
     /// </summary>
     public static void RequestPlacard(HouseTerritory territoryType, uint wardIndex, uint houseIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestPlacardData, (uint)territoryType, wardIndex * 256 + houseIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestPlacardData, (uint)territoryType, (wardIndex * 256) + houseIndex);
 
     /// <summary>
     ///     请求抽选数据
     /// </summary>
     public static void RequestLottery(HouseTerritory territoryType, uint wardIndex, uint plotIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestLotteryData, (uint)territoryType, wardIndex * 256 + plotIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestLotteryData, (uint)territoryType, (wardIndex * 256) + plotIndex);
 
     /// <summary>
     ///     请求当前房屋名称设置数据
@@ -220,7 +220,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     public static void ChangeInteriorDesign(InteriorDesignStyle style) =>
         ExecuteCommandManager.Instance().ExecuteCommand
             (ExecuteCommandFlag.HouseInteriorDesignChange, (uint)HousingManager.Instance()->GetCurrentPlot(), (uint)style);
-    
+
     /// <summary>
     ///     请求加载室外装潢背包数据
     /// </summary>
@@ -250,7 +250,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// </summary>
     public static void RequestPlacedFurnitures(bool isIndoor) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestPlacedFurnitures, isIndoor ? 1U : 0U);
-    
+
     /// <summary>
     ///     请求房屋共享室友名单
     /// </summary>
@@ -274,7 +274,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// </summary>
     public static void RequestHousing() =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousing);
-    
+
     /// <summary>
     ///     请求庭院雇员出售列表数据
     /// </summary>
@@ -300,7 +300,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetHouseRetainerDrawnSword, isVisible ? 1U : 0U);
 
     private static uint GetEstateTagFlag(uint tagIndexFirst, uint tagIndexSecond, uint tagIndexThird) =>
-        tagIndexFirst << 16 | tagIndexSecond << 8 | tagIndexThird;
+        (tagIndexFirst << 16) | (tagIndexSecond << 8) | tagIndexThird;
 
     private static (uint High, uint Low) GetCurrentHouseID()
     {
@@ -328,7 +328,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
 
         return (0, 0);
     }
-    
+
     private static ExecuteCommandFlag ToFlag(PageKind pageKind) =>
         pageKind switch
         {

@@ -6,6 +6,6 @@ public sealed unsafe class TooltipActionModification : TooltipModification
 {
     public required TooltipActionType Target { get; init; }
 
-    private StringArrayData* StringArray => 
+    private StringArrayData* StringArray =>
         AtkStage.Instance()->GetStringArrayData(StringArrayType.ItemDetail);
 }

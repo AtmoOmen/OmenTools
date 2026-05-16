@@ -17,7 +17,7 @@ public sealed class StructuredJsonLocalizationParser
     {
         ArgumentNullException.ThrowIfNull(stream);
 
-        using var reader     = new StreamReader(stream, Encoding.UTF8, true, leaveOpen: true);
+        using var reader     = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
         using var jsonReader = new JsonTextReader(reader);
 
         var                        root   = JToken.ReadFrom(jsonReader);

@@ -1,7 +1,7 @@
 using System.Numerics;
-using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using Lumina.Text.ReadOnly;
 using GameObject = OmenTools.Dalamud.Services.ObjectTable.ObjectKinds.GameObject;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 
@@ -9,7 +9,7 @@ namespace OmenTools.Dalamud.Services.ObjectTable.Abstractions.ObjectKinds;
 
 public interface IGameObject : IEquatable<IGameObject>
 {
-    SeString              Name             { get; }
+    ReadOnlySeString      Name             { get; }
     ulong                 GameObjectID     { get; }
     uint                  EntityID         { get; }
     uint                  DataID           { get; }

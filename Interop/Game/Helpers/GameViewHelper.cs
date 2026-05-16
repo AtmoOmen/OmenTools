@@ -20,7 +20,7 @@ public static class GameViewHelper
         var wy = worldPos.Y;
         var wz = worldPos.Z;
 
-        var w = wx * mat.M14 + wy * mat.M24 + wz * mat.M34 + mat.M44;
+        var w = (wx * mat.M14) + (wy * mat.M24) + (wz * mat.M34) + mat.M44;
 
         if (w < 0.001)
         {
@@ -29,9 +29,9 @@ public static class GameViewHelper
             return false;
         }
 
-        var invW = 1.0                                                    / w;
-        var x    = (wx * mat.M11 + wy * mat.M21 + wz * mat.M31 + mat.M41) * invW;
-        var y    = (wx * mat.M12 + wy * mat.M22 + wz * mat.M32 + mat.M42) * invW;
+        var invW = 1.0                                                          / w;
+        var x    = ((wx * mat.M11) + (wy * mat.M21) + (wz * mat.M31) + mat.M41) * invW;
+        var y    = ((wx * mat.M12) + (wy * mat.M22) + (wz * mat.M32) + mat.M42) * invW;
 
         var width  = dev->Width;
         var height = dev->Height;

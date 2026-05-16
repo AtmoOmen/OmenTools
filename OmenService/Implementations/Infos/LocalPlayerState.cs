@@ -441,6 +441,6 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         if (DistanceTo2D(target.Position.ToVector2()) <= target.HitboxRadius)
             return Object.Position;
 
-        return target.Position + Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius;
+        return target.Position + (Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius);
     }
 }

@@ -11,7 +11,7 @@ public sealed class TeleportCommand : ExecuteCommandBase
     /// </summary>
     public static void Teleport(uint aetheryteID, uint aetheryteSubID, bool useTicket) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Teleport, aetheryteID, useTicket ? 1U : 0U, aetheryteSubID);
-    
+
     /// <summary>
     ///     接受传送邀请
     /// </summary>

@@ -34,7 +34,7 @@ public sealed class DutyCommand : ExecuteCommandBase
         var  end    = Math.Min(values.Length, start + count);
 
         for (var i = start; i < end; i++)
-            result |= (uint)values[i] << (i - start) * 8;
+            result |= (uint)values[i] << ((i - start) * 8);
 
         return result;
     }

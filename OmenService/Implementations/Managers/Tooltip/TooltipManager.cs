@@ -160,6 +160,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         var itemGroupFlags  = GetItemTooltipGroupFlags(numberArrayData);
 
         var currentItemInfo = GetItemInfo(AgentItemDetail.Instance()->ItemId);
+
         if (currentItemInfo != lastItemInfo)
         {
             lastItemInfo      = currentItemInfo;

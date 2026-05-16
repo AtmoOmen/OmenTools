@@ -3,7 +3,6 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Utility;
 using Lumina.Excel.Sheets;
 using Lumina.Text.Payloads;
@@ -119,6 +118,7 @@ public static class SeStringExtension
         }
     }
 
+    // TODO: API 16 移除
     extension(SeStringBuilder b)
     {
         public SeStringBuilder AddRange(IEnumerable<Payload> payloads)
@@ -161,13 +161,16 @@ public static class SeStringExtension
     {
         public ReadOnlySeString PraseAutoTranslate()
         {
-            var builder = new SeStringBuilder();
+            using var rentedOuter = new RentedSeStringBuilder();
+            var       builder     = rentedOuter.Builder;
 
             var counter = -1;
 
             foreach (var payload in span)
             {
                 counter++;
+
+                using var rented = new RentedSeStringBuilder();
 
                 if (payload.Type            != ReadOnlySePayloadType.Macro  ||
                     payload.MacroCode       != MacroCode.Fixed              ||
@@ -178,21 +181,20 @@ public static class SeStringExtension
                     !LuminaGetter.TryGetRow(rowID, out Completion macroRow) ||
                     macroRow.Group != group + 1)
                 {
-                    using var rented = new RentedSeStringBuilder();
 
                     if (counter      == 0                          &&
                         payload.Type == ReadOnlySePayloadType.Text &&
                         string.IsNullOrEmpty(payload.ToString().Trim()))
                         continue;
 
-                    builder.Append(rented.Builder.Append(payload).ToReadOnlySeString().ToDalamudString());
+                    builder.Append(rented.Builder.Append(payload).ToReadOnlySeString());
                     continue;
                 }
 
-                builder.Add(new AutoTranslatePayload(macroRow.Group, rowID));
+                builder.Append(payload);
             }
 
-            return builder.Build().Encode();
+            return builder.ToReadOnlySeString();
         }
     }
 
@@ -204,7 +206,7 @@ public static class SeStringExtension
             var adjustedValue = c - start;
             var index         = adjustedValue >> 6;
             var bit           = adjustedValue              & 63;
-            return index < bitmap.Length && (bitmap[index] & 1UL << bit) != 0;
+            return index < bitmap.Length && (bitmap[index] & (1UL << bit)) != 0;
         }
     }
 }

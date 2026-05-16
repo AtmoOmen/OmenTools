@@ -79,7 +79,7 @@ public unsafe class GameState : OmenServiceBase<GameState>
         !IsInPVPArea &&
         (ContentFinderConditionData.RowId == 0 ||
          !ContentTypes.NotPVE.Contains(ContentFinderConditionData.ContentType.RowId));
-    
+
     /// <summary>
     ///     当前窗口是否位于前台
     /// </summary>
@@ -105,7 +105,7 @@ public unsafe class GameState : OmenServiceBase<GameState>
 
     // 因为生命周期里不会变更, 因此只需要懒加载一次即可
     private static readonly Lazy<string> ClientVersionLazy =
-        new(() => Framework.Instance()->GameVersionString.ToString());
+        new(() => Framework.Instance()->GameVersionString);
 
     // 因为生命周期里不会变更, 因此只需要懒加载一次即可
     private static readonly Lazy<bool> IsGLLazy =

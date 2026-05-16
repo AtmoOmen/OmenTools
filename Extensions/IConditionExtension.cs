@@ -1,5 +1,4 @@
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Plugin.Services;
 
 namespace OmenTools.Extensions;
 
@@ -18,7 +17,7 @@ public static class IConditionExtension
                     ConditionFlag.OnFreeTrial
                 ]
             ).Any();
-        
+
         public bool IsOccupiedInEvent =>
             service.Any
             (

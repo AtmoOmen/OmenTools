@@ -4,10 +4,15 @@ using System.Globalization;
 using System.Text;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Utility;
 using Lumina.Data;
+using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
 using OmenTools.Localization;
 using OmenTools.OmenService.Abstractions;
+using DSeString = Dalamud.Game.Text.SeStringHandling.SeString;
+using DSeStringBuilder = Dalamud.Game.Text.SeStringHandling.SeStringBuilder;
+using SeStringBuilder = Lumina.Text.SeStringBuilder;
 
 namespace OmenTools.OmenService;
 
@@ -136,7 +141,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         return string.Format(CultureInfo.CurrentCulture, format, args);
     }
 
-    public SeString GetSe(string key, params object[] args)
+    public ReadOnlySeString GetSe(string key, params object[] args)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(args);
@@ -150,13 +155,14 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         if (args.Length == 0 && template.IsLiteralOnly)
             return snapshot.PlainTextSeCache.GetOrAdd(key, _ => CreatePlainSeString(format));
 
-        var builder = new SeStringBuilder();
+        using var rented  = new RentedSeStringBuilder();
+        var       builder = rented.Builder;
 
         foreach (var segment in template.Segments)
         {
             if (!segment.IsArgument)
             {
-                builder.AddText(segment.Text);
+                builder.Append(segment.Text);
                 continue;
             }
 
@@ -167,10 +173,10 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
             }
 
             LogFormatError(snapshot, key, segment.Text);
-            builder.AddText(segment.Text);
+            builder.Append(segment.Text);
         }
 
-        return builder.Build();
+        return builder.ToReadOnlySeString();
     }
 
     private ConfiguredState GetConfiguredState()
@@ -391,41 +397,57 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
             case null:
                 return;
 
-            case SeString seString:
-                builder.Append(seString);
+            case DSeString dalamudSeString:
+                builder.Append(new ReadOnlySeString(dalamudSeString.Encode()));
                 return;
 
-            case SeStringBuilder seStringBuilder:
-                builder.Append(seStringBuilder.Build());
+            case DSeStringBuilder dalamudSeStringBuilder:
+                builder.Append(dalamudSeStringBuilder.Build().Encode());
                 return;
 
             case Payload payload:
-                builder.Add(payload);
+                builder.Append(new ReadOnlySeString(new DSeString(payload).Encode()));
+                return;
+
+            case ReadOnlySeString readOnlySeString:
+                builder.Append(readOnlySeString);
+                return;
+
+            case ReadOnlySePayload readOnlySePayload:
+                builder.Append(readOnlySePayload);
+                return;
+
+            case RentedSeStringBuilder rentedSeStringBuilder:
+                builder.Append(rentedSeStringBuilder.Builder.ToReadOnlySeString());
+                return;
+
+            case SeStringBuilder seStringBuilder:
+                builder.Append(seStringBuilder.ToReadOnlySeString());
                 return;
 
             case BitmapFontIcon icon:
-                builder.AddIcon(icon);
+                builder.AppendIcon((uint)icon);
                 return;
 
             case SeIconChar iconChar:
-                builder.AddText(iconChar.ToIconString());
+                builder.Append(iconChar.ToIconString());
                 return;
 
             case IFormattable formattable:
-                builder.AddText(formattable.ToString(null, CultureInfo.CurrentCulture) ?? string.Empty);
+                builder.Append(formattable.ToString(null, CultureInfo.CurrentCulture) ?? string.Empty);
                 return;
 
             default:
-                builder.AddText(arg.ToString() ?? string.Empty);
+                builder.Append(arg.ToString() ?? string.Empty);
                 return;
         }
     }
 
-    private static SeString CreatePlainSeString(string text)
+    private static ReadOnlySeString CreatePlainSeString(string text)
     {
-        var builder = new SeStringBuilder();
-        builder.AddText(text);
-        return builder.Build();
+        using var rented = new RentedSeStringBuilder();
+        rented.Builder.Append(text);
+        return rented.Builder.ToReadOnlySeString();
     }
 
     private static string LogMissingKeyAndReturnKey(LanguageSnapshot snapshot, string key)
@@ -471,7 +493,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
 
         public ConcurrentDictionary<string, SeTemplate> TemplateCache { get; } = new(StringComparer.Ordinal);
 
-        public ConcurrentDictionary<string, SeString> PlainTextSeCache { get; } = new(StringComparer.Ordinal);
+        public ConcurrentDictionary<string, ReadOnlySeString> PlainTextSeCache { get; } = new(StringComparer.Ordinal);
 
         public ConcurrentDictionary<string, byte> MissingKeys { get; } = new(StringComparer.Ordinal);
 
@@ -555,7 +577,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
 
             while (index < format.Length && char.IsAsciiDigit(format[index]))
             {
-                value = value * 10 + format[index] - '0';
+                value = (value * 10) + format[index] - '0';
                 index++;
             }
 

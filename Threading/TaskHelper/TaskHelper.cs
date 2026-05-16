@@ -15,7 +15,7 @@ public partial class TaskHelper : IDisposable
     public TaskHelper()
     {
         DService.Instance().RegTaskHelper(this);
-        
+
         QueueCounts.TryAdd(1, 0);
         QueueCounts.TryAdd(0, 0);
         _ = ProcessChannelAsync(CancelSource.Token);

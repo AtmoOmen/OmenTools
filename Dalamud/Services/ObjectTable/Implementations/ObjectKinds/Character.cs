@@ -1,8 +1,8 @@
 using Dalamud.Game.ClientState.Objects.Enums;
-using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
+using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud.Services.ObjectTable.Enums;
 using Companion = Lumina.Excel.Sheets.Companion;
 using Ornament = Lumina.Excel.Sheets.Ornament;
@@ -35,7 +35,7 @@ internal unsafe class Character
     public                 RowRef<ClassJob> ClassJob => Struct->CharacterData.ClassJob.ToLuminaRowRef<ClassJob>();
     public                 byte Level => Struct->CharacterData.Level;
     public                 byte[] Customize => Struct->DrawData.CustomizeData.Data.ToArray();
-    public                 SeString CompanyTag => SeString.Parse(Struct->FreeCompanyTag);
+    public                 ReadOnlySeString CompanyTag => new(Struct->FreeCompanyTag);
     public                 float Alpha => Struct->Alpha;
     public                 uint NameID => Struct->NameId;
     public                 ulong AccountID => Struct->AccountId;

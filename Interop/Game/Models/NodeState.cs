@@ -13,7 +13,7 @@ public readonly record struct NodeState
     public float Width  => Size.X;
     public float Height => Size.Y;
 
-    public Vector2 Center => TopLeft + Size / 2;
+    public Vector2 Center => TopLeft + (Size / 2);
 
     public Vector2 TopRight    => TopLeft + Size.WithY(0);
     public Vector2 BottomLeft  => TopLeft + Size.WithX(0);

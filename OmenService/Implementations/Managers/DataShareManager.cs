@@ -1,5 +1,4 @@
 using System.Reflection;
-using OmenTools.Dalamud;
 using OmenTools.Dalamud.DataShare.Attributes;
 using OmenTools.OmenService.Abstractions;
 

@@ -19,7 +19,7 @@ public static unsafe class AtkUnitBaseExtension
                 return (T*)addonPtr;
             }
         }
-        
+
         public void CallbackNoUpdate(params object[] args)
         {
             fixed (AtkUnitBase* addonPtr = &addon)
@@ -30,7 +30,7 @@ public static unsafe class AtkUnitBaseExtension
                 addonPtr->FireCallback((uint)atkValues.Length, atkValues.Pointer);
             }
         }
-        
+
         /// <remarks>请自行处理处理传入的 AtkValueArray 生命周期</remarks>
         public void CallbackNoUpdate(scoped in AtkValueArray atkValues)
         {
@@ -51,7 +51,7 @@ public static unsafe class AtkUnitBaseExtension
                 addonPtr->FireCallback((uint)atkValues.Length, atkValues.Pointer, true);
             }
         }
-        
+
         /// <remarks>请自行处理处理传入的 AtkValueArray 生命周期</remarks>
         public void Callback(scoped in AtkValueArray atkValues)
         {

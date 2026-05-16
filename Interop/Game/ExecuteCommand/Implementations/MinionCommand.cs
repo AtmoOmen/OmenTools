@@ -11,7 +11,7 @@ public sealed class MinionCommand : ExecuteCommandBase
     /// </summary>
     public static void Summon(uint minionID) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SummonMinion, minionID);
-    
+
     /// <summary>
     ///     收回宠物
     /// </summary>

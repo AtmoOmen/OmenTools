@@ -518,7 +518,7 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
         if (!LuminaGetter.TryGetRow(dyeRow, out Stain stainRow) ||
             stainRow.Item[0] is not { IsValid: true, RowId: > 0 } stainItem)
             return false;
-        
+
         LastItem = stainItem.Value;
         return true;
     }

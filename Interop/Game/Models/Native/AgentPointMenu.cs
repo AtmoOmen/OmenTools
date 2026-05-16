@@ -55,7 +55,7 @@ public unsafe struct AgentPointMenu
         var count    = EntryCount;
 
         for (var i = 0; i < count; i++)
-            if ((bitfield & 1 << i) == 0)
+            if ((bitfield & (1 << i)) == 0)
                 return i;
 
         return -1;
@@ -63,7 +63,7 @@ public unsafe struct AgentPointMenu
 
     public static AgentPointMenu* Instance() =>
         (AgentPointMenu*)AgentModule.Instance()->GetAgentByInternalId(AgentId.PointMenu);
-    
+
     [Flags]
     public enum PendingResultFlag : byte
     {

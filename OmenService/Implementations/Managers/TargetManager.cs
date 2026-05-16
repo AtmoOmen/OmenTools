@@ -471,16 +471,16 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
     public bool SetHardTarget(IGameObject? target, bool ignoreTargetModes = false, bool a4 = false, int a5 = 0) =>
         SetHardTargetHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address, ignoreTargetModes, a4, a5);
 
-    public bool SetSoftTarget(IGameObject? target) => 
+    public bool SetSoftTarget(IGameObject? target) =>
         SetSoftTargetHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address);
 
-    public void SetFocusTarget(GameObjectId gameObjectID) => 
+    public void SetFocusTarget(GameObjectId gameObjectID) =>
         SetFocusTargetHook.Original(TargetSystem.Instance(), gameObjectID);
 
-    public ulong InteractWithObject(IGameObject? target, bool checkLoS = true) => 
+    public ulong InteractWithObject(IGameObject? target, bool checkLoS = true) =>
         InteractWithObjectHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address, checkLoS);
 
-    public void OpenObjectInteraction(IGameObject? target) => 
+    public void OpenObjectInteraction(IGameObject? target) =>
         OpenObjectInteractionHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address);
 
     #endregion

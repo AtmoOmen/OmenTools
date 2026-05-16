@@ -11,13 +11,15 @@ public sealed unsafe class MJICommand : ExecuteCommandBase
     ///     无人岛捕获动物
     /// </summary>
     public static void CaptureMonster(uint animalBaseID, uint animalEntityID, uint currentMode, uint currentModeItem) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(
+        ExecuteCommandManager.Instance().ExecuteCommand
+        (
             ExecuteCommandFlag.MJICaptureMonster,
             animalBaseID,
             animalEntityID,
             currentMode,
-            currentModeItem);
-    
+            currentModeItem
+        );
+
     /// <summary>
     ///     切换无人岛模式
     /// </summary>
@@ -178,7 +180,7 @@ public sealed unsafe class MJICommand : ExecuteCommandBase
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIFavorStateRequest);
 
     private static uint BuildScheduleParam(uint startingHour, uint craftObjectID) =>
-        8 * (startingHour | 32 * craftObjectID);
+        8 * (startingHour | (32 * craftObjectID));
 
     public enum Mode : uint
     {

@@ -23,7 +23,7 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
     }
 
     public ConcurrentDictionary<Type, Window> UniqueWindows { get; } = [];
-    
+
     /// <summary>
     ///     在窗口系统绘制前调用
     /// </summary>
@@ -58,7 +58,7 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
 
     private void OnWindowManagerDraw()
     {
-        var regs = this.drawScopeRegistrations;
+        var             regs         = drawScopeRegistrations;
         IDisposable?[]? activeScopes = null;
 
         try

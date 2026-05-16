@@ -240,8 +240,8 @@ public class CrescentEvent : IEquatable<CrescentEvent>
 
         var randomAngle = Random.Shared.NextDouble() * 2 * MathF.PI;
 
-        var x = Position.X + randomRadius * MathF.Cos((float)randomAngle);
-        var z = Position.Z + randomRadius * MathF.Sin((float)randomAngle);
+        var x = Position.X + (randomRadius * MathF.Cos((float)randomAngle));
+        var z = Position.Z + (randomRadius * MathF.Sin((float)randomAngle));
 
         return new Vector3(x, y, z);
     }

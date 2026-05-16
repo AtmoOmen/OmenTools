@@ -33,7 +33,7 @@ public static partial class ImGuiOm
 
         var lines      = wrappedText.Split('\n');
         var lineHeight = ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemSpacing.Y;
-        var finalSize  = new Vector2(lineLength + 2 * ImGui.GetStyle().FramePadding.X, lines.Length * lineHeight);
+        var finalSize  = new Vector2(lineLength + (2 * ImGui.GetStyle().FramePadding.X), lines.Length * lineHeight);
 
         var textTemp   = wrappedText;
         var textLength = wrappedText.Length + 1;
@@ -81,7 +81,7 @@ public static partial class ImGuiOm
                     var linkStart = new Vector2
                     (
                         screenStartPos.X + startX,
-                        screenStartPos.Y + lineIndex * ImGui.GetTextLineHeightWithSpacing()
+                        screenStartPos.Y + (lineIndex * ImGui.GetTextLineHeightWithSpacing())
                     );
 
                     var linkEnd = new Vector2
@@ -261,7 +261,7 @@ public static partial class ImGuiOm
 
         bool IsLatinChar(char c)
         {
-            return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-' || c == '@' || c == '&';
+            return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '@' || c == '&';
         }
 
         float GetCharWidth(char c)

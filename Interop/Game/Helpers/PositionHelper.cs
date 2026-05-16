@@ -58,32 +58,32 @@ public static class PositionHelper
         );
 
     public static Vector2 WorldToTexture(Vector3 pos, Map map) =>
-        new Vector2(pos.X,       pos.Z)       * (map.SizeFactor / 100.0f) +
-        new Vector2(map.OffsetX, map.OffsetY) * (map.SizeFactor / 100.0f) +
+        (new Vector2(pos.X,       pos.Z)       * (map.SizeFactor / 100.0f)) +
+        (new Vector2(map.OffsetX, map.OffsetY) * (map.SizeFactor / 100.0f)) +
         new Vector2(1024.0f, 1024.0f);
 
     public static Vector2 TextureToWorld(Vector2 pos, Map map)
     {
         var adjustedCoordinates = (pos - new Vector2(1024f)) / map.SizeFactor;
-        return adjustedCoordinates * 100f - new Vector2(map.OffsetX, map.OffsetY);
+        return (adjustedCoordinates * 100f) - new Vector2(map.OffsetX, map.OffsetY);
     }
 
     private static float WorldXZToMap(float value, uint scale, int offset) =>
-        0.02f * offset + 2048f / scale + 0.02f * value + 1f;
+        (0.02f * offset) + (2048f / scale) + (0.02f * value) + 1f;
 
     private static float MapToWorldXZ(float mapValue, uint scale, int offset) =>
-        (mapValue - 0.02f * offset - 2048f / scale - 1f) / 0.02f;
+        (mapValue - (0.02f * offset) - (2048f / scale) - 1f) / 0.02f;
 
     public static float WorldYToMap(float value, int zOffset, bool correctZOffset = false) =>
         correctZOffset && zOffset == -10000 ? value / 100f : (value - zOffset) / 100f;
 
     public static float MapToWorldY(float mapValue, int zOffset, bool correctZOffset = false) =>
-        correctZOffset && zOffset == -10000 ? mapValue * 100f : mapValue * 100f + zOffset;
+        correctZOffset && zOffset == -10000 ? mapValue * 100f : (mapValue * 100f) + zOffset;
 
     private static float RawToMap(int pos, float scale)
     {
         var num1 = scale / 100f;
         var num2 = (float)(pos * (double)num1 / 1000.0f);
-        return 40.96f / num1 * ((num2 + 1024.0f) / 2048.0f) + 1.0f;
+        return (40.96f / num1 * ((num2 + 1024.0f) / 2048.0f)) + 1.0f;
     }
 }

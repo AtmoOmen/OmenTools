@@ -25,7 +25,7 @@ public sealed class FieldMarkerCommand : ExecuteCommandBase
     /// </summary>
     public static void Remove(FieldMarkerPoint point) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RemoveFieldMarker, (uint)point);
-    
+
     /// <summary>
     ///     清除场地标点
     /// </summary>

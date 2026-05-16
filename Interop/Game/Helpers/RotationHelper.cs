@@ -44,5 +44,5 @@ public static class RotationHelper
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float PacketToChara(ushort rotation) =>
-        rotation * INV_PACKET_SCALE - MathF.PI;
+        (rotation * INV_PACKET_SCALE) - MathF.PI;
 }

@@ -1,6 +1,6 @@
 using System.Numerics;
-using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using Lumina.Text.ReadOnly;
 using OmenTools.OmenService;
 using ObjectKind = Dalamud.Game.ClientState.Objects.Enums.ObjectKind;
 using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
@@ -14,7 +14,7 @@ internal unsafe class GameObject
 ) : IGameObject
 {
     protected internal CSGameObject*         Struct           => (CSGameObject*)Address;
-    public             SeString              Name             => SeString.Parse(Struct->Name);
+    public             ReadOnlySeString      Name             => new(Struct->Name);
     public             ulong                 GameObjectID     => Struct->GetGameObjectId();
     public             uint                  EntityID         => Struct->EntityId;
     public             uint                  DataID           => Struct->BaseId;
@@ -81,5 +81,5 @@ internal unsafe class GameObject
         GameObjectID.GetHashCode();
 
     public override string ToString() =>
-        $"{GameObjectID:X}({Name.TextValue} - {ObjectKind}) Address: {Address:X}";
+        $"{GameObjectID:X}({Name} - {ObjectKind}) Address: {Address:X}";
 }

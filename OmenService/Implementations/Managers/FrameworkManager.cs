@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using Dalamud.Plugin.Services;
 using OmenTools.Dalamud;
 using OmenTools.OmenService.Abstractions;
 

@@ -11,7 +11,7 @@ public sealed class DomanEnclaveCommand : ExecuteCommandBase
     /// </summary>
     public static void Buyback(uint itemIndex) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuybackReconstrcutionItem, itemIndex);
-    
+
     /// <summary>
     ///     请求支援物资退还箱物资数据
     /// </summary>

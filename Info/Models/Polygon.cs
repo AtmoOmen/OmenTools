@@ -5,7 +5,7 @@ namespace OmenTools.Info.Models;
 public class Polygon
 {
     private const float EPSILON = 1e-6f;
-    
+
     private readonly Vector2[] vertices;
 
     /// <summary>
@@ -27,8 +27,8 @@ public class Polygon
     {
         var result = false;
         for (int i = 0, j = vertices.Length - 1; i < vertices.Length; j = i++)
-            if (vertices[i].Y > point.Y != vertices[j].Y > point.Y &&
-                point.X                 < (vertices[j].X - vertices[i].X) * (point.Y - vertices[i].Y) / (vertices[j].Y - vertices[i].Y) + vertices[i].X)
+            if ((vertices[i].Y > point.Y) != (vertices[j].Y > point.Y) &&
+                point.X                   < ((vertices[j].X - vertices[i].X) * (point.Y - vertices[i].Y) / (vertices[j].Y - vertices[i].Y)) + vertices[i].X)
                 result = !result;
 
         return result;
@@ -61,8 +61,8 @@ public class Polygon
 
             var candidate = new Vector2
             (
-                vertices[idx1].X * w1 + vertices[idx2].X * w2 + vertices[idx3].X * w3,
-                vertices[idx1].Y * w1 + vertices[idx2].Y * w2 + vertices[idx3].Y * w3
+                (vertices[idx1].X * w1) + (vertices[idx2].X * w2) + (vertices[idx3].X * w3),
+                (vertices[idx1].Y * w1) + (vertices[idx2].Y * w2) + (vertices[idx3].Y * w3)
             );
 
             if (IsPointInPolygon(candidate) && !IsPointOnBoundary(candidate))
@@ -103,16 +103,16 @@ public class Polygon
     /// </summary>
     private static bool IsPointOnLineSegment(Vector2 point, Vector2 start, Vector2 end)
     {
-        var crossProduct = (point.Y - start.Y) * (end.X - start.X) - (point.X - start.X) * (end.Y - start.Y);
+        var crossProduct = ((point.Y - start.Y) * (end.X - start.X)) - ((point.X - start.X) * (end.Y - start.Y));
 
         if (Math.Abs(crossProduct) > EPSILON)
             return false;
 
-        var dotProduct = (point.X - start.X) * (end.X - start.X) + (point.Y - start.Y) * (end.Y - start.Y);
+        var dotProduct = ((point.X - start.X) * (end.X - start.X)) + ((point.Y - start.Y) * (end.Y - start.Y));
         if (dotProduct < 0)
             return false;
 
-        var squaredLength = (end.X - start.X) * (end.X - start.X) + (end.Y - start.Y) * (end.Y - start.Y);
+        var squaredLength = ((end.X - start.X) * (end.X - start.X)) + ((end.Y - start.Y) * (end.Y - start.Y));
         return !(dotProduct > squaredLength);
     }
 
@@ -131,7 +131,7 @@ public class Polygon
             var x1 = vertices[(i + 1) % vertices.Length].X;
             var y1 = vertices[(i + 1) % vertices.Length].Y;
 
-            var a = x0 * y1 - x1 * y0;
+            var a = (x0 * y1) - (x1 * y0);
             signedArea += a;
 
             centroid.X += (x0 + x1) * a;
@@ -285,7 +285,7 @@ public class Polygon
         var pivot = 0;
         for (var i = 1; i < n; i++)
             if (points[i].Y < points[pivot].Y ||
-                Math.Abs(points[i].Y - points[pivot].Y) < EPSILON && points[i].X < points[pivot].X)
+                (Math.Abs(points[i].Y - points[pivot].Y) < EPSILON && points[i].X < points[pivot].X))
                 pivot = i;
 
         (points[0], points[pivot]) = (points[pivot], points[0]);
@@ -330,7 +330,7 @@ public class Polygon
     ///     计算向量叉积
     /// </summary>
     private static float CrossProduct(Vector2 p0, Vector2 p1, Vector2 p2) =>
-        (p1.X - p0.X) * (p2.Y - p0.Y) - (p2.X - p0.X) * (p1.Y - p0.Y);
+        ((p1.X - p0.X) * (p2.Y - p0.Y)) - ((p2.X - p0.X) * (p1.Y - p0.Y));
 
     /// <summary>
     ///     计算两点间的平方距离
@@ -339,7 +339,7 @@ public class Polygon
     {
         var dx = p2.X - p1.X;
         var dy = p2.Y - p1.Y;
-        return dx * dx + dy * dy;
+        return (dx * dx) + (dy * dy);
     }
 
     /// <summary>

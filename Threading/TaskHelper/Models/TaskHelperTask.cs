@@ -56,7 +56,7 @@ public record TaskHelperTask
     ///     任务取消令牌源 <br />
     /// </summary>
     public CancellationTokenSource? CancelToken { get; }
-    
+
     /// <summary>
     ///     任务名称
     /// </summary>

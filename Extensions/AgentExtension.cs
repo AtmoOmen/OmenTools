@@ -14,7 +14,7 @@ public static unsafe class AgentExtension
             var agent = AgentModule.Instance()->GetAgentByInternalId(agentID);
             return agent == null ? null : agent->SendEvent(eventKind, eventParams);
         }
-        
+
         /// <remarks>请自行处理处理传入的 AtkValueArray 生命周期</remarks>
         public AtkValue* SendEvent(ulong eventKind, scoped in AtkValueArray valueArray)
         {
@@ -30,7 +30,7 @@ public static unsafe class AgentExtension
             var returnValue = stackalloc AtkValue[1];
             return agentInterface.SendEvent(returnValue, eventKind, eventParams);
         }
-        
+
         /// <remarks>请自行处理处理传入的 AtkValueArray 生命周期</remarks>
         public AtkValue* SendEvent(ulong eventKind, scoped in AtkValueArray valueArray)
         {
@@ -44,7 +44,7 @@ public static unsafe class AgentExtension
             agentInterface.ReceiveEvent(returnValue, atkValues, (uint)eventParams.Length, eventKind);
             return returnValue;
         }
-        
+
         /// <remarks>请自行处理处理传入的 AtkValueArray 生命周期</remarks>
         public AtkValue* SendEvent(AtkValue* returnValue, ulong eventKind, scoped in AtkValueArray valueArray)
         {

@@ -122,7 +122,7 @@ public unsafe class ControllerManager : OmenServiceBase<ControllerManager>
                 var t        = i * 0.5f;
                 var progress = duration > 0 ? t / duration : 0;
 
-                var envelope    = 4.0f * (progress - progress * progress);
+                var envelope    = 4.0f * (progress - (progress * progress));
                 var oscillation = MathF.Abs(MathF.Sin(t * MathF.PI));
 
                 var finalStrength = maxIntensity * envelope * oscillation;
