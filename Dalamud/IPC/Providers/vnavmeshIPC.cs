@@ -12,7 +12,7 @@ public static class vnavmeshIPC
     [IPCSubscriber("vnavmesh.Nav.IsReady", DefaultValue = "false")]
     private static IPCSubscriber<bool>? NavIsReady;
 
-    [IPCSubscriber("vnavmesh.Nav.BuildProgress", DefaultValue = "0")]
+    [IPCSubscriber("vnavmesh.Nav.BuildProgress", DefaultValue = "-1")]
     private static IPCSubscriber<float>? NavBuildProgress;
 
     [IPCSubscriber("vnavmesh.Nav.Reload")]
