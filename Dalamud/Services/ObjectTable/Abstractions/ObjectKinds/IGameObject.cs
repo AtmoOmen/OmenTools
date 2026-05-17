@@ -9,7 +9,7 @@ namespace OmenTools.Dalamud.Services.ObjectTable.Abstractions.ObjectKinds;
 
 public interface IGameObject : IEquatable<IGameObject>
 {
-    ReadOnlySeString      Name             { get; }
+    string                Name             { get; }
     ulong                 GameObjectID     { get; }
     uint                  EntityID         { get; }
     uint                  DataID           { get; }

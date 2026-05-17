@@ -1,4 +1,5 @@
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
@@ -14,42 +15,44 @@ internal unsafe class Character
     nint address
 ) : GameObject(address), ICharacter
 {
-    protected internal new FFXIVClientStructs.FFXIV.Client.Game.Character.Character* Struct => (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)Address;
-    public                 short TransformationID => Struct->TransformationId;
-    public                 float ModelScale => Struct->CharacterData.ModelScale;
-    public                 int ModelCharaID => Struct->ModelContainer.ModelCharaId;
-    public                 int ModelSkeletonID => Struct->ModelContainer.ModelSkeletonId;
-    public                 uint CurrentHp => Struct->CharacterData.Health;
-    public                 uint MaxHp => Struct->CharacterData.MaxHealth;
-    public                 uint CurrentMp => Struct->CharacterData.Mana;
-    public                 uint MaxMp => Struct->CharacterData.MaxMana;
-    public                 uint CurrentGp => Struct->CharacterData.GatheringPoints;
-    public                 uint MaxGp => Struct->CharacterData.MaxGatheringPoints;
-    public                 uint CurrentCp => Struct->CharacterData.CraftingPoints;
-    public                 uint MaxCp => Struct->CharacterData.MaxCraftingPoints;
-    public                 ushort TitleID => Struct->CharacterData.TitleId;
-    public                 byte Icon => Struct->CharacterData.Icon;
-    public                 byte ENPCMap => Struct->CharacterData.Map;
-    public                 BattalionFlags Battalion => (BattalionFlags)Struct->CharacterData.Battalion;
-    public                 byte ShieldPercentage => Struct->CharacterData.ShieldValue;
-    public                 RowRef<ClassJob> ClassJob => Struct->CharacterData.ClassJob.ToLuminaRowRef<ClassJob>();
-    public                 byte Level => Struct->CharacterData.Level;
-    public                 byte[] Customize => Struct->DrawData.CustomizeData.Data.ToArray();
-    public                 ReadOnlySeString CompanyTag => new(Struct->FreeCompanyTag);
-    public                 float Alpha => Struct->Alpha;
-    public                 uint NameID => Struct->NameId;
-    public                 ulong AccountID => Struct->AccountId;
-    public                 ulong ContentID => Struct->ContentId;
-    public                 CharacterModes Mode => Struct->Mode;
-    public                 byte ModeParam => Struct->ModeParam;
-    public                 RowRef<OnlineStatus> OnlineStatus => Struct->CharacterData.OnlineStatus.ToLuminaRowRef<OnlineStatus>();
-    public                 ulong EmoteTargetObjectID => Struct->EmoteController.Target;
-    public                 IGameObject? EmoteTargetObject => DService.Instance().ObjectTable.SearchByID(EmoteTargetObjectID);
-    public                 bool IsWanderer => Struct->IsWanderer();
-    public                 bool IsTraveler => Struct->IsTraveler();
-    public                 bool IsVoyager => Struct->IsVoyager();
-    public                 RowRef<World> CurrentWorld => Struct->CurrentWorld.ToLuminaRowRef<World>();
-    public                 RowRef<World> HomeWorld => Struct->HomeWorld.ToLuminaRowRef<World>();
+    protected internal new FFXIVClientStructs.FFXIV.Client.Game.Character.Character* Struct => 
+        (FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)Address;
+    
+    public short                TransformationID    => Struct->TransformationId;
+    public float                ModelScale          => Struct->CharacterData.ModelScale;
+    public int                  ModelCharaID        => Struct->ModelContainer.ModelCharaId;
+    public int                  ModelSkeletonID     => Struct->ModelContainer.ModelSkeletonId;
+    public uint                 CurrentHp           => Struct->CharacterData.Health;
+    public uint                 MaxHp               => Struct->CharacterData.MaxHealth;
+    public uint                 CurrentMp           => Struct->CharacterData.Mana;
+    public uint                 MaxMp               => Struct->CharacterData.MaxMana;
+    public uint                 CurrentGp           => Struct->CharacterData.GatheringPoints;
+    public uint                 MaxGp               => Struct->CharacterData.MaxGatheringPoints;
+    public uint                 CurrentCp           => Struct->CharacterData.CraftingPoints;
+    public uint                 MaxCp               => Struct->CharacterData.MaxCraftingPoints;
+    public ushort               TitleID             => Struct->CharacterData.TitleId;
+    public byte                 Icon                => Struct->CharacterData.Icon;
+    public byte                 ENPCMap             => Struct->CharacterData.Map;
+    public BattalionFlags       Battalion           => (BattalionFlags)Struct->CharacterData.Battalion;
+    public byte                 ShieldPercentage    => Struct->CharacterData.ShieldValue;
+    public RowRef<ClassJob>     ClassJob            => Struct->CharacterData.ClassJob.ToLuminaRowRef<ClassJob>();
+    public byte                 Level               => Struct->CharacterData.Level;
+    public byte[]               Customize           => Struct->DrawData.CustomizeData.Data.ToArray();
+    public string               CompanyTag          => Struct->FreeCompanyTagString;
+    public float                Alpha               => Struct->Alpha;
+    public uint                 NameID              => Struct->NameId;
+    public ulong                AccountID           => Struct->AccountId;
+    public ulong                ContentID           => Struct->ContentId;
+    public CharacterModes       Mode                => Struct->Mode;
+    public byte                 ModeParam           => Struct->ModeParam;
+    public RowRef<OnlineStatus> OnlineStatus        => Struct->CharacterData.OnlineStatus.ToLuminaRowRef<OnlineStatus>();
+    public ulong                EmoteTargetObjectID => Struct->EmoteController.Target;
+    public IGameObject?         EmoteTargetObject   => DService.Instance().ObjectTable.SearchByID(EmoteTargetObjectID);
+    public bool                 IsWanderer          => Struct->IsWanderer();
+    public bool                 IsTraveler          => Struct->IsTraveler();
+    public bool                 IsVoyager           => Struct->IsVoyager();
+    public RowRef<World>        CurrentWorld        => Struct->CurrentWorld.ToLuminaRowRef<World>();
+    public RowRef<World>        HomeWorld           => Struct->HomeWorld.ToLuminaRowRef<World>();
 
     public override ulong TargetObjectID => Struct->TargetId;
 

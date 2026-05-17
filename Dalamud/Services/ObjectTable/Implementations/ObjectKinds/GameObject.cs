@@ -1,4 +1,5 @@
 using System.Numerics;
+using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using Lumina.Text.ReadOnly;
 using OmenTools.OmenService;
@@ -14,7 +15,7 @@ internal unsafe class GameObject
 ) : IGameObject
 {
     protected internal CSGameObject*         Struct           => (CSGameObject*)Address;
-    public             ReadOnlySeString      Name             => new(Struct->Name);
+    public             string                Name             => Struct->NameString;
     public             ulong                 GameObjectID     => Struct->GetGameObjectId();
     public             uint                  EntityID         => Struct->EntityId;
     public             uint                  DataID           => Struct->BaseId;

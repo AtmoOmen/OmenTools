@@ -32,7 +32,7 @@ public interface ICharacter : IGameObject
     RowRef<ClassJob>     ClassJob            { get; }
     byte                 Level               { get; }
     byte[]               Customize           { get; }
-    ReadOnlySeString     CompanyTag          { get; }
+    string               CompanyTag          { get; }
     float                Alpha               { get; }
     uint                 NameID              { get; }
     ulong                AccountID           { get; }

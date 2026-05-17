@@ -140,8 +140,9 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
 
         knowledgeCrystal = DService.Instance().ObjectTable.SearchObject
         (
-            x => x is IEventObj { ObjectKind: ObjectKind.EventObj, DataID: 2007457, Name.IsEmpty: true } obj &&
-                 obj.ToStruct()->EventState   == 0                                                           &&
+            x => x is IEventObj { ObjectKind: ObjectKind.EventObj, DataID: 2007457 } obj &&
+                 string.IsNullOrEmpty(obj.Name)                                          &&
+                 obj.ToStruct()->EventState   == 0                                       &&
                  obj.ToStruct()->CameraOffset != Vector3.Zero,
             IObjectTable.EventRange
         );
