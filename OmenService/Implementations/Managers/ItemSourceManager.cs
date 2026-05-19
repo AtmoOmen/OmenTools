@@ -13,24 +13,6 @@ namespace OmenTools.OmenService;
 
 public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
 {
-    private const int  SNAPSHOT_FORMAT_VERSION = 1;
-    private const uint SNAPSHOT_MAGIC          = 0x49535243; // ISRC
-    private const int  HOT_CACHE_CAPACITY      = 30;
-
-    private static readonly FrozenDictionary<uint, ItemOffset> EmptyOffsets =
-        new Dictionary<uint, ItemOffset>().ToFrozenDictionary();
-
-    private readonly Lock                                  snapshotGate = new();
-    private readonly LRUCache<uint, ItemSourceQueryResult> hotCache     = new(HOT_CACHE_CAPACITY);
-
-    private FrozenDictionary<uint, ItemOffset> itemOffsets   = EmptyOffsets;
-    private string[]                           stringTable   = [];
-    private ShopNPCLocation[]                  locationTable = [];
-    private FileStream?                        snapshotStream;
-
-    private RepositoryStatus status = RepositoryStatus.Building;
-    private int              buildStarted;
-
     public ItemSourceQueryResult Query(uint itemID)
     {
         if (itemID == 0)
@@ -51,7 +33,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         }
 
         if (currentOffsets.TryGetValue(itemID, out var itemOffset) && currentHandle != null)
-            return hotCache.GetOrAdd(itemID, _ => DecodeItem(currentHandle, itemOffset, currentStrings, currentLocations));
+            return hotCache.GetOrAdd(itemID, _ => DecodeItem(currentHandle, itemOffset, currentStrings, currentLocations.ToList()));
 
         return currentStatus switch
         {
@@ -60,6 +42,21 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
             _                       => ItemSourceQueryResult.Building
         };
     }
+    
+    
+    private static readonly FrozenDictionary<uint, ItemOffset> EmptyOffsets =
+        new Dictionary<uint, ItemOffset>().ToFrozenDictionary();
+
+    private readonly Lock                                  snapshotGate = new();
+    private readonly LRUCache<uint, ItemSourceQueryResult> hotCache     = new(HOT_CACHE_CAPACITY);
+
+    private FrozenDictionary<uint, ItemOffset> itemOffsets   = EmptyOffsets;
+    private string[]                           stringTable   = [];
+    private ShopNPCLocation[]                  locationTable = [];
+    private FileStream?                        snapshotStream;
+
+    private RepositoryStatus status = RepositoryStatus.Building;
+    private int              buildStarted;
 
     protected override void Init()
     {
@@ -192,10 +189,10 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
 
     private static ItemSourceQueryResult DecodeItem
     (
-        SafeFileHandle                 handle,
-        ItemOffset                     itemOffset,
-        IReadOnlyList<string>          strings,
-        IReadOnlyList<ShopNPCLocation> locations
+        SafeFileHandle        handle,
+        ItemOffset            itemOffset,
+        IReadOnlyList<string> strings,
+        List<ShopNPCLocation> locations
     )
     {
         try
@@ -262,7 +259,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         }
     }
 
-    private async Task WriteSnapshotAsync(string path, IReadOnlyDictionary<uint, ItemSourceInfo> items)
+    private static async Task WriteSnapshotAsync(string path, Dictionary<uint, ItemSourceInfo> items)
     {
         var stringIndexBuilder   = new Dictionary<string, int>(StringComparer.Ordinal);
         var stringTableBuilder   = new List<string>();
@@ -340,7 +337,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         await WriteAllBytesAtomicallyAsync(path, outputStream.ToArray()).ConfigureAwait(false);
     }
 
-    private static byte[] BuildStringSection(IReadOnlyList<string> strings)
+    private static byte[] BuildStringSection(List<string> strings)
     {
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream, Encoding.UTF8, true);
@@ -352,7 +349,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return stream.ToArray();
     }
 
-    private static byte[] BuildLocationSection(IReadOnlyList<ShopNPCLocation> locations)
+    private static byte[] BuildLocationSection(List<ShopNPCLocation> locations)
     {
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream, Encoding.UTF8, true);
@@ -563,7 +560,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
     (
         ShopNPCLocation?              location,
         IDictionary<LocationKey, int> indices,
-        ICollection<ShopNPCLocation>  table
+        List<ShopNPCLocation>         table
     )
     {
         if (location == null)
@@ -666,4 +663,12 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         SectionInfo IndexSection,
         SectionInfo DataSection
     );
+    
+    #region 常量
+
+    private const int  SNAPSHOT_FORMAT_VERSION = 1;
+    private const uint SNAPSHOT_MAGIC          = 0x49535243; // ISRC
+    private const int  HOT_CACHE_CAPACITY      = 30;
+
+    #endregion
 }
