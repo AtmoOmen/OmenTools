@@ -26,6 +26,9 @@ public sealed class ItemSourceInfo
     public static ItemSourceQueryResult Query(uint itemID) =>
         ItemSourceManager.Instance().Query(itemID);
 
+    public static ExchangeItemsQueryResult QueryExchangeItems(uint costItemID) =>
+        ItemSourceManager.Instance().QueryExchangeItems(costItemID);
+
     internal static Dictionary<uint, ItemSourceInfo> BuildAllItems()
     {
         var timer = Stopwatch.StartNew();
