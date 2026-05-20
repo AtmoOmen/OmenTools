@@ -17,6 +17,6 @@ public record ShopItemCostInfo
         if (Collectablity != null)
             return $"{GetItemName()} \ue03d ({Collectablity.Value}~)";
 
-        return $"{GetItemName()} x{Cost}";
+        return $"{GetItemName()} x{Cost.ToChineseString()}";
     }
 }
