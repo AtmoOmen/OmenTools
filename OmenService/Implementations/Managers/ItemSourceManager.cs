@@ -70,7 +70,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
             return reverseHotCache.GetOrAdd
             (
                 costItemID,
-                _ => BuildReverseQueryResult(costItemID, targetItemIDs, currentHandle, currentOffsets, currentStrings, currentLocations)
+                _ => BuildExchangeQueryResult(costItemID, targetItemIDs, currentHandle, currentOffsets, currentStrings, currentLocations)
             );
         }
 
@@ -311,7 +311,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         }
     }
 
-    private static ExchangeItemsQueryResult BuildReverseQueryResult
+    private static ExchangeItemsQueryResult BuildExchangeQueryResult
     (
         uint                               costItemID,
         IReadOnlyList<uint>                targetItemIDs,
@@ -338,6 +338,8 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
 
             items.Add(reverseItem);
         }
+
+        items = items.Where(x => !string.IsNullOrWhiteSpace(x.GetItemName())).ToList();
 
         if (items.Count == 0)
             return ExchangeItemsQueryResult.NotFound;
