@@ -2,11 +2,22 @@ using Dalamud.Game.NativeWrapper;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using OmenTools.Interop.Game.Models;
+using DalamudAgentID = Dalamud.Game.Agent.AgentId;
 
 namespace OmenTools.Extensions;
 
 public static unsafe class AgentExtension
 {
+    extension(DalamudAgentID agentID)
+    {
+        public AtkValue* SendEvent(ulong eventKind, params object[] eventParams) => 
+            ((AgentId)agentID).SendEvent(eventKind, eventParams);
+
+        /// <remarks>请自行处理处理传入的 AtkValueArray 生命周期</remarks>
+        public AtkValue* SendEvent(ulong eventKind, scoped in AtkValueArray valueArray) =>
+            ((AgentId)agentID).SendEvent(eventKind, valueArray);
+    }
+    
     extension(AgentId agentID)
     {
         public AtkValue* SendEvent(ulong eventKind, params object[] eventParams)
