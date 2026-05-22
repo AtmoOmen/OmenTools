@@ -20,6 +20,8 @@ public class ImGuiMapRenderer
 
     public bool EnableDefaultMarkers { get; set; }
 
+    public Func<MapMarker, bool>? DefaultMarkerFilter { get; set; }
+
     public uint MapID      { get; private set; }
     public Map? CurrentMap { get; private set; }
 
@@ -77,30 +79,35 @@ public class ImGuiMapRenderer
             mapTexture = null;
         }
 
-        defaultMarkers.Clear();
-        if (CurrentMap != null)
-        {
-            foreach (var m in CurrentMap.Value.GetMapMarkers())
-            {
-                if (m.Icon == 0) continue;
-
-                var texturePos = new Vector2(m.X, m.Y);
-                var worldPos   = PositionHelper.TextureToWorld(texturePos, CurrentMap.Value);
-
-                defaultMarkers.Add(new ImGuiMapMarker
-                {
-                    ID          = $"__default_{m.RowId}_{m.SubrowId}",
-                    Position    = worldPos.ToVector3(0),
-                    Size        = ScaledVector2(24f),
-                    IconID      = m.Icon,
-                    Name        = m.GetMarkerLabel(),
-                    ShowLabel   = false,
-                    ShowTooltip = true,
-                });
-            }
-        }
+        RefreshDefaultMarkers();
 
         ResetView();
+    }
+
+    public void RefreshDefaultMarkers()
+    {
+        defaultMarkers.Clear();
+        if (CurrentMap == null) return;
+
+        foreach (var m in CurrentMap.Value.GetMapMarkers())
+        {
+            if (m.Icon == 0) continue;
+            if (DefaultMarkerFilter != null && !DefaultMarkerFilter(m)) continue;
+
+            var texturePos = new Vector2(m.X, m.Y);
+            var worldPos   = PositionHelper.TextureToWorld(texturePos, CurrentMap.Value);
+
+            defaultMarkers.Add(new ImGuiMapMarker
+            {
+                ID          = $"__default_{m.RowId}_{m.SubrowId}",
+                Position    = worldPos.ToVector3(0),
+                Size        = ScaledVector2(24f),
+                IconID      = m.Icon,
+                Name        = m.GetMarkerLabel(),
+                ShowLabel   = false,
+                ShowTooltip = true,
+            });
+        }
     }
 
     public void ResetView()
