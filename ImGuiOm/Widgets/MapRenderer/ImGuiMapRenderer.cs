@@ -2,6 +2,7 @@ using System.Numerics;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Utility;
 using Lumina.Excel.Sheets;
+using OmenTools.Extensions;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
 
@@ -16,6 +17,8 @@ public class ImGuiMapRenderer
     public float LerpSpeed { get; set; } = 15.0f;
 
     public bool EnableResizeGrip { get; set; } = true;
+
+    public bool EnableDefaultMarkers { get; set; }
 
     public uint MapID      { get; private set; }
     public Map? CurrentMap { get; private set; }
@@ -37,6 +40,8 @@ public class ImGuiMapRenderer
     private readonly List<ImGuiMapMarker> markers = [];
 
     private readonly Dictionary<uint, ISharedImmediateTexture> iconTextureCache = [];
+
+    private readonly List<ImGuiMapMarker> defaultMarkers = [];
 
     public Action<ImGuiMapRenderer, Vector3, Vector2, ImGuiMouseButton>? OnMapClicked { get; set; }
 
@@ -70,6 +75,29 @@ public class ImGuiMapRenderer
         {
             CurrentMap = null;
             mapTexture = null;
+        }
+
+        defaultMarkers.Clear();
+        if (CurrentMap != null)
+        {
+            foreach (var m in CurrentMap.Value.GetMapMarkers())
+            {
+                if (m.Icon == 0) continue;
+
+                var texturePos = new Vector2(m.X, m.Y);
+                var worldPos   = PositionHelper.TextureToWorld(texturePos, CurrentMap.Value);
+
+                defaultMarkers.Add(new ImGuiMapMarker
+                {
+                    ID          = $"__default_{m.RowId}_{m.SubrowId}",
+                    Position    = worldPos.ToVector3(0),
+                    Size        = ScaledVector2(24f),
+                    IconID      = m.Icon,
+                    Name        = m.GetMarkerLabel(),
+                    ShowLabel   = false,
+                    ShowTooltip = true,
+                });
+            }
         }
 
         ResetView();
@@ -252,6 +280,70 @@ public class ImGuiMapRenderer
 
         var             mousePos      = ImGui.GetMousePos();
         ImGuiMapMarker? hoveredMarker = null;
+
+        if (EnableDefaultMarkers)
+        {
+            foreach (var marker in defaultMarkers)
+            {
+                var screenPos = WorldToScreen(marker.Position);
+
+                if (screenPos.X < viewportMin.X - 50f ||
+                    screenPos.X > viewportMax.X + 50f ||
+                    screenPos.Y < viewportMin.Y - 50f ||
+                    screenPos.Y > viewportMax.Y + 50f) continue;
+
+                var markerHalfSize = marker.Size / 2f;
+                var markerMin      = screenPos - markerHalfSize;
+                var markerMax      = screenPos + markerHalfSize;
+
+                var isMouseOver = isHovered                 &&
+                                  mousePos.X >= markerMin.X &&
+                                  mousePos.X <= markerMax.X &&
+                                  mousePos.Y >= markerMin.Y &&
+                                  mousePos.Y <= markerMax.Y;
+
+                if (isMouseOver)
+                {
+                    hoveredMarker = marker;
+                    marker.OnHover?.Invoke(marker);
+                }
+
+                ImTextureID textureHandle = default;
+
+                if (marker.IconID.HasValue)
+                {
+                    if (!iconTextureCache.TryGetValue(marker.IconID.Value, out var iconTex))
+                    {
+                        iconTex                               = DService.Instance().Texture.GetFromGameIcon(new(marker.IconID.Value));
+                        iconTextureCache[marker.IconID.Value] = iconTex;
+                    }
+
+                    var iconWrap                                    = iconTex.GetWrapOrEmpty();
+                    if (iconWrap.Handle != nint.Zero) textureHandle = iconWrap.Handle;
+                }
+
+                var drawMin = markerMin;
+                var drawMax = markerMax;
+
+                if (isMouseOver)
+                {
+                    drawMin -= new Vector2(2f, 2f);
+                    drawMax += new Vector2(2f, 2f);
+                    ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+                }
+
+                if (textureHandle != nint.Zero)
+                    drawList.AddImage(textureHandle, drawMin, drawMax, Vector2.Zero, Vector2.One, marker.Color);
+                else
+                {
+                    drawList.AddCircleFilled(screenPos, Math.Min(marker.Size.X, marker.Size.Y) / 2f, marker.Color);
+                    drawList.AddCircle(screenPos, Math.Min(marker.Size.X,       marker.Size.Y) / 2f, 0xFFFFFFFF, 16, 1.5f);
+                }
+
+                if (marker.ShowLabel && !string.IsNullOrEmpty(marker.Label))
+                    labelDrawTasks.Add((marker, screenPos));
+            }
+        }
 
         foreach (var marker in markers)
         {
