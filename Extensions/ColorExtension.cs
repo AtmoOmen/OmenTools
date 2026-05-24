@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
@@ -7,11 +8,12 @@ namespace OmenTools.Extensions;
 
 public static unsafe class ColorExtension
 {
-    private static readonly Dictionary<ImGuiCol, Vector4>   ImGuiColToVector4   = [];
-    private static readonly Dictionary<ImGuiCol, uint>      ImGuiColToUInt      = [];
-    private static readonly Dictionary<KnownColor, Vector4> KnownColorToVector4 = [];
-    private static readonly Dictionary<KnownColor, uint>    KnownColorToUInt    = [];
-    private static readonly Dictionary<uint, Vector4>       UIntToVector4       = [];
+    private static readonly Dictionary<ImGuiCol, Vector4>   ImGuiColToVector4    = [];
+    private static readonly Dictionary<ImGuiCol, uint>      ImGuiColToUInt       = [];
+    private static readonly Dictionary<KnownColor, Vector4> KnownColorToVector4  = [];
+    private static readonly Dictionary<KnownColor, uint>    KnownColorToUInt     = [];
+    private static readonly Dictionary<uint, Vector4>       UIntToVector4        = [];
+    private static readonly Dictionary<uint, Vector4>       ReverseUIntToVector4 = [];
 
     extension(ImGuiCol imguiCol)
     {
@@ -40,6 +42,10 @@ public static unsafe class ColorExtension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 ToVector4() =>
             UIntToVector4.GetOrAdd(color, _ => ImGui.ColorConvertU32ToFloat4(color));
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4 ReverseToVector4() =>
+            ReverseUIntToVector4.GetOrAdd(color, _ => ImGui.ColorConvertU32ToFloat4(BinaryPrimitives.ReverseEndianness(color)));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 GetVector4UIColor() =>
