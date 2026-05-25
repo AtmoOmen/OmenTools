@@ -1,6 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Interop.Game.Models;
 
@@ -48,10 +50,22 @@ public unsafe class AtkValueArray : IDisposable
                 Pointer[index] = new AtkValue { Type = AtkValueType.Bool, Byte = Convert.ToByte(boolValue) };
                 break;
             case string stringValue:
+            {
                 var stringBytes = Encoding.UTF8.GetBytes(stringValue + '\0');
                 var stringAlloc = Marshal.AllocHGlobal(stringBytes.Length);
                 Marshal.Copy(stringBytes, 0, stringAlloc, stringBytes.Length);
                 Pointer[index] = new AtkValue { Type = AtkValueType.String, String = (byte*)stringAlloc };
+                break;
+            }
+            case ReadOnlySeString readOnlySeString:
+            {
+                using var rented = new RentedSeStringBuilder();
+                var stringBytes = rented.Builder.Append(readOnlySeString).GetViewAsSpan().ToArray();
+                var stringAlloc = Marshal.AllocHGlobal(stringBytes.Length);
+                
+                Marshal.Copy(stringBytes, 0, stringAlloc, stringBytes.Length);
+                Pointer[index] = new AtkValue { Type = AtkValueType.String, String = (byte*)stringAlloc };
+            }
                 break;
             case AtkValue atkValue:
                 Pointer[index] = atkValue;
