@@ -15,6 +15,7 @@ public interface IBattleChara : ICharacter
     float                                 CurrentCastTime     { get; }
     float                                 BaseCastTime        { get; }
     float                                 TotalCastTime       { get; }
+    string                                FreeCompanyName     { get; }
 
     new unsafe BattleChara* ToStruct();
 
