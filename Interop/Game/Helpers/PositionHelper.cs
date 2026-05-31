@@ -3,87 +3,122 @@ using Lumina.Excel.Sheets;
 
 namespace OmenTools.Interop.Game.Helpers;
 
+// FF14 坐标体系
+//
+// 纹理坐标 (Texture): 二维, 地图贴图上的像素位置, 范围约 0~2048, 中心 1024
+// 地图坐标 (Map):     二维, 游戏内地图界面显示的坐标, 范围约 1~42
+// 世界坐标 (World):   三维, XZ 为水平面, Y 为纵轴高度
+//
+// 三套坐标的水平换算统一以 "World <-> Texture" 为精确基准, 其余全部由它线性派生, 保证任意链路自洽:
+//
+//   s       = SizeFactor / 100
+//   Texture = (World_xz + Offset) * s + 1024
+//   Map     = Texture / 2048 * (PIXELS_PER_MAP_UNIT / s) + 1
+//
+// 高度轴 (World.Y) 与水平面无关, 单独换算
 public static class PositionHelper
 {
-    public static Vector2 TextureToMap(int x, int y, float scale)
-    {
-        var num = scale / 100f;
-        return new
-        (
-            RawToMap((int)((x - 1024) * num * 1000f), scale),
-            RawToMap((int)((y - 1024) * num * 1000f), scale)
-        );
-    }
+    // 单位地图坐标对应的纹理像素数, 即 2048 / 50
+    private const float PIXELS_PER_MAP_UNIT = 40.96f;
+
+    private const float TEXTURE_CENTER = 1024f;
+    private const float TEXTURE_SIZE   = 2048f;
+
+    // 高度轴的哨兵偏移值, 表示该地图未定义独立的高度偏移
+    private const int HEIGHT_OFFSET_SENTINEL = -10000;
+
+    #region World <-> Texture
+
+    public static Vector2 WorldToTexture(Vector3 pos, Map map) =>
+        WorldXZToTexture(new(pos.X, pos.Z), map.SizeFactor, map.OffsetX, map.OffsetY);
+
+    public static Vector2 TextureToWorld(Vector2 pos, Map map) =>
+        TextureToWorldXZ(pos, map.SizeFactor, map.OffsetX, map.OffsetY);
+
+    #endregion
+
+    #region World <-> Map
 
     public static Vector2 WorldToMap(Vector2 pos, Map map) =>
-        new
-        (
-            WorldXZToMap(pos.X, map.SizeFactor, map.OffsetX),
-            WorldXZToMap(pos.Y, map.SizeFactor, map.OffsetY)
-        );
+        TextureToMapXZ(WorldXZToTexture(pos, map.SizeFactor, map.OffsetX, map.OffsetY), map.SizeFactor);
 
     public static Vector3 WorldToMap
     (
         Vector3                pos,
         Map                    map,
         TerritoryTypeTransient territoryTransient,
-        bool                   correctZOffset = false
-    ) =>
-        new
-        (
-            WorldXZToMap(pos.X, map.SizeFactor, map.OffsetX),
-            WorldXZToMap(pos.Z, map.SizeFactor, map.OffsetY),
-            WorldYToMap(pos.Y, territoryTransient.OffsetZ, correctZOffset)
-        );
+        bool                   correctHeightOffset = false
+    )
+    {
+        var mapXZ = TextureToMapXZ(WorldXZToTexture(new(pos.X, pos.Z), map.SizeFactor, map.OffsetX, map.OffsetY), map.SizeFactor);
+        return new(mapXZ.X, WorldYToMap(pos.Y, territoryTransient.OffsetZ, correctHeightOffset), mapXZ.Y);
+    }
 
     public static Vector2 MapToWorld(Vector2 pos, Map map) =>
-        new
-        (
-            MapToWorldXZ(pos.X, map.SizeFactor, map.OffsetX),
-            MapToWorldXZ(pos.Y, map.SizeFactor, map.OffsetY)
-        );
+        TextureToWorldXZ(MapToTextureXZ(pos, map.SizeFactor), map.SizeFactor, map.OffsetX, map.OffsetY);
 
     public static Vector3 MapToWorld
     (
         Vector3                pos,
         Map                    map,
         TerritoryTypeTransient territoryTransient,
-        bool                   correctZOffset = false
-    ) =>
-        new
-        (
-            MapToWorldXZ(pos.X, map.SizeFactor, map.OffsetX),
-            MapToWorldXZ(pos.Z, map.SizeFactor, map.OffsetY),
-            MapToWorldY(pos.Y, territoryTransient.OffsetZ, correctZOffset)
-        );
-
-    public static Vector2 WorldToTexture(Vector3 pos, Map map) =>
-        (new Vector2(pos.X,       pos.Z)       * (map.SizeFactor / 100.0f)) +
-        (new Vector2(map.OffsetX, map.OffsetY) * (map.SizeFactor / 100.0f)) +
-        new Vector2(1024.0f, 1024.0f);
-
-    public static Vector2 TextureToWorld(Vector2 pos, Map map)
+        bool                   correctHeightOffset = false
+    )
     {
-        var adjustedCoordinates = (pos - new Vector2(1024f)) / map.SizeFactor;
-        return (adjustedCoordinates * 100f) - new Vector2(map.OffsetX, map.OffsetY);
+        var worldXZ = TextureToWorldXZ(MapToTextureXZ(new(pos.X, pos.Z), map.SizeFactor), map.SizeFactor, map.OffsetX, map.OffsetY);
+        return new(worldXZ.X, MapToWorldY(pos.Y, territoryTransient.OffsetZ, correctHeightOffset), worldXZ.Y);
     }
 
-    private static float WorldXZToMap(float value, uint scale, int offset) =>
-        (0.02f * offset) + (2048f / scale) + (0.02f * value) + 1f;
+    #endregion
 
-    private static float MapToWorldXZ(float mapValue, uint scale, int offset) =>
-        (mapValue - (0.02f * offset) - (2048f / scale) - 1f) / 0.02f;
+    #region Texture <-> Map
 
-    public static float WorldYToMap(float value, int zOffset, bool correctZOffset = false) =>
-        correctZOffset && zOffset == -10000 ? value / 100f : (value - zOffset) / 100f;
+    public static Vector2 TextureToMap(int x, int y, float sizeFactor) =>
+        TextureToMapXZ(new(x, y), (uint)sizeFactor);
 
-    public static float MapToWorldY(float mapValue, int zOffset, bool correctZOffset = false) =>
-        correctZOffset && zOffset == -10000 ? mapValue * 100f : (mapValue * 100f) + zOffset;
+    public static Vector2 TextureToMap(Vector2 pos, Map map) =>
+        TextureToMapXZ(pos, map.SizeFactor);
 
-    private static float RawToMap(int pos, float scale)
+    public static Vector2 MapToTexture(Vector2 pos, Map map) =>
+        MapToTextureXZ(pos, map.SizeFactor);
+
+    #endregion
+
+    #region Height (World.Y <-> Map)
+
+    public static float WorldYToMap(float value, int heightOffset, bool correctHeightOffset = false) =>
+        correctHeightOffset && heightOffset == HEIGHT_OFFSET_SENTINEL ? value / 100f : (value - heightOffset) / 100f;
+
+    public static float MapToWorldY(float mapValue, int heightOffset, bool correctHeightOffset = false) =>
+        correctHeightOffset && heightOffset == HEIGHT_OFFSET_SENTINEL ? mapValue * 100f : (mapValue * 100f) + heightOffset;
+
+    #endregion
+
+    #region Core
+
+    private static Vector2 WorldXZToTexture(Vector2 worldXZ, uint sizeFactor, int offsetX, int offsetY)
     {
-        var num1 = scale / 100f;
-        var num2 = (float)(pos * (double)num1 / 1000.0f);
-        return (40.96f / num1 * ((num2 + 1024.0f) / 2048.0f)) + 1.0f;
+        var s = sizeFactor / 100f;
+        return ((worldXZ + new Vector2(offsetX, offsetY)) * s) + new Vector2(TEXTURE_CENTER);
     }
+
+    private static Vector2 TextureToWorldXZ(Vector2 texture, uint sizeFactor, int offsetX, int offsetY)
+    {
+        var s = sizeFactor / 100f;
+        return ((texture - new Vector2(TEXTURE_CENTER)) / s) - new Vector2(offsetX, offsetY);
+    }
+
+    private static Vector2 TextureToMapXZ(Vector2 texture, uint sizeFactor)
+    {
+        var s = sizeFactor / 100f;
+        return (texture    / TEXTURE_SIZE * (PIXELS_PER_MAP_UNIT / s)) + new Vector2(1f);
+    }
+
+    private static Vector2 MapToTextureXZ(Vector2 map, uint sizeFactor)
+    {
+        var s = sizeFactor / 100f;
+        return (map - new Vector2(1f)) * s / PIXELS_PER_MAP_UNIT * TEXTURE_SIZE;
+    }
+
+    #endregion
 }
