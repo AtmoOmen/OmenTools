@@ -101,8 +101,9 @@ public static class UpstreamOpcode
                 $"尝试读取 OPCODE {name} 发生错误, 请在 Discord 内上报\n" +
                 $"Error while reading OPCODE {name}. Please report on Discord."
             );
-            throw;
         }
+
+        return 0;
     }
 
     private static int ReadOpcodes(string name, params (CompSig sig, int offset)[] data)
@@ -127,6 +128,7 @@ public static class UpstreamOpcode
             $"尝试读取 OPCODE {name} 发生错误, 请在 Discord 内上报\n" +
             $"Error while reading OPCODE {name}. Please report on Discord."
         );
-        throw exception;
+
+        return 0;
     }
 }

@@ -30,8 +30,15 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 
     public GamePacketManagerConfig Config { get; private set; } = null!;
 
-    public void SendPackt<T>(T data) where T : unmanaged, IUpstreamPacket =>
-        SendPacket(Framework.Instance()->NetworkModuleProxy, (byte*)&data, 0, 0x9876543); // 打个标记
+    public void SendPackt<T>(T data) where T : unmanaged, IUpstreamPacket
+    {
+        var ptr = (byte*)&data;
+        if (ptr == null || *(int*)ptr == 0)
+            return;
+        
+        // 打个标记
+        SendPacket(Framework.Instance()->NetworkModuleProxy, ptr, 0, 0x9876543);
+    }
 
     #region 注册
 
