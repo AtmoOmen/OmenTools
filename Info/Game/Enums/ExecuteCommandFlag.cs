@@ -2404,7 +2404,6 @@ public enum ExecuteCommandFlag
     ///     <para><c>param3</c>：Inventory Slot</para>
     ///     <para><c>param4</c>：物品ID, HQ时增加 100_0000</para>
     /// </remarks>
-    /// <seealso cref="EventFrameworkActionCommand" />
     EventFrameworkAction = 2800,
 
     /// <summary>
@@ -2775,7 +2774,7 @@ public enum ExecuteCommandFlag
     ///     宇宙好运道开始抽奖
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点; 2 - 俄匊斯信用点</para>
+    ///     <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点; 2 - 俄匊斯信用点; 3 - 奥克塞西亚信用点</para>
     /// </remarks>
     /// <seealso cref="WKSCommand" />
     WKSStartLottery = 3450,
@@ -2784,7 +2783,7 @@ public enum ExecuteCommandFlag
     ///     宇宙好运道选择转盘
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点; 2 - 俄匊斯信用点</para>
+    ///     <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点; 2 - 俄匊斯信用点; 3 - 奥克塞西亚信用点</para>
     ///     <para><c>param2</c>: 转盘类型 (左边 - 0, 右边 - 1)</para>
     /// </remarks>
     /// <seealso cref="WKSCommand" />
@@ -2794,7 +2793,7 @@ public enum ExecuteCommandFlag
     ///     宇宙好运道结束抽奖
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点; 2 - 俄匊斯信用点</para>
+    ///     <para><c>param1</c>: 类型: 0 - 月球信用点; 1 - 法恩娜信用点; 2 - 俄匊斯信用点; 3 - 奥克塞西亚信用点</para>
     /// </remarks>
     /// <seealso cref="WKSCommand" />
     WKSEndLottery = 3452,
