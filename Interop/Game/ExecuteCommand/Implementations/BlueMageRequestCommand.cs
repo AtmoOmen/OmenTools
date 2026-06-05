@@ -10,11 +10,11 @@ public sealed class BlueMageRequestCommand : ExecuteCommandBase
     ///     请求青魔法师每周挑战信息
     /// </summary>
     public static void RequestContentBriefing() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestAozContentBriefing);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestBlueContentBriefing);
 
     /// <summary>
     ///     请求青魔法书数据
     /// </summary>
     public static void RequestNotebook() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequstAOZNotebook);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequstBlueNotebook);
 }

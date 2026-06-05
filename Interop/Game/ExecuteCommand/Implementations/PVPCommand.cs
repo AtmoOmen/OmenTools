@@ -53,7 +53,7 @@ public sealed class PVPCommand : ExecuteCommandBase
     ///     发送 PVP 快捷发言
     /// </summary>
     public static void QuickChat(uint quickChatRowID, uint param1 = 0, uint param2 = 0) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.PVPQuickChat, quickChatRowID, param1, param2);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SnedPVPQuickChat, quickChatRowID, param1, param2);
 
     public enum Season : uint
     {

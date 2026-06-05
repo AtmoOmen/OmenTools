@@ -10,19 +10,19 @@ public sealed class NoviceNetworkCommand : ExecuteCommandBase
     ///     解除新人状态
     /// </summary>
     public static void DismissNovice() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.DissmissNovice);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.DissmissNoviceState);
 
     /// <summary>
     ///     成为新人状态
     /// </summary>
     public static void EnableNovice() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EnableNovice);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetNoviceState);
 
     /// <summary>
     ///     指导者启用或解除自动加入新人频道设置
     /// </summary>
     public static void ToggleMentorAutoJoin() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MentorAutoJoinNoviceNetwork);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetAutoJoinNoviceNetworkMentor);
 
     /// <summary>
     ///     接受新人频道邀请
@@ -40,17 +40,17 @@ public sealed class NoviceNetworkCommand : ExecuteCommandBase
     ///     解除回归者状态
     /// </summary>
     public static void DismissReturner() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.DismissReturner);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.DismissReturnerState);
 
     /// <summary>
     ///     刷新新人频道状态
     /// </summary>
     public static void Request() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestNoviceNetwork);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RefreshNoviceNetwork);
 
     /// <summary>
     ///     认领回归者时是否一并加入新人频道
     /// </summary>
     public static void JoinAsReturner() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ReturnerJoinNoviceNetwork);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.JoinNoviceNetworkReturner);
 }

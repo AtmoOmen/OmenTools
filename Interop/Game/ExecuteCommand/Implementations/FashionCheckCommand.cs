@@ -10,17 +10,17 @@ public sealed class FashionCheckCommand : ExecuteCommandBase
     ///     获取时尚品鉴每周参与奖励
     /// </summary>
     public static void GetEntryReward() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FashionCheckEntryReward);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CliamFashionCheckEntryReward);
 
     /// <summary>
     ///     获取时尚品鉴每周额外奖励
     /// </summary>
     public static void GetBonusReward() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FashionCheckBonusReward);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ClaimFashionCheckBonusReward);
 
     /// <summary>
     ///     时尚品鉴新增装备条目与额外奖励
     /// </summary>
     public static void AddEntryAndBonusReward() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FashionCheckAddEntryAndBonusReward);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ClaimFashionCheckNewGearReward);
 }

@@ -55,7 +55,7 @@ public sealed class RetainerCommand : ExecuteCommandBase
     ) =>
         ExecuteCommandManager.Instance().ExecuteCommand
         (
-            ExecuteCommandFlag.CastGlamourToRetainer,
+            ExecuteCommandFlag.CastRetainerGlamour,
             (uint)targetInventoryType,
             targetInventorySlot,
             (uint)sourceInventoryType,

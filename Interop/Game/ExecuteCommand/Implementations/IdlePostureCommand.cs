@@ -10,17 +10,17 @@ public sealed class IdlePostureCommand : ExecuteCommandBase
     ///     更改闲置状态姿势
     /// </summary>
     public static void Change(uint postureIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.IdlePostureChange, 0, postureIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetIdlePosture, 0, postureIndex);
 
     /// <summary>
     ///     进入闲置状态姿势
     /// </summary>
     public static void Enter(uint postureIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.IdlePostureEnter, 0, postureIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EnterIdlePosture, 0, postureIndex);
 
     /// <summary>
     ///     退出闲置状态姿势
     /// </summary>
     public static void Exit() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.IdlePostureExit);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ExitIdlePosture);
 }

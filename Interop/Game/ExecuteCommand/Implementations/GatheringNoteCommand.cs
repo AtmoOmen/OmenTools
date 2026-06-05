@@ -10,13 +10,13 @@ public sealed class GatheringNoteCommand : ExecuteCommandBase
     ///     请求鱼类图鉴数据
     /// </summary>
     public static void RequestFishingNoteInfo(uint fishingNoteInfoID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestFishingNoteInfo, fishingNoteInfoID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestFishingNote, fishingNoteInfoID);
 
     /// <summary>
     ///     请求刺鱼图鉴数据
     /// </summary>
     public static void RequestSpearfishNoteInfo(uint fishingNoteInfoID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestSpearfishNoteInfo, fishingNoteInfoID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestSpearfishNote, fishingNoteInfoID);
 
     /// <summary>
     ///     请求采集点数据
@@ -28,5 +28,5 @@ public sealed class GatheringNoteCommand : ExecuteCommandBase
     ///     将采集笔记指定分区指定等级区间标记为已发现过
     /// </summary>
     public static void MarkSeenGatherDivisionLevelRange(uint divisionIndex, uint levelRangeIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MarkSeenGatherDivisionLevelRange, divisionIndex, levelRangeIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MarkGatherDivisionLevelRangeSeen, divisionIndex, levelRangeIndex);
 }

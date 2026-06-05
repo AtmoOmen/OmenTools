@@ -10,5 +10,5 @@ public sealed class BozjaCommand : ExecuteCommandBase
     ///     分配博兹雅失传技能库到技能槽
     /// </summary>
     public static void UseFromHolster(uint holsterIndex, uint slotIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BozjaUseFromHolster, holsterIndex, slotIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.AssignBozjaActionFromHolster, holsterIndex, slotIndex);
 }

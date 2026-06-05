@@ -10,11 +10,11 @@ public sealed class WondrousTailsCommand : ExecuteCommandBase
     ///     确认天书奇谈副本结果
     /// </summary>
     public static void Confirm(uint index) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.WondrousTailsConfirm, index);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ConfirmWondrousTailsSlot, index);
 
     /// <summary>
     ///     天书奇谈再想想
     /// </summary>
     public static void Rethink(uint index) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.WondrousTailsOperate, 0, index);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.WondrousTails, 0, index);
 }

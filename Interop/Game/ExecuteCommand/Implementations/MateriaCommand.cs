@@ -35,7 +35,7 @@ public sealed class MateriaCommand : ExecuteCommandBase
     ///     因职业变更自动取消魔晶石镶嵌委托
     /// </summary>
     public static void CancelAttachRequest() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CancelMateriaAttachRequest);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CancelMateriaAttachRequestForced);
 
     // TODO: 需要确定是否可用
     /// <summary>

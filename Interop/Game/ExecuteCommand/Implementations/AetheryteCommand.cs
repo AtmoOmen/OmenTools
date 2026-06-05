@@ -22,11 +22,11 @@ public sealed class AetheryteCommand : ExecuteCommandBase
     ///     移除 PlayStation Plus 会员可设置的免费传送点
     /// </summary>
     public static void RemovePSPlusFree() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RemovePSPlusFreeAetheryte);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RemoveFreeAetherytePSPlus);
 
     /// <summary>
     ///     移除 Nintendo Switch Online 会员可设置的免费传送点
     /// </summary>
     public static void RemoveNSOFree() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RemoveNSOFreeAetheryte);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RemoveFreeAetheryteNSO);
 }

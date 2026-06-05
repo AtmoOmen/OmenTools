@@ -22,29 +22,29 @@ public sealed class GlamourPlateCommand : ExecuteCommandBase
     ///     请求投影模板数据
     /// </summary>
     public static void Request() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestGlamourPlates);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestGlamourPlate);
 
     /// <summary>
     ///     为装备解除投影
     /// </summary>
     public static void DispellItems(uint dispellItemsSelectedBitmask) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.DispellItemsFromGlamour, dispellItemsSelectedBitmask);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.DispellGlamours, dispellItemsSelectedBitmask);
 
     /// <summary>
     ///     进入投影模板选择状态
     /// </summary>
     public static void Enter() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.GlamourPlateState, 1, 1);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ToggleGlamourPlateState, 1, 1);
 
     /// <summary>
     ///     退出投影模板选择状态
     /// </summary>
     public static void Exit() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.GlamourPlateState, 0, 1);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ToggleGlamourPlateState, 0, 1);
 
     /// <summary>
     ///     进入/退出投影模板选择状态
     /// </summary>
     public static void Toggle(bool isEnter) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.GlamourPlateState, isEnter ? 1U : 0, 1);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ToggleGlamourPlateState, isEnter ? 1U : 0, 1);
 }

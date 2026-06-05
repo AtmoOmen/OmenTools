@@ -10,5 +10,5 @@ public sealed class GuideCommand : ExecuteCommandBase
     ///     向服务器标记已展示过某一新手指南
     /// </summary>
     public static void MarkHowToFinished(uint howToID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MarkHowToFinished, howToID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MarkHowToSeen, howToID);
 }

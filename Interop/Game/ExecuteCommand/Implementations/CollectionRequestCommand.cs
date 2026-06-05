@@ -16,11 +16,11 @@ public sealed class CollectionRequestCommand : ExecuteCommandBase
     ///     请求肖像列表数据
     /// </summary>
     public static void RequestPortraits() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestPortraits);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestPortrait);
 
     /// <summary>
     ///     请求铭牌数据
     /// </summary>
     public static void RequestCharaCard() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestCharaCard);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestCharacterCard);
 }

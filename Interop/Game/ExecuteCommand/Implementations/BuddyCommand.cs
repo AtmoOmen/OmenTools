@@ -12,20 +12,20 @@ public sealed class BuddyCommand : ExecuteCommandBase
     /// </summary>
     /// <seealso cref="BuddyAction" />
     public static void UseAction(ActionType actionType) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuddyAction, (uint)actionType);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetBuddyAction, (uint)actionType);
 
     /// <summary>
     ///     设置陆行鸟装甲
     /// </summary>
     /// <seealso cref="BuddyEquip" />
     public static void Equip(Part part, uint buddyEquipRowID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuddyEquip, (uint)part, buddyEquipRowID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetBuddyEquip, (uint)part, buddyEquipRowID);
 
     /// <summary>
     ///     卸下陆行鸟装甲
     /// </summary>
     public static void Unequip(Part part) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuddyEquip, (uint)part);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetBuddyEquip, (uint)part);
 
     /// <summary>
     ///     陆行鸟学习技能
@@ -33,7 +33,7 @@ public sealed class BuddyCommand : ExecuteCommandBase
     public static void LearnSkill(Category category, uint level)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(level, 1U);
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuddyLearnSkill, ((level - 1) * 3) + (uint)category);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.LearnBuddySkill, ((level - 1) * 3) + (uint)category);
     }
 
     public enum Category : uint

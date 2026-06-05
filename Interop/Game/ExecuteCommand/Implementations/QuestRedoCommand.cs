@@ -22,17 +22,17 @@ public sealed class QuestRedoCommand : ExecuteCommandBase
     ///     继续先前的昔日重现
     /// </summary>
     public static void Continue() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.QuestRedoContinue);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ContinueQuestRedo);
 
     /// <summary>
     ///     删除已有的昔日重现存档
     /// </summary>
     public static void DeleteSave() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.QuestRedoDeleteSave);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.DeleteQuestRedoSave);
 
     /// <summary>
     ///     初始化昔日重现所需的界面信息
     /// </summary>
     public static void ResetUI() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.QuestRedoResetUI);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ResetQuestRedoUI);
 }

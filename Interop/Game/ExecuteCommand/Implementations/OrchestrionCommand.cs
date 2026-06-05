@@ -16,17 +16,17 @@ public sealed class OrchestrionCommand : ExecuteCommandBase
     ///     管弦乐琴播放或停止切换
     /// </summary>
     public static void TogglePlay() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.OrchestrionPlayToggle);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ToggleOrchestrion);
 
     /// <summary>
     ///     管弦乐琴下一曲或音量调整
     /// </summary>
     public static void NextTrack() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.OrchestrionNextTrack);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.PlayNextOrchestrionTrack);
 
     /// <summary>
     ///     旅馆内播放管弦乐琴乐谱
     /// </summary>
     public static void PlayTrack(uint orchestrionID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.OrchestrionPlayTrack, orchestrionID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.PlayOrchestrionTrack, orchestrionID);
 }

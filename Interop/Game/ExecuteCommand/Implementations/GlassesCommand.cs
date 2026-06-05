@@ -10,5 +10,5 @@ public sealed class GlassesCommand : ExecuteCommandBase
     ///     装备面部配饰
     /// </summary>
     public static void Equip(uint glassesSlot, uint glassesID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EquipGlasses, glassesSlot, glassesID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EquipFacewear, glassesSlot, glassesID);
 }

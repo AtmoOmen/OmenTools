@@ -10,5 +10,5 @@ public sealed class TitleRequestCommand : ExecuteCommandBase
     ///     请求称号数据
     /// </summary>
     public static void Request() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestTitle);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestTitles);
 }

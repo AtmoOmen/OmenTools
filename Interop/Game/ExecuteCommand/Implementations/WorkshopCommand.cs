@@ -16,7 +16,7 @@ public sealed class WorkshopCommand : ExecuteCommandBase
     ///     刷新部队合建物品交纳信息
     /// </summary>
     public static void RefreshFCMaterialDelivery() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RefreshFCMaterialDelivery);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestCompanyProject);
 
     /// <summary>
     ///     请求潜水艇完成情况信息

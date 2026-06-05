@@ -10,7 +10,7 @@ public sealed class AroundRangeCommand : ExecuteCommandBase
     ///     设置角色显示范围
     /// </summary>
     public static void Set(Mode mode) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.AroundRangeSetMode, (uint)mode);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetAroundRangeMode, (uint)mode);
 
     public enum Mode : uint
     {

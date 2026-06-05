@@ -28,7 +28,7 @@ public sealed class AchievementCommand : ExecuteCommandBase
     ///     请求接近达成成就概览
     /// </summary>
     public static void RequestNearCompletion() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestNearCompletionAchievement, 1);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestNearCompletedAchievement, 1);
 
     /// <summary>
     ///     根据页面索引请求 FATE 关联成就数据

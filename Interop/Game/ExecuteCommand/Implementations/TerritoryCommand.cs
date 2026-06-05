@@ -10,13 +10,13 @@ public sealed class TerritoryCommand : ExecuteCommandBase
     ///     执行区域变更
     /// </summary>
     public static void Transport(TransportKind transportKind, InnerTransportKind innerTransportKind = 0) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.TerritoryTransport, (uint)transportKind, (uint)innerTransportKind);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.StartTerritoryTransport, (uint)transportKind, (uint)innerTransportKind);
 
     /// <summary>
     ///     区域变更完成
     /// </summary>
     public static void FinishTransport() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.TerritoryTransportFinish);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FinishTerritoryTransport);
 
     public enum TransportKind : uint
     {

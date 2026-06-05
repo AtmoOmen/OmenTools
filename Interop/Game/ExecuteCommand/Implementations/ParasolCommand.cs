@@ -22,17 +22,17 @@ public sealed class ParasolCommand : ExecuteCommandBase
     ///     根据当前情况使用或收回时尚配饰
     /// </summary>
     public static void Update(uint parasolID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.UpdateParasol, parasolID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.UpdateParasolState, parasolID);
 
     /// <summary>
     ///     设置时尚配饰
     /// </summary>
     public static void Set(uint parasolID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetParasol, parasolID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetParasolToAutoUse, parasolID);
 
     /// <summary>
     ///     取消选择时尚配饰
     /// </summary>
     public static void Clear() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetParasol);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetParasolToAutoUse);
 }

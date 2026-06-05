@@ -17,31 +17,31 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     ///     建造房屋
     /// </summary>
     public static void Build(uint wardIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuildHouse, wardIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.BuildHouseOnPlot, wardIndex);
 
     /// <summary>
     ///     进入外部装潢设置模式
     /// </summary>
     public static void EnterExteriorFixtures(uint wardIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EnterExteriorFixtures, wardIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EnterExteriorFixturesState, wardIndex);
 
     /// <summary>
     ///     进入内部装潢设置模式
     /// </summary>
     public static void EnterInteriorFixtures(uint wardIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EnterInteriorFixtures, wardIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EnterInteriorFixturesState, wardIndex);
 
     /// <summary>
     ///     拆除房屋
     /// </summary>
     public static void Remove(uint wardIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RemoveHouse, wardIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RemoveHouseFromPlot, wardIndex);
 
     /// <summary>
     ///     重置房屋区域内的数据
     /// </summary>
     public static void ReloadArea() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ReloadHousingArea, 255);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingArea, 255);
 
     /// <summary>
     ///     移除部队房屋
@@ -84,13 +84,13 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     ///     请求门牌数据
     /// </summary>
     public static void RequestPlacard(HouseTerritory territoryType, uint wardIndex, uint houseIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestPlacardData, (uint)territoryType, (wardIndex * 256) + houseIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingPlacard, (uint)territoryType, (wardIndex * 256) + houseIndex);
 
     /// <summary>
     ///     请求抽选数据
     /// </summary>
     public static void RequestLottery(HouseTerritory territoryType, uint wardIndex, uint plotIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestLotteryData, (uint)territoryType, (wardIndex * 256) + plotIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingLottery, (uint)territoryType, (wardIndex * 256) + plotIndex);
 
     /// <summary>
     ///     请求当前房屋名称设置数据
@@ -134,7 +134,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         if (houseIDHigh == houseID && houseID == 0) return;
 
         var flags = (allowTeleport ? 1U : 0U) | (allowEnter ? 65536U : 0U);
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SaveHousingGuestAccess, houseIDHigh, houseID, flags);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetHousingGuestAccess, houseIDHigh, houseID, flags);
     }
 
     /// <summary>
@@ -158,14 +158,14 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         if (houseIDHigh == houseID && houseID == 0) return;
 
         var flags = GetEstateTagFlag(tagIndexFirst, tagIndexSecond, tagIndexThird);
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SaveHousingEstateTag, houseIDHigh, houseID, flags);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetHousingEstateTag, houseIDHigh, houseID, flags);
     }
 
     /// <summary>
     ///     请求住宅区数据
     /// </summary>
     public static void RequestHousingArea(HouseTerritory territoryType, uint wardIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingAreaData, (uint)territoryType, wardIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingWard, (uint)territoryType, wardIndex);
 
     /// <summary>
     ///     移动到庭院门前
@@ -206,20 +206,20 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     ///     进入布置家具或庭具状态
     /// </summary>
     public static void EnterFurnishState() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FurnishState, 0, (uint)HousingManager.Instance()->GetCurrentPlot());
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EnterFurnishState, 0, (uint)HousingManager.Instance()->GetCurrentPlot());
 
     /// <summary>
     ///     请求房屋内部装修风格
     /// </summary>
     public static void RequestInteriorDesign() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.HouseInteriorDesignRequest, 255);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingInteriorDesign, 255);
 
     /// <summary>
     ///     更改房屋内部装修风格
     /// </summary>
     public static void ChangeInteriorDesign(InteriorDesignStyle style) =>
         ExecuteCommandManager.Instance().ExecuteCommand
-            (ExecuteCommandFlag.HouseInteriorDesignChange, (uint)HousingManager.Instance()->GetCurrentPlot(), (uint)style);
+            (ExecuteCommandFlag.ChangeHousingInteriorDesign, (uint)HousingManager.Instance()->GetCurrentPlot(), (uint)style);
 
     /// <summary>
     ///     请求加载室外装潢背包数据
@@ -267,7 +267,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     ///     请求房屋仓库状况数据
     /// </summary>
     public static void RequestStoreroomStatus(uint houseIDHigh, uint houseID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestStoreroomStatus, houseIDHigh, houseID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestHousingStoreroom, houseIDHigh, houseID);
 
     /// <summary>
     ///     请求房屋数据
@@ -285,19 +285,19 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     ///     打开购买界面
     /// </summary>
     public static void OpenBuyUI() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.OpenHouseRetainerBuyUI);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.OpenHousingRetainerBuyUI);
 
     /// <summary>
     ///     设置雇员武器
     /// </summary>
     public static void SetWeapon(InventoryType inventoryType, uint inventorySlot) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetHouseRetainerWeapon, (uint)inventoryType, inventorySlot);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetHousingRetainerWeapon, (uint)inventoryType, inventorySlot);
 
     /// <summary>
     ///     切换房屋雇员是否显示主手武器
     /// </summary>
     public static void SetDrawnSword(bool isVisible) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetHouseRetainerDrawnSword, isVisible ? 1U : 0U);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ToggleHousingRetainerWeapon, isVisible ? 1U : 0U);
 
     private static uint GetEstateTagFlag(uint tagIndexFirst, uint tagIndexSecond, uint tagIndexThird) =>
         (tagIndexFirst << 16) | (tagIndexSecond << 8) | tagIndexThird;

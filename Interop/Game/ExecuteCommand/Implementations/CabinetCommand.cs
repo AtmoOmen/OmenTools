@@ -28,5 +28,5 @@ public sealed class CabinetCommand : ExecuteCommandBase
     ///     请求收藏柜数据完成
     /// </summary>
     public static void FinishRequest() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FinishRequestCabinet);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FinishCabinetRequest);
 }

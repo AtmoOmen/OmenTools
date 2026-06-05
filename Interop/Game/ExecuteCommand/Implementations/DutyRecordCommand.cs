@@ -16,5 +16,5 @@ public sealed class DutyRecordCommand : ExecuteCommandBase
     ///     结束任务回顾
     /// </summary>
     public static void End() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EndDutyRecord);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.FinishDutyRecord);
 }

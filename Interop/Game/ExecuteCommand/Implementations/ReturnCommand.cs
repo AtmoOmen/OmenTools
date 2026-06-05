@@ -10,11 +10,11 @@ public sealed class ReturnCommand : ExecuteCommandBase
     ///     若当前种族不是拉拉菲尔族, 则返回至最近安全点
     /// </summary>
     public static void IfNotLalafell() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ReturnIfNotLalafell);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ReturnToSafePointIfNotLalafell);
 
     /// <summary>
     ///     立即返回至返回点
     /// </summary>
     public static void Instant() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.InstantReturn);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ReturnIfNotLalafell);
 }

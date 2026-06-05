@@ -19,7 +19,7 @@ public sealed class InventoryCommand : ExecuteCommandBase
     public static void Move(InventoryType sourceInventoryType, InventoryType targetInventoryType) =>
         ExecuteCommandManager.Instance().ExecuteCommand
         (
-            ExecuteCommandFlag.MoveItemInventory,
+            ExecuteCommandFlag.MoveItemBetweenInventory,
             (uint)sourceInventoryType,
             (uint)targetInventoryType
         );
@@ -30,7 +30,7 @@ public sealed class InventoryCommand : ExecuteCommandBase
     public static void BlockOperation(InventoryType sourceInventoryType, InventoryType targetInventoryType) =>
         ExecuteCommandManager.Instance().ExecuteCommand
         (
-            ExecuteCommandFlag.InventoryOperationBlocked,
+            ExecuteCommandFlag.NotifyBlockedInventoryOperation,
             (uint)sourceInventoryType,
             (uint)targetInventoryType
         );
@@ -57,5 +57,5 @@ public sealed class InventoryCommand : ExecuteCommandBase
     ///     刷新物品栏数据
     /// </summary>
     public static void Refresh() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.InventoryRefresh);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RefreshInventory);
 }

@@ -13,7 +13,7 @@ public sealed unsafe class MJICommand : ExecuteCommandBase
     public static void CaptureMonster(uint animalBaseID, uint animalEntityID, uint currentMode, uint currentModeItem) =>
         ExecuteCommandManager.Instance().ExecuteCommand
         (
-            ExecuteCommandFlag.MJICaptureMonster,
+            ExecuteCommandFlag.CaptureMJIAnimal,
             animalBaseID,
             animalEntityID,
             currentMode,
@@ -24,19 +24,19 @@ public sealed unsafe class MJICommand : ExecuteCommandBase
     ///     切换无人岛模式
     /// </summary>
     public static void SetMode(Mode mode) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJISetMode, (uint)mode);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetMJIMode, (uint)mode);
 
     /// <summary>
     ///     设置无人岛模式参数
     /// </summary>
     public static void SetModeParam(uint param) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJISetModeParam, param);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetMJIModeParam, param);
 
     /// <summary>
     ///     清除无人岛模式参数
     /// </summary>
     public static void ClearModeParam() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJISetModeParam);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetMJIModeParam);
 
     /// <summary>
     ///     打开无人岛设置面板
@@ -54,79 +54,79 @@ public sealed unsafe class MJICommand : ExecuteCommandBase
     ///     设置无人岛设置面板开关状态
     /// </summary>
     public static void SetSettingPanel(bool isOpen) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJISettingPanelToggle, isOpen ? 1U : 0U);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ToggleMJISettingPanel, isOpen ? 1U : 0U);
 
     /// <summary>
     ///     请求无人岛工房排班数据
     /// </summary>
     public static void RequestWorkshop(uint cycleDay) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIWorkshopRequest, cycleDay);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestMJIWorkshop, cycleDay);
 
     /// <summary>
     ///     请求无人岛工房排班物品数据
     /// </summary>
     public static void RequestWorkshopItem() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIWorkshopRequestItem);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestMJIWorkshopAssignment);
 
     /// <summary>
     ///     添加无人岛工房排班
     /// </summary>
     public static void AddWorkshopSchedule(uint startingHour, uint craftObjectID, uint cycleDay) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIWorkshopAssign, BuildScheduleParam(startingHour, craftObjectID), cycleDay);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.AssignMJIWorkshop, BuildScheduleParam(startingHour, craftObjectID), cycleDay);
 
     /// <summary>
     ///     删除无人岛工房排班
     /// </summary>
     public static void RemoveWorkshopSchedule(uint startingHour, uint craftObjectID, uint cycleDay) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIWorkshopAssign, BuildScheduleParam(startingHour, craftObjectID), cycleDay, 0, 1);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.AssignMJIWorkshop, BuildScheduleParam(startingHour, craftObjectID), cycleDay, 0, 1);
 
     /// <summary>
     ///     取消无人岛工坊排班
     /// </summary>
     public static void CancelWorkshopSchedule(uint startingHour, uint craftObjectID, uint cycleDay) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIWorkshopCancel, BuildScheduleParam(startingHour, craftObjectID), cycleDay);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CancelMJIWorkshopAssignment, BuildScheduleParam(startingHour, craftObjectID), cycleDay);
 
     /// <summary>
     ///     设置无人岛休息周期
     /// </summary>
     public static void SetRestCycles(uint restDay1, uint restDay2, uint restDay3, uint restDay4) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJISetRestCycles, restDay1, restDay2, restDay3, restDay4);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetMJIWorkshopRest, restDay1, restDay2, restDay3, restDay4);
 
     /// <summary>
     ///     收取无人岛屯货仓库探索结果
     /// </summary>
     public static void CollectGranary(uint granaryIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIGranaryCollect, granaryIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CollectMJIGranary, granaryIndex);
 
     /// <summary>
     ///     查看无人岛屯货仓库探索目的地
     /// </summary>
     public static void ViewGranaryDestinations(uint granaryIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIGranaryViewDestinations, granaryIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ViewMJIGranaryDestination, granaryIndex);
 
     /// <summary>
     ///     无人岛屯货仓库派遣探险
     /// </summary>
     public static void AssignGranary(uint granaryIndex, uint destinationIndex, uint explorationDays) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIGranaryAssign, granaryIndex, destinationIndex, explorationDays);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.AssignMJIGranary, granaryIndex, destinationIndex, explorationDays);
 
     /// <summary>
     ///     在无人岛放养宠物
     /// </summary>
     public static void ReleaseMinion(uint minionID, uint areaIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIReleaseMinion, minionID, areaIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ReleaseMJIMinion, minionID, areaIndex);
 
     /// <summary>
     ///     放生无人岛牧场动物
     /// </summary>
     public static void ReleaseAnimal(uint animalIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIReleaseAnimal, animalIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ReleaseMJIAnimal, animalIndex);
 
     /// <summary>
     ///     收集无人岛牧场动物产物
     /// </summary>
     public static void CollectAnimalLeavings(uint animalIndex, uint collectFlag) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJICollectAnimalLeavings, animalIndex, collectFlag);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CollectMJIAnimalLeaving, animalIndex, collectFlag);
 
     /// <summary>
     ///     收取无人岛牧场全部动物产物
@@ -134,50 +134,50 @@ public sealed unsafe class MJICommand : ExecuteCommandBase
     public static void CollectAllAnimalLeavings()
     {
         foreach (var (_, count) in MJIManager.Instance()->PastureHandler->AvailableMammetLeavings)
-            ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJICollectAllAnimalLeavings, (uint)count);
+            ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CollectMJIAllAnimalLeaving, (uint)count);
     }
 
     /// <summary>
     ///     托管无人岛牧场动物
     /// </summary>
     public static void EntrustAnimal(uint animalIndex, uint feedItemID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIEntrustAnimal, animalIndex, feedItemID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EntrustMJIAnimal, animalIndex, feedItemID);
 
     /// <summary>
     ///     召回无人岛放生的宠物
     /// </summary>
     public static void RecallMinion(uint minionIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIRecallMinion, minionIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RecallMJIMinion, minionIndex);
 
     /// <summary>
     ///     托管单块无人岛耕地
     /// </summary>
     public static void EntrustFarm(uint farmIndex, uint seedItemID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIFarmEntrustSingle, farmIndex, seedItemID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.EntrustMJIFarm, farmIndex, seedItemID);
 
     /// <summary>
     ///     取消托管单块无人岛耕地
     /// </summary>
     public static void DismissFarm(uint farmIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIFarmDismiss, farmIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.DismissMJIFarmEntrust, farmIndex);
 
     /// <summary>
     ///     收取单块无人岛耕地
     /// </summary>
     public static void CollectFarm(uint farmIndex, bool dismissAfterCollect = false) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIFarmCollectSingle, farmIndex, dismissAfterCollect ? 1U : 0U);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CollectMJIFarm, farmIndex, dismissAfterCollect ? 1U : 0U);
 
     /// <summary>
     ///     收取全部无人岛耕地
     /// </summary>
     public static void CollectAllFarms() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIFarmCollectAll, *(uint*)MJIManager.Instance()->GranariesState);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.CollectMJIAllFarm, *(uint*)MJIManager.Instance()->GranariesState);
 
     /// <summary>
     ///     请求无人岛工房需求数据
     /// </summary>
     public static void RequestFavorState() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MJIFavorStateRequest);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestMJIWorkshopFavor);
 
     private static uint BuildScheduleParam(uint startingHour, uint craftObjectID) =>
         8 * (startingHour | (32 * craftObjectID));

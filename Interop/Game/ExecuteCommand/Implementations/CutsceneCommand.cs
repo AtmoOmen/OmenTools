@@ -10,7 +10,7 @@ public sealed class CutsceneCommand : ExecuteCommandBase
     ///     请求过场剧情数据
     /// </summary>
     public static void Request(uint cutsceneID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestCutscene307, cutsceneID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestCutsceneInfo307, cutsceneID);
 
     /// <summary>
     ///     请求过场剧情数据

@@ -10,7 +10,7 @@ public sealed class ReclaimCommand : ExecuteCommandBase
     ///     清空回收仓库通知
     /// </summary>
     public static void Clear() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ReclaimClear);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ClearReclaimNotification);
 
     /// <summary>
     ///     取回全部 1.0 遗产物品或临时保管家具

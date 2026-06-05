@@ -10,7 +10,7 @@ public sealed class CraftNoteCommand : ExecuteCommandBase
     ///     将制作笔记指定分区指定等级区间标记为已发现过
     /// </summary>
     public static void MarkSeenDivisionLevelRange(uint divisionIndex, uint levelRangeIndex) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MarkSeenCraftDivisionLevelRange, divisionIndex, levelRangeIndex);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.MarkCraftDivisionLevelRangeSeen, divisionIndex, levelRangeIndex);
 
     /// <summary>
     ///     中止或完成简易制作
