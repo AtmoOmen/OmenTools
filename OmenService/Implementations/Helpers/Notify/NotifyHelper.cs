@@ -35,9 +35,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     public bool UserDismissable { get; set; } = true;
 
     public float NotificationProgress { get; set; } = 1f;
-
-    public bool EnableTrayNotification { get; set; }
-
+    
     public TimeSpan ContentHintDuration { get; set; } = TimeSpan.FromSeconds(3);
 
     public TrayNotifier? TrayNotifier { get; set; }
@@ -47,6 +45,8 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     public ushort ChatErrorTextColor { get; set; } = 17;
 
     public ushort ChatErrorSeStringTextColor { get; set; } = 17;
+
+    public bool RelayToTrayWhenBackground { get; set; } = true;
 
     protected override void Uninit()
     {
@@ -126,6 +126,18 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
         var plan = BuildNotificationPlan(this, message, type, title, options);
 
+        if (TrayNotifier != null && RelayToTrayWhenBackground && !GameState.IsForeground)
+        {
+            var icon = plan.Type switch
+            {
+                NotificationType.Warning => ToolTipIcon.Warning,
+                NotificationType.Error   => ToolTipIcon.Error,
+                _                        => ToolTipIcon.Info
+            };
+            
+            TrayNotifier.ShowBalloonTip(plan.Title, plan.Message, icon);
+        }
+
         DService.Instance().DalamudNotification.AddNotification
         (
             new()
@@ -146,8 +158,6 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
                 RespectUiHidden                    = plan.RespectUIHidden
             }
         );
-
-        TryShowTrayNotification(this, plan);
     }
 
     public void NotificationSuccess(string message, string? title = null, NotificationOptions? options = null) =>
@@ -228,30 +238,9 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             options?.ShowIndeterminateIfNoExpiry ?? helper.NotificationShowIndeterminateIfNoExpiry,
             options?.RespectUIHidden             ?? helper.NotificationRespectUIHidden,
             options?.UserDismissable             ?? helper.UserDismissable,
-            options?.Progress                    ?? helper.NotificationProgress,
-            options?.ShowTray                    ?? helper.EnableTrayNotification,
-            options?.TrayOnlyWhenBackground      ?? type is not NotificationType.Success,
-            options?.TrayIcon                    ?? GetTrayIcon(type)
+            options?.Progress                    ?? helper.NotificationProgress
         );
     }
-
-    private static void TryShowTrayNotification(NotifyHelper helper, NotificationPlan plan)
-    {
-        if (!plan.ShowTray || helper.TrayNotifier is not { } trayNotifier)
-            return;
-
-        if (plan.TrayOnlyWhenBackground && GameState.IsForeground)
-            return;
-
-        trayNotifier.ShowBalloonTip(plan.Title, plan.Message, plan.TrayIcon);
-    }
-
-    private static ToolTipIcon GetTrayIcon(NotificationType type) => type switch
-    {
-        NotificationType.Warning => ToolTipIcon.Warning,
-        NotificationType.Error   => ToolTipIcon.Error,
-        _                        => ToolTipIcon.Info
-    };
 
     private void PrintChat(string message, ReadOnlySeString? prefix, bool isError, ushort? textColor)
     {
@@ -339,10 +328,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         bool                     ShowIndeterminateIfNoExpiry,
         bool                     RespectUIHidden,
         bool                     UserDismissable,
-        float                    Progress,
-        bool                     ShowTray,
-        bool                     TrayOnlyWhenBackground,
-        ToolTipIcon              TrayIcon
+        float                    Progress
     );
 
     #endregion

@@ -14,11 +14,6 @@ public sealed class TrayNotifier : IDisposable
     public string MultiMessageTemplate { get; set; } = "收到了 {0} 条新消息";
 
     /// <summary>
-    ///     是否仅当窗口处于后台时才显示消息。
-    /// </summary>
-    public bool OnlyBackground { get; set; }
-
-    /// <summary>
     ///     托盘图标。
     /// </summary>
     public required Icon Icon
@@ -116,12 +111,6 @@ public sealed class TrayNotifier : IDisposable
                 while (reader.TryRead(out var message))
                     buffer.Add(message);
 
-                if (ShouldSkipCurrentBatch())
-                {
-                    trayIconThread.Hide();
-                    continue;
-                }
-
                 ShowBatch(buffer);
                 await Task.Delay(DisplayWindow, token).ConfigureAwait(false);
                 trayIconThread.Hide();
@@ -149,9 +138,6 @@ public sealed class TrayNotifier : IDisposable
         var message = buffer[0];
         trayIconThread.ShowBalloonTip(5000, message.Title, message.Message, message.Icon);
     }
-
-    private bool ShouldSkipCurrentBatch() =>
-        OnlyBackground && GameState.IsForeground;
 
     private sealed class TrayIconThread : IDisposable
     {

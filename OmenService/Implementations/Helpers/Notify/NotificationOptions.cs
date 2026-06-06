@@ -29,10 +29,4 @@ public sealed record NotificationOptions
     public bool? UserDismissable { get; init; }
 
     public float? Progress { get; init; }
-
-    public bool? ShowTray { get; init; }
-
-    public bool? TrayOnlyWhenBackground { get; init; }
-
-    public ToolTipIcon? TrayIcon { get; init; }
 }
