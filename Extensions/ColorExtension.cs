@@ -45,7 +45,7 @@ public static unsafe class ColorExtension
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 ReverseToVector4() =>
-            ReverseUIntToVector4.GetOrAdd(color, _ => ImGui.ColorConvertU32ToFloat4(BinaryPrimitives.ReverseEndianness(color)));
+            ReverseUIntToVector4.GetOrAdd(color, _ => ImGui.ColorConvertU32ToFloat4(BinaryPrimitives.ReverseEndianness(color) | 0xFF000000));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 GetVector4UIColor() =>
