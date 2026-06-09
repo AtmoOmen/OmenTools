@@ -27,11 +27,7 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public unsafe nint Address
     {
-        get
-        {
-            ThreadSafety.AssertMainThread();
-            return (nint)(&CSGameObjectManager.Instance()->Objects);
-        }
+        get => (nint)(&CSGameObjectManager.Instance()->Objects);
     }
 
     public int Length => ObjectTableLength;
@@ -40,17 +36,11 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public IGameObject? this[int index]
     {
-        get
-        {
-            ThreadSafety.AssertMainThread();
-            return index >= ObjectTableLength || index < 0 ? null : cachedObjectTable[index].Update();
-        }
+        get => index >= ObjectTableLength || index < 0 ? null : cachedObjectTable[index].Update();
     }
 
     public IGameObject? SearchByID(ulong gameObjectID)
     {
-        ThreadSafety.AssertMainThread();
-
         if (gameObjectID is 0)
             return null;
 
@@ -65,8 +55,6 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public unsafe IGameObject? SearchByID(ulong gameObjectID, Range range)
     {
-        ThreadSafety.AssertMainThread();
-
         if (gameObjectID is 0)
             return null;
 
@@ -84,8 +72,6 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public unsafe IGameObject? SearchByEntityID(uint entityID)
     {
-        ThreadSafety.AssertMainThread();
-
         if (entityID is 0 or 0xE0000000)
             return null;
 
@@ -101,8 +87,6 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public unsafe IGameObject? SearchByEntityID(uint entityID, Range range)
     {
-        ThreadSafety.AssertMainThread();
-
         if (entityID is 0 or 0xE0000000)
             return null;
 
@@ -118,17 +102,11 @@ internal sealed partial class ObjectTable : IObjectTable
         return null;
     }
 
-    public unsafe nint GetObjectAddress(int index)
-    {
-        ThreadSafety.AssertMainThread();
-
-        return index >= ObjectTableLength || index < 0 ? nint.Zero : (nint)cachedObjectTable[index].Address;
-    }
+    public unsafe nint GetObjectAddress(int index) =>
+        index >= ObjectTableLength || index < 0 ? nint.Zero : (nint)cachedObjectTable[index].Address;
 
     public unsafe IGameObject? CreateObjectReference(nint address)
     {
-        ThreadSafety.AssertMainThread();
-
         if (address == nint.Zero)
             return null;
 
@@ -153,8 +131,6 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public IEnumerable<IGameObject> SearchObjects(Predicate<IGameObject> predicate, Range range)
     {
-        ThreadSafety.AssertMainThread();
-
         var (offset, length) = range.GetOffsetAndLength(ObjectTableLength);
 
         for (var i = 0; i < length; i++)
@@ -170,8 +146,6 @@ internal sealed partial class ObjectTable : IObjectTable
 
     public IGameObject? SearchObject(Predicate<IGameObject> predicate, Range range)
     {
-        ThreadSafety.AssertMainThread();
-
         var (offset, length) = range.GetOffsetAndLength(ObjectTableLength);
 
         for (var i = 0; i < length; i++)
@@ -231,12 +205,8 @@ internal sealed partial class ObjectTable : IObjectTable
 
 internal sealed partial class ObjectTable
 {
-    public IEnumerator<IGameObject> GetEnumerator()
-    {
-        ThreadSafety.AssertMainThread();
-
-        return new Enumerator(this);
-    }
+    public IEnumerator<IGameObject> GetEnumerator() =>
+        new Enumerator(this);
 
     IEnumerator IEnumerable.GetEnumerator() =>
         GetEnumerator();
