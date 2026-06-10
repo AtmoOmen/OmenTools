@@ -189,7 +189,8 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
     {
         if (!UniqueWindows.TryRemove(typeof(T), out var window))
             return false;
-
+        
+        WindowSystem.RemoveWindow(window);
         if (window is IDisposable disposableWindow)
             disposableWindow.Dispose();
 
