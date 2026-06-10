@@ -114,7 +114,7 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     /// </summary>
     /// <param name="handler">自定义的 <see cref="HttpClientHandler" />。</param>
     /// <param name="name">建议带上前缀与用途，建议使用短横线分隔，例如 <c>AutoAntiCensorShip-Default</c>。</param>
-    public HttpClient Get(HttpClientHandler handler, string name = "default") =>
+    public HttpClient Get(HttpMessageHandler handler, string name = "default") =>
         clients.GetOrAdd(name, static (_, state) => CreateClient(state), handler);
 
     /// <summary>
@@ -131,7 +131,7 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     /// <param name="handler">自定义的 <see cref="HttpClientHandler" />。</param>
     /// <param name="name">实例名称。</param>
     /// <param name="configure">首次创建实例时的配置逻辑。</param>
-    public HttpClient Get(HttpClientHandler handler, string name, Action<HttpClient> configure) =>
+    public HttpClient Get(HttpMessageHandler handler, string name, Action<HttpClient> configure) =>
         clients.GetOrAdd(name, static (_, state) => CreateClient(state.Handler, state.Configure), (Handler: handler, Configure: configure));
 
     #region 辅助方法
