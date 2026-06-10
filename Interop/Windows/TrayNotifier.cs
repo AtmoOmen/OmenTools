@@ -18,7 +18,7 @@ public sealed class TrayNotifier : IDisposable
     /// </summary>
     public required Icon Icon
     {
-        get => Volatile.Read(ref icon) ?? throw new InvalidOperationException("托盘图标尚未初始化。");
+        get => Volatile.Read(ref field) ?? throw new InvalidOperationException("托盘图标尚未初始化。");
         set
         {
             if (IsDisposed)
@@ -26,7 +26,7 @@ public sealed class TrayNotifier : IDisposable
 
             ArgumentNullException.ThrowIfNull(value);
 
-            Volatile.Write(ref icon, value);
+            Volatile.Write(ref field, value);
             trayIconThread.SetIcon(value);
         }
     }
@@ -50,8 +50,7 @@ public sealed class TrayNotifier : IDisposable
     private readonly Task                    processingTask;
     private readonly TrayIconThread          trayIconThread;
 
-    private int   isDisposed;
-    private Icon? icon;
+    private int isDisposed;
 
     public TrayNotifier()
     {
