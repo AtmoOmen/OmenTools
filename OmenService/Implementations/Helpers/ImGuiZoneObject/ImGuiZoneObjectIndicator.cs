@@ -45,28 +45,26 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     /// </summary>
     public ZoneIndicatorHandle RegisterTemporary
     (
-        Vector3                           position,
-        string?                           text      = null,
-        Vector4?                          textColor = null,
-        Action<ZoneIndicatorDrawContext>? onDraw    = null,
-        ZoneIndicatorOptions?             options   = null
+        Vector3                              position,
+        Func<Vector3, ZoneIndicatorText>?     posTextGetter = null,
+        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
+        ZoneIndicatorOptions?                options       = null
     ) =>
-        Register(IndicatorEntry.ForPosition(NewID(), GameState.TerritoryType, false, position, text, textColor, onDraw, options));
+        Register(IndicatorEntry.ForPosition(NewID(), GameState.TerritoryType, false, position, posTextGetter, onDraw, options));
 
     /// <summary>
     ///     临时注册一个跟随游戏物体的标记, 区域切换时自动清空
     /// </summary>
     public ZoneIndicatorHandle RegisterTemporary
     (
-        Func<IGameObject?>                objectGetter,
-        string?                           text      = null,
-        Vector4?                          textColor = null,
-        Action<ZoneIndicatorDrawContext>? onDraw    = null,
-        ZoneIndicatorOptions?             options   = null
+        Func<List<IGameObject>>             objectGetter,
+        Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
+        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
+        ZoneIndicatorOptions?                options       = null
     )
     {
         ArgumentNullException.ThrowIfNull(objectGetter);
-        return Register(IndicatorEntry.ForObject(NewID(), GameState.TerritoryType, false, objectGetter, text, textColor, onDraw, options));
+        return Register(IndicatorEntry.ForObject(NewID(), GameState.TerritoryType, false, objectGetter, objTextGetter, onDraw, options));
     }
 
     /// <summary>
@@ -74,30 +72,28 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     /// </summary>
     public ZoneIndicatorHandle RegisterPermanent
     (
-        uint                              territoryType,
-        Vector3                           position,
-        string?                           text      = null,
-        Vector4?                          textColor = null,
-        Action<ZoneIndicatorDrawContext>? onDraw    = null,
-        ZoneIndicatorOptions?             options   = null
+        uint                                 territoryType,
+        Vector3                              position,
+        Func<Vector3, ZoneIndicatorText>?     posTextGetter = null,
+        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
+        ZoneIndicatorOptions?                options       = null
     ) =>
-        Register(IndicatorEntry.ForPosition(NewID(), territoryType, true, position, text, textColor, onDraw, options));
+        Register(IndicatorEntry.ForPosition(NewID(), territoryType, true, position, posTextGetter, onDraw, options));
 
     /// <summary>
     ///     永久注册一个跟随游戏物体的标记, 进入对应区域才激活, 取消注册前一直保留
     /// </summary>
     public ZoneIndicatorHandle RegisterPermanent
     (
-        uint                              territoryType,
-        Func<IGameObject?>                objectGetter,
-        string?                           text      = null,
-        Vector4?                          textColor = null,
-        Action<ZoneIndicatorDrawContext>? onDraw    = null,
-        ZoneIndicatorOptions?             options   = null
+        uint                                 territoryType,
+        Func<List<IGameObject>>             objectGetter,
+        Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
+        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
+        ZoneIndicatorOptions?                options       = null
     )
     {
         ArgumentNullException.ThrowIfNull(objectGetter);
-        return Register(IndicatorEntry.ForObject(NewID(), territoryType, true, objectGetter, text, textColor, onDraw, options));
+        return Register(IndicatorEntry.ForObject(NewID(), territoryType, true, objectGetter, objTextGetter, onDraw, options));
     }
 
     private ZoneIndicatorHandle Register(IndicatorEntry entry)
@@ -126,13 +122,18 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         return true;
     }
 
-    internal bool UpdateTextByID(ulong id, string? text, Vector4? textColor)
+    internal bool UpdateTextByID
+    (
+        ulong                                id,
+        Func<IGameObject, ZoneIndicatorText>? objTextGetter,
+        Func<Vector3, ZoneIndicatorText>?     posTextGetter
+    )
     {
         if (!masterStore.TryGetValue(id, out var entry))
             return false;
 
-        entry.Text      = text;
-        entry.TextColor = textColor ?? DefaultTextColor;
+        entry.ObjTextGetter = objTextGetter;
+        entry.PosTextGetter = posTextGetter;
         return true;
     }
 
@@ -184,10 +185,10 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         var entries = activeEntries;
         if (entries.IsDefaultOrEmpty)
             return;
-        
+
         if (DService.Instance().ObjectTable.LocalPlayer is not { } localPlayer)
             return;
-        
+
         var playerPosition = localPlayer.Position;
         var drawList       = ImGui.GetForegroundDrawList();
 
@@ -197,72 +198,92 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
 
         foreach (var entry in entries)
         {
-            var text   = entry.Text;
             var onDraw = entry.OnDraw;
 
-            // 既无文字也无自定义绘制, 跳过
-            if (string.IsNullOrEmpty(text) && onDraw == null)
-                continue;
-
-            if (!entry.TryResolvePosition(out var worldPosition))
-                continue;
-
-            var distanceSquared = Vector3.DistanceSquared(playerPosition, worldPosition);
-            var renderRadius    = entry.RenderRadius;
-            if (distanceSquared > renderRadius * renderRadius)
-                continue;
-
-            if (entry.HiddenWhenBlocked)
+            foreach (var (worldPosition, gameObject) in entry.ResolveTargets())
             {
-                if (!hasCameraPosition)
+                var distanceSquared = Vector3.DistanceSquared(playerPosition, worldPosition);
+                var renderRadius    = entry.RenderRadius;
+                if (distanceSquared > renderRadius * renderRadius)
+                    continue;
+
+                if (entry.HiddenWhenBlocked)
                 {
-                    if (!TryGetCameraPosition(out cameraPosition))
-                        cameraPosition = playerPosition;
-                    hasCameraPosition = true;
+                    if (!hasCameraPosition)
+                    {
+                        if (!TryGetCameraPosition(out cameraPosition))
+                            cameraPosition = playerPosition;
+                        hasCameraPosition = true;
+                    }
+
+                    if (!RaycastHelper.HasLineOfSight(cameraPosition, worldPosition))
+                        continue;
                 }
 
-                if (!RaycastHelper.HasLineOfSight(cameraPosition, worldPosition))
-                    continue;
-            }
+                var isOnScreen = DService.Instance().GameGUI.WorldToScreen(worldPosition, out var screenPosition);
 
-            var isOnScreen = DService.Instance().GameGUI.WorldToScreen(worldPosition, out var screenPosition);
+                var context = new ZoneIndicatorDrawContext
+                (
+                    worldPosition,
+                    screenPosition,
+                    isOnScreen,
+                    MathF.Sqrt(distanceSquared),
+                    drawList
+                );
 
-            var context = new ZoneIndicatorDrawContext
-            (
-                worldPosition,
-                screenPosition,
-                isOnScreen,
-                MathF.Sqrt(distanceSquared),
-                drawList
-            );
+                try
+                {
+                    var textInfo = ResolveText(entry, gameObject, worldPosition);
 
-            try
-            {
-                if (!string.IsNullOrEmpty(text) && isOnScreen)
-                    DrawText(drawList, screenPosition, text, entry.TextColor);
+                    if (textInfo?.Text is { } text && isOnScreen)
+                    {
+                        var finalScreenPos = screenPosition;
+                        if (textInfo.TextOffset is { } offset)
+                            finalScreenPos += new Vector2(offset.X, offset.Y);
 
-                onDraw?.Invoke(context);
-            }
-            catch (Exception ex)
-            {
-                DLog.Error($"绘制区域物体标记时发生错误: ID {entry.ID}", ex);
+                        DrawText(drawList, finalScreenPos, text, textInfo.TextColor ?? DefaultTextColor, textInfo.TextScale ?? 1f);
+                    }
+
+                    onDraw?.Invoke(context);
+                }
+                catch (Exception ex)
+                {
+                    DLog.Error($"绘制区域物体标记时发生错误: ID {entry.ID}", ex);
+                }
             }
         }
     }
 
-    // 在屏幕坐标处绘制带名牌背景的文字
-    private static void DrawText(ImDrawListPtr drawList, Vector2 screenPosition, string text, Vector4 textColor)
+    // 根据条目类型和当前目标解析文字参数
+    private static ZoneIndicatorText? ResolveText
+    (
+        IndicatorEntry  entry,
+        IGameObject?    gameObject,
+        Vector3         worldPosition
+    )
     {
-        var textSize = ImGui.CalcTextSize(text);
+        if (gameObject != null)
+            return entry.ObjTextGetter?.Invoke(gameObject);
 
-        var textPosition = screenPosition - (textSize * 0.5f);
-        var rectMin      = textPosition   - LabelPadding;
-        var rectMax      = textPosition   + textSize + LabelPadding;
+        return entry.PosTextGetter?.Invoke(worldPosition);
+    }
+
+    // 在屏幕坐标处绘制带名牌背景的文字
+    private static void DrawText(ImDrawListPtr drawList, Vector2 screenPosition, string text, Vector4 textColor, float textScale)
+    {
+        var textSize     = ImGui.CalcTextSize(text) * textScale;
+        var textPosition = screenPosition - (textSize                * 0.5f);
+        var rectMin      = textPosition   - (LabelPadding            * textScale);
+        var rectMax      = textPosition   + textSize + (LabelPadding * textScale);
         var rounding     = (rectMax.Y - rectMin.Y) * 0.25f;
 
         drawList.AddRectFilled(rectMin, rectMax, LabelBackgroundColor, rounding);
         drawList.AddRect(rectMin, rectMax, LabelBorderColor, rounding, ImDrawFlags.None, 1f);
-        drawList.AddText(textPosition, textColor.ToUInt(), text);
+
+        var font     = ImGui.GetFont();
+        var fontSize = font.FontSize * textScale;
+        
+        drawList.AddText(font, fontSize, textPosition, textColor.ToUInt(), text);
     }
 
     // 获取当前激活摄像机的世界坐标

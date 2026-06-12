@@ -23,10 +23,16 @@ public readonly struct ZoneIndicatorHandle
         IsValid && (Service?.UnregisterByID(ID) ?? false);
 
     /// <summary>
-    ///     更新标记文字与颜色, 句柄已失效或服务不可用时返回 false
+    ///     更新标记的文字获取器
+    ///     跟随物体条目使用 <paramref name="objTextGetter" />, 固定位置条目使用 <paramref name="posTextGetter" />
+    ///     句柄已失效或服务不可用时返回 false
     /// </summary>
-    public bool UpdateText(string? text, Vector4? textColor = null) =>
-        IsValid && (Service?.UpdateTextByID(ID, text, textColor) ?? false);
+    public bool UpdateText
+    (
+        Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
+        Func<Vector3, ZoneIndicatorText>?     posTextGetter = null
+    ) =>
+        IsValid && (Service?.UpdateTextByID(ID, objTextGetter, posTextGetter) ?? false);
 
     /// <summary>
     ///     更新自定义绘制逻辑, 句柄已失效或服务不可用时返回 false

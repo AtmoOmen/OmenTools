@@ -3,22 +3,22 @@ using System.Numerics;
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
 /// <summary>
-///     区域物体标记的内部条目, 可变以支持就地更新文字与绘制逻辑
+///     区域物体标记的内部条目, 可变以支持就地更新绘制逻辑与文本获取器
 /// </summary>
 internal sealed class IndicatorEntry
 {
     private IndicatorEntry
     (
-        ulong                             id,
-        uint                              territoryType,
-        bool                              isPermanent,
-        Vector3                           fixedPosition,
-        Func<IGameObject?>?               objectGetter,
-        string?                           text,
-        Vector4                           textColor,
-        Action<ZoneIndicatorDrawContext>? onDraw,
-        uint                              renderRadius,
-        bool                              hiddenWhenBlocked
+        ulong                                id,
+        uint                                 territoryType,
+        bool                                 isPermanent,
+        Vector3                              fixedPosition,
+        Func<List<IGameObject>>?             objectGetter,
+        Func<IGameObject, ZoneIndicatorText>? objTextGetter,
+        Func<Vector3, ZoneIndicatorText>?     posTextGetter,
+        Action<ZoneIndicatorDrawContext>?     onDraw,
+        uint                                 renderRadius,
+        bool                                 hiddenWhenBlocked
     )
     {
         ID                = id;
@@ -26,8 +26,8 @@ internal sealed class IndicatorEntry
         IsPermanent       = isPermanent;
         FixedPosition     = fixedPosition;
         ObjectGetter      = objectGetter;
-        Text              = text;
-        TextColor         = textColor;
+        ObjTextGetter     = objTextGetter;
+        PosTextGetter     = posTextGetter;
         OnDraw            = onDraw;
         RenderRadius      = renderRadius;
         HiddenWhenBlocked = hiddenWhenBlocked;
@@ -37,27 +37,34 @@ internal sealed class IndicatorEntry
     public uint  TerritoryType { get; }
     public bool  IsPermanent   { get; }
 
-    public Vector3             FixedPosition { get; }
-    public Func<IGameObject?>? ObjectGetter  { get; }
+    public Vector3                  FixedPosition { get; }
+    public Func<List<IGameObject>>? ObjectGetter  { get; }
 
-    // 以下三项支持运行期就地更新, 引用赋值读写, 不加锁
-    public string?                           Text      { get; set; }
-    public Vector4                           TextColor { get; set; }
-    public Action<ZoneIndicatorDrawContext>? OnDraw    { get; set; }
+    /// <summary>
+    ///     按物体获取文字, 仅跟随物体条目使用; null 表示不绘制
+    /// </summary>
+    public Func<IGameObject, ZoneIndicatorText>? ObjTextGetter { get; set; }
+
+    /// <summary>
+    ///     按位置获取文字, 仅固定位置条目使用; null 表示不绘制
+    /// </summary>
+    public Func<Vector3, ZoneIndicatorText>? PosTextGetter { get; set; }
+
+    // 以下支持运行期就地更新, 引用赋值读写, 不加锁
+    public Action<ZoneIndicatorDrawContext>? OnDraw { get; set; }
 
     public uint RenderRadius      { get; }
     public bool HiddenWhenBlocked { get; }
 
     public static IndicatorEntry ForPosition
     (
-        ulong                             id,
-        uint                              territoryType,
-        bool                              isPermanent,
-        Vector3                           position,
-        string?                           text,
-        Vector4?                          textColor,
-        Action<ZoneIndicatorDrawContext>? onDraw,
-        ZoneIndicatorOptions?             options
+        ulong                                id,
+        uint                                 territoryType,
+        bool                                 isPermanent,
+        Vector3                              position,
+        Func<Vector3, ZoneIndicatorText>?     posTextGetter = null,
+        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
+        ZoneIndicatorOptions?                options       = null
     )
     {
         options ??= ZoneIndicatorOptions.Default;
@@ -68,8 +75,8 @@ internal sealed class IndicatorEntry
             isPermanent,
             position,
             null,
-            text,
-            textColor ?? ImGuiZoneObjectIndicator.DefaultTextColor,
+            null,
+            posTextGetter,
             onDraw,
             options.RenderRadius,
             options.HiddenWhenBlocked
@@ -78,14 +85,13 @@ internal sealed class IndicatorEntry
 
     public static IndicatorEntry ForObject
     (
-        ulong                             id,
-        uint                              territoryType,
-        bool                              isPermanent,
-        Func<IGameObject?>                objectGetter,
-        string?                           text,
-        Vector4?                          textColor,
-        Action<ZoneIndicatorDrawContext>? onDraw,
-        ZoneIndicatorOptions?             options
+        ulong                                id,
+        uint                                 territoryType,
+        bool                                 isPermanent,
+        Func<List<IGameObject>>             objectGetter,
+        Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
+        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
+        ZoneIndicatorOptions?                options       = null
     )
     {
         options ??= ZoneIndicatorOptions.Default;
@@ -96,32 +102,37 @@ internal sealed class IndicatorEntry
             isPermanent,
             default,
             objectGetter,
-            text,
-            textColor ?? ImGuiZoneObjectIndicator.DefaultTextColor,
+            objTextGetter,
+            null,
             onDraw,
             options.RenderRadius,
             options.HiddenWhenBlocked
         );
     }
 
-    // 解析当前世界坐标, 物体获取失败时返回 false
-    public bool TryResolvePosition(out Vector3 position)
+    /// <summary>
+    ///     解析所有目标位置及对应物体引用
+    ///     固定位置条目返回单一 (FixedPosition, null)
+    ///     跟随物体条目返回每个有效物体的 (Position, GameObject)
+    /// </summary>
+    public IEnumerable<(Vector3 Position, IGameObject? GameObject)> ResolveTargets()
     {
         if (ObjectGetter == null)
         {
-            position = FixedPosition;
-            return true;
+            yield return (FixedPosition, null);
+            yield break;
         }
 
-        var gameObject = ObjectGetter();
+        var objects = ObjectGetter();
+        if (objects is not { Count: > 0 })
+            yield break;
 
-        if (gameObject == null || !gameObject.IsValid())
+        foreach (var go in objects)
         {
-            position = default;
-            return false;
-        }
+            if (go == null || !go.IsValid())
+                continue;
 
-        position = gameObject.Position;
-        return true;
+            yield return (go.Position, go);
+        }
     }
 }
