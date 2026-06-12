@@ -268,22 +268,26 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         return entry.PosTextGetter?.Invoke(worldPosition);
     }
 
-    // 在屏幕坐标处绘制带名牌背景的文字
-    private static void DrawText(ImDrawListPtr drawList, Vector2 screenPosition, string text, Vector4 textColor, float textScale)
+    private static void DrawText
+    (
+        ImDrawListPtr drawList,
+        Vector2       screenPosition,
+        string        text,
+        Vector4       textColor,
+        float         textScale
+    )
     {
-        var textSize     = ImGui.CalcTextSize(text) * textScale;
-        var textPosition = screenPosition - (textSize                * 0.5f);
-        var rectMin      = textPosition   - (LabelPadding            * textScale);
-        var rectMax      = textPosition   + textSize + (LabelPadding * textScale);
+        using var _ = FontManager.Instance().GetUIFont(textScale).Push();
+
+        var textSize     = ImGui.CalcTextSize(text);
+        var textPosition = screenPosition - (textSize * 0.5f);
+        var rectMin      = textPosition   - LabelPadding;
+        var rectMax      = textPosition   + textSize + LabelPadding;
         var rounding     = (rectMax.Y - rectMin.Y) * 0.25f;
 
         drawList.AddRectFilled(rectMin, rectMax, LabelBackgroundColor, rounding);
         drawList.AddRect(rectMin, rectMax, LabelBorderColor, rounding, ImDrawFlags.None, 1f);
-
-        var font     = ImGui.GetFont();
-        var fontSize = font.FontSize * textScale;
-        
-        drawList.AddText(font, fontSize, textPosition, textColor.ToUInt(), text);
+        drawList.AddText(textPosition, textColor.ToUInt(), text);
     }
 
     // 获取当前激活摄像机的世界坐标
