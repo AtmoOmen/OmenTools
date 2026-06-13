@@ -3,11 +3,11 @@ using System.Numerics;
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
 /// <summary>
-///     区域物体标记的内部条目, 可变以支持就地更新绘制逻辑与文本获取器
+///     区域物体标记的内部条目
 /// </summary>
-internal sealed class IndicatorEntry
+internal sealed class ZoneIndicatorEntry
 {
-    private IndicatorEntry
+    private ZoneIndicatorEntry
     (
         ulong                                 id,
         uint                                  territoryType,
@@ -18,7 +18,8 @@ internal sealed class IndicatorEntry
         Func<Vector3, ZoneIndicatorText>?     posTextGetter,
         Action<ZoneIndicatorDrawContext>?     onDraw,
         uint                                  renderRadius,
-        bool                                  hiddenWhenBlocked
+        bool                                  hiddenWhenBlocked,
+        ZoneIndicatorSurrounding?             surrounding
     )
     {
         ID                  = id;
@@ -32,6 +33,7 @@ internal sealed class IndicatorEntry
         RenderRadius        = renderRadius;
         RenderRadiusSquared = (float)renderRadius * renderRadius;
         HiddenWhenBlocked   = hiddenWhenBlocked;
+        Surrounding         = surrounding;
     }
 
     public ulong ID            { get; }
@@ -58,7 +60,9 @@ internal sealed class IndicatorEntry
     public float RenderRadiusSquared { get; }
     public bool  HiddenWhenBlocked   { get; }
 
-    public static IndicatorEntry ForPosition
+    public ZoneIndicatorSurrounding? Surrounding { get; }
+
+    public static ZoneIndicatorEntry ForPosition
     (
         ulong                             id,
         uint                              territoryType,
@@ -81,11 +85,12 @@ internal sealed class IndicatorEntry
             posTextGetter,
             onDraw,
             options.RenderRadius,
-            options.HiddenWhenBlocked
+            options.HiddenWhenBlocked,
+            options.Surrounding
         );
     }
 
-    public static IndicatorEntry ForObject
+    public static ZoneIndicatorEntry ForObject
     (
         ulong                                 id,
         uint                                  territoryType,
@@ -108,7 +113,8 @@ internal sealed class IndicatorEntry
             null,
             onDraw,
             options.RenderRadius,
-            options.HiddenWhenBlocked
+            options.HiddenWhenBlocked,
+            options.Surrounding
         );
     }
 

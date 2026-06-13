@@ -40,6 +40,6 @@ public readonly struct ZoneIndicatorHandle
     public bool UpdateDraw(Action<ZoneIndicatorDrawContext>? onDraw) =>
         IsValid && (Service?.UpdateDrawByID(ID, onDraw) ?? false);
 
-    private static ImGuiZoneObjectIndicator? Service =>
-        DService.Instance().GetOmenService<ImGuiZoneObjectIndicator>();
+    private static ZoneIndicatorRenderer? Service =>
+        DService.Instance().GetOmenService<ZoneIndicatorRenderer>();
 }

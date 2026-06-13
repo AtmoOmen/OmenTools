@@ -12,16 +12,16 @@ namespace OmenTools.OmenService.ImGuiZoneObject;
 ///     提供在游戏内用 ImGui 标记某个物体或地点的轻量封装
 ///     支持临时注册 (区域切换自动清空) 与永久注册 (进入对应区域才激活)
 /// </summary>
-public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneObjectIndicator>
+public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicatorRenderer>
 {
     // 全局唯一且单调递增的句柄 ID, 永不复用
     private long nextID;
 
     // 句柄操作的唯一查找源, 永久注册常驻, 临时注册在区域切换时整批移除
-    private readonly ConcurrentDictionary<ulong, IndicatorEntry> masterStore = [];
+    private readonly ConcurrentDictionary<ulong, ZoneIndicatorEntry> masterStore = [];
 
     // 当前区域应绘制的条目快照
-    private ImmutableArray<IndicatorEntry> activeEntries = [];
+    private ImmutableArray<ZoneIndicatorEntry> activeEntries = [];
 
     // Update 阶段预计算后的绘制状态, Draw 阶段只读消费, 原子替换
     private CachedEntryState[] cachedDrawStates = [];
@@ -60,7 +60,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         Action<ZoneIndicatorDrawContext>? onDraw        = null,
         ZoneIndicatorOptions?             options       = null
     ) =>
-        Register(IndicatorEntry.ForPosition(NewID(), GameState.TerritoryType, false, position, posTextGetter, onDraw, options));
+        Register(ZoneIndicatorEntry.ForPosition(NewID(), GameState.TerritoryType, false, position, posTextGetter, onDraw, options));
 
     /// <summary>
     ///     临时注册一个跟随游戏物体的标记, 区域切换时自动清空
@@ -74,7 +74,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     )
     {
         ArgumentNullException.ThrowIfNull(objectGetter);
-        return Register(IndicatorEntry.ForObject(NewID(), GameState.TerritoryType, false, objectGetter, objTextGetter, onDraw, options));
+        return Register(ZoneIndicatorEntry.ForObject(NewID(), GameState.TerritoryType, false, objectGetter, objTextGetter, onDraw, options));
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         Action<ZoneIndicatorDrawContext>? onDraw        = null,
         ZoneIndicatorOptions?             options       = null
     ) =>
-        Register(IndicatorEntry.ForPosition(NewID(), territoryType, true, position, posTextGetter, onDraw, options));
+        Register(ZoneIndicatorEntry.ForPosition(NewID(), territoryType, true, position, posTextGetter, onDraw, options));
 
     /// <summary>
     ///     永久注册一个跟随游戏物体的标记, 进入对应区域才激活, 取消注册前一直保留
@@ -103,10 +103,10 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     )
     {
         ArgumentNullException.ThrowIfNull(objectGetter);
-        return Register(IndicatorEntry.ForObject(NewID(), territoryType, true, objectGetter, objTextGetter, onDraw, options));
+        return Register(ZoneIndicatorEntry.ForObject(NewID(), territoryType, true, objectGetter, objTextGetter, onDraw, options));
     }
 
-    private ZoneIndicatorHandle Register(IndicatorEntry entry)
+    private ZoneIndicatorHandle Register(ZoneIndicatorEntry entry)
     {
         masterStore[entry.ID] = entry;
         RebuildActiveEntries();
@@ -173,7 +173,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     {
         var currentTerritory = GameState.TerritoryType;
 
-        var builder = ImmutableArray.CreateBuilder<IndicatorEntry>();
+        var builder = ImmutableArray.CreateBuilder<ZoneIndicatorEntry>();
 
         foreach (var entry in masterStore.Values)
         {
@@ -241,7 +241,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
             }
 
             if (targetListBuffer.Count > 0)
-                stateListBuffer.Add(new CachedEntryState(entry.OnDraw, targetListBuffer.ToArray()));
+                stateListBuffer.Add(new CachedEntryState(entry.OnDraw, targetListBuffer.ToArray(), entry.Surrounding));
         }
 
         cachedDrawStates = stateListBuffer.ToArray();
@@ -274,6 +274,9 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
                         DrawText(drawList, finalScreenPos, text, target.TextColor, textInfo.TextScale ?? 1f);
                     }
 
+                    if (state.Surrounding is { } surrounding)
+                        DrawSurrounding(drawList, target.WorldPosition, surrounding);
+
                     if (onDraw != null)
                     {
                         var context = new ZoneIndicatorDrawContext
@@ -297,9 +300,9 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
 
     private static ZoneIndicatorText? ResolveText
     (
-        IndicatorEntry entry,
-        IGameObject?   gameObject,
-        Vector3        worldPosition
+        ZoneIndicatorEntry entry,
+        IGameObject?       gameObject,
+        Vector3            worldPosition
     ) =>
         gameObject != null ? entry.ObjTextGetter?.Invoke(gameObject) : entry.PosTextGetter?.Invoke(worldPosition);
 
@@ -327,6 +330,124 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         drawList.AddRectFilled(rectMin, rectMax, bgCol.ToUInt(), ROUNDING);
         drawList.AddRect(rectMin, rectMax, borderCol.ToUInt(), ROUNDING, ImDrawFlags.None, 1f);
         drawList.AddText(textPosition, textColor.ToUInt(), text);
+    }
+
+    private static void DrawSurrounding(ImDrawListPtr drawList, Vector3 worldPos, ZoneIndicatorSurrounding s)
+    {
+        var color = s.Color.ToUInt();
+        var gui   = DService.Instance().GameGUI;
+
+        // 复用预计算的单位形状偏移, 在绘制时按半径缩放, 避免每帧堆分配与三角函数计算
+        var unitOffsets = s.Type switch
+        {
+            ZoneIndicatorSurrounding.Shape.Circle   => UnitCircleOffsets,
+            ZoneIndicatorSurrounding.Shape.Square   => UnitSquareOffsets,
+            ZoneIndicatorSurrounding.Shape.Triangle => UnitTriangleOffsets,
+            _                                       => null
+        };
+
+        if (unitOffsets == null)
+            return;
+
+        DrawPolyline(drawList, gui, worldPos, unitOffsets, s.Radius, color, s.Thickness);
+    }
+
+    private static void DrawPolyline
+    (
+        ImDrawListPtr         drawList,
+        IGameGui              gui,
+        Vector3               center,
+        ReadOnlySpan<Vector2> unitOffsets,
+        float                 radius,
+        uint                  color,
+        float                 thickness
+    )
+    {
+        var n = unitOffsets.Length;
+
+        // 预计算所有世界坐标顶点, 单位偏移按半径缩放
+        Span<Vector3> worldVerts = stackalloc Vector3[n];
+        for (var i = 0; i < n; i++)
+            worldVerts[i] = new Vector3(center.X + (unitOffsets[i].X * radius), center.Y, center.Z + (unitOffsets[i].Y * radius));
+
+        // 投影所有顶点
+        Span<Vector2?> screenVerts = stackalloc Vector2?[n];
+        for (var i = 0; i < n; i++)
+            if (gui.WorldToScreen(worldVerts[i], out var sp))
+                screenVerts[i] = sp;
+
+        // 逐边绘制, 单端在摄像机后方时裁剪到近平面
+        for (var i = 0; i < n; i++)
+        {
+            var j = (i + 1) % n;
+            DrawClippedEdge(drawList, gui, worldVerts[i], worldVerts[j], screenVerts[i], screenVerts[j], color, thickness);
+        }
+    }
+
+    private static void DrawClippedEdge
+    (
+        ImDrawListPtr drawList,
+        IGameGui      gui,
+        Vector3       worldA,
+        Vector3       worldB,
+        Vector2?      screenA,
+        Vector2?      screenB,
+        uint          color,
+        float         thickness
+    )
+    {
+        // 两端都可见 — 直接画
+        if (screenA is { } pa && screenB is { } pb)
+        {
+            drawList.AddLine(pa, pb, color, thickness);
+            return;
+        }
+
+        // 两端都在摄像机后 — 跳过
+        if (screenA is null && screenB is null)
+            return;
+
+        // 一端可见、一端在摄像机后 — 二分裁剪到近平面
+        var visibleWorld  = screenA is not null ? worldA : worldB;
+        var behindWorld   = screenA is null ? worldA : worldB;
+        var visibleScreen = screenA ?? screenB!.Value;
+
+        if (TryClipToNearPlane(gui, visibleWorld, behindWorld, out var clipScreen))
+            drawList.AddLine(visibleScreen, clipScreen, color, thickness);
+    }
+
+    private static bool TryClipToNearPlane(IGameGui gui, Vector3 visible, Vector3 behind, out Vector2 clipScreen)
+    {
+        clipScreen = default;
+
+        var lo = 0f;
+        var hi = 1f;
+
+        // 二分查找近平面交点
+        for (var i = 0; i < 8; i++)
+        {
+            var mid = (lo + hi) * 0.5f;
+            var wp = new Vector3
+            (
+                visible.X + ((behind.X - visible.X) * mid),
+                visible.Y + ((behind.Y - visible.Y) * mid),
+                visible.Z + ((behind.Z - visible.Z) * mid)
+            );
+
+            if (gui.WorldToScreen(wp, out _))
+                lo = mid;
+            else
+                hi = mid;
+        }
+
+        var clipWorld = new Vector3
+        (
+            visible.X + ((behind.X - visible.X) * lo),
+            visible.Y + ((behind.Y - visible.Y) * lo),
+            visible.Z + ((behind.Z - visible.Z) * lo)
+        );
+
+        return gui.WorldToScreen(clipWorld, out clipScreen);
     }
 
     private static int GetDeterministicHashCode(string str)
@@ -410,6 +531,73 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
 
     // 名牌背景内边距
     private static readonly Vector2 LabelPadding = new(6f, 3f);
+
+    // 圆形描边分段数
+    private const int CIRCLE_SEGMENTS = 64;
+
+    // 单位半径形状的 XZ 偏移, 绘制时按实际半径缩放, 避免每帧重新计算与堆分配
+    private static readonly Vector2[] UnitCircleOffsets   = BuildUnitCircleOffsets();
+    private static readonly Vector2[] UnitSquareOffsets   = [new(-1f, -1f), new(1f, -1f), new(1f, 1f), new(-1f, 1f)];
+    private static readonly Vector2[] UnitTriangleOffsets = [new(0f, -1f), new(0.8660254f, 0.5f), new(-0.8660254f, 0.5f)];
+
+    private static Vector2[] BuildUnitCircleOffsets()
+    {
+        var offsets = new Vector2[CIRCLE_SEGMENTS];
+
+        for (var i = 0; i < CIRCLE_SEGMENTS; i++)
+        {
+            var angle = MathF.Tau * i / CIRCLE_SEGMENTS;
+            offsets[i] = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        }
+
+        return offsets;
+    }
+
+    #endregion
+
+    #region 嵌套类
+
+    internal sealed class CachedEntryState
+    {
+        internal CachedEntryState(Action<ZoneIndicatorDrawContext>? onDraw, CachedDrawTarget[] targets, ZoneIndicatorSurrounding? surrounding)
+        {
+            OnDraw      = onDraw;
+            Targets     = targets;
+            Surrounding = surrounding;
+        }
+
+        /// <summary>自定义绘制委托, null 表示仅绘制文字</summary>
+        public readonly Action<ZoneIndicatorDrawContext>? OnDraw;
+
+        /// <summary>经距离剔除与遮挡剔除后的绘制目标</summary>
+        public readonly CachedDrawTarget[] Targets;
+
+        /// <summary>包围形状参数, null 表示不绘制形状</summary>
+        public readonly ZoneIndicatorSurrounding? Surrounding;
+    }
+
+    internal readonly struct CachedDrawTarget
+    {
+        internal CachedDrawTarget(Vector3 worldPosition, float distance, ZoneIndicatorText? text, Vector4 textColor)
+        {
+            WorldPosition = worldPosition;
+            Distance      = distance;
+            Text          = text;
+            TextColor     = textColor;
+        }
+
+        /// <summary>目标世界坐标</summary>
+        public readonly Vector3 WorldPosition;
+
+        /// <summary>目标到玩家的距离 (yalm), 在 Update 阶段计算</summary>
+        public readonly float Distance;
+
+        /// <summary>已解析的文字参数, null 表示不绘制文字</summary>
+        public readonly ZoneIndicatorText? Text;
+
+        /// <summary>已解析并缓存的颜色</summary>
+        public readonly Vector4 TextColor;
+    }
 
     #endregion
 }
