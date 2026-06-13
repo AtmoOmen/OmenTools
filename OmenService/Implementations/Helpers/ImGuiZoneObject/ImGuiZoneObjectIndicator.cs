@@ -45,10 +45,10 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     /// </summary>
     public ZoneIndicatorHandle RegisterTemporary
     (
-        Vector3                              position,
-        Func<Vector3, ZoneIndicatorText>?     posTextGetter = null,
-        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
-        ZoneIndicatorOptions?                options       = null
+        Vector3                           position,
+        Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
+        Action<ZoneIndicatorDrawContext>? onDraw        = null,
+        ZoneIndicatorOptions?             options       = null
     ) =>
         Register(IndicatorEntry.ForPosition(NewID(), GameState.TerritoryType, false, position, posTextGetter, onDraw, options));
 
@@ -57,10 +57,10 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     /// </summary>
     public ZoneIndicatorHandle RegisterTemporary
     (
-        Func<List<IGameObject>>             objectGetter,
+        Func<List<IGameObject>>               objectGetter,
         Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
         Action<ZoneIndicatorDrawContext>?     onDraw        = null,
-        ZoneIndicatorOptions?                options       = null
+        ZoneIndicatorOptions?                 options       = null
     )
     {
         ArgumentNullException.ThrowIfNull(objectGetter);
@@ -72,11 +72,11 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     /// </summary>
     public ZoneIndicatorHandle RegisterPermanent
     (
-        uint                                 territoryType,
-        Vector3                              position,
-        Func<Vector3, ZoneIndicatorText>?     posTextGetter = null,
-        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
-        ZoneIndicatorOptions?                options       = null
+        uint                              territoryType,
+        Vector3                           position,
+        Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
+        Action<ZoneIndicatorDrawContext>? onDraw        = null,
+        ZoneIndicatorOptions?             options       = null
     ) =>
         Register(IndicatorEntry.ForPosition(NewID(), territoryType, true, position, posTextGetter, onDraw, options));
 
@@ -85,11 +85,11 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     /// </summary>
     public ZoneIndicatorHandle RegisterPermanent
     (
-        uint                                 territoryType,
-        Func<List<IGameObject>>             objectGetter,
+        uint                                  territoryType,
+        Func<List<IGameObject>>               objectGetter,
         Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
         Action<ZoneIndicatorDrawContext>?     onDraw        = null,
-        ZoneIndicatorOptions?                options       = null
+        ZoneIndicatorOptions?                 options       = null
     )
     {
         ArgumentNullException.ThrowIfNull(objectGetter);
@@ -124,7 +124,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
 
     internal bool UpdateTextByID
     (
-        ulong                                id,
+        ulong                                 id,
         Func<IGameObject, ZoneIndicatorText>? objTextGetter,
         Func<Vector3, ZoneIndicatorText>?     posTextGetter
     )
@@ -257,9 +257,9 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     // 根据条目类型和当前目标解析文字参数
     private static ZoneIndicatorText? ResolveText
     (
-        IndicatorEntry  entry,
-        IGameObject?    gameObject,
-        Vector3         worldPosition
+        IndicatorEntry entry,
+        IGameObject?   gameObject,
+        Vector3        worldPosition
     )
     {
         if (gameObject != null)
