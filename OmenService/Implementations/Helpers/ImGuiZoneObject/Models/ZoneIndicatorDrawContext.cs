@@ -13,7 +13,8 @@ public readonly ref struct ZoneIndicatorDrawContext
         Vector2       screenPosition,
         bool          isOnScreen,
         float         distance,
-        ImDrawListPtr drawList
+        ImDrawListPtr drawList,
+        Vector2       textSize
     )
     {
         WorldPosition  = worldPosition;
@@ -21,6 +22,7 @@ public readonly ref struct ZoneIndicatorDrawContext
         IsOnScreen     = isOnScreen;
         Distance       = distance;
         DrawList       = drawList;
+        TextSize       = textSize;
     }
 
     /// <summary>
@@ -47,4 +49,9 @@ public readonly ref struct ZoneIndicatorDrawContext
     ///     可直接使用的前景绘制列表
     /// </summary>
     public ImDrawListPtr DrawList { get; }
+
+    /// <summary>
+    ///     上一帧缓存的文字渲染尺寸, 首次绘制使用默认值 50×20
+    /// </summary>
+    public Vector2 TextSize { get; }
 }

@@ -1,4 +1,5 @@
 using System.Numerics;
+using Lumina.Text.ReadOnly;
 
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
@@ -10,7 +11,7 @@ public sealed class ZoneIndicatorText
     /// <summary>
     ///     显示文字, null 表示不绘制文字
     /// </summary>
-    public string? Text { get; init; }
+    public ReadOnlySeString? Text { get; init; }
 
     /// <summary>
     ///     文字颜色, null 回退默认白色
