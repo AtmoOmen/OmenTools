@@ -67,14 +67,35 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     /// </summary>
     public ZoneIndicatorHandle RegTemporary
     (
-        Func<List<IGameObject>>               objectGetter,
-        Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
-        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
-        ZoneIndicatorOptions?                 options       = null
+        Func<List<nint>>                  objectGetter,
+        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
+        Action<ZoneIndicatorDrawContext>? onDraw        = null,
+        ZoneIndicatorOptions?             options       = null
     )
     {
         ArgumentNullException.ThrowIfNull(objectGetter);
         return Register(ZoneIndicatorEntry.ForObject(NewID(), GameState.TerritoryType, false, objectGetter, objTextGetter, onDraw, options));
+    }
+
+    /// <summary>
+    ///     临时注册一个跟随游戏物体的标记 (IGameObject 兼容路径), 区域切换时自动清空
+    /// </summary>
+    public ZoneIndicatorHandle RegTemporary
+    (
+        Func<List<IGameObject>>           objectGetter,
+        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
+        Action<ZoneIndicatorDrawContext>? onDraw        = null,
+        ZoneIndicatorOptions?             options       = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(objectGetter);
+        return RegTemporary
+        (
+            AdaptObjectGetter(objectGetter),
+            objTextGetter,
+            onDraw,
+            options
+        );
     }
 
     /// <summary>
@@ -95,15 +116,38 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     /// </summary>
     public ZoneIndicatorHandle RegPermanent
     (
-        uint                                  territoryType,
-        Func<List<IGameObject>>               objectGetter,
-        Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
-        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
-        ZoneIndicatorOptions?                 options       = null
+        uint                              territoryType,
+        Func<List<nint>>                  objectGetter,
+        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
+        Action<ZoneIndicatorDrawContext>? onDraw        = null,
+        ZoneIndicatorOptions?             options       = null
     )
     {
         ArgumentNullException.ThrowIfNull(objectGetter);
         return Register(ZoneIndicatorEntry.ForObject(NewID(), territoryType, true, objectGetter, objTextGetter, onDraw, options));
+    }
+
+    /// <summary>
+    ///     永久注册一个跟随游戏物体的标记 (IGameObject 兼容路径), 进入对应区域才激活, 取消注册前一直保留
+    /// </summary>
+    public ZoneIndicatorHandle RegPermanent
+    (
+        uint                              territoryType,
+        Func<List<IGameObject>>           objectGetter,
+        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
+        Action<ZoneIndicatorDrawContext>? onDraw        = null,
+        ZoneIndicatorOptions?             options       = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(objectGetter);
+        return RegPermanent
+        (
+            territoryType,
+            AdaptObjectGetter(objectGetter),
+            objTextGetter,
+            onDraw,
+            options
+        );
     }
 
     private ZoneIndicatorHandle Register(ZoneIndicatorEntry entry)
@@ -199,7 +243,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         {
             targetListBuffer.Clear();
 
-            foreach (var (worldPosition, gameObject) in entry.ResolveTargets())
+            foreach (var (worldPosition, objectPtr) in entry.ResolveTargets())
             {
                 var distanceSquared = Vector3.DistanceSquared(playerPosition, worldPosition);
                 if (distanceSquared > entry.RenderRadiusSquared)
@@ -218,7 +262,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                         continue;
                 }
 
-                var textInfo      = ResolveText(entry, gameObject, worldPosition);
+                var textInfo      = ResolveText(entry, objectPtr, worldPosition);
                 var resolvedColor = Vector4.Zero;
                 if (textInfo is { Text: { } text })
                     resolvedColor = textInfo.TextColor ?? GetStableColor(text);
@@ -286,10 +330,10 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     private static ZoneIndicatorText? ResolveText
     (
         ZoneIndicatorEntry entry,
-        IGameObject?       gameObject,
+        nint               objectPtr,
         Vector3            worldPosition
     ) =>
-        gameObject != null ? entry.ObjTextGetter?.Invoke(gameObject) : entry.PosTextGetter?.Invoke(worldPosition);
+        objectPtr != nint.Zero ? entry.ObjTextGetter?.Invoke(objectPtr) : entry.PosTextGetter?.Invoke(worldPosition);
 
     private static void DrawText
     (
@@ -381,16 +425,16 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         float         thickness
     )
     {
-        // 两端都可见 — 直接画
-        if (screenA is { } pa && screenB is { } pb)
+        switch (screenA)
         {
-            drawList.AddLine(pa, pb, color, thickness);
-            return;
+            // 两端都可见 — 直接画
+            case { } pa when screenB is { } pb:
+                drawList.AddLine(pa, pb, color, thickness);
+                return;
+            // 两端都在摄像机后 — 跳过
+            case null when screenB is null:
+                return;
         }
-
-        // 两端都在摄像机后 — 跳过
-        if (screenA is null && screenB is null)
-            return;
 
         // 一端可见、一端在摄像机后 — 二分裁剪到近平面
         var visibleWorld  = screenA is not null ? worldA : worldB;
@@ -493,6 +537,24 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
             _         => p
         };
     }
+
+    private static Func<List<nint>> AdaptObjectGetter(Func<List<IGameObject>> getter) =>
+        () =>
+        {
+            var objects = getter();
+            if (objects is not { Count: > 0 })
+                return [];
+
+            var result = new List<nint>(objects.Count);
+
+            foreach (var go in objects)
+            {
+                if (go.Address != nint.Zero)
+                    result.Add((nint)go.ToStruct());
+            }
+
+            return result;
+        };
 
     private static bool TryGetCameraPosition(out Vector3 position)
     {

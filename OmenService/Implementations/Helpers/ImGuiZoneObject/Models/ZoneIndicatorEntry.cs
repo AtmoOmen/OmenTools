@@ -1,4 +1,5 @@
 using System.Numerics;
+using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
@@ -6,23 +7,21 @@ namespace OmenTools.OmenService.ImGuiZoneObject;
 ///     区域物体标记的内部条目
 ///     身份与生命周期字段只读, 内容字段支持运行期就地更新, 引用赋值读写, 不加锁
 /// </summary>
-internal sealed class ZoneIndicatorEntry : IZoneIndicatorMutable
+internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
 {
-    private uint renderRadius;
-
     private ZoneIndicatorEntry
     (
-        ulong                                 id,
-        uint                                  territoryType,
-        bool                                  isPermanent,
-        Vector3                               fixedPosition,
-        Func<List<IGameObject>>?              objectGetter,
-        Func<IGameObject, ZoneIndicatorText>? objTextGetter,
-        Func<Vector3, ZoneIndicatorText>?     posTextGetter,
-        Action<ZoneIndicatorDrawContext>?     onDraw,
-        uint                                  renderRadius,
-        bool                                  hiddenWhenBlocked,
-        ZoneIndicatorSurrounding?             surrounding
+        ulong                             id,
+        uint                              territoryType,
+        bool                              isPermanent,
+        Vector3                           fixedPosition,
+        Func<List<nint>>?                 objectGetter,
+        Func<nint, ZoneIndicatorText>?    objTextGetter,
+        Func<Vector3, ZoneIndicatorText>? posTextGetter,
+        Action<ZoneIndicatorDrawContext>? onDraw,
+        uint                              renderRadius,
+        bool                              hiddenWhenBlocked,
+        ZoneIndicatorSurrounding?         surrounding
     )
     {
         ID                = id;
@@ -42,20 +41,20 @@ internal sealed class ZoneIndicatorEntry : IZoneIndicatorMutable
     public uint  TerritoryType { get; }
     public bool  IsPermanent   { get; }
 
-    public Vector3                  FixedPosition { get; set; }
-    public Func<List<IGameObject>>? ObjectGetter  { get; set; }
+    public Vector3           FixedPosition { get; set; }
+    public Func<List<nint>>? ObjectGetter  { get; set; }
 
-    public Func<IGameObject, ZoneIndicatorText>? ObjTextGetter { get; set; }
-    public Func<Vector3, ZoneIndicatorText>?     PosTextGetter { get; set; }
+    public Func<nint, ZoneIndicatorText>?    ObjTextGetter { get; set; }
+    public Func<Vector3, ZoneIndicatorText>? PosTextGetter { get; set; }
 
     public Action<ZoneIndicatorDrawContext>? OnDraw { get; set; }
 
     public uint RenderRadius
     {
-        get => renderRadius;
+        get;
         set
         {
-            renderRadius        = value;
+            field               = value;
             RenderRadiusSquared = (float)value * value;
         }
     }
@@ -99,13 +98,13 @@ internal sealed class ZoneIndicatorEntry : IZoneIndicatorMutable
 
     public static ZoneIndicatorEntry ForObject
     (
-        ulong                                 id,
-        uint                                  territoryType,
-        bool                                  isPermanent,
-        Func<List<IGameObject>>               objectGetter,
-        Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
-        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
-        ZoneIndicatorOptions?                 options       = null
+        ulong                             id,
+        uint                              territoryType,
+        bool                              isPermanent,
+        Func<List<nint>>                  objectGetter,
+        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
+        Action<ZoneIndicatorDrawContext>? onDraw        = null,
+        ZoneIndicatorOptions?             options       = null
     )
     {
         options ??= ZoneIndicatorOptions.Default;
@@ -126,28 +125,45 @@ internal sealed class ZoneIndicatorEntry : IZoneIndicatorMutable
     }
 
     /// <summary>
-    ///     解析所有目标位置及对应物体引用
-    ///     固定位置条目返回单一 (FixedPosition, null)
-    ///     跟随物体条目返回每个有效物体的 (Position, GameObject)
+    ///     解析所有目标位置及对应物体指针
+    ///     固定位置条目返回单一 (FixedPosition, nint.Zero)
+    ///     跟随物体条目返回每个有效物体的 (Position, ObjectPtr)
     /// </summary>
-    public IEnumerable<(Vector3 Position, IGameObject? GameObject)> ResolveTargets()
+    public IEnumerable<(Vector3 Position, nint ObjectPtr)> ResolveTargets()
     {
         if (ObjectGetter == null)
         {
-            yield return (FixedPosition, null);
+            yield return (FixedPosition, nint.Zero);
             yield break;
         }
 
-        var objects = ObjectGetter();
-        if (objects is not { Count: > 0 })
+        var ptrs = ObjectGetter();
+        if (ptrs is not { Count: > 0 })
             yield break;
 
-        foreach (var go in objects)
+        foreach (var ptr in ptrs)
         {
-            if (go == null || !go.IsValid())
+            if (ptr == nint.Zero)
                 continue;
 
-            yield return (go.Position, go);
+            if (!TryGetPosition(ptr, out var pos))
+                continue;
+
+            yield return (pos, ptr);
         }
+    }
+
+    private static bool TryGetPosition(nint ptr, out Vector3 pos)
+    {
+        var go = (CSGameObject*)ptr;
+
+        if (go == null)
+        {
+            pos = default;
+            return false;
+        }
+
+        pos = go->Position;
+        return true;
     }
 }

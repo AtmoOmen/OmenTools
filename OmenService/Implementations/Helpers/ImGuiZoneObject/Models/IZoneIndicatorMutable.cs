@@ -16,12 +16,12 @@ public interface IZoneIndicatorMutable
     /// <summary>
     ///     物体获取器, 非 null 时条目跟随物体, 为 null 时回退固定位置
     /// </summary>
-    Func<List<IGameObject>>? ObjectGetter { get; set; }
+    Func<List<nint>>? ObjectGetter { get; set; }
 
     /// <summary>
     ///     按物体获取文字, 仅跟随物体条目使用; null 表示不绘制
     /// </summary>
-    Func<IGameObject, ZoneIndicatorText>? ObjTextGetter { get; set; }
+    Func<nint, ZoneIndicatorText>? ObjTextGetter { get; set; }
 
     /// <summary>
     ///     按位置获取文字, 仅固定位置条目使用; null 表示不绘制
