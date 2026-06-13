@@ -58,6 +58,9 @@ public static class LuminaWrapper
 
     public static string GetItemName(uint rowID) =>
         LuminaGetter.TryGetRow<Item>(rowID, out var item) ? item.Name.ToString() : string.Empty;
+    
+    public static string GetEventItemName(uint rowID) =>
+        LuminaGetter.TryGetRow<EventItem>(rowID, out var item) ? item.Name.ToString() : string.Empty;
 
     public static uint GetItemIconID(uint rowID) =>
         LuminaGetter.TryGetRow<Item>(rowID, out var item) ? item.Icon : 0U;
