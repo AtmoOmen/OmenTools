@@ -9,27 +9,27 @@ internal sealed class IndicatorEntry
 {
     private IndicatorEntry
     (
-        ulong                                id,
-        uint                                 territoryType,
-        bool                                 isPermanent,
-        Vector3                              fixedPosition,
-        Func<List<IGameObject>>?             objectGetter,
+        ulong                                 id,
+        uint                                  territoryType,
+        bool                                  isPermanent,
+        Vector3                               fixedPosition,
+        Func<List<IGameObject>>?              objectGetter,
         Func<IGameObject, ZoneIndicatorText>? objTextGetter,
         Func<Vector3, ZoneIndicatorText>?     posTextGetter,
         Action<ZoneIndicatorDrawContext>?     onDraw,
-        uint                                 renderRadius,
-        bool                                 hiddenWhenBlocked
+        uint                                  renderRadius,
+        bool                                  hiddenWhenBlocked
     )
     {
-        ID                = id;
-        TerritoryType     = territoryType;
-        IsPermanent       = isPermanent;
-        FixedPosition     = fixedPosition;
-        ObjectGetter      = objectGetter;
-        ObjTextGetter     = objTextGetter;
-        PosTextGetter     = posTextGetter;
-        OnDraw            = onDraw;
-        RenderRadius       = renderRadius;
+        ID                  = id;
+        TerritoryType       = territoryType;
+        IsPermanent         = isPermanent;
+        FixedPosition       = fixedPosition;
+        ObjectGetter        = objectGetter;
+        ObjTextGetter       = objTextGetter;
+        PosTextGetter       = posTextGetter;
+        OnDraw              = onDraw;
+        RenderRadius        = renderRadius;
         RenderRadiusSquared = (float)renderRadius * renderRadius;
         HiddenWhenBlocked   = hiddenWhenBlocked;
     }
@@ -55,18 +55,18 @@ internal sealed class IndicatorEntry
     public Action<ZoneIndicatorDrawContext>? OnDraw { get; set; }
 
     public uint  RenderRadius        { get; }
-    public float RenderRadiusSquared  { get; }
-    public bool  HiddenWhenBlocked    { get; }
+    public float RenderRadiusSquared { get; }
+    public bool  HiddenWhenBlocked   { get; }
 
     public static IndicatorEntry ForPosition
     (
-        ulong                                id,
-        uint                                 territoryType,
-        bool                                 isPermanent,
-        Vector3                              position,
-        Func<Vector3, ZoneIndicatorText>?     posTextGetter = null,
-        Action<ZoneIndicatorDrawContext>?     onDraw        = null,
-        ZoneIndicatorOptions?                options       = null
+        ulong                             id,
+        uint                              territoryType,
+        bool                              isPermanent,
+        Vector3                           position,
+        Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
+        Action<ZoneIndicatorDrawContext>? onDraw        = null,
+        ZoneIndicatorOptions?             options       = null
     )
     {
         options ??= ZoneIndicatorOptions.Default;
@@ -87,13 +87,13 @@ internal sealed class IndicatorEntry
 
     public static IndicatorEntry ForObject
     (
-        ulong                                id,
-        uint                                 territoryType,
-        bool                                 isPermanent,
-        Func<List<IGameObject>>             objectGetter,
+        ulong                                 id,
+        uint                                  territoryType,
+        bool                                  isPermanent,
+        Func<List<IGameObject>>               objectGetter,
         Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
         Action<ZoneIndicatorDrawContext>?     onDraw        = null,
-        ZoneIndicatorOptions?                options       = null
+        ZoneIndicatorOptions?                 options       = null
     )
     {
         options ??= ZoneIndicatorOptions.Default;

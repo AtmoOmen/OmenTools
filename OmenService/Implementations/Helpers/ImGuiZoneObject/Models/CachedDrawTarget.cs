@@ -7,11 +7,12 @@ namespace OmenTools.OmenService.ImGuiZoneObject;
 /// </summary>
 internal readonly struct CachedDrawTarget
 {
-    internal CachedDrawTarget(Vector3 worldPosition, float distance, ZoneIndicatorText? text)
+    internal CachedDrawTarget(Vector3 worldPosition, float distance, ZoneIndicatorText? text, Vector4 textColor)
     {
         WorldPosition = worldPosition;
         Distance      = distance;
         Text          = text;
+        TextColor     = textColor;
     }
 
     /// <summary>目标世界坐标</summary>
@@ -22,4 +23,7 @@ internal readonly struct CachedDrawTarget
 
     /// <summary>已解析的文字参数, null 表示不绘制文字</summary>
     public readonly ZoneIndicatorText? Text;
+
+    /// <summary>已解析并缓存的颜色</summary>
+    public readonly Vector4 TextColor;
 }

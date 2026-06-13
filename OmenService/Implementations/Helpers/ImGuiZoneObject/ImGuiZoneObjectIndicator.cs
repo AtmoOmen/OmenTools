@@ -33,7 +33,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     protected override void Init()
     {
         DService.Instance().ClientState.TerritoryChanged += OnTerritoryChanged;
-        FrameworkManager.Instance().Reg(OnUpdate, throttleMS: 100);
+        FrameworkManager.Instance().Reg(OnUpdate, 100);
         WindowManager.Instance().PostDraw += OnDraw;
     }
 
@@ -120,7 +120,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     #endregion
 
     #region 句柄转发
-    
+
     internal bool UnregisterByID(ulong id)
     {
         if (!masterStore.TryRemove(id, out _))
@@ -233,8 +233,11 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
                         continue;
                 }
 
-                var textInfo = ResolveText(entry, gameObject, worldPosition);
-                targetListBuffer.Add(new CachedDrawTarget(worldPosition, MathF.Sqrt(distanceSquared), textInfo));
+                var textInfo      = ResolveText(entry, gameObject, worldPosition);
+                var resolvedColor = Vector4.Zero;
+                if (textInfo is { Text: { } text })
+                    resolvedColor = textInfo.TextColor ?? GetStableColor(text);
+                targetListBuffer.Add(new CachedDrawTarget(worldPosition, MathF.Sqrt(distanceSquared), textInfo, resolvedColor));
             }
 
             if (targetListBuffer.Count > 0)
@@ -268,7 +271,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
                         if (textInfo.TextOffset is { } offset)
                             finalScreenPos += new Vector2(offset.X, offset.Y);
 
-                        DrawText(drawList, finalScreenPos, text, textInfo.TextColor ?? DefaultTextColor, textInfo.TextScale ?? 1f);
+                        DrawText(drawList, finalScreenPos, text, target.TextColor, textInfo.TextScale ?? 1f);
                     }
 
                     if (onDraw != null)
@@ -309,17 +312,80 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         float         textScale
     )
     {
+        const float ROUNDING = 5f;
+
         using var font = FontManager.Instance().GetUIFont(textScale).Push();
 
         var textSize     = ImGui.CalcTextSize(text);
         var textPosition = screenPosition - (textSize * 0.5f);
         var rectMin      = textPosition   - LabelPadding;
         var rectMax      = textPosition   + textSize + LabelPadding;
-        var rounding     = (rectMax.Y - rectMin.Y) * 0.25f;
 
-        drawList.AddRectFilled(rectMin, rectMax, LABEL_BACKGROUND_COLOR, rounding);
-        drawList.AddRect(rectMin, rectMax, LABEL_BORDER_COLOR, rounding, ImDrawFlags.None, 1f);
+        var bgCol     = new Vector4(textColor.X * 0.08f, textColor.Y * 0.08f, textColor.Z * 0.08f, 0.9f);
+        var borderCol = textColor with { W = 0.8f };
+
+        drawList.AddRectFilled(rectMin, rectMax, bgCol.ToUInt(), ROUNDING);
+        drawList.AddRect(rectMin, rectMax, borderCol.ToUInt(), ROUNDING, ImDrawFlags.None, 1f);
         drawList.AddText(textPosition, textColor.ToUInt(), text);
+    }
+
+    private static int GetDeterministicHashCode(string str)
+    {
+        unchecked
+        {
+            var hash1 = (5381 << 16) + 5381;
+            var hash2 = hash1;
+
+            for (var i = 0; i < str.Length; i += 2)
+            {
+                hash1 = ((hash1 << 5) + hash1) ^ str[i];
+                if (i + 1 < str.Length)
+                    hash2 = ((hash2 << 5) + hash2) ^ str[i + 1];
+            }
+
+            return hash1 + (hash2 * 1566083941);
+        }
+    }
+
+    private static Vector4 GetStableColor(string text)
+    {
+        var hash = GetDeterministicHashCode(text);
+        var hue  = (hash & 0x7FFFFFFF) % 360 / 360f;
+        return HslToRgb(hue, 0.8f, 0.6f);
+    }
+
+    private static Vector4 HslToRgb(float h, float s, float l)
+    {
+        float r, g, b;
+
+        if (s == 0)
+            r = g = b = l;
+        else
+        {
+            var q = l < 0.5f ? l * (1f + s) : l + s - (l * s);
+            var p = (2f * l) - q;
+            r = HueToRgb(p, q, h + (1f / 3f));
+            g = HueToRgb(p, q, h);
+            b = HueToRgb(p, q, h - (1f / 3f));
+        }
+
+        return new Vector4(r, g, b, 1.0f);
+    }
+
+    private static float HueToRgb(float p, float q, float t)
+    {
+        if (t < 0f)
+            t += 1f;
+        if (t > 1f)
+            t -= 1f;
+
+        return t switch
+        {
+            < 1f / 6f => p + ((q - p) * 6f * t),
+            < 1f / 2f => q,
+            < 2f / 3f => p + ((q - p) * ((2f / 3f) - t) * 6f),
+            _         => p
+        };
     }
 
     private static bool TryGetCameraPosition(out Vector3 position)
@@ -342,16 +408,8 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
 
     #region 常量
 
-    internal static readonly Vector4 DefaultTextColor = new(1f, 1f, 1f, 1f);
-
     // 名牌背景内边距
     private static readonly Vector2 LabelPadding = new(6f, 3f);
-
-    // 名牌背景填充色 (ABGR), 深色半透明
-    private const uint LABEL_BACKGROUND_COLOR = 0xC8000000;
-
-    // 名牌边框色 (ABGR), 浅色半透明
-    private const uint LABEL_BORDER_COLOR = 0x50FFFFFF;
 
     #endregion
 }
