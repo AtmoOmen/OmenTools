@@ -53,7 +53,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     /// <summary>
     ///     临时注册一个固定世界坐标标记, 区域切换时自动清空
     /// </summary>
-    public ZoneIndicatorHandle RegisterTemporary
+    public ZoneIndicatorHandle RegTemporary
     (
         Vector3                           position,
         Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
@@ -65,7 +65,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     /// <summary>
     ///     临时注册一个跟随游戏物体的标记, 区域切换时自动清空
     /// </summary>
-    public ZoneIndicatorHandle RegisterTemporary
+    public ZoneIndicatorHandle RegTemporary
     (
         Func<List<IGameObject>>               objectGetter,
         Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
@@ -80,7 +80,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     /// <summary>
     ///     永久注册一个固定世界坐标标记, 进入对应区域才激活, 取消注册前一直保留
     /// </summary>
-    public ZoneIndicatorHandle RegisterPermanent
+    public ZoneIndicatorHandle RegPermanent
     (
         uint                              territoryType,
         Vector3                           position,
@@ -93,7 +93,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     /// <summary>
     ///     永久注册一个跟随游戏物体的标记, 进入对应区域才激活, 取消注册前一直保留
     /// </summary>
-    public ZoneIndicatorHandle RegisterPermanent
+    public ZoneIndicatorHandle RegPermanent
     (
         uint                                  territoryType,
         Func<List<IGameObject>>               objectGetter,
@@ -130,27 +130,12 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         return true;
     }
 
-    internal bool UpdateTextByID
-    (
-        ulong                                 id,
-        Func<IGameObject, ZoneIndicatorText>? objTextGetter,
-        Func<Vector3, ZoneIndicatorText>?     posTextGetter
-    )
+    internal bool UpdateByID(ulong id, Action<IZoneIndicatorMutable> mutator)
     {
         if (!masterStore.TryGetValue(id, out var entry))
             return false;
 
-        entry.ObjTextGetter = objTextGetter;
-        entry.PosTextGetter = posTextGetter;
-        return true;
-    }
-
-    internal bool UpdateDrawByID(ulong id, Action<ZoneIndicatorDrawContext>? onDraw)
-    {
-        if (!masterStore.TryGetValue(id, out var entry))
-            return false;
-
-        entry.OnDraw = onDraw;
+        mutator(entry);
         return true;
     }
 

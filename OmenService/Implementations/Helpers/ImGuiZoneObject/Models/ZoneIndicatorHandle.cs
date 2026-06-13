@@ -1,5 +1,3 @@
-using System.Numerics;
-
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
 /// <summary>
@@ -19,26 +17,19 @@ public readonly struct ZoneIndicatorHandle
     /// <summary>
     ///     取消注册该标记, 句柄已失效或服务不可用时返回 false
     /// </summary>
-    public bool Unregister() =>
+    public bool Unreg() =>
         IsValid && (Service?.UnregisterByID(ID) ?? false);
 
     /// <summary>
-    ///     更新标记的文字获取器
-    ///     跟随物体条目使用 <paramref name="objTextGetter" />, 固定位置条目使用 <paramref name="posTextGetter" />
+    ///     就地更新该标记的可变内容, 通过 <paramref name="mutator" /> 修改任意内容字段
+    ///     仅修改 <paramref name="mutator" /> 实际触及的字段, 其余保持不变
     ///     句柄已失效或服务不可用时返回 false
     /// </summary>
-    public bool UpdateText
-    (
-        Func<IGameObject, ZoneIndicatorText>? objTextGetter = null,
-        Func<Vector3, ZoneIndicatorText>?     posTextGetter = null
-    ) =>
-        IsValid && (Service?.UpdateTextByID(ID, objTextGetter, posTextGetter) ?? false);
-
-    /// <summary>
-    ///     更新自定义绘制逻辑, 句柄已失效或服务不可用时返回 false
-    /// </summary>
-    public bool UpdateDraw(Action<ZoneIndicatorDrawContext>? onDraw) =>
-        IsValid && (Service?.UpdateDrawByID(ID, onDraw) ?? false);
+    public bool Update(Action<IZoneIndicatorMutable> mutator)
+    {
+        ArgumentNullException.ThrowIfNull(mutator);
+        return IsValid && (Service?.UpdateByID(ID, mutator) ?? false);
+    }
 
     private static ZoneIndicatorRenderer? Service =>
         DService.Instance().GetOmenService<ZoneIndicatorRenderer>();

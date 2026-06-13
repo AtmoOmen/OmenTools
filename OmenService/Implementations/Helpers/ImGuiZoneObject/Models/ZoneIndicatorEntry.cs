@@ -4,9 +4,12 @@ namespace OmenTools.OmenService.ImGuiZoneObject;
 
 /// <summary>
 ///     区域物体标记的内部条目
+///     身份与生命周期字段只读, 内容字段支持运行期就地更新, 引用赋值读写, 不加锁
 /// </summary>
-internal sealed class ZoneIndicatorEntry
+internal sealed class ZoneIndicatorEntry : IZoneIndicatorMutable
 {
+    private uint renderRadius;
+
     private ZoneIndicatorEntry
     (
         ulong                                 id,
@@ -22,45 +25,49 @@ internal sealed class ZoneIndicatorEntry
         ZoneIndicatorSurrounding?             surrounding
     )
     {
-        ID                  = id;
-        TerritoryType       = territoryType;
-        IsPermanent         = isPermanent;
-        FixedPosition       = fixedPosition;
-        ObjectGetter        = objectGetter;
-        ObjTextGetter       = objTextGetter;
-        PosTextGetter       = posTextGetter;
-        OnDraw              = onDraw;
-        RenderRadius        = renderRadius;
-        RenderRadiusSquared = (float)renderRadius * renderRadius;
-        HiddenWhenBlocked   = hiddenWhenBlocked;
-        Surrounding         = surrounding;
+        ID                = id;
+        TerritoryType     = territoryType;
+        IsPermanent       = isPermanent;
+        FixedPosition     = fixedPosition;
+        ObjectGetter      = objectGetter;
+        ObjTextGetter     = objTextGetter;
+        PosTextGetter     = posTextGetter;
+        OnDraw            = onDraw;
+        RenderRadius      = renderRadius;
+        HiddenWhenBlocked = hiddenWhenBlocked;
+        Surrounding       = surrounding;
     }
 
     public ulong ID            { get; }
     public uint  TerritoryType { get; }
     public bool  IsPermanent   { get; }
 
-    public Vector3                  FixedPosition { get; }
-    public Func<List<IGameObject>>? ObjectGetter  { get; }
+    public Vector3                  FixedPosition { get; set; }
+    public Func<List<IGameObject>>? ObjectGetter  { get; set; }
 
-    /// <summary>
-    ///     按物体获取文字, 仅跟随物体条目使用; null 表示不绘制
-    /// </summary>
     public Func<IGameObject, ZoneIndicatorText>? ObjTextGetter { get; set; }
+    public Func<Vector3, ZoneIndicatorText>?     PosTextGetter { get; set; }
 
-    /// <summary>
-    ///     按位置获取文字, 仅固定位置条目使用; null 表示不绘制
-    /// </summary>
-    public Func<Vector3, ZoneIndicatorText>? PosTextGetter { get; set; }
-
-    // 以下支持运行期就地更新, 引用赋值读写, 不加锁
     public Action<ZoneIndicatorDrawContext>? OnDraw { get; set; }
 
-    public uint  RenderRadius        { get; }
-    public float RenderRadiusSquared { get; }
-    public bool  HiddenWhenBlocked   { get; }
+    public uint RenderRadius
+    {
+        get => renderRadius;
+        set
+        {
+            renderRadius        = value;
+            RenderRadiusSquared = (float)value * value;
+        }
+    }
 
-    public ZoneIndicatorSurrounding? Surrounding { get; }
+    /// <summary>
+    ///     渲染半径平方, 随 <see cref="RenderRadius" /> 自动更新, 供距离剔除直接比较
+    /// </summary>
+    public float RenderRadiusSquared { get; private set; }
+
+    public bool HiddenWhenBlocked { get; set; }
+
+    public ZoneIndicatorSurrounding? Surrounding { get; set; }
 
     public static ZoneIndicatorEntry ForPosition
     (

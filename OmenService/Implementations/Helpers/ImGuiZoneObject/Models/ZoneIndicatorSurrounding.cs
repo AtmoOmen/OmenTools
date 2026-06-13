@@ -20,7 +20,7 @@ public sealed class ZoneIndicatorSurrounding
 
     /// <summary>描边粗细 (像素)</summary>
     public float Thickness { get; init; } = 1f;
-    
+
     /// <summary>
     ///     包围形状类型
     /// </summary>
