@@ -14,28 +14,38 @@ namespace OmenTools.OmenService.ImGuiZoneObject;
 /// </summary>
 public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneObjectIndicator>
 {
-    // 全局唯一且单调递增的句柄 ID, 永不复用, 保证失效句柄不会误命中后续注册
+    // 全局唯一且单调递增的句柄 ID, 永不复用
     private long nextID;
 
     // 句柄操作的唯一查找源, 永久注册常驻, 临时注册在区域切换时整批移除
     private readonly ConcurrentDictionary<ulong, IndicatorEntry> masterStore = [];
 
-    // 当前区域应绘制的条目快照, 热循环只读此数组, 低频事件时重建
+    // 当前区域应绘制的条目快照
     private ImmutableArray<IndicatorEntry> activeEntries = [];
+
+    // Update 阶段预计算后的绘制状态, Draw 阶段只读消费, 原子替换
+    private CachedEntryState[] cachedDrawStates = [];
+
+    // Update 阶段复用缓冲区
+    private readonly List<CachedEntryState> stateListBuffer  = [];
+    private readonly List<CachedDrawTarget> targetListBuffer = [];
 
     protected override void Init()
     {
         DService.Instance().ClientState.TerritoryChanged += OnTerritoryChanged;
-        WindowManager.Instance().PostDraw                += OnDraw;
+        FrameworkManager.Instance().Reg(OnUpdate, throttleMS: 100);
+        WindowManager.Instance().PostDraw += OnDraw;
     }
 
     protected override void Uninit()
     {
         DService.Instance().ClientState.TerritoryChanged -= OnTerritoryChanged;
-        WindowManager.Instance().PostDraw                -= OnDraw;
+        FrameworkManager.Instance().Unreg(OnUpdate);
+        WindowManager.Instance().PostDraw -= OnDraw;
 
         masterStore.Clear();
-        activeEntries = [];
+        activeEntries    = [];
+        cachedDrawStates = [];
     }
 
     #region 注册
@@ -110,9 +120,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     #endregion
 
     #region 句柄转发
-
-    // 以下方法供 ZoneIndicatorHandle 成员方法转发, 句柄已失效时静默返回 false
-
+    
     internal bool UnregisterByID(ulong id)
     {
         if (!masterStore.TryRemove(id, out _))
@@ -150,7 +158,6 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
 
     #region 内部
 
-    // 区域切换时移除全部临时注册, 并重建激活快照
     private void OnTerritoryChanged(uint territoryType)
     {
         foreach (var (id, entry) in masterStore)
@@ -162,7 +169,6 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         RebuildActiveEntries();
     }
 
-    // 仅在低频事件 (注册/取消/区域切换) 时调用, 计算出当前区域应绘制的子集
     private void RebuildActiveEntries()
     {
         var currentTerritory = GameState.TerritoryType;
@@ -180,31 +186,38 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         activeEntries = builder.ToImmutable();
     }
 
-    private void OnDraw()
+    private void OnUpdate(IFramework framework)
     {
         var entries = activeEntries;
+
         if (entries.IsDefaultOrEmpty)
+        {
+            cachedDrawStates = [];
             return;
+        }
 
         if (DService.Instance().ObjectTable.LocalPlayer is not { } localPlayer)
+        {
+            cachedDrawStates = [];
             return;
+        }
 
         var playerPosition = localPlayer.Position;
-        var drawList       = ImGui.GetForegroundDrawList();
 
         // 遮挡检测以摄像机视角为准, 取不到时回退玩家位置以避免误剔除
         var hasCameraPosition = false;
         var cameraPosition    = playerPosition;
 
+        stateListBuffer.Clear();
+
         foreach (var entry in entries)
         {
-            var onDraw = entry.OnDraw;
+            targetListBuffer.Clear();
 
             foreach (var (worldPosition, gameObject) in entry.ResolveTargets())
             {
                 var distanceSquared = Vector3.DistanceSquared(playerPosition, worldPosition);
-                var renderRadius    = entry.RenderRadius;
-                if (distanceSquared > renderRadius * renderRadius)
+                if (distanceSquared > entry.RenderRadiusSquared)
                     continue;
 
                 if (entry.HiddenWhenBlocked)
@@ -220,22 +233,36 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
                         continue;
                 }
 
-                var isOnScreen = DService.Instance().GameGUI.WorldToScreen(worldPosition, out var screenPosition);
+                var textInfo = ResolveText(entry, gameObject, worldPosition);
+                targetListBuffer.Add(new CachedDrawTarget(worldPosition, MathF.Sqrt(distanceSquared), textInfo));
+            }
 
-                var context = new ZoneIndicatorDrawContext
-                (
-                    worldPosition,
-                    screenPosition,
-                    isOnScreen,
-                    MathF.Sqrt(distanceSquared),
-                    drawList
-                );
+            if (targetListBuffer.Count > 0)
+                stateListBuffer.Add(new CachedEntryState(entry.OnDraw, targetListBuffer.ToArray()));
+        }
+
+        cachedDrawStates = stateListBuffer.ToArray();
+    }
+
+    private void OnDraw()
+    {
+        var states = cachedDrawStates;
+        if (states.Length == 0)
+            return;
+
+        var drawList = ImGui.GetForegroundDrawList();
+
+        foreach (var state in states)
+        {
+            var onDraw = state.OnDraw;
+
+            foreach (var target in state.Targets)
+            {
+                var isOnScreen = DService.Instance().GameGUI.WorldToScreen(target.WorldPosition, out var screenPosition);
 
                 try
                 {
-                    var textInfo = ResolveText(entry, gameObject, worldPosition);
-
-                    if (textInfo?.Text is { } text && isOnScreen)
+                    if (target.Text is { Text: { } text } textInfo && isOnScreen)
                     {
                         var finalScreenPos = screenPosition;
                         if (textInfo.TextOffset is { } offset)
@@ -244,29 +271,34 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
                         DrawText(drawList, finalScreenPos, text, textInfo.TextColor ?? DefaultTextColor, textInfo.TextScale ?? 1f);
                     }
 
-                    onDraw?.Invoke(context);
+                    if (onDraw != null)
+                    {
+                        var context = new ZoneIndicatorDrawContext
+                        (
+                            target.WorldPosition,
+                            screenPosition,
+                            isOnScreen,
+                            target.Distance,
+                            drawList
+                        );
+                        onDraw(context);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    DLog.Error($"绘制区域物体标记时发生错误: ID {entry.ID}", ex);
+                    DLog.Error("绘制区域物体标记时发生错误", ex);
                 }
             }
         }
     }
 
-    // 根据条目类型和当前目标解析文字参数
     private static ZoneIndicatorText? ResolveText
     (
         IndicatorEntry entry,
         IGameObject?   gameObject,
         Vector3        worldPosition
-    )
-    {
-        if (gameObject != null)
-            return entry.ObjTextGetter?.Invoke(gameObject);
-
-        return entry.PosTextGetter?.Invoke(worldPosition);
-    }
+    ) =>
+        gameObject != null ? entry.ObjTextGetter?.Invoke(gameObject) : entry.PosTextGetter?.Invoke(worldPosition);
 
     private static void DrawText
     (
@@ -277,7 +309,7 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         float         textScale
     )
     {
-        using var _ = FontManager.Instance().GetUIFont(textScale).Push();
+        using var font = FontManager.Instance().GetUIFont(textScale).Push();
 
         var textSize     = ImGui.CalcTextSize(text);
         var textPosition = screenPosition - (textSize * 0.5f);
@@ -285,12 +317,11 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
         var rectMax      = textPosition   + textSize + LabelPadding;
         var rounding     = (rectMax.Y - rectMin.Y) * 0.25f;
 
-        drawList.AddRectFilled(rectMin, rectMax, LabelBackgroundColor, rounding);
-        drawList.AddRect(rectMin, rectMax, LabelBorderColor, rounding, ImDrawFlags.None, 1f);
+        drawList.AddRectFilled(rectMin, rectMax, LABEL_BACKGROUND_COLOR, rounding);
+        drawList.AddRect(rectMin, rectMax, LABEL_BORDER_COLOR, rounding, ImDrawFlags.None, 1f);
         drawList.AddText(textPosition, textColor.ToUInt(), text);
     }
 
-    // 获取当前激活摄像机的世界坐标
     private static bool TryGetCameraPosition(out Vector3 position)
     {
         position = default;
@@ -317,10 +348,10 @@ public sealed unsafe class ImGuiZoneObjectIndicator : OmenServiceBase<ImGuiZoneO
     private static readonly Vector2 LabelPadding = new(6f, 3f);
 
     // 名牌背景填充色 (ABGR), 深色半透明
-    private const uint LabelBackgroundColor = 0xC8000000;
+    private const uint LABEL_BACKGROUND_COLOR = 0xC8000000;
 
     // 名牌边框色 (ABGR), 浅色半透明
-    private const uint LabelBorderColor = 0x50FFFFFF;
+    private const uint LABEL_BORDER_COLOR = 0x50FFFFFF;
 
     #endregion
 }

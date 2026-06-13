@@ -29,8 +29,9 @@ internal sealed class IndicatorEntry
         ObjTextGetter     = objTextGetter;
         PosTextGetter     = posTextGetter;
         OnDraw            = onDraw;
-        RenderRadius      = renderRadius;
-        HiddenWhenBlocked = hiddenWhenBlocked;
+        RenderRadius       = renderRadius;
+        RenderRadiusSquared = (float)renderRadius * renderRadius;
+        HiddenWhenBlocked   = hiddenWhenBlocked;
     }
 
     public ulong ID            { get; }
@@ -53,8 +54,9 @@ internal sealed class IndicatorEntry
     // 以下支持运行期就地更新, 引用赋值读写, 不加锁
     public Action<ZoneIndicatorDrawContext>? OnDraw { get; set; }
 
-    public uint RenderRadius      { get; }
-    public bool HiddenWhenBlocked { get; }
+    public uint  RenderRadius        { get; }
+    public float RenderRadiusSquared  { get; }
+    public bool  HiddenWhenBlocked    { get; }
 
     public static IndicatorEntry ForPosition
     (
