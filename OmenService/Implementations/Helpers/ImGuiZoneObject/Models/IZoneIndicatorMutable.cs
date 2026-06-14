@@ -9,12 +9,12 @@ namespace OmenTools.OmenService.ImGuiZoneObject;
 public interface IZoneIndicatorMutable
 {
     /// <summary>
-    ///     固定世界坐标, 仅 <see cref="ObjectGetter" /> 为 null 的固定位置条目生效
+    ///     位置获取器, 仅 <see cref="ObjectGetter" /> 为 null 的固定位置条目生效
     /// </summary>
-    Vector3 FixedPosition { get; set; }
+    Func<List<Vector3>>? PositionGetter { get; set; }
 
     /// <summary>
-    ///     物体获取器, 非 null 时条目跟随物体, 为 null 时回退固定位置
+    ///     物体获取器, 非 null 时条目跟随物体, 为 null 时回退位置获取器
     /// </summary>
     Func<List<nint>>? ObjectGetter { get; set; }
 

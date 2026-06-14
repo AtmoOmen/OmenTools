@@ -60,16 +60,19 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     #region 注册
 
     /// <summary>
-    ///     临时注册一个固定世界坐标标记, 区域切换时自动清空
+    ///     临时注册一个或多个世界坐标标记, 区域切换时自动清空
     /// </summary>
     public ZoneIndicatorHandle RegTemporary
     (
-        Vector3                           position,
+        Func<List<Vector3>>               positionGetter,
         Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
         Action<ZoneIndicatorDrawContext>? onDraw        = null,
         ZoneIndicatorOptions?             options       = null
-    ) =>
-        Register(ZoneIndicatorEntry.ForPosition(NewID(), GameState.TerritoryType, false, position, posTextGetter, onDraw, options));
+    )
+    {
+        ArgumentNullException.ThrowIfNull(positionGetter);
+        return Register(ZoneIndicatorEntry.ForPosition(NewID(), GameState.TerritoryType, false, positionGetter, posTextGetter, onDraw, options));
+    }
 
     /// <summary>
     ///     临时注册一个跟随游戏物体的标记, 区域切换时自动清空
@@ -108,17 +111,20 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     }
 
     /// <summary>
-    ///     永久注册一个固定世界坐标标记, 进入对应区域才激活, 取消注册前一直保留
+    ///     永久注册一个或多个世界坐标标记, 进入对应区域才激活, 取消注册前一直保留
     /// </summary>
     public ZoneIndicatorHandle RegPermanent
     (
         uint                              territoryType,
-        Vector3                           position,
+        Func<List<Vector3>>               positionGetter,
         Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
         Action<ZoneIndicatorDrawContext>? onDraw        = null,
         ZoneIndicatorOptions?             options       = null
-    ) =>
-        Register(ZoneIndicatorEntry.ForPosition(NewID(), territoryType, true, position, posTextGetter, onDraw, options));
+    )
+    {
+        ArgumentNullException.ThrowIfNull(positionGetter);
+        return Register(ZoneIndicatorEntry.ForPosition(NewID(), territoryType, true, positionGetter, posTextGetter, onDraw, options));
+    }
 
     /// <summary>
     ///     永久注册一个跟随游戏物体的标记, 进入对应区域才激活, 取消注册前一直保留

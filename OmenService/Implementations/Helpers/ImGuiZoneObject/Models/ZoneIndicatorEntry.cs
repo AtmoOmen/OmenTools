@@ -14,7 +14,7 @@ internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
         ulong                             id,
         uint                              territoryType,
         bool                              isPermanent,
-        Vector3                           fixedPosition,
+        Func<List<Vector3>>?              positionGetter,
         Func<List<nint>>?                 objectGetter,
         Func<nint, ZoneIndicatorText>?    objTextGetter,
         Func<Vector3, ZoneIndicatorText>? posTextGetter,
@@ -27,7 +27,7 @@ internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
         ID                = id;
         TerritoryType     = territoryType;
         IsPermanent       = isPermanent;
-        FixedPosition     = fixedPosition;
+        PositionGetter    = positionGetter;
         ObjectGetter      = objectGetter;
         ObjTextGetter     = objTextGetter;
         PosTextGetter     = posTextGetter;
@@ -41,8 +41,8 @@ internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
     public uint  TerritoryType { get; }
     public bool  IsPermanent   { get; }
 
-    public Vector3           FixedPosition { get; set; }
-    public Func<List<nint>>? ObjectGetter  { get; set; }
+    public Func<List<Vector3>>? PositionGetter { get; set; }
+    public Func<List<nint>>?    ObjectGetter   { get; set; }
 
     public Func<nint, ZoneIndicatorText>?    ObjTextGetter { get; set; }
     public Func<Vector3, ZoneIndicatorText>? PosTextGetter { get; set; }
@@ -73,19 +73,20 @@ internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
         ulong                             id,
         uint                              territoryType,
         bool                              isPermanent,
-        Vector3                           position,
+        Func<List<Vector3>>               positionGetter,
         Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
         Action<ZoneIndicatorDrawContext>? onDraw        = null,
         ZoneIndicatorOptions?             options       = null
     )
     {
+        ArgumentNullException.ThrowIfNull(positionGetter);
         options ??= ZoneIndicatorOptions.Default;
         return new
         (
             id,
             territoryType,
             isPermanent,
-            position,
+            positionGetter,
             null,
             null,
             posTextGetter,
@@ -113,7 +114,7 @@ internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
             id,
             territoryType,
             isPermanent,
-            default,
+            null,
             objectGetter,
             objTextGetter,
             null,
@@ -126,14 +127,23 @@ internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
 
     /// <summary>
     ///     解析所有目标位置及对应物体指针
-    ///     固定位置条目返回单一 (FixedPosition, nint.Zero)
+    ///     位置条目返回位置获取器提供的每个 (Position, nint.Zero)
     ///     跟随物体条目返回每个有效物体的 (Position, ObjectPtr)
     /// </summary>
     public IEnumerable<(Vector3 Position, nint ObjectPtr)> ResolveTargets()
     {
         if (ObjectGetter == null)
         {
-            yield return (FixedPosition, nint.Zero);
+            if (PositionGetter == null)
+                yield break;
+
+            var positions = PositionGetter();
+            if (positions is not { Count: > 0 })
+                yield break;
+
+            foreach (var pos in positions)
+                yield return (pos, nint.Zero);
+
             yield break;
         }
 
