@@ -15,115 +15,50 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     #region 公开
 
     /// <summary>
-    ///     临时注册一个或多个世界坐标标记, 区域切换时自动清空
+    ///     临时注册标记, 区域切换时自动清空
     /// </summary>
-    public ZoneIndicatorHandle RegTemporary
+    /// <typeparam name="T">数据源类型, 每个实例可提供一个世界坐标</typeparam>
+    /// <param name="sourceGetter">数据源获取器, 返回的列表每项对应一个标记</param>
+    /// <param name="posGetter">从 T 提取世界坐标</param>
+    /// <param name="options">选项, 含 TextGetter / CustomDraw / RenderRadius 等, null 取默认</param>
+    public ZoneIndicatorHandle RegTemporary<T>
     (
-        Func<List<Vector3>>               positionGetter,
-        Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
-        Action<ZoneIndicatorDrawContext>? onDraw        = null,
-        ZoneIndicatorOptions?             options       = null
+        Func<List<T>>            sourceGetter,
+        Func<T, Vector3>         posGetter,
+        ZoneIndicatorOptions<T>? options = null
     )
     {
-        ArgumentNullException.ThrowIfNull(positionGetter);
-        return Register(ZoneIndicatorEntry.ForPosition(NewID(), GameState.TerritoryType, false, positionGetter, posTextGetter, onDraw, options));
+        ArgumentNullException.ThrowIfNull(sourceGetter);
+        ArgumentNullException.ThrowIfNull(posGetter);
+        return Register(new ZoneIndicatorEntry<T>(NewID(), GameState.TerritoryType, false, sourceGetter, posGetter, options ?? new ZoneIndicatorOptions<T>()));
     }
 
     /// <summary>
-    ///     临时注册一个跟随游戏物体的标记, 区域切换时自动清空
+    ///     永久注册标记, 进入对应区域才激活, 取消注册前一直保留
     /// </summary>
-    public ZoneIndicatorHandle RegTemporary
+    /// <typeparam name="T">数据源类型, 每个实例可提供一个世界坐标</typeparam>
+    /// <param name="territoryType">激活该标记的区域 ID</param>
+    /// <param name="sourceGetter">数据源获取器, 返回的列表每项对应一个标记</param>
+    /// <param name="posGetter">从 T 提取世界坐标</param>
+    /// <param name="options">选项, 含 TextGetter / CustomDraw / RenderRadius 等, null 取默认</param>
+    public ZoneIndicatorHandle RegPermanent<T>
     (
-        Func<List<nint>>                  objectGetter,
-        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
-        Action<ZoneIndicatorDrawContext>? onDraw        = null,
-        ZoneIndicatorOptions?             options       = null
+        uint                     territoryType,
+        Func<List<T>>            sourceGetter,
+        Func<T, Vector3>         posGetter,
+        ZoneIndicatorOptions<T>? options = null
     )
     {
-        ArgumentNullException.ThrowIfNull(objectGetter);
-        return Register(ZoneIndicatorEntry.ForObject(NewID(), GameState.TerritoryType, false, objectGetter, objTextGetter, onDraw, options));
+        ArgumentNullException.ThrowIfNull(sourceGetter);
+        ArgumentNullException.ThrowIfNull(posGetter);
+        return Register(new ZoneIndicatorEntry<T>(NewID(), territoryType, true, sourceGetter, posGetter, options ?? new ZoneIndicatorOptions<T>()));
     }
 
-    /// <summary>
-    ///     临时注册一个跟随游戏物体的标记 (IGameObject 兼容路径), 区域切换时自动清空
-    /// </summary>
-    public ZoneIndicatorHandle RegTemporary
-    (
-        Func<List<IGameObject>>           objectGetter,
-        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
-        Action<ZoneIndicatorDrawContext>? onDraw        = null,
-        ZoneIndicatorOptions?             options       = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(objectGetter);
-        return RegTemporary
-        (
-            AdaptObjectGetter(objectGetter),
-            objTextGetter,
-            onDraw,
-            options
-        );
-    }
-
-    /// <summary>
-    ///     永久注册一个或多个世界坐标标记, 进入对应区域才激活, 取消注册前一直保留
-    /// </summary>
-    public ZoneIndicatorHandle RegPermanent
-    (
-        uint                              territoryType,
-        Func<List<Vector3>>               positionGetter,
-        Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
-        Action<ZoneIndicatorDrawContext>? onDraw        = null,
-        ZoneIndicatorOptions?             options       = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(positionGetter);
-        return Register(ZoneIndicatorEntry.ForPosition(NewID(), territoryType, true, positionGetter, posTextGetter, onDraw, options));
-    }
-
-    /// <summary>
-    ///     永久注册一个跟随游戏物体的标记, 进入对应区域才激活, 取消注册前一直保留
-    /// </summary>
-    public ZoneIndicatorHandle RegPermanent
-    (
-        uint                              territoryType,
-        Func<List<nint>>                  objectGetter,
-        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
-        Action<ZoneIndicatorDrawContext>? onDraw        = null,
-        ZoneIndicatorOptions?             options       = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(objectGetter);
-        return Register(ZoneIndicatorEntry.ForObject(NewID(), territoryType, true, objectGetter, objTextGetter, onDraw, options));
-    }
-
-    /// <summary>
-    ///     永久注册一个跟随游戏物体的标记 (IGameObject 兼容路径), 进入对应区域才激活, 取消注册前一直保留
-    /// </summary>
-    public ZoneIndicatorHandle RegPermanent
-    (
-        uint                              territoryType,
-        Func<List<IGameObject>>           objectGetter,
-        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
-        Action<ZoneIndicatorDrawContext>? onDraw        = null,
-        ZoneIndicatorOptions?             options       = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(objectGetter);
-        return RegPermanent
-        (
-            territoryType,
-            AdaptObjectGetter(objectGetter),
-            objTextGetter,
-            onDraw,
-            options
-        );
-    }
     #endregion
 
-    private readonly ConcurrentDictionary<ulong, ZoneIndicatorEntry> masterStore = [];
+    private readonly ConcurrentDictionary<ulong, ZoneIndicatorEntryBase> masterStore = [];
 
-    private ImmutableArray<ZoneIndicatorEntry> activeEntries = [];
+    private ImmutableArray<ZoneIndicatorEntryBase> activeEntries = [];
 
     private CachedEntryState[] cachedDrawStates = [];
 
@@ -197,31 +132,30 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         {
             targetListBuffer.Clear();
 
-            foreach (var (worldPosition, objectPtr) in entry.ResolveTargets())
+            foreach (var target in entry.ResolveTargets())
             {
-                var distanceSquared = Vector3.DistanceSquared(playerPosition, worldPosition);
-                if (distanceSquared > entry.RenderRadiusSquared)
+                var distanceSquared = Vector3.DistanceSquared(playerPosition, target.Position);
+                if (entry.RenderRadiusSquared is { } rSq && distanceSquared > rSq)
                     continue;
 
                 if (entry.HiddenWhenBlocked)
                 {
                     cameraPos ??= TryGetCameraPosition(out var cp) ? cp : playerPosition;
-                    if (!RaycastHelper.HasLineOfSight(cameraPos.Value, worldPosition))
+                    if (!RaycastHelper.HasLineOfSight(cameraPos.Value, target.Position))
                         continue;
                 }
 
-                var textInfo = ResolveText(entry, objectPtr, worldPosition);
-                var resolvedColor = textInfo switch
+                var resolvedColor = target.Text switch
                 {
-                    { Text: { } text }  => textInfo.TextColor ?? GetStableColor(text),
-                    { Image: not null } => textInfo.TextColor ?? new Vector4(1f),
+                    { Text: { } t }     => target.Text.TextColor ?? GetStableColor(t),
+                    { Image: not null } => target.Text.TextColor ?? new Vector4(1f),
                     _                   => Vector4.Zero
                 };
-                targetListBuffer.Add(new CachedDrawTarget(worldPosition, MathF.Sqrt(distanceSquared), textInfo, resolvedColor));
+                targetListBuffer.Add(new CachedDrawTarget(target.Position, MathF.Sqrt(distanceSquared), target.Text, resolvedColor, target.OnDraw));
             }
 
             if (targetListBuffer.Count > 0)
-                stateListBuffer.Add(new CachedEntryState(entry.ID, entry.OnDraw, targetListBuffer.ToArray(), entry.Surrounding));
+                stateListBuffer.Add(new CachedEntryState(entry.ID, targetListBuffer.ToArray(), entry.Surrounding));
         }
 
         cachedDrawStates = stateListBuffer.ToArray();
@@ -240,8 +174,6 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
         foreach (var state in states)
         {
-            var onDraw = state.OnDraw;
-
             for (var i = 0; i < state.Targets.Length; i++)
             {
                 var target     = state.Targets[i];
@@ -282,7 +214,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                     if (state.Surrounding is { } surrounding)
                         DrawSurrounding(bgDrawList, target.WorldPosition, surrounding);
 
-                    if (onDraw != null)
+                    if (target.OnDraw is { } perTargetDraw)
                     {
                         var context = new ZoneIndicatorDrawContext
                         (
@@ -293,7 +225,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                             fgDrawList,
                             textSize
                         );
-                        onDraw(context);
+                        perTargetDraw(context);
                     }
                 }
                 catch (Exception ex)
@@ -309,7 +241,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
     #endregion
 
-    private ZoneIndicatorHandle Register(ZoneIndicatorEntry entry)
+    private ZoneIndicatorHandle Register(ZoneIndicatorEntryBase entry)
     {
         masterStore[entry.ID] = entry;
         RebuildActiveEntries();
@@ -347,7 +279,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     {
         var currentTerritory = GameState.TerritoryType;
 
-        var builder = ImmutableArray.CreateBuilder<ZoneIndicatorEntry>();
+        var builder = ImmutableArray.CreateBuilder<ZoneIndicatorEntryBase>();
 
         foreach (var entry in masterStore.Values)
         {
@@ -357,10 +289,6 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
         activeEntries = builder.ToImmutable();
     }
-
-
-    private static ZoneIndicatorText? ResolveText(ZoneIndicatorEntry entry, nint objectPtr, Vector3 worldPosition) =>
-        objectPtr != nint.Zero ? entry.ObjTextGetter?.Invoke(objectPtr) : entry.PosTextGetter?.Invoke(worldPosition);
 
     private static void DrawTextBackground(ImDrawListPtr drawList, Vector2 screenPosition, Vector4 textColor, Vector2 cachedSize)
     {
@@ -461,7 +389,6 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         }
     }
 
-
     private static void DrawSurrounding(ImDrawListPtr drawList, Vector3 worldPos, ZoneIndicatorSurrounding s)
     {
         var gui   = DService.Instance().GameGUI;
@@ -556,7 +483,6 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         return gui.WorldToScreen(Vector3.Lerp(visible, behind, lo), out clipScreen);
     }
 
-
     private static Vector4 GetStableColor(ReadOnlySeString text)
     {
         var hue = (GetStableHash(text) & 0x7FFFFFFF) % 360 / 360f;
@@ -608,25 +534,6 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         };
     }
 
-
-    private static Func<List<nint>> AdaptObjectGetter(Func<List<IGameObject>> getter) =>
-        () =>
-        {
-            var objects = getter();
-            if (objects is not { Count: > 0 })
-                return [];
-
-            var result = new List<nint>(objects.Count);
-
-            foreach (var go in objects)
-            {
-                if (go.Address != nint.Zero)
-                    result.Add((nint)go.ToStruct());
-            }
-
-            return result;
-        };
-
     private static bool TryGetCameraPosition(out Vector3 position)
     {
         position = default;
@@ -674,17 +581,13 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
     internal sealed class CachedEntryState
     (
-        ulong                             entryID,
-        Action<ZoneIndicatorDrawContext>? onDraw,
-        CachedDrawTarget[]                targets,
-        ZoneIndicatorSurrounding?         surrounding
+        ulong                     entryID,
+        CachedDrawTarget[]        targets,
+        ZoneIndicatorSurrounding? surrounding
     )
     {
         /// <summary>条目 ID, 用于尺寸缓存索引</summary>
         public ulong EntryID { get; } = entryID;
-
-        /// <summary>自定义绘制委托, null 表示仅绘制文字</summary>
-        public Action<ZoneIndicatorDrawContext>? OnDraw { get; } = onDraw;
 
         /// <summary>经距离剔除与遮挡剔除后的绘制目标</summary>
         public CachedDrawTarget[] Targets { get; } = targets;
@@ -695,10 +598,11 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
     internal readonly struct CachedDrawTarget
     (
-        Vector3            worldPosition,
-        float              distance,
-        ZoneIndicatorText? text,
-        Vector4            textColor
+        Vector3                           worldPosition,
+        float                             distance,
+        ZoneIndicatorText?                text,
+        Vector4                           textColor,
+        Action<ZoneIndicatorDrawContext>? onDraw
     )
     {
         /// <summary>目标世界坐标</summary>
@@ -712,6 +616,9 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
         /// <summary>已解析并缓存的颜色</summary>
         public Vector4 TextColor { get; } = textColor;
+
+        /// <summary>逐目标的自定义绘制回调, null 表示无</summary>
+        public Action<ZoneIndicatorDrawContext>? OnDraw { get; } = onDraw;
     }
 
     /// <summary>Draw 阶段第一遍收集的文字绘制信息, 供第二遍批量 SeString 渲染</summary>

@@ -1,175 +1,104 @@
 using System.Numerics;
-using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace OmenTools.OmenService.ZoneIndicator;
 
-internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
+internal abstract class ZoneIndicatorEntryBase : IZoneIndicatorMutable
 {
-    private ZoneIndicatorEntry
+    protected ZoneIndicatorEntryBase
     (
-        ulong                             id,
-        uint                              territoryType,
-        bool                              isPermanent,
-        Func<List<Vector3>>?              positionGetter,
-        Func<List<nint>>?                 objectGetter,
-        Func<nint, ZoneIndicatorText>?    objTextGetter,
-        Func<Vector3, ZoneIndicatorText>? posTextGetter,
-        Action<ZoneIndicatorDrawContext>? onDraw,
-        uint                              renderRadius,
-        bool                              hiddenWhenBlocked,
-        ZoneIndicatorSurrounding?         surrounding
+        ulong                id,
+        uint                 territoryType,
+        bool                 isPermanent,
+        ZoneIndicatorOptions options
     )
     {
         ID                = id;
         TerritoryType     = territoryType;
         IsPermanent       = isPermanent;
-        PositionGetter    = positionGetter;
-        ObjectGetter      = objectGetter;
-        ObjTextGetter     = objTextGetter;
-        PosTextGetter     = posTextGetter;
-        OnDraw            = onDraw;
-        RenderRadius      = renderRadius;
-        HiddenWhenBlocked = hiddenWhenBlocked;
-        Surrounding       = surrounding;
+        RenderRadius      = options.RenderRadius;
+        HiddenWhenBlocked = options.HiddenWhenBlocked;
+        Surrounding       = options.Surrounding;
     }
 
     public ulong ID            { get; }
     public uint  TerritoryType { get; }
     public bool  IsPermanent   { get; }
 
-    public Func<List<Vector3>>? PositionGetter { get; set; }
-    public Func<List<nint>>?    ObjectGetter   { get; set; }
-
-    public Func<nint, ZoneIndicatorText>?    ObjTextGetter { get; set; }
-    public Func<Vector3, ZoneIndicatorText>? PosTextGetter { get; set; }
-
-    public Action<ZoneIndicatorDrawContext>? OnDraw { get; set; }
-
-    public uint RenderRadius
+    public uint? RenderRadius
     {
         get;
         set
         {
             field               = value;
-            RenderRadiusSquared = (float)value * value;
+            RenderRadiusSquared = value is { } v ? (float)v * v : null;
         }
     }
 
-    /// <summary>
-    ///     渲染半径平方, 随 <see cref="RenderRadius" /> 自动更新, 供距离剔除直接比较
-    /// </summary>
-    public float RenderRadiusSquared { get; private set; }
+    /// <summary>渲染半径平方, null 表示不做距离限制</summary>
+    public float? RenderRadiusSquared { get; private set; }
 
-    public bool HiddenWhenBlocked { get; set; }
+    public bool                      HiddenWhenBlocked { get; set; }
+    public ZoneIndicatorSurrounding? Surrounding       { get; set; }
 
-    public ZoneIndicatorSurrounding? Surrounding { get; set; }
+    /// <summary>解析所有目标, 每项已含预解析的 <see cref="ZoneIndicatorText" /> 与逐目标 CustomDraw 闭包</summary>
+    internal abstract IEnumerable<ResolvedTarget> ResolveTargets();
+}
 
-    public static ZoneIndicatorEntry ForPosition
+internal sealed class ZoneIndicatorEntry<T> : ZoneIndicatorEntryBase
+{
+    private readonly Func<List<T>>                        sourceGetter;
+    private readonly Func<T, Vector3>                     positionSelector;
+    private readonly Func<T, ZoneIndicatorText>?          textGetter;
+    private readonly Action<ZoneIndicatorDrawContext<T>>? customDraw;
+
+    public ZoneIndicatorEntry
     (
-        ulong                             id,
-        uint                              territoryType,
-        bool                              isPermanent,
-        Func<List<Vector3>>               positionGetter,
-        Func<Vector3, ZoneIndicatorText>? posTextGetter = null,
-        Action<ZoneIndicatorDrawContext>? onDraw        = null,
-        ZoneIndicatorOptions?             options       = null
-    )
+        ulong                   id,
+        uint                    territoryType,
+        bool                    isPermanent,
+        Func<List<T>>           sourceGetter,
+        Func<T, Vector3>        positionSelector,
+        ZoneIndicatorOptions<T> options
+    ) : base(id, territoryType, isPermanent, options)
     {
-        ArgumentNullException.ThrowIfNull(positionGetter);
-        options ??= ZoneIndicatorOptions.Default;
-        return new
-        (
-            id,
-            territoryType,
-            isPermanent,
-            positionGetter,
-            null,
-            null,
-            posTextGetter,
-            onDraw,
-            options.RenderRadius,
-            options.HiddenWhenBlocked,
-            options.Surrounding
-        );
+        this.sourceGetter     = sourceGetter;
+        this.positionSelector = positionSelector;
+        textGetter            = options.TextGetter;
+        customDraw            = options.CustomDraw;
     }
 
-    public static ZoneIndicatorEntry ForObject
-    (
-        ulong                             id,
-        uint                              territoryType,
-        bool                              isPermanent,
-        Func<List<nint>>                  objectGetter,
-        Func<nint, ZoneIndicatorText>?    objTextGetter = null,
-        Action<ZoneIndicatorDrawContext>? onDraw        = null,
-        ZoneIndicatorOptions?             options       = null
-    )
+    internal override IEnumerable<ResolvedTarget> ResolveTargets()
     {
-        options ??= ZoneIndicatorOptions.Default;
-        return new
-        (
-            id,
-            territoryType,
-            isPermanent,
-            null,
-            objectGetter,
-            objTextGetter,
-            null,
-            onDraw,
-            options.RenderRadius,
-            options.HiddenWhenBlocked,
-            options.Surrounding
-        );
-    }
-
-    /// <summary>
-    ///     解析所有目标位置及对应物体指针
-    ///     位置条目返回位置获取器提供的每个 (Position, nint.Zero)
-    ///     跟随物体条目返回每个有效物体的 (Position, ObjectPtr)
-    /// </summary>
-    public IEnumerable<(Vector3 Position, nint ObjectPtr)> ResolveTargets()
-    {
-        if (ObjectGetter == null)
-        {
-            if (PositionGetter == null)
-                yield break;
-
-            var positions = PositionGetter();
-            if (positions is not { Count: > 0 })
-                yield break;
-
-            foreach (var pos in positions)
-                yield return (pos, nint.Zero);
-
-            yield break;
-        }
-
-        var ptrs = ObjectGetter();
-        if (ptrs is not { Count: > 0 })
+        var sources = sourceGetter();
+        if (sources is not { Count: > 0 })
             yield break;
 
-        foreach (var ptr in ptrs)
+        foreach (var source in sources)
         {
-            if (ptr == nint.Zero)
-                continue;
+            var pos  = positionSelector(source);
+            var text = textGetter?.Invoke(source);
 
-            if (!TryGetPosition(ptr, out var pos))
-                continue;
+            Action<ZoneIndicatorDrawContext>? perTargetDraw = null;
 
-            yield return (pos, ptr);
+            if (customDraw is not null)
+            {
+                var captured = source;
+                perTargetDraw = ctx => customDraw(new ZoneIndicatorDrawContext<T>(ctx, captured));
+            }
+
+            yield return new ResolvedTarget(pos, text, perTargetDraw);
         }
     }
+}
 
-    private static bool TryGetPosition(nint ptr, out Vector3 pos)
-    {
-        var go = (CSGameObject*)ptr;
-
-        if (go == null)
-        {
-            pos = default;
-            return false;
-        }
-
-        pos = go->Position;
-        return true;
-    }
+internal readonly struct ResolvedTarget
+(
+    Vector3                           position,
+    ZoneIndicatorText?                text,
+    Action<ZoneIndicatorDrawContext>? onDraw
+)
+{
+    public Vector3                           Position { get; } = position;
+    public ZoneIndicatorText?                Text     { get; } = text;
+    public Action<ZoneIndicatorDrawContext>? OnDraw   { get; } = onDraw;
 }
