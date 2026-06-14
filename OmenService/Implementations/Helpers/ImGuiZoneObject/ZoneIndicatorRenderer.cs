@@ -10,10 +10,6 @@ using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
-/// <summary>
-///     提供在游戏内用 ImGui 标记某个物体或地点的轻量封装
-///     支持临时注册 (区域切换自动清空) 与永久注册 (进入对应区域才激活)
-/// </summary>
 public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicatorRenderer>
 {
     #region 公开
