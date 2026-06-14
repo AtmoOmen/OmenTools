@@ -40,6 +40,6 @@ public sealed class ZoneIndicatorText
         public required ISharedImmediateTexture Texture { get; init; }
 
         /// <summary>图片尺寸</summary>
-        public required Func<Vector2> Size { get; init; }
+        public required Func<Vector2> SizeGetter { get; init; }
     }
 }

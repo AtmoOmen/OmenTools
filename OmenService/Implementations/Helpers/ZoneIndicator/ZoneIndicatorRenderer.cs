@@ -426,7 +426,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                     {
                         var (_, cachedTextOnlyH) = textSizeCache.TryGetValue(d.CacheKey, out var c) ? c : (FallbackTextSize, 0f);
                         var rowOriginY = ImGui.GetCursorPosY();
-                        var imageSize  = image.Size();
+                        var imageSize  = image.SizeGetter();
                         var textHeight = cachedTextOnlyH > 0f ? cachedTextOnlyH : ImGui.GetTextLineHeight();
                         var rowHeight  = Math.Max(imageSize.Y, textHeight);
 
@@ -445,7 +445,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                     case ({ } imageOnly, null):
                     {
                         if (imageOnly.Texture.GetWrapOrDefault() is { } wrap && wrap.Handle != nint.Zero)
-                            ImGui.Image(wrap.Handle, imageOnly.Size());
+                            ImGui.Image(wrap.Handle, imageOnly.SizeGetter());
                         break;
                     }
                     case (null, { } textOnly):
