@@ -46,28 +46,19 @@ internal abstract class ZoneIndicatorEntryBase : IZoneIndicatorMutable
     internal abstract IEnumerable<ResolvedTarget> ResolveTargets();
 }
 
-internal sealed class ZoneIndicatorEntry<T> : ZoneIndicatorEntryBase
+internal sealed class ZoneIndicatorEntry<T>
+(
+    ulong                   id,
+    uint                    territoryType,
+    bool                    isPermanent,
+    Func<List<T>>           sourceGetter,
+    Func<T, Vector3>        positionSelector,
+    ZoneIndicatorOptions<T> options
+)
+    : ZoneIndicatorEntryBase(id, territoryType, isPermanent, options)
 {
-    private readonly Func<List<T>>                        sourceGetter;
-    private readonly Func<T, Vector3>                     positionSelector;
-    private readonly Func<T, ZoneIndicatorText>?          textGetter;
-    private readonly Action<ZoneIndicatorDrawContext<T>>? customDraw;
-
-    public ZoneIndicatorEntry
-    (
-        ulong                   id,
-        uint                    territoryType,
-        bool                    isPermanent,
-        Func<List<T>>           sourceGetter,
-        Func<T, Vector3>        positionSelector,
-        ZoneIndicatorOptions<T> options
-    ) : base(id, territoryType, isPermanent, options)
-    {
-        this.sourceGetter     = sourceGetter;
-        this.positionSelector = positionSelector;
-        textGetter            = options.TextGetter;
-        customDraw            = options.CustomDraw;
-    }
+    private readonly Func<T, ZoneIndicatorText>?          textGetter       = options.TextGetter;
+    private readonly Action<ZoneIndicatorDrawContext<T>>? customDraw       = options.CustomDraw;
 
     internal override IEnumerable<ResolvedTarget> ResolveTargets()
     {
