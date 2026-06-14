@@ -1,4 +1,4 @@
-namespace OmenTools.OmenService.ImGuiZoneObject;
+namespace OmenTools.OmenService.ZoneIndicator;
 
 public sealed class ZoneIndicatorOptions
 {

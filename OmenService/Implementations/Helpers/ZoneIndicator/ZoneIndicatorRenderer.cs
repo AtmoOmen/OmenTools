@@ -8,7 +8,7 @@ using OmenTools.Dalamud;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.OmenService.Abstractions;
 
-namespace OmenTools.OmenService.ImGuiZoneObject;
+namespace OmenTools.OmenService.ZoneIndicator;
 
 public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicatorRenderer>
 {

@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace OmenTools.OmenService.ImGuiZoneObject;
+namespace OmenTools.OmenService.ZoneIndicator;
 
 public interface IZoneIndicatorMutable
 {

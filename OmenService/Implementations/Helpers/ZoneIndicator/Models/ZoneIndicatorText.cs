@@ -2,7 +2,7 @@ using System.Numerics;
 using Dalamud.Interface.Textures;
 using Lumina.Text.ReadOnly;
 
-namespace OmenTools.OmenService.ImGuiZoneObject;
+namespace OmenTools.OmenService.ZoneIndicator;
 
 public sealed class ZoneIndicatorText
 {

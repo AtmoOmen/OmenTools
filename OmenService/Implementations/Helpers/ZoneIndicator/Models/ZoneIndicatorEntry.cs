@@ -1,7 +1,7 @@
 using System.Numerics;
 using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
-namespace OmenTools.OmenService.ImGuiZoneObject;
+namespace OmenTools.OmenService.ZoneIndicator;
 
 internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
 {
