@@ -16,48 +16,7 @@ namespace OmenTools.OmenService.ImGuiZoneObject;
 /// </summary>
 public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicatorRenderer>
 {
-    // 全局唯一且单调递增的句柄 ID, 永不复用
-    private long nextID;
-
-    // 句柄操作的唯一查找源, 永久注册常驻, 临时注册在区域切换时整批移除
-    private readonly ConcurrentDictionary<ulong, ZoneIndicatorEntry> masterStore = [];
-
-    // 当前区域应绘制的条目快照
-    private ImmutableArray<ZoneIndicatorEntry> activeEntries = [];
-
-    // Update 阶段预计算后的绘制状态, Draw 阶段只读消费, 原子替换
-    private CachedEntryState[] cachedDrawStates = [];
-
-    // Update 阶段复用缓冲区
-    private readonly List<CachedEntryState> stateListBuffer  = [];
-    private readonly List<CachedDrawTarget> targetListBuffer = [];
-    private readonly List<TextDrawInfo>     textDrawBuffer   = [];
-
-    // 文字尺寸缓存: (EntryID, TargetIndex) → 上一帧渲染尺寸, 用于居中对齐与背景绘制
-    private readonly ConcurrentDictionary<(ulong EntryID, int TargetIndex), Vector2> textSizeCache = [];
-
-    private static readonly Vector2 DefaultTextSize = new(50f, 20f);
-
-    protected override void Init()
-    {
-        DService.Instance().ClientState.TerritoryChanged += OnTerritoryChanged;
-        FrameworkManager.Instance().Reg(OnUpdate, 100);
-        WindowManager.Instance().PostDraw += OnDraw;
-    }
-
-    protected override void Uninit()
-    {
-        DService.Instance().ClientState.TerritoryChanged -= OnTerritoryChanged;
-        FrameworkManager.Instance().Unreg(OnUpdate);
-        WindowManager.Instance().PostDraw -= OnDraw;
-
-        masterStore.Clear();
-        textSizeCache.Clear();
-        activeEntries    = [];
-        cachedDrawStates = [];
-    }
-
-    #region 注册
+    #region 公开
 
     /// <summary>
     ///     临时注册一个或多个世界坐标标记, 区域切换时自动清空
@@ -165,51 +124,48 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         );
     }
 
-    private ZoneIndicatorHandle Register(ZoneIndicatorEntry entry)
-    {
-        masterStore[entry.ID] = entry;
-        RebuildActiveEntries();
-
-        return new() { ID = entry.ID };
-    }
-
-    private ulong NewID() =>
-        (ulong)Interlocked.Increment(ref nextID);
-
     #endregion
 
-    #region 句柄转发
+    private readonly ConcurrentDictionary<ulong, ZoneIndicatorEntry> masterStore = [];
 
-    internal bool UnregisterByID(ulong id)
+    private ImmutableArray<ZoneIndicatorEntry> activeEntries = [];
+
+    private CachedEntryState[] cachedDrawStates = [];
+
+    private readonly List<CachedEntryState> stateListBuffer  = [];
+    private readonly List<CachedDrawTarget> targetListBuffer = [];
+    private readonly List<TextDrawInfo>     textDrawBuffer   = [];
+
+    private readonly ConcurrentDictionary<(ulong EntryID, int TargetIndex), (Vector2 Size, float TextOnlyHeight)> textSizeCache = [];
+
+    private long nextID;
+
+    #region 生命周期
+
+    protected override void Init()
     {
-        if (!masterStore.TryRemove(id, out _))
-            return false;
-
-        // 清理该条目关联的尺寸缓存
-        foreach (var key in textSizeCache.Keys)
-        {
-            if (key.EntryID == id)
-                textSizeCache.TryRemove(key, out _);
-        }
-
-        RebuildActiveEntries();
-        return true;
+        DService.Instance().ClientState.TerritoryChanged += OnZoneChanged;
+        FrameworkManager.Instance().Reg(OnUpdate, 100);
+        WindowManager.Instance().PostDraw += OnDraw;
     }
 
-    internal bool UpdateByID(ulong id, Action<IZoneIndicatorMutable> mutator)
+    protected override void Uninit()
     {
-        if (!masterStore.TryGetValue(id, out var entry))
-            return false;
+        DService.Instance().ClientState.TerritoryChanged -= OnZoneChanged;
+        FrameworkManager.Instance().Unreg(OnUpdate);
+        WindowManager.Instance().PostDraw -= OnDraw;
 
-        mutator(entry);
-        return true;
+        masterStore.Clear();
+        textSizeCache.Clear();
+        activeEntries    = [];
+        cachedDrawStates = [];
     }
 
     #endregion
 
-    #region 内部
+    #region 事件
 
-    private void OnTerritoryChanged(uint territoryType)
+    private void OnZoneChanged(uint territoryType)
     {
         foreach (var (id, entry) in masterStore)
         {
@@ -219,23 +175,6 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
         textSizeCache.Clear();
         RebuildActiveEntries();
-    }
-
-    private void RebuildActiveEntries()
-    {
-        var currentTerritory = GameState.TerritoryType;
-
-        var builder = ImmutableArray.CreateBuilder<ZoneIndicatorEntry>();
-
-        foreach (var entry in masterStore.Values)
-        {
-            if (entry.TerritoryType != currentTerritory)
-                continue;
-
-            builder.Add(entry);
-        }
-
-        activeEntries = builder.ToImmutable();
     }
 
     private void OnUpdate(IFramework framework)
@@ -256,7 +195,6 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
         var playerPosition = localPlayer.Position;
 
-        // 遮挡检测以摄像机视角为准, 取不到时回退玩家位置以避免误剔除
         var hasCameraPosition = false;
         var cameraPosition    = playerPosition;
 
@@ -285,10 +223,13 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                         continue;
                 }
 
-                var textInfo      = ResolveText(entry, objectPtr, worldPosition);
-                var resolvedColor = Vector4.Zero;
-                if (textInfo is { Text: { } text })
-                    resolvedColor = textInfo.TextColor ?? GetStableColor(text);
+                var textInfo = ResolveText(entry, objectPtr, worldPosition);
+                var resolvedColor = textInfo switch
+                {
+                    { Text: { } text }  => textInfo.TextColor ?? GetStableColor(text),
+                    { Image: not null } => textInfo.TextColor ?? new Vector4(1f),
+                    _                   => Vector4.Zero
+                };
                 targetListBuffer.Add(new CachedDrawTarget(worldPosition, MathF.Sqrt(distanceSquared), textInfo, resolvedColor));
             }
 
@@ -308,7 +249,6 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         var bgDrawList = ImGui.GetBackgroundDrawList();
         var fgDrawList = ImGui.GetForegroundDrawList();
 
-        // 第一遍: 绘制背景矩形、包围形状, 收集需要渲染文字的条目
         textDrawBuffer.Clear();
 
         foreach (var state in states)
@@ -325,13 +265,13 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                     var textSize = DefaultTextSize;
                     var cacheKey = (state.EntryID, i);
 
-                    if (target.Text is { Text: { } text } textInfo && isOnScreen)
+                    if (target.Text is { } textInfo && isOnScreen && (textInfo.Text is not null || textInfo.Image is not null))
                     {
                         var finalScreenPos = screenPosition;
                         if (textInfo.TextOffset is { } offset)
                             finalScreenPos += new Vector2(offset.X, offset.Y);
 
-                        var cachedSize = textSizeCache.GetValueOrDefault(cacheKey, DefaultTextSize);
+                        var cachedSize = textSizeCache.GetValueOrDefault(cacheKey, DefaultCached).Size;
 
                         DrawTextBackground(bgDrawList, finalScreenPos, target.TextColor, cachedSize);
 
@@ -340,11 +280,12 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                             new TextDrawInfo
                             {
                                 ScreenPos  = finalScreenPos,
-                                Text       = text,
+                                Text       = textInfo.Text,
                                 Color      = target.TextColor,
                                 Scale      = textInfo.TextScale ?? 1f,
                                 CacheKey   = cacheKey,
-                                CachedSize = cachedSize
+                                CachedSize = cachedSize,
+                                Image      = textInfo.Image
                             }
                         );
 
@@ -375,9 +316,63 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
             }
         }
 
-        // 第二遍: 单个全屏透明窗口承载所有 SeStringWrapped
         if (textDrawBuffer.Count > 0)
             RenderSeStringBatch();
+    }
+
+    #endregion
+
+    private ZoneIndicatorHandle Register(ZoneIndicatorEntry entry)
+    {
+        masterStore[entry.ID] = entry;
+        RebuildActiveEntries();
+
+        return new() { ID = entry.ID };
+    }
+
+    private ulong NewID() =>
+        (ulong)Interlocked.Increment(ref nextID);
+
+    internal bool UnregisterByID(ulong id)
+    {
+        if (!masterStore.TryRemove(id, out _))
+            return false;
+
+        // 清理该条目关联的尺寸缓存
+        foreach (var key in textSizeCache.Keys)
+        {
+            if (key.EntryID == id)
+                textSizeCache.TryRemove(key, out _);
+        }
+
+        RebuildActiveEntries();
+        return true;
+    }
+
+    internal bool UpdateByID(ulong id, Action<IZoneIndicatorMutable> mutator)
+    {
+        if (!masterStore.TryGetValue(id, out var entry))
+            return false;
+
+        mutator(entry);
+        return true;
+    }
+
+    private void RebuildActiveEntries()
+    {
+        var currentTerritory = GameState.TerritoryType;
+
+        var builder = ImmutableArray.CreateBuilder<ZoneIndicatorEntry>();
+
+        foreach (var entry in masterStore.Values)
+        {
+            if (entry.TerritoryType != currentTerritory)
+                continue;
+
+            builder.Add(entry);
+        }
+
+        activeEntries = builder.ToImmutable();
     }
 
     private static ZoneIndicatorText? ResolveText
@@ -438,12 +433,53 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
                 using (FontManager.Instance().GetUIFont(d.Scale).Push())
                 using (ImRaii.PushColor(ImGuiCol.Text, d.Color.ToUInt()))
-                using (ImRaii.Group())
-                    ImGuiHelpers.SeStringWrapped(d.Text);
+                {
+                    var textOnlyHeight = 0f;
 
-                var newSize = ImGui.GetItemRectSize();
-                if (newSize is { X: > 0, Y: > 0 })
-                    textSizeCache[d.CacheKey] = newSize;
+                    using (ImRaii.Group())
+                    {
+                        var image = d.Image;
+
+                        if (image is not null && d.Text is { } text)
+                        {
+                            var cached      = textSizeCache.GetValueOrDefault(d.CacheKey, DefaultCached);
+                            var rowOriginY  = ImGui.GetCursorPosY();
+                            var imageSize   = image.Size();
+                            var imageHeight = imageSize.Y;
+                            var textHeight  = cached.TextOnlyHeight > 0f ? cached.TextOnlyHeight : ImGui.GetTextLineHeight();
+                            var rowHeight   = Math.Max(imageHeight, textHeight);
+
+                            var imageWrap = image.Texture.GetWrapOrDefault();
+
+                            if (imageWrap != null && imageWrap.Handle != nint.Zero)
+                            {
+                                ImGui.SetCursorPosY(rowOriginY + ((rowHeight - imageHeight) * 0.5f));
+                                ImGui.Image(imageWrap.Handle, imageSize);
+                                ImGui.SameLine();
+                            }
+
+                            ImGui.SetCursorPosY(rowOriginY + ((rowHeight - textHeight) * 0.5f));
+                            ImGuiHelpers.SeStringWrapped(text);
+
+                            textOnlyHeight = ImGui.GetItemRectSize().Y;
+                        }
+                        else if (image is not null)
+                        {
+                            var wrap = image.Texture.GetWrapOrDefault();
+                            if (wrap != null && wrap.Handle != nint.Zero)
+                                ImGui.Image(wrap.Handle, image.Size());
+                        }
+                        else if (d.Text is { } textOnly)
+                        {
+                            ImGuiHelpers.SeStringWrapped(textOnly);
+                            textOnlyHeight = ImGui.GetItemRectSize().Y;
+                        }
+                    }
+
+                    var newSize = ImGui.GetItemRectSize();
+                    if (newSize is { X: > 0, Y: > 0 })
+                        textSizeCache[d.CacheKey] = (newSize, textOnlyHeight);
+                }
             }
 
             ImGui.End();
@@ -665,20 +701,20 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         return true;
     }
 
-    #endregion
-
     #region 常量
 
-    // 名牌背景内边距
     private static readonly Vector2 LabelPadding = new(6f, 3f);
 
-    // 圆形描边分段数
     private const int CIRCLE_SEGMENTS = 64;
 
-    // 单位半径形状的 XZ 偏移, 绘制时按实际半径缩放, 避免每帧重新计算与堆分配
     private static readonly Vector2[] UnitCircleOffsets   = BuildUnitCircleOffsets();
     private static readonly Vector2[] UnitSquareOffsets   = [new(-1f, -1f), new(1f, -1f), new(1f, 1f), new(-1f, 1f)];
     private static readonly Vector2[] UnitTriangleOffsets = [new(0f, -1f), new(0.8660254f, 0.5f), new(-0.8660254f, 0.5f)];
+
+    private static readonly Vector2 DefaultTextSize = new(50f, 20f);
+
+    private static readonly (Vector2 Size, float TextOnlyHeight) DefaultCached =
+        (DefaultTextSize, DefaultTextSize.Y);
 
     private static Vector2[] BuildUnitCircleOffsets()
     {
@@ -746,12 +782,13 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     /// <summary>Draw 阶段第一遍收集的文字绘制信息, 供第二遍批量 SeString 渲染</summary>
     internal struct TextDrawInfo
     {
-        public Vector2          ScreenPos;
-        public ReadOnlySeString Text;
-        public Vector4          Color;
-        public float            Scale;
-        public (ulong, int)     CacheKey;
-        public Vector2          CachedSize;
+        public Vector2                      ScreenPos;
+        public ReadOnlySeString?            Text;
+        public Vector4                      Color;
+        public float                        Scale;
+        public (ulong, int)                 CacheKey;
+        public Vector2                      CachedSize;
+        public ZoneIndicatorText.TextImage? Image;
     }
 
     #endregion

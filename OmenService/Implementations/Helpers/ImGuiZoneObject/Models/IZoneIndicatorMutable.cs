@@ -2,10 +2,6 @@ using System.Numerics;
 
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
-/// <summary>
-///     区域物体标记的可变内容视图, 通过 <see cref="ZoneIndicatorHandle.Update" /> 在运行期就地更新
-///     仅暴露可变内容, 不含 ID、区域、临时 / 永久等身份与生命周期字段
-/// </summary>
 public interface IZoneIndicatorMutable
 {
     /// <summary>

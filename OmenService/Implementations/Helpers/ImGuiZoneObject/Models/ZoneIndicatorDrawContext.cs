@@ -2,9 +2,6 @@ using System.Numerics;
 
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
-/// <summary>
-///     自定义绘制委托的上下文, 提供已解析的坐标与绘制资源
-/// </summary>
 public readonly ref struct ZoneIndicatorDrawContext
 {
     internal ZoneIndicatorDrawContext

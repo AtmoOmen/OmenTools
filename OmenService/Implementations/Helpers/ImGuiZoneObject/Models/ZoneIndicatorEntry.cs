@@ -3,10 +3,6 @@ using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
 
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
-/// <summary>
-///     区域物体标记的内部条目
-///     身份与生命周期字段只读, 内容字段支持运行期就地更新, 引用赋值读写, 不加锁
-/// </summary>
 internal sealed unsafe class ZoneIndicatorEntry : IZoneIndicatorMutable
 {
     private ZoneIndicatorEntry

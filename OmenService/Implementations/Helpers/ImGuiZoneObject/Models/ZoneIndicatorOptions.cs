@@ -1,8 +1,5 @@
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
-/// <summary>
-///     区域物体标记的可选参数
-/// </summary>
 public sealed class ZoneIndicatorOptions
 {
     internal static readonly ZoneIndicatorOptions Default = new();

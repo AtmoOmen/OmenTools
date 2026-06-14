@@ -1,9 +1,5 @@
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
-/// <summary>
-///     区域物体标记的句柄, 用于取消注册或更新文字与自定义绘制
-///     轻量值类型, 仅持有全局唯一 ID, 对已失效的句柄操作会静默忽略
-/// </summary>
 public readonly struct ZoneIndicatorHandle
 {
     internal ulong ID { get; init; }

@@ -2,9 +2,6 @@ using System.Numerics;
 
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
-/// <summary>
-///     目标周围的包围形状参数, 在世界 XZ 水平面上生成形状顶点, 投影到屏幕后以 polyline 绘制
-/// </summary>
 public sealed class ZoneIndicatorSurrounding
 {
     /// <summary>形状类型</summary>

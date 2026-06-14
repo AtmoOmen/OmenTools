@@ -1,11 +1,9 @@
 using System.Numerics;
+using Dalamud.Interface.Textures;
 using Lumina.Text.ReadOnly;
 
 namespace OmenTools.OmenService.ImGuiZoneObject;
 
-/// <summary>
-///     标记文字参数, 用于按物体或位置动态生成文字
-/// </summary>
 public sealed class ZoneIndicatorText
 {
     /// <summary>
@@ -24,7 +22,24 @@ public sealed class ZoneIndicatorText
     public float? TextScale { get; init; }
 
     /// <summary>
-    ///     文字屏幕坐标偏移 (像素), null 回退零向量
+    ///     文字屏幕坐标偏移, null 回退零向量
     /// </summary>
     public Vector3? TextOffset { get; init; }
+
+    /// <summary>
+    ///     文字前绘制的图片, null 表示不绘制图片
+    /// </summary>
+    public TextImage? Image { get; init; }
+
+    /// <summary>
+    ///     标记文字附带的图片参数
+    /// </summary>
+    public sealed class TextImage
+    {
+        /// <summary>图片纹理</summary>
+        public required ISharedImmediateTexture Texture { get; init; }
+
+        /// <summary>图片尺寸</summary>
+        public required Func<Vector2> Size { get; init; }
+    }
 }
