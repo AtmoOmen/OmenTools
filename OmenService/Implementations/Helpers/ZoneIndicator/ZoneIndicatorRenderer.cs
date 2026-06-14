@@ -155,7 +155,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
             }
 
             if (targetListBuffer.Count > 0)
-                stateListBuffer.Add(new CachedEntryState(entry.ID, targetListBuffer.ToArray(), entry.Surrounding));
+                stateListBuffer.Add(new CachedEntryState(entry.ID, targetListBuffer.ToArray(), entry.Surrounding, entry.HideTextLabel));
         }
 
         cachedDrawStates = stateListBuffer.ToArray();
@@ -192,7 +192,8 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
                         var cachedSize = textSizeCache.TryGetValue(cacheKey, out var c) ? c.Size : FallbackTextSize;
 
-                        DrawTextBackground(bgDrawList, finalScreenPos, target.TextColor, cachedSize);
+                        if (!state.HideTextLabel)
+                            DrawTextBackground(bgDrawList, finalScreenPos, target.TextColor, cachedSize);
 
                         textDrawBuffer.Add
                         (
@@ -583,7 +584,8 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     (
         ulong                     entryID,
         CachedDrawTarget[]        targets,
-        ZoneIndicatorSurrounding? surrounding
+        ZoneIndicatorSurrounding? surrounding,
+        bool                      hideTextLabel
     )
     {
         /// <summary>条目 ID, 用于尺寸缓存索引</summary>
@@ -594,6 +596,9 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
         /// <summary>包围形状参数, null 表示不绘制形状</summary>
         public ZoneIndicatorSurrounding? Surrounding { get; } = surrounding;
+
+        /// <summary>不绘制文字标签背景</summary>
+        public bool HideTextLabel { get; } = hideTextLabel;
     }
 
     internal readonly struct CachedDrawTarget

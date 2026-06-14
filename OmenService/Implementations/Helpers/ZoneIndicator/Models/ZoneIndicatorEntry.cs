@@ -17,6 +17,7 @@ internal abstract class ZoneIndicatorEntryBase : IZoneIndicatorMutable
         IsPermanent       = isPermanent;
         RenderRadius      = options.RenderRadius;
         HiddenWhenBlocked = options.HiddenWhenBlocked;
+        HideTextLabel     = options.HideTextLabel;
         Surrounding       = options.Surrounding;
     }
 
@@ -38,6 +39,7 @@ internal abstract class ZoneIndicatorEntryBase : IZoneIndicatorMutable
     public float? RenderRadiusSquared { get; private set; }
 
     public bool                      HiddenWhenBlocked { get; set; }
+    public bool                      HideTextLabel     { get; set; }
     public ZoneIndicatorSurrounding? Surrounding       { get; set; }
 
     /// <summary>解析所有目标, 每项已含预解析的 <see cref="ZoneIndicatorText" /> 与逐目标 CustomDraw 闭包</summary>
