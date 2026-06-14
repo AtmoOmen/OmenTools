@@ -76,6 +76,9 @@ public static class LuminaWrapper
 
     public static string GetContentName(uint rowID) =>
         LuminaGetter.TryGetRow<ContentFinderCondition>(rowID, out var item) ? item.Name.ToString() : string.Empty;
+    
+    public static string GetContentTypeName(uint rowID) =>
+        LuminaGetter.TryGetRow<ContentType>(rowID, out var item) ? item.Name.ToString() : string.Empty;
 
     public static string GetContentRouletteName(uint rowID) =>
         LuminaGetter.TryGetRow<ContentRoulette>(rowID, out var item) ? item.Name.ToString() : string.Empty;
