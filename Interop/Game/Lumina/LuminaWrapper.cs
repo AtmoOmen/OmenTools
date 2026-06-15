@@ -74,6 +74,9 @@ public static class LuminaWrapper
     public static string GetZonePlaceName(uint rowID) =>
         LuminaGetter.TryGetRow<TerritoryType>(rowID, out var item) ? item.PlaceName.ValueNullable?.Name.ToString() ?? string.Empty : string.Empty;
 
+    public static string GetMountName(uint rowID) =>
+        LuminaGetter.TryGetRow<Mount>(rowID, out var item) ? item.Singular.ToString() : string.Empty;
+    
     public static string GetContentName(uint rowID) =>
         LuminaGetter.TryGetRow<ContentFinderCondition>(rowID, out var item) ? item.Name.ToString() : string.Empty;
     
