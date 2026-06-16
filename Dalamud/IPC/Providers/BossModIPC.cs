@@ -131,7 +131,7 @@ public static class BossModIPC
         ConfigurationDisableModule?.InvokeFunc(name, disable) ?? false;
 
     /// <summary>
-    ///     检查旋转操作队列是否有待执行项
+    ///     检查循环操作队列是否有待执行项
     /// </summary>
     /// <returns></returns>
     public static bool GetHasRotationActionQueueEntries() =>
