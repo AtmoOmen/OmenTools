@@ -9,11 +9,6 @@ public abstract class TerritoryTransportMethodBase
     
     public abstract string DisplayName { get; }
 
-    public virtual uint IconID
-    {
-        get => 0;
-    }
-
     public abstract bool CanTransport(uint sourceTerritory, uint targetTerritory);
 
     public abstract IEnumerable<uint> EnumerateReachableTargets(uint sourceTerritory);
