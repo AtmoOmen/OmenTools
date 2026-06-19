@@ -86,6 +86,9 @@ public static class LuminaWrapper
     public static string GetContentRouletteName(uint rowID) =>
         LuminaGetter.TryGetRow<ContentRoulette>(rowID, out var item) ? item.Name.ToString() : string.Empty;
 
+    public static string GetDeepDungeonName(uint rowID) =>
+        LuminaGetter.TryGetRow<DeepDungeon>(rowID, out var item) ? item.Name.ToString() : string.Empty;
+
     public static string GetPlaceName(uint rowID) =>
         LuminaGetter.TryGetRow<PlaceName>(rowID, out var item) ? item.Name.ToString() : string.Empty;
 
