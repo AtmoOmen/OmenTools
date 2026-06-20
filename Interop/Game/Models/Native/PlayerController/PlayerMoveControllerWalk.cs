@@ -134,10 +134,10 @@ public unsafe struct PlayerMoveControllerWalk
     public float MovementForward;
 
     /// <summary>
-    ///     速度钳制标志 (控制速度计算方式: true=clamp 0.6-1.0)
+    ///     是否拒绝移动输入
     /// </summary>
     [FieldOffset(292)]
-    public bool IsMovementClamped;
+    public bool IsMovementInputLocked;
 
     /// <summary>
     ///     摄像机倾斜切换 (检测 CAM_TILT_UP/DOWN 输入)
