@@ -316,6 +316,18 @@ public unsafe struct PlayerController
     public bool PositionUpdateFlag2;
 
     /// <summary>
+    ///     转身速度限制及其他移动标志:
+    ///     bit 1 (0x02): 翻转方向 (+π 到目标旋转)
+    ///     bit 2 (0x04): 未知 (在某些路径中被清除)
+    ///     bit 8 (0x08): 转身速度限制激活标志
+    ///         1 = 限制转身速度为 3.14-6.28 rad/s (PlayerController_UpdateMovementInterpolation)
+    ///         0 = 瞬间转身 (直接应用目标旋转)
+    ///     此标志由 SetupMovementTarget_V1/V2/V3 设置, 由 UpdateMovementInterpolation 在转身完成后清除
+    /// </summary>
+    [FieldOffset(861)]
+    public byte TurnSpeedFlags;
+
+    /// <summary>
     ///     GainStatus 速度参数 (sub_1418109B0 从 OnGainStatus 写入)
     /// </summary>
     [FieldOffset(864)]
@@ -791,6 +803,14 @@ public unsafe struct PlayerController
         fixed (PlayerController* controller = &this)
             CancelMovementPtr(controller);
     }
+
+    /// <summary>
+    ///     禁用转身速度限制 — 清除 offset 861 的 bit 8
+    ///     需要每帧调用 (因为 SetupMovementTarget 会重新设置 bit 8)
+    ///     清除后 PlayerController_UpdateMovementInterpolation 会直接应用目标旋转 (瞬间转身)
+    /// </summary>
+    public void DisableTurnSpeedLimit() =>
+        TurnSpeedFlags &= 0xF7; // 清除 bit 8, 保留其他 bit
 
     public enum MovementModeType
     {
