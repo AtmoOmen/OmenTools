@@ -1,9 +1,9 @@
-using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.AetheryteRecord.Data;
+using OmenTools.Info.Game.AetheryteRecord.Enums;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
 using TinyPinyin;
