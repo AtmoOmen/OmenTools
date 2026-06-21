@@ -1,8 +1,8 @@
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.AetheryteRecord;
 using OmenTools.Info.Game.AetheryteRecord.Data;
-using OmenTools.Info.Lumina;
 using OmenTools.Info.Lumina.ExtraSheets;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
@@ -34,7 +34,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
         }
     }
 
-    private TaskHelper taskHelper = null!;
+    private TaskHelper? taskHelper;
 
     private const ulong INVALID_HOUSE_ID = 0xFFFFFFFFFFFFFFFF;
 
@@ -44,6 +44,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
         DService.Instance().ClientState.TerritoryChanged += OnZoneChanged;
         OnZoneChanged(0);
+        
         GameState.Instance().Login += OnLogin;
     }
 
@@ -52,8 +53,8 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
         DService.Instance().ClientState.TerritoryChanged -= OnZoneChanged;
         GameState.Instance().Login                       -= OnLogin;
 
-        taskHelper.Dispose();
-        taskHelper = null!;
+        taskHelper?.Dispose();
+        taskHelper = null;
     }
 
     private void OnLogin() =>
@@ -61,27 +62,14 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
     private void OnZoneChanged(uint zone)
     {
-        taskHelper.RemoveQueueTasks(1);
+        taskHelper.Abort();
 
         if (GameState.ContentFinderCondition != 0 ||
             !GameState.IsLoggedIn)
             return;
 
-        taskHelper.Enqueue(() => GameState.TerritoryLoadState == 3);
-        taskHelper.Enqueue
-        (
-            () =>
-            {
-                if (DService.Instance().ObjectTable.LocalPlayer is null ||
-                    DService.Instance().Condition.IsBetweenAreas)
-                    return false;
-
-                RefreshRecords();
-
-                return true;
-            },
-            weight: 1
-        );
+        taskHelper.Enqueue(() => UIModule.IsScreenReady());
+        taskHelper.Enqueue(RefreshRecords);
     }
 
     private void RefreshRecords()
@@ -91,7 +79,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
         var otherName = LuminaWrapper.GetAddonText(832);
 
-        foreach (var (_, data) in Sheets.Aetherytes)
+        foreach (var data in LuminaGetter.Get<Aetheryte>())
         {
             var record = AetheryteRecord.Parse(data);
             if (record == null || !record.IsUnlocked()) continue;
