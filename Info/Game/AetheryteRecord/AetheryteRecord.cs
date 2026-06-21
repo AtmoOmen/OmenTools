@@ -6,13 +6,12 @@ using OmenTools.Info.Game.AetheryteRecord.Data;
 using OmenTools.Info.Game.AetheryteRecord.Enums;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
-using TinyPinyin;
 using Map = Lumina.Excel.Sheets.Map;
 
 namespace OmenTools.Info.Game.AetheryteRecord;
 
 /// <summary>
-///     Group: 255 冒险者住宅区, 254 天穹街, 253 宇宙探索
+///     254 天穹街, 253 宇宙探索
 ///     有需要请自行实现保存
 /// </summary>
 public record AetheryteRecord
@@ -80,7 +79,7 @@ public record AetheryteRecord
     {
         if (DService.Instance().ObjectTable.LocalPlayer == null ||
             DService.Instance().Condition.IsBetweenAreas        ||
-            !ValidGroups.Contains(Group) && Group != 255 && Group != 254)
+            (!ValidGroups.Contains(Group) && Group != 254 && Group != 253))
             return;
 
         var info = GetAetheryteState(this);

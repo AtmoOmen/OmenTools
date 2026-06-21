@@ -5,25 +5,88 @@ namespace OmenTools.Info.Game.AetheryteRecord.Data;
 
 internal static partial class AetheryteRecords
 {
+    // 宇宙探索简易以太之光 TerritoryType - Vector3
+    internal static readonly FrozenDictionary<uint, List<Vector3>> CosmicExplorationPositions = new Dictionary<uint, List<Vector3>>
+    {
+        // 憧憬湾
+        [1237] = 
+        [
+            // 月门基地
+            new(-1.0f, 1.6f, -28.9f),
+            // 葫芦小湾
+            new(-541.2f, 59.5f, -530.1f),
+            // 婚庆威的实验园
+            new(429.1f, 45.5f, 499.8f),
+            // 闪亮山
+            new(-621.2f, 50.5f, 396.2f),
+            // 月底
+            new(632.0f, -73.9f, -575.2f),
+        ],
+        // 法恩娜
+        [1291] = 
+        [
+            // 玻璃匠基地
+            new(338.2f, 52.6f, -384.8f),
+            // 虹彩阶梯
+            new(-154.3f, 29.0f, 313.8f),
+            // 玻砾河岸
+            new(-643.3f, -1.5f, -630.4f),
+            // 胶囊峡谷
+            new(675.4f, -242.0f, 425.5f),
+            // 熔火涌道
+            new(-594.7f, 28.0f, 721.3f),
+        ],
+        // 俄匊斯
+        [1310] = 
+        [
+            // 大地基地
+            new(-165.9f, 0.5f, 78.9f),
+            // 升地沙石滩西北
+            new(-140.0f, -74.9f, -587.2f),
+            // 革剌斯角
+            new(-451.4f, 102.1f, 763.0f),
+            // 蓝裂幽陆
+            new(731.3f, 218.8f, -102.0f),
+            // 荒漠地洞遗迹
+            new(-121.0f, -193.7f, -796.9f),
+        ],
+        // 奥克塞西亚
+        [1319] = 
+        [
+            // 原木屋基地
+            new(263.4f, 205.7f, 353.6f),
+            // 盛放花园
+            new(-226.2f, 145.0f, -556.0f),
+            // 伞帽凉棚
+            new(-244.2f, 168.1f, 317.5f),
+            // 树晶堆栈
+            default, // TODO: 等我借到号
+            // 苍石林班
+            default, // TODO: 等我借到号
+        ],
+        
+    }.ToFrozenDictionary();
+    
     // 天穹街简易以太之光 Index - Vector3
     internal static readonly FrozenDictionary<uint, Vector3> FirmamentPositions = new Dictionary<uint, Vector3>
     {
-        // 无名众人广场
-        [0] = new(20.8f, -16.0f, 168.1f),
+        // 西升歌文化区
+        [0] = new(-92.8f, -0.0f, -116.3f),
+        // 东升歌文化区
+        [1] = new(111.9f, -20.0f, -107.7f),
         // 十字镐大街
-        [1] = new(77.7f, -18.5f, 6.4f),
-        // 新巢居住区
-        [2] = new(147.1f, -50.0f, 95.7f),
+        [2] = new(77.7f, -18.5f, 6.4f),
         // 圣罗埃勒广场
         [3] = new(204.1f, -40.0f, -25.7f),
+        // 新巢居住区
+        [4] = new(147.1f, -50.0f, 95.7f),
         // 落羽商业区
-        [4] = new(-77.9f, 0.0f, 79.6f),
+        [5] = new(-77.9f, 0.0f, 79.6f),
+        // 无名众人广场
+        [6] = new(20.8f, -16.0f, 168.1f),
         // 白霜官舍
-        [5] = new(-135.0f, 10.0f, -11.6f),
-        // 西升歌文化区
-        [6] = new(-92.8f, -0.0f, -116.3f),
-        // 东升歌文化区
-        [7] = new(111.9f, -20.0f, -107.7f),
+        [7] = new(-135.0f, 10.0f, -11.6f),
+        
     }.ToFrozenDictionary();
     
     // 以太之光 / 城内以太之晶 RowID - Vector3
