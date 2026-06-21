@@ -57,12 +57,24 @@ public record AetheryteRecord
             return field;
         }
     }
+    
+    public Aetheryte GetData() =>
+        LuminaGetter.GetRow<Aetheryte>(RowID).GetValueOrDefault();
 
-    public virtual bool Equals(AetheryteRecord? other) =>
-        other?.RowID == RowID;
+    public TerritoryType GetZone() =>
+        LuminaGetter.GetRow<TerritoryType>(ZoneID).GetValueOrDefault();
 
+    public Map GetMap() =>
+        LuminaGetter.GetRow<Map>(MapID).GetValueOrDefault();
+    
     public unsafe bool IsUnlocked() =>
-        UIState.Instance()->IsAetheryteUnlocked(RowID);
+        Group switch
+        {
+            255 => true, // 冒险者住宅区
+            254 => true, // 天穹街
+            253 => true, // 宇宙探索
+            _   => UIState.Instance()->IsAetheryteUnlocked(RowID)
+        };
 
     public void Update()
     {
@@ -170,15 +182,6 @@ public record AetheryteRecord
         return record;
     }
 
-    public Aetheryte GetData() =>
-        LuminaGetter.GetRow<Aetheryte>(RowID).GetValueOrDefault();
-
-    public TerritoryType GetZone() =>
-        LuminaGetter.GetRow<TerritoryType>(ZoneID).GetValueOrDefault();
-
-    public Map GetMap() =>
-        LuminaGetter.GetRow<Map>(MapID).GetValueOrDefault();
-
     public static bool TryParseName(MapMarker marker, [NotNullWhen(true)] out string? name)
     {
         name = null;
@@ -257,6 +260,11 @@ public record AetheryteRecord
         return (AetheryteRecordState.None, cost);
     }
 
+    public virtual bool Equals(AetheryteRecord? other) =>
+        other?.RowID    == RowID    &&
+        other?.SubIndex == SubIndex &&
+        other?.Group    == Group;
+
     public override string ToString()
     {
         var zoneName = GetZone().ExtractPlaceName();
@@ -266,5 +274,5 @@ public record AetheryteRecord
     }
 
     public override int GetHashCode() =>
-        HashCode.Combine(RowID, Name);
+        HashCode.Combine(RowID, SubIndex, Group);
 }
