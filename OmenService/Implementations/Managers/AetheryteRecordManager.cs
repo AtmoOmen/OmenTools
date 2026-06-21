@@ -158,6 +158,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
     private void RefreshCosmicExplorationRecords()
     {
+        byte index = 0;
         foreach (var (territoryID, positions) in AetheryteRecords.CosmicExplorationPositions)
         {
             var territory   = LuminaGetter.GetRowOrDefault<TerritoryType>(territoryID);
@@ -165,13 +166,10 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
             var version     = territory.ExVersion.RowId;
             var versionName = $"{version + 2}.0";
             var offset      = AetheryteRecords.CosmicPlaceNameOffsets[territoryID];
-
-            byte index = 0;
-
+            
             foreach (var position in positions)
             {
                 var placeName = LuminaWrapper.GetPlaceName(index + offset);
-
                 var record = new AetheryteRecord
                 (
                     175,
