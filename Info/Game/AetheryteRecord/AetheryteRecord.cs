@@ -265,13 +265,8 @@ public record AetheryteRecord
         other?.SubIndex == SubIndex &&
         other?.Group    == Group;
 
-    public override string ToString()
-    {
-        var zoneName = GetZone().ExtractPlaceName();
-
-        return $"AetheryteRecord_{RowID}_{Version + 2}.0_{SubIndex}_{zoneName}_{RegionName}_{Name}_" +
-               $"{PinyinHelper.GetPinyin(zoneName, string.Empty)}_{PinyinHelper.GetPinyin(RegionName, string.Empty)}_{PinyinHelper.GetPinyin(Name, string.Empty)}";
-    }
+    public override string ToString() =>
+        $"AetheryteRecord.{RowID}-{SubIndex}-{Group}";
 
     public override int GetHashCode() =>
         HashCode.Combine(RowID, SubIndex, Group);
