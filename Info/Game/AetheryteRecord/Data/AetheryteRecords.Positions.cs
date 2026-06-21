@@ -60,9 +60,9 @@ internal static partial class AetheryteRecords
             // 伞帽凉棚
             new(-244.2f, 168.1f, 317.5f),
             // 树晶堆栈
-            default, // TODO: 等我借到号
+            new(-599.7f, 206.6f, -371.4f),
             // 苍石林班
-            default, // TODO: 等我借到号
+            new(-676.6f, 115.0f, 626.7f)
         ],
         
     }.ToFrozenDictionary();
@@ -87,6 +87,15 @@ internal static partial class AetheryteRecords
         // 白霜官舍
         [7] = new(-135.0f, 10.0f, -11.6f),
         
+    }.ToFrozenDictionary();
+    
+    // 宇宙探索 PlaceName 偏移
+    internal static readonly FrozenDictionary<uint, uint> CosmicPlaceNameOffsets = new Dictionary<uint, uint>
+    {
+        [1237] = 5446, // 憧憬湾
+        [1291] = 5456, // 法恩娜
+        [1310] = 5451, // 俄匊斯
+        [1319] = 5546, // 奥克塞西亚
     }.ToFrozenDictionary();
     
     // 以太之光 / 城内以太之晶 RowID - Vector3
