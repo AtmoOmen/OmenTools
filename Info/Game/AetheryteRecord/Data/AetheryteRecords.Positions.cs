@@ -3,8 +3,29 @@ using System.Numerics;
 
 namespace OmenTools.Info.Game.AetheryteRecord.Data;
 
-public static partial class AetheryteRecords
+internal static partial class AetheryteRecords
 {
+    // 天穹街简易以太之光 Index - Vector3
+    internal static readonly FrozenDictionary<uint, Vector3> FirmamentPositions = new Dictionary<uint, Vector3>
+    {
+        // 无名众人广场
+        [0] = new(20.8f, -16.0f, 168.1f),
+        // 十字镐大街
+        [1] = new(77.7f, -18.5f, 6.4f),
+        // 新巢居住区
+        [2] = new(147.1f, -50.0f, 95.7f),
+        // 圣罗埃勒广场
+        [3] = new(204.1f, -40.0f, -25.7f),
+        // 落羽商业区
+        [4] = new(-77.9f, 0.0f, 79.6f),
+        // 白霜官舍
+        [5] = new(-135.0f, 10.0f, -11.6f),
+        // 西升歌文化区
+        [6] = new(-92.8f, -0.0f, -116.3f),
+        // 东升歌文化区
+        [7] = new(111.9f, -20.0f, -107.7f),
+    }.ToFrozenDictionary();
+    
     // 以太之光 / 城内以太之晶 RowID - Vector3
     internal static readonly FrozenDictionary<uint, Vector3> NormalPositions = new Dictionary<uint, Vector3>
     {

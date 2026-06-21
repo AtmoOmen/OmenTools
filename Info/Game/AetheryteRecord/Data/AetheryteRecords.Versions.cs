@@ -1,6 +1,6 @@
 ﻿namespace OmenTools.Info.Game.AetheryteRecord.Data;
 
-public static partial class AetheryteRecords
+internal static partial class AetheryteRecords
 {
     // 以太之光 / 城内以太之晶 RowID - ExVersion
     internal static readonly Dictionary<uint, byte> NormalVersions = new()

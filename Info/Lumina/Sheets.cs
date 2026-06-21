@@ -5,7 +5,7 @@ using OmenTools.OmenService;
 using Action = Lumina.Excel.Sheets.Action;
 using Status = Lumina.Excel.Sheets.Status;
 
-namespace OmenTools.Info.Game.Data;
+namespace OmenTools.Info.Lumina;
 
 public static class Sheets
 {

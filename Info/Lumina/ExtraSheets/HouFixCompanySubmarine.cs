@@ -1,7 +1,7 @@
 using Lumina.Excel;
 using Lumina.Text.ReadOnly;
 
-namespace OmenTools.Interop.Game.Lumina.ExtraSheets;
+namespace OmenTools.Info.Lumina.ExtraSheets;
 
 [Sheet("custom/004/HouFixCompanySubmarine_00447")]
 public readonly struct HouFixCompanySubmarine
@@ -15,8 +15,8 @@ public readonly struct HouFixCompanySubmarine
     public uint      RowOffset => offset;
     public uint      RowId     => row;
 
-    public readonly ReadOnlySeString Identifier => page.ReadString(offset,     offset);
-    public readonly ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
+    public ReadOnlySeString Identifier => page.ReadString(offset,     offset);
+    public ReadOnlySeString Text       => page.ReadString(offset + 4, offset);
 
     static HouFixCompanySubmarine IExcelRow<HouFixCompanySubmarine>.Create(ExcelPage page, uint offset, uint row) =>
         new(page, offset, row);

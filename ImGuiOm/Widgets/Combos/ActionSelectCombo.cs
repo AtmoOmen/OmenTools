@@ -1,4 +1,5 @@
 using OmenTools.Info.Game.Data;
+using OmenTools.Info.Lumina;
 using OmenTools.Interop.Game.Lumina;
 using Action = Lumina.Excel.Sheets.Action;
 
