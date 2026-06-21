@@ -11,7 +11,7 @@ using Map = Lumina.Excel.Sheets.Map;
 namespace OmenTools.Info.Game.AetheryteRecord;
 
 /// <summary>
-///     254 天穹街, 253 宇宙探索
+///     255 冒险者住宅区, 254 天穹街, 253 宇宙探索
 ///     有需要请自行实现保存
 /// </summary>
 public record AetheryteRecord
@@ -44,6 +44,7 @@ public record AetheryteRecord
                     5   => LuminaWrapper.GetZonePlaceName(144),       // 金碟
                     255 => LuminaWrapper.GetAddonText(8495),          // 冒险者住宅区
                     254 => GetZone().PlaceName.Value.Name.ToString(), // 天穹街
+                    253 => LuminaWrapper.GetAddonText(3849),          // 宇宙探索
                     _   => GetZone().PlaceNameZone.Value.Name.ToString()
                 };
 
@@ -56,7 +57,7 @@ public record AetheryteRecord
             return field;
         }
     }
-    
+
     public Aetheryte GetData() =>
         LuminaGetter.GetRow<Aetheryte>(RowID).GetValueOrDefault();
 
