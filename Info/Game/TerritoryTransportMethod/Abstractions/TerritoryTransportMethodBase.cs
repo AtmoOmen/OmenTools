@@ -1,4 +1,6 @@
-﻿using OmenTools.Threading.TaskHelper;
+﻿using FFXIVClientStructs.FFXIV.Client.UI;
+using OmenTools.OmenService;
+using OmenTools.Threading.TaskHelper;
 
 namespace OmenTools.Info.Game.TerritoryTransportMethod.Abstractions;
 
@@ -9,19 +11,18 @@ public abstract class TerritoryTransportMethodBase
     
     public abstract string DisplayName { get; }
 
-    public abstract bool CanTransport(uint sourceTerritory, uint targetTerritory);
-
     public abstract IEnumerable<uint> EnumerateReachableTargets(uint sourceTerritory);
-
-    public virtual bool CanExecute
-    {
-        get => !DService.Instance().Condition.IsBoundByDuty &&
-               !DService.Instance().Condition.IsBetweenAreas;
-    }
 
     public abstract void Enqueue(TaskHelper taskHelper, uint targetTerritory);
 
-    public abstract string Describe(uint targetTerritory);
-
     public virtual void Cleanup() { }
+
+    #region 工具
+
+    protected static Func<bool> WaitForZoneReady(uint zone) =>
+        () => GameState.TerritoryType == zone &&
+              LocalPlayerState.Object != null &&
+              UIModule.IsScreenReady();
+
+    #endregion
 }
