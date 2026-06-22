@@ -1,8 +1,9 @@
 using System.Runtime.InteropServices;
 using OmenTools.Dalamud;
+using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService;
 
-namespace OmenTools.Interop.Game.Models.Packets.Upstream;
+namespace OmenTools.Info.Game.Packets.Upstream;
 
 public static class UpstreamOpcode
 {

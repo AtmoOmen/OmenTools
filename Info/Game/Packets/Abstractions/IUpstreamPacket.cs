@@ -1,4 +1,4 @@
-namespace OmenTools.Interop.Game.Models.Packets.Abstractions;
+namespace OmenTools.Info.Game.Packets.Abstractions;
 
 public interface IUpstreamPacket
 {

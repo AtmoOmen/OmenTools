@@ -6,7 +6,7 @@ using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService;
 using DynamicEvent = Lumina.Excel.Sheets.DynamicEvent;
 
-namespace OmenTools.Interop.Game.Models;
+namespace OmenTools.Info.Game;
 
 /// <summary>
 ///     新月岛中的野外事件 (CE / FATE / 魔法罐任务) 数据类

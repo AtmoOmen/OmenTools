@@ -1,9 +1,11 @@
 ﻿using System.Collections.Frozen;
 using System.Numerics;
+using Lumina.Excel.Sheets;
+using OmenTools.Interop.Game.Lumina;
 
 namespace OmenTools.Info.Game.AetheryteRecord.Data;
 
-internal static partial class AetheryteRecords
+public static partial class AetheryteRecords
 {
     // 宇宙探索简易以太之光 TerritoryType - Vector3
     internal static readonly FrozenDictionary<uint, List<Vector3>> CosmicExplorationPositions = new Dictionary<uint, List<Vector3>>

@@ -12,7 +12,6 @@ namespace OmenTools.Info.Game.AetheryteRecord;
 
 /// <summary>
 ///     255 冒险者住宅区, 254 天穹街, 253 宇宙探索
-///     有需要请自行实现保存
 /// </summary>
 public record AetheryteRecord
 (
@@ -27,9 +26,6 @@ public record AetheryteRecord
     string  Name
 )
 {
-    private static readonly HashSet<byte> ValidGroups =
-        LuminaGetter.Get<Aetheryte>().Select(x => x.AethernetGroup).ToHashSet();
-
     public AetheryteRecordState State { get; private set; }
     public uint                 Cost  { get; private set; }
 
@@ -67,20 +63,19 @@ public record AetheryteRecord
     public Map GetMap() =>
         LuminaGetter.GetRow<Map>(MapID).GetValueOrDefault();
     
-    public unsafe bool IsUnlocked() =>
-        Group switch
-        {
-            255 => true, // 冒险者住宅区
-            254 => true, // 天穹街
-            253 => true, // 宇宙探索
-            _   => UIState.Instance()->IsAetheryteUnlocked(RowID)
-        };
+    public unsafe bool IsUnlocked()
+    {
+        if (!AetheryteRecords.AethernetGroups.Contains(Group))
+            return true;
+        
+        return UIState.Instance()->IsAetheryteUnlocked(RowID);
+    }
 
     public void Update()
     {
         if (DService.Instance().ObjectTable.LocalPlayer == null ||
             DService.Instance().Condition.IsBetweenAreas        ||
-            (!ValidGroups.Contains(Group) && Group != 254 && Group != 253))
+            !AetheryteRecords.AethernetGroups.Contains(Group))
             return;
 
         var info = GetAetheryteState(this);

@@ -1,11 +1,11 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using OmenTools.Info.Game.Packets.Abstractions;
 using OmenTools.Interop.Game.Helpers;
-using OmenTools.Interop.Game.Models.Packets.Abstractions;
 using OmenTools.OmenService;
 
-namespace OmenTools.Interop.Game.Models.Packets.Upstream;
+namespace OmenTools.Info.Game.Packets.Upstream;
 
 [StructLayout(LayoutKind.Explicit, Size = 48)]
 public struct UseActionLocationPacket

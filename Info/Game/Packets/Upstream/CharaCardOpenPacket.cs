@@ -1,10 +1,11 @@
 using System.Runtime.InteropServices;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using OmenTools.Interop.Game.Models.Packets.Abstractions;
+using OmenTools.Info.Game.Packets.Abstractions;
+using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService;
 
-namespace OmenTools.Interop.Game.Models.Packets.Upstream;
+namespace OmenTools.Info.Game.Packets.Upstream;
 
 [StructLayout(LayoutKind.Explicit, Size = 48)]
 public struct CharaCardOpenPacket

@@ -8,7 +8,7 @@ using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService;
 using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
-namespace OmenTools.Interop.Game.Models;
+namespace OmenTools.Info.Game;
 
 /// <summary>
 ///     新月岛中的 辅助职业 数据类

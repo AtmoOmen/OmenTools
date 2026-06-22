@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.Network;
-using OmenTools.Interop.Game.Models.Packets.Abstractions;
+using OmenTools.Info.Game.Packets.Abstractions;
 
-namespace OmenTools.Interop.Game.Models.Packets.Downstream;
+namespace OmenTools.Info.Game.Packets.Downstream;
 
 /// <summary>
 ///     金碟游戏机“孤树无援”游玩结果

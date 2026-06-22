@@ -3,7 +3,7 @@ using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using OmenTools.Interop.Game.Lumina;
 
-namespace OmenTools.Interop.Game.Models;
+namespace OmenTools.Info.Game;
 
 /// <summary>
 ///     新月岛中的 魔路 / 简易魔路 数据类

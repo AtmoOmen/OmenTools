@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
-using OmenTools.Interop.Game.Models.Packets.Abstractions;
+using OmenTools.Info.Game.Packets.Abstractions;
 
-namespace OmenTools.Interop.Game.Models.Packets.Downstream;
+namespace OmenTools.Info.Game.Packets.Downstream;
 
 [StructLayout(LayoutKind.Explicit)]
 public unsafe struct StatusEffectListUpdatePacket : IDownstreamPacket

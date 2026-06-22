@@ -7,9 +7,9 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Network;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using OmenTools.Dalamud;
+using OmenTools.Info.Game.Packets.Abstractions;
+using OmenTools.Info.Game.Packets.Upstream;
 using OmenTools.Interop.Game.Models;
-using OmenTools.Interop.Game.Models.Packets.Abstractions;
-using OmenTools.Interop.Game.Models.Packets.Upstream;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
