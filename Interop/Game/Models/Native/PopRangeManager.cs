@@ -40,7 +40,7 @@ public unsafe struct PopRangeManager
     public void PopRange(ILayoutInstance* exit, Vector3? recoveredPosition = null)
     {
         ExitLayoutInstance = (ExitRangeLayoutInstance*)exit;
-        var pop = ExitLayoutInstance->PopRangeLayoutInstance;
+        var pop = ExitLayoutInstance->ReturnInstance;
 
         Position = *pop->Base.GetTranslationImpl();
 
@@ -49,20 +49,27 @@ public unsafe struct PopRangeManager
     }
 }
 
+// TODO: FFCS
 [StructLayout(LayoutKind.Explicit, Size = 160)]
 public unsafe struct ExitRangeLayoutInstance
 {
-    [FieldOffset(0x0)]
-    public TriggerBoxLayoutInstance Base;
+    [FieldOffset(0)]   public TriggerBoxLayoutInstance Base;
+    [FieldOffset(128)] public ExitRangeType            ExitType;
+    [FieldOffset(132)] public ushort                   ZoneID;
+    [FieldOffset(134)] public ushort                   TerritoryType;
+    [FieldOffset(136)] public int                      Index;
+    [FieldOffset(140)] public uint                     DestInstanceID;
+    [FieldOffset(144)] public uint                     ReturnInstanceID;
+    [FieldOffset(148)] public float                    PlayerRunningDirection;
 
-    [FieldOffset(134)]
-    public ushort TerritoryType;
-
-    [FieldOffset(144)]
-    public uint PopRangeLayoutInstanceID;
-
-    public PopRangeLayoutInstance* PopRangeLayoutInstance =>
-        (PopRangeLayoutInstance*)LayoutWorld.GetLayoutInstanceStatic(InstanceType.PopRange, PopRangeLayoutInstanceID);
+    public PopRangeLayoutInstance* ReturnInstance =>
+        (PopRangeLayoutInstance*)LayoutWorld.GetLayoutInstanceStatic(InstanceType.PopRange, ReturnInstanceID);
+    
+    public enum ExitRangeType 
+    {
+        ZoneLine  = 1,
+        Invisible = 2, // used for doors etc.
+    }
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 160)]
