@@ -1,3 +1,4 @@
+using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.Sheets;
@@ -32,6 +33,19 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
             foreach (var record in HouseRecords)
                 yield return record;
         }
+    }
+
+    public AetheryteRecord? GetNearestAetheryte
+    (
+        uint    zoneID,
+        Vector3 pos
+    )
+    {
+        var validAetherytes = AllRecords
+                              .Where(x => AetheryteRecords.AethernetGroups.Contains(x.Group) && x.ZoneID == zoneID)
+                              .OrderBy(x => Vector3.DistanceSquared(x.Position, pos))
+                              .ToList();
+        return validAetherytes.Count == 0 ? null : validAetherytes.FirstOrDefault();
     }
 
     private TaskHelper? taskHelper;
