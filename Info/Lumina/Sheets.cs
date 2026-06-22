@@ -263,39 +263,64 @@ public static class Sheets
         DService.Instance().PI.GetOrCreateData
         (
             MAP_TO_FINAL_TEXTURE_MAP_TAG,
-            () => LuminaGetter.Get<Map>()
-                              .Select
-                              (map =>
-                                  {
-                                      var type = map.Id.ToString().Split('/')[0];
+            () =>
+            {
+                var maps = LuminaGetter.Get<Map>();
 
-                                      var finalMap = Enumerable
-                                                     .Range((int)map.RowId + 1, int.MaxValue - (int)map.RowId - 1)
-                                                     .Select
-                                                     (rowID =>
-                                                          LuminaGetter.TryGetRow((uint)rowID, out Map nextRow)
-                                                              ? (OK: true, Row: nextRow)
-                                                              : (OK: false, Row: default)
-                                                     )
-                                                     .TakeWhile
-                                                     (x =>
-                                                          x.OK &&
-                                                          x.Row.Id.ToString().Split('/')[0] == type
-                                                     )
-                                                     .Select(x => x.Row)
-                                                     .LastOrDefault(map);
+                var result = new Dictionary<uint, Map>
+                (
+                    maps.TryGetNonEnumeratedCount(out var count) ? count : 0
+                );
 
-                                      return new
-                                      {
-                                          map.RowId,
-                                          FinalMap = finalMap
-                                      };
-                                  }
-                              )
-                              .ToDictionary
-                              (
-                                  x => x.RowId,
-                                  x => x.FinalMap
-                              )
+                var     groupRowIDs   = new List<uint>();
+                string? groupTypeID   = null;
+                Map     groupFinalMap = default;
+                uint    previousRowID = 0;
+
+                foreach (var map in maps)
+                {
+                    var mapID = map.Id.ToString();
+
+                    var sameGroup =
+                        groupRowIDs.Count > 0                  &&
+                        map.RowId         == previousRowID + 1 &&
+                        TypePart(mapID).Equals(TypePart(groupTypeID), StringComparison.Ordinal);
+
+                    if (!sameGroup)
+                    {
+                        FlushGroup();
+
+                        groupTypeID = mapID;
+                        groupRowIDs.Clear();
+                    }
+
+                    groupRowIDs.Add(map.RowId);
+                    groupFinalMap = map;
+                    previousRowID = map.RowId;
+                }
+
+                FlushGroup();
+
+                return result;
+
+                void FlushGroup()
+                {
+                    if (groupRowIDs.Count == 0)
+                        return;
+
+                    foreach (var rowId in groupRowIDs)
+                        result[rowId] = groupFinalMap;
+                }
+
+                static ReadOnlySpan<char> TypePart(string? id)
+                {
+                    var span  = id.AsSpan();
+                    var slash = span.IndexOf('/');
+
+                    return slash >= 0
+                               ? span[..slash]
+                               : span;
+                }
+            }
         );
 }
