@@ -255,4 +255,47 @@ public static class Sheets
                               .Where(x => x.TargetArea)
                               .ToDictionary(x => x.RowId, x => x)
         );
+    
+    [DataShareTag]
+    private const string MAP_TO_FINAL_TEXTURE_MAP_TAG = "OmenTools.Info.Game.Data.Sheets.MapToFinalTextureMap";
+
+    public static Dictionary<uint, Map> MapToFinalTextureMap { get; } =
+        DService.Instance().PI.GetOrCreateData
+        (
+            MAP_TO_FINAL_TEXTURE_MAP_TAG,
+            () => LuminaGetter.Get<Map>()
+                              .Select
+                              (map =>
+                                  {
+                                      var type = map.Id.ToString().Split('/')[0];
+
+                                      var finalMap = Enumerable
+                                                     .Range((int)map.RowId + 1, int.MaxValue - (int)map.RowId - 1)
+                                                     .Select
+                                                     (rowID =>
+                                                          LuminaGetter.TryGetRow((uint)rowID, out Map nextRow)
+                                                              ? (OK: true, Row: nextRow)
+                                                              : (OK: false, Row: default)
+                                                     )
+                                                     .TakeWhile
+                                                     (x =>
+                                                          x.OK &&
+                                                          x.Row.Id.ToString().Split('/')[0] == type
+                                                     )
+                                                     .Select(x => x.Row)
+                                                     .LastOrDefault(map);
+
+                                      return new
+                                      {
+                                          map.RowId,
+                                          FinalMap = finalMap
+                                      };
+                                  }
+                              )
+                              .ToDictionary
+                              (
+                                  x => x.RowId,
+                                  x => x.FinalMap
+                              )
+        );
 }

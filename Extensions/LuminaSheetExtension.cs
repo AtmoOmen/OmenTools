@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Enums;
+using OmenTools.Info.Lumina;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
 
@@ -24,12 +25,16 @@ public static unsafe class LuminaSheetExtension
                                .ToList();
         }
     }
-
+    
     extension(scoped in Map map)
     {
         public string GetTexturePath()
         {
-            var mapKey = map.Id.ToString();
+            var mapRow = map;
+            if (Sheets.MapToFinalTextureMap.TryGetValue(map.RowId, out var finalMapRow))
+                mapRow = finalMapRow;
+
+            var mapKey = mapRow.Id.ToString();
             var rawKey = mapKey.Replace("/", "");
             return $"ui/map/{mapKey}/{rawKey}_m.tex";
         }
