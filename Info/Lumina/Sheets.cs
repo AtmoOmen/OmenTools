@@ -308,8 +308,8 @@ public static class Sheets
                     if (groupRowIDs.Count == 0)
                         return;
 
-                    foreach (var rowId in groupRowIDs)
-                        result[rowId] = groupFinalMap;
+                    foreach (var rowID in groupRowIDs)
+                        result[rowID] = groupFinalMap;
                 }
 
                 static ReadOnlySpan<char> TypePart(string? id)
