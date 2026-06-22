@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.LayoutEngine;
 using FFXIVClientStructs.FFXIV.Client.LayoutEngine.Layer;
+using OmenTools.OmenService;
 
 namespace OmenTools.Interop.Game.Models.Native;
 
@@ -40,9 +41,18 @@ public unsafe struct PopRangeManager
     public void PopRange(ILayoutInstance* exit, Vector3? recoveredPosition = null)
     {
         var pop = ((ExitRangeLayoutInstance*)exit)->ReturnInstance;
+
+        if (recoveredPosition == null)
+        {
+            Position          = LocalPlayerState.Object?.Position ?? default;
+            RecoveredPosition = *pop->Base.GetTranslationImpl();
+        }
+        else
+        {
+            Position          = new(float.MaxValue);
+            RecoveredPosition = recoveredPosition.Value;
+        }
         
-        Position           = new(float.MaxValue);
-        RecoveredPosition  = recoveredPosition ?? *pop->Base.GetTranslationImpl() + *pop->AddPos;
         ExitLayoutInstance = (ExitRangeLayoutInstance*)exit;
         State              = 2;
     }
