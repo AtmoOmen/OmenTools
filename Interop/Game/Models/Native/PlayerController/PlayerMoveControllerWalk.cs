@@ -181,32 +181,4 @@ public unsafe struct PlayerMoveControllerWalk
 
         return instance;
     }
-
-    private static readonly CompSig               StartMovementSig = new("48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18 57 48 83 EC 30");
-    private delegate        bool                  StartMovementDelegate(PlayerMoveControllerWalk* controller, int mode, float speed);
-    private static readonly StartMovementDelegate StartMovementPtr = StartMovementSig.GetDelegate<StartMovementDelegate>();
-
-    /// <summary>
-    ///     启动移动
-    ///     mode: 1=走路, 2=跑步/停止, 3=跳跃
-    /// </summary>
-    public bool StartMovement(int mode, float speed)
-    {
-        fixed (PlayerMoveControllerWalk* controller = &this)
-            return StartMovementPtr(controller, mode, speed);
-    }
-
-    private static readonly CompSig                    TriggerWalkControlSig = new("48 83 EC 28 48 8B 81 B8 00 00 00 48 85 C0 74 5A 48 89 5C 24");
-    private delegate        bool                       TriggerWalkControlDelegate(PlayerMoveControllerWalk* controller);
-    private static readonly TriggerWalkControlDelegate TriggerWalkControlPtr = TriggerWalkControlSig.GetDelegate<TriggerWalkControlDelegate>();
-
-    /// <summary>
-    ///     发送移动控制动作 512
-    ///     触发角色进入"正在移动"状态, 发送网络控制动作
-    /// </summary>
-    public bool TriggerWalkControl()
-    {
-        fixed (PlayerMoveControllerWalk* controller = &this)
-            return TriggerWalkControlPtr(controller);
-    }
 }

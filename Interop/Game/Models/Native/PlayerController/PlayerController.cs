@@ -775,35 +775,6 @@ public unsafe struct PlayerController
             StartFollowPtr(controller, followRequest);
     }
 
-    private static readonly CompSig              StopMovementSig = new("48 89 5C 24 08 57 48 83 EC 30 48 8B D9 0F B6 FA");
-    private delegate        void                 StopMovementDelegate(PlayerController* playerController, bool viaCommand);
-    private static readonly StopMovementDelegate StopMovementPtr = StopMovementSig.GetDelegate<StopMovementDelegate>();
-
-    /// <summary>
-    ///     停止移动
-    ///     viaCommand=true: 发送 ExecuteCommand.LeaveSwimState
-    ///     viaCommand=false: 清除动作请求, 发送命令 ExecuteCommand.EnterSwimState
-    /// </summary>
-    public void StopMovement(bool viaCommand = false)
-    {
-        fixed (PlayerController* controller = &this)
-            StopMovementPtr(controller, viaCommand);
-    }
-
-    private static readonly CompSig                CancelMovementSig = new("40 57 48 83 EC 20 0F B6 81 10 04 00 00 48 8B F9");
-    private delegate        void                   CancelMovementDelegate(PlayerController* playerController);
-    private static readonly CancelMovementDelegate CancelMovementPtr = CancelMovementSig.GetDelegate<CancelMovementDelegate>();
-
-    /// <summary>
-    ///     取消移动
-    ///     设置移动状态为 2 (已取消), 重置导航状态, 取消动作请求, 停止表情
-    /// </summary>
-    public void CancelMovement()
-    {
-        fixed (PlayerController* controller = &this)
-            CancelMovementPtr(controller);
-    }
-
     /// <summary>
     ///     禁用转身速度限制 — 清除 offset 861 的 bit 8
     ///     需要每帧调用 (因为 SetupMovementTarget 会重新设置 bit 8)
