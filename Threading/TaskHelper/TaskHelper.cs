@@ -134,6 +134,12 @@ public partial class TaskHelper : IDisposable
     public int TimeoutMS { get; set; } = 10_000;
 
     /// <summary>
+    ///     全局任务重试时间 <br />
+    ///     默认为 0 毫秒; 设置为 ≤ 0 以每帧重试 <br />
+    /// </summary>
+    public int RetryIntervalMS { get; set; } = 0;
+
+    /// <summary>
     ///     是否已被销毁
     /// </summary>
     public bool IsDisposed { get; private set; }
@@ -174,6 +180,10 @@ public partial class TaskHelper : IDisposable
                                 ExecuteCurrentTask();
 
                             isBusy = true;
+                            
+                            // 任务还没有完成
+                            if (CurrentTask != null && RetryIntervalMS > 0)
+                                await Task.Delay(RetryIntervalMS, ct).ConfigureAwait(false);
                         }
                         else
                             isBusy = queueTaskCount > 0 || pendingTaskCount > 0;
