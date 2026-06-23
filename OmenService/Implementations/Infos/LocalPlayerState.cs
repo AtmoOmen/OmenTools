@@ -12,6 +12,7 @@ using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
 using AgentUpdateDelegate = OmenTools.Interop.Game.Models.Native.AgentUpdateDelegate;
 using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
+using CurrencyManager = FFXIVClientStructs.FFXIV.Client.Game.CurrencyManager;
 using GrandCompany = FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany;
 using Task = System.Threading.Tasks.Task;
 
@@ -318,6 +319,10 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 
     public static unsafe uint GetItemCount(uint itemID)
     {
+        var manager = CurrencyManager.Instance();
+        if (manager->HasItem(itemID))
+            return manager->GetItemCount(itemID);
+        
         var instance = InventoryManager.Instance();
         return (uint)(instance->GetInventoryItemCount(itemID) + instance->GetInventoryItemCount(itemID, true));
     }
