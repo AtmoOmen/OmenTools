@@ -2,7 +2,7 @@ namespace OmenTools.Dalamud.Services.ObjectTable.Abstractions;
 
 using IGameObject = IGameObject;
 
-public interface IObjectTable : IEnumerable<IGameObject>
+public interface IObjectTable : IEnumerable<IGameObject>, IOmenDalamudService<IObjectTable>
 {
     static readonly Range CharactersRange    = ..200;
     static readonly Range ClientRange        = 200..449;

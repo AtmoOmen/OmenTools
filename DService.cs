@@ -32,6 +32,9 @@ public sealed class DService
         instance.UIBuilder     = pluginInterface.UiBuilder;
         instance.ObjectTable   = new ObjectTable();
         instance.AetheryteList = new AetheryteList();
+        
+        instance.OmenDalamudServices[typeof(IObjectTable)]   = instance.ObjectTable;
+        instance.OmenDalamudServices[typeof(IAetheryteList)] = instance.AetheryteList;
 
         try
         {
@@ -77,6 +80,10 @@ public sealed class DService
             InternalInstance.DisposeTrackedHooks();
 
             InternalInstance.ResetServiceState();
+
+            InternalInstance.ObjectTable   = null;
+            InternalInstance.AetheryteList = null;
+            InternalInstance.OmenDalamudServices.Clear();
         }
         catch (Exception ex)
         {
@@ -98,6 +105,9 @@ public sealed class DService
 
     public T? GetOmenService<T>() where T : OmenServiceBase =>
         (T?)OmenServices.GetValueOrDefault(typeof(T));
+    
+    public T? GetOmenDalamudService<T>() where T : IOmenDalamudService =>
+        (T?)OmenDalamudServices.GetValueOrDefault(typeof(T));
 
     #endregion
 
@@ -115,7 +125,8 @@ public sealed class DService
 
     private DServiceInitOptions InitOptions { get; set; } = new();
 
-    private Dictionary<Type, OmenServiceBase> OmenServices { get; set; } = [];
+    private Dictionary<Type, OmenServiceBase>        OmenServices        { get; set; } = [];
+    private Dictionary<Type, IOmenDalamudService> OmenDalamudServices { get; set; } = [];
 
     private ConcurrentDictionary<TaskHelper, byte>   TaskHelpers   { get; set; } = [];
     private ConcurrentDictionary<MemoryPatch, byte>  MemoryPatches { get; set; } = [];
@@ -135,7 +146,7 @@ public sealed class DService
         foreach (var serviceType in serviceTypes)
         {
             if (Activator.CreateInstance(serviceType) is not OmenServiceBase serviceInstance)
-                throw new InvalidOperationException($"鏃犳硶鍒涘缓 OmenService 瀹炰緥: {serviceType.FullName}");
+                throw new InvalidOperationException($"初始化 OmenService 错误: {serviceType.FullName}");
 
             OmenServices.TryAdd(serviceType, serviceInstance);
         }
@@ -349,3 +360,12 @@ public sealed class DService
 
     #endregion
 }
+
+public interface IOmenDalamudService<T> : IOmenDalamudService where T : IOmenDalamudService<T>
+{
+    static T Instance() =>
+        DService.Instance().GetOmenDalamudService<T>() ??
+        throw new InvalidOperationException($"服务 {typeof(T).Name} 尚未注册或初始化");
+}
+
+public interface IOmenDalamudService;
