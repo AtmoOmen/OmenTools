@@ -115,6 +115,12 @@ public partial class TaskHelper : IDisposable
     public Action? ExceptionAction { get; set; }
 
     /// <summary>
+    ///     是否允许移动到下一任务的检查
+    ///     若此不为空, 当当前没有任务但存在下一条任务时, 会一直等待此返回 true
+    /// </summary>
+    public Func<bool>? MoveToNextCheckFunc { get; set; }
+
+    /// <summary>
     ///     是否显示调试信息
     /// </summary>
     public bool ShowDebug { get; set; }
@@ -242,6 +248,12 @@ public partial class TaskHelper : IDisposable
 
     private void ProcessNextTask()
     {
+        if (MoveToNextCheckFunc is { } checkFunc)
+        {
+            if (!checkFunc())
+                return;
+        }
+        
         foreach (var queue in Queues)
         {
             if (!queue.Tasks.TryDequeue(out var task)) continue;
