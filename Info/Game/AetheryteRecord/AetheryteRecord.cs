@@ -6,6 +6,7 @@ using OmenTools.Info.Game.AetheryteRecord.Data;
 using OmenTools.Info.Game.AetheryteRecord.Enums;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
+using OmenTools.OmenService;
 using Map = Lumina.Excel.Sheets.Map;
 
 namespace OmenTools.Info.Game.AetheryteRecord;
@@ -54,6 +55,9 @@ public record AetheryteRecord
         }
     }
 
+    public bool IsHouse => 
+        GetData().PlaceName.RowId is 1145 or 1160;
+
     public Aetheryte GetData() =>
         LuminaGetter.GetRow<Aetheryte>(RowID).GetValueOrDefault();
 
@@ -67,6 +71,11 @@ public record AetheryteRecord
     {
         if (!AetheryteRecords.AethernetGroups.Contains(Group))
             return true;
+
+        // 天穹街和宇宙探索都仅有原始服务器能进入
+        if (Group is 254 or 253 &&
+            GameState.CurrentWorld != GameState.HomeWorld)
+            return false;
         
         return UIState.Instance()->IsAetheryteUnlocked(RowID);
     }
