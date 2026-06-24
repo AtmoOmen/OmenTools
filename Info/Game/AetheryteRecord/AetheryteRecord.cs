@@ -39,15 +39,19 @@ public record AetheryteRecord
                 var name = Group switch
                 {
                     5   => LuminaWrapper.GetZonePlaceName(144),       // 金碟
-                    255 => LuminaWrapper.GetAddonText(8495),          // 冒险者住宅区
                     254 => GetZone().PlaceName.Value.Name.ToString(), // 天穹街
                     253 => LuminaWrapper.GetAddonText(3849),          // 宇宙探索
                     _   => GetZone().PlaceNameZone.Value.Name.ToString()
                 };
 
+                // 狼狱停船场
                 if (ZoneID == 250)
-                    name = LuminaWrapper.GetPlaceName(22); // 狼狱停船场
+                    name = LuminaWrapper.GetPlaceName(22);
 
+                // 冒险者住宅区
+                if (IsHouse)
+                    name = LuminaWrapper.GetAddonText(8495);
+                
                 field = name;
             }
 
@@ -69,6 +73,9 @@ public record AetheryteRecord
     
     public unsafe bool IsUnlocked()
     {
+        if (IsHouse)
+            return true;
+        
         if (!AetheryteRecords.AethernetGroups.Contains(Group))
             return true;
 
