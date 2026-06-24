@@ -16,7 +16,7 @@ public sealed class FateCommand : ExecuteCommandBase
     ///     为临危受命设置等级同步状态
     /// </summary>
     public static void SyncLevel(uint fateID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SyncToFateLevel, fateID);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SyncToFateLevel, fateID, 1);
 
     /// <summary>
     ///     临危受命退出等级同步状态
