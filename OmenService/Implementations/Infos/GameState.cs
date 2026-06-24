@@ -90,59 +90,37 @@ public unsafe class GameState : OmenServiceBase<GameState>
     ///     当前游戏客户端语言
     /// </summary>
     public static Language ClientLanguge =>
-        ClientLangaugeLazy.Value;
+        (Language)(Framework.Instance()->ClientLanguage + 1);
 
     /// <summary>
     ///     当前游戏客户端版本
     /// </summary>
     public static string ClientVersion =>
-        ClientVersionLazy.Value;
-
-    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
-    // 因为枚举前面多定义了一个 None, 所以要 + 1
-    private static readonly Lazy<Language> ClientLangaugeLazy =
-        new(() => (Language)(Framework.Instance()->ClientLanguage + 1));
-
-    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
-    private static readonly Lazy<string> ClientVersionLazy =
-        new(() => Framework.Instance()->GameVersionString);
-
-    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
-    private static readonly Lazy<bool> IsGLLazy =
-        new(() => Framework.Instance()->ClientLanguage < 4);
+        Framework.Instance()->GameVersionString ?? string.Empty;
 
     /// <summary>
     ///     是否为国际服客户端
     /// </summary>
-    public static bool IsGL => IsGLLazy.Value;
-
-    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
-    // 4 - 国服简中 (CHS); 5 - 国服繁中 (CHT, 很神奇, 但确实是有)
-    private static readonly Lazy<bool> IsCNLazy =
-        new(() => Framework.Instance()->ClientLanguage is 4 or 5);
+    public static bool IsGL => 
+        Framework.Instance()->ClientLanguage < 4;
 
     /// <summary>
     ///     是否为国服客户端
     /// </summary>
-    public static bool IsCN => IsCNLazy.Value;
-
-    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
-    private static readonly Lazy<bool> IsTCLazy =
-        new(() => Framework.Instance()->ClientLanguage == 7);
+    public static bool IsCN => 
+        Framework.Instance()->ClientLanguage is 4 or 5;
 
     /// <summary>
     ///     是否为繁中客户端
     /// </summary>
-    public static bool IsTC => IsTCLazy.Value;
-
-    // 因为生命周期里不会变更, 因此只需要懒加载一次即可
-    private static readonly Lazy<bool> IsKRLazy =
-        new(() => Framework.Instance()->ClientLanguage == 6);
+    public static bool IsTC => 
+        Framework.Instance()->ClientLanguage == 7;
 
     /// <summary>
     ///     是否为韩服客户端
     /// </summary>
-    public static bool IsKR => IsKRLazy.Value;
+    public static bool IsKR => 
+        Framework.Instance()->ClientLanguage == 6;
 
     /// <summary>
     ///     进入临危受命范围时
