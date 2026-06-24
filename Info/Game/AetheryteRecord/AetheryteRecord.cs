@@ -11,7 +11,7 @@ using Map = Lumina.Excel.Sheets.Map;
 namespace OmenTools.Info.Game.AetheryteRecord;
 
 /// <summary>
-///     255 冒险者住宅区, 254 天穹街, 253 宇宙探索
+///     254 天穹街, 253 宇宙探索
 /// </summary>
 public record AetheryteRecord
 (

@@ -227,7 +227,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                     (
                         aetheryte.AetheryteID,
                         aetheryte.SubIndex,
-                        255,
+                        aetheryteRow.AethernetGroup,
                         0,
                         aetheryte.TerritoryID,
                         aptMarker.Map.RowId,
@@ -250,7 +250,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                     (
                         aetheryte.AetheryteID,
                         aetheryte.SubIndex,
-                        255,
+                        aetheryteRow.AethernetGroup,
                         0,
                         aetheryte.TerritoryID,
                         sharedHouseMarker.Map.RowId,
@@ -276,7 +276,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                     (
                         aetheryte.AetheryteID,
                         aetheryte.SubIndex,
-                        255,
+                        aetheryteRow.AethernetGroup,
                         0,
                         aetheryte.TerritoryID,
                         fcMarker.Map.RowId,
@@ -302,7 +302,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                     (
                         aetheryte.AetheryteID,
                         aetheryte.SubIndex,
-                        255,
+                        aetheryteRow.AethernetGroup,
                         0,
                         aetheryte.TerritoryID,
                         personalMarker.Map.RowId,
