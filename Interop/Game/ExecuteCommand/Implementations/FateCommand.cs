@@ -27,7 +27,7 @@ public sealed class FateCommand : ExecuteCommandBase
     /// <summary>
     ///     自动触发临危受命等级同步请求
     /// </summary>
-    public static void AutoSyncLevel(uint fateID, bool isSync) =>
+    public static void ToggleLevelSync(uint fateID, bool isSync) =>
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SyncToFateLevelAuto, fateID, isSync ? 1U : 0U);
 
     /// <summary>
