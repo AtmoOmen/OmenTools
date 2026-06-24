@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using Lumina.Data;
@@ -142,6 +143,22 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
                 {
                     status = RepositoryStatus.Building;
 
+                    // 等待游戏版本就绪
+                    const int VERSION_WAIT_TIMEOUT_MS  = 30_000;
+                    const int VERSION_POLL_INTERVAL_MS = 500;
+
+                    var versionWaitStopwatch = Stopwatch.StartNew();
+                    while (string.IsNullOrEmpty(GameState.ClientVersion) &&
+                           versionWaitStopwatch.ElapsedMilliseconds < VERSION_WAIT_TIMEOUT_MS)
+                        await Task.Delay(VERSION_POLL_INTERVAL_MS).ConfigureAwait(false);
+
+                    if (string.IsNullOrEmpty(GameState.ClientVersion))
+                    {
+                        status = RepositoryStatus.Failed;
+                        DLog.Warning("[ItemSourceRepository] 等待游戏版本超时, 放弃构建快照");
+                        return;
+                    }
+
                     var snapshotPath = GetSnapshotPath();
                     var items        = ItemSourceInfo.BuildAllItems();
                     await WriteSnapshotAsync(snapshotPath, items).ConfigureAwait(false);
@@ -187,6 +204,12 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
 
             var header = ReadHeader(reader);
             ValidateHeader(header, bytes.Length);
+
+            if (string.IsNullOrEmpty(GameState.ClientVersion))
+            {
+                failureReason = "游戏版本尚未就绪";
+                return false;
+            }
 
             if (!string.Equals(header.ClientVersion, GameState.ClientVersion, StringComparison.Ordinal))
                 throw new InvalidDataException($"客户端版本不匹配, 当前: {GameState.ClientVersion}, 快照: {header.ClientVersion}");
