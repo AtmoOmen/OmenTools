@@ -93,7 +93,9 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
         var otherName = LuminaWrapper.GetAddonText(832);
 
-        foreach (var data in LuminaGetter.Get<Aetheryte>())
+        foreach (var data in LuminaGetter.Get<Aetheryte>()
+                                         .OrderBy(x => x.AethernetGroup)
+                                         .ThenBy(x => x.Territory.RowId))
         {
             var record = AetheryteRecord.Parse(data);
             if (record == null || !record.IsUnlocked()) continue;
