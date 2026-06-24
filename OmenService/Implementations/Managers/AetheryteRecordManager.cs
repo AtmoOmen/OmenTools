@@ -98,7 +98,10 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                                          .ThenBy(x => x.Territory.RowId))
         {
             var record = AetheryteRecord.Parse(data);
-            if (record == null || !record.IsUnlocked()) continue;
+            if (record == null       ||
+                !record.IsUnlocked() ||
+                record.IsHouse)
+                continue;
 
             if (record.Group == 5)
             {
