@@ -138,6 +138,12 @@ public partial class TaskHelper : IDisposable
     ///     默认为 0 毫秒; 设置为 ≤ 0 以每帧重试 <br />
     /// </summary>
     public int RetryIntervalMS { get; set; } = 0;
+    
+    /// <summary>
+    ///     当前任务完成, 进入下一任务前的等待时间 <br />
+    ///     默认为 0 毫秒; 设置为 ≤ 0 以每帧重试 <br />
+    /// </summary>
+    public int TaskIntervalMS { get; set; } = 0;
 
     /// <summary>
     ///     是否已被销毁
@@ -184,6 +190,10 @@ public partial class TaskHelper : IDisposable
                             // 任务还没有完成
                             if (CurrentTask != null && RetryIntervalMS > 0)
                                 await Task.Delay(RetryIntervalMS, ct).ConfigureAwait(false);
+                            
+                            // 任务已经完成了
+                            if (CurrentTask == null && TaskIntervalMS > 0)
+                                await Task.Delay(TaskIntervalMS, ct).ConfigureAwait(false);
                         }
                         else
                             isBusy = queueTaskCount > 0 || pendingTaskCount > 0;
