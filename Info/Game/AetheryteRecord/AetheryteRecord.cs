@@ -59,8 +59,19 @@ public record AetheryteRecord
         }
     }
 
-    public bool IsHouse => 
-        GetData().PlaceName.RowId is 1145 or 1160;
+    public bool IsHouse
+    {
+        get
+        {
+            if (isHouse != null)
+                return isHouse.Value;
+            
+            isHouse = GetData().PlaceName.RowId is 1145 or 1160;
+            return isHouse.Value;
+        }
+    }
+
+    private bool? isHouse;
 
     public Aetheryte GetData() =>
         LuminaGetter.GetRow<Aetheryte>(RowID).GetValueOrDefault();
