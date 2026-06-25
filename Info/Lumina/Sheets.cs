@@ -223,7 +223,7 @@ public static class Sheets
             SPEED_DETECTION_ZONES_TAG,
             () =>
             {
-                HashSet<uint> limitedIntendedUse = GameState.IsCN || GameState.IsTC
+                HashSet<uint> limitedIntendedUse = !GameState.IsGL
                                                        ? [1, 18, 31, 41, 47, 48, 52, 53, 61]
                                                        : [18, 31, 41, 48, 52, 53];
                 return LuminaGetter.Get<TerritoryType>()
