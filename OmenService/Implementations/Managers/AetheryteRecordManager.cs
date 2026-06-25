@@ -42,32 +42,28 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                               .ToList();
         return validAetherytes.Count == 0 ? null : validAetherytes.FirstOrDefault();
     }
-
-    private TaskHelper? taskHelper;
-
+    
     protected override void Init()
     {
-        taskHelper = new() { TimeoutMS = 60_000 };
-
-        BuildRecords();
-
         DService.Instance().ClientState.TerritoryChanged += OnZoneChanged;
-        OnZoneChanged(0);
-
         GameState.Instance().Login += OnLogin;
+        
+        OnLogin();
     }
 
     protected override void Uninit()
     {
         DService.Instance().ClientState.TerritoryChanged -= OnZoneChanged;
         GameState.Instance().Login                       -= OnLogin;
-
-        taskHelper?.Dispose();
-        taskHelper = null;
     }
 
-    private void OnLogin() =>
-        OnZoneChanged(0);
+    private void OnLogin()
+    {
+        if (!GameState.IsLoggedIn) return;
+        
+        BuildRecords();
+        RefreshRecords();
+    }
 
     private void OnZoneChanged(uint zone)
     {
@@ -80,13 +76,14 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
     private void BuildRecords()
     {
+        Records = [];
+        
         foreach (var data in LuminaGetter.Get<Aetheryte>()
                                          .OrderBy(x => x.AethernetGroup)
                                          .ThenBy(x => x.Territory.RowId))
         {
             var record = AetheryteRecord.Parse(data);
-            if (record == null ||
-                !record.IsUnlocked())
+            if (record == null || !record.IsUnlocked())
                 continue;
 
             // 金碟游乐场
@@ -116,9 +113,19 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
             }
         }
 
-        RefreshFirmamentRecords();
-        RefreshCosmicExplorationRecords();
+        BuildFirmamentRecords();
+        BuildCosmicExplorationRecords();
+        BuildHouseRecords();
+    }
 
+    private void RefreshRecords()
+    {
+        foreach (var record in AllRecords)
+            record.Update();
+    }
+
+    private void BuildHouseRecords()
+    {
         var housingMarkers = LuminaGetter.GetSub<HousingMapMarkerInfo>()
                                          .SelectMany(x => x)
                                          .Where(x => x.Map.ValueNullable != null)
@@ -126,7 +133,6 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
         // 部队房
         var fcInfo = HousingManager.GetOwnedHouseId(EstateType.FreeCompanyEstate);
-
         if (fcInfo.Id != INVALID_HOUSE_ID)
         {
             var zoneID = fcInfo.TerritoryTypeId;
@@ -249,13 +255,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
         }
     }
 
-    private void RefreshRecords()
-    {
-        foreach (var record in AllRecords)
-            record.Update();
-    }
-
-    private void RefreshFirmamentRecords()
+    private void BuildFirmamentRecords()
     {
         var territory = LuminaGetter.GetRowOrDefault<TerritoryType>(886);
         var map       = territory.Map.Value;
@@ -283,7 +283,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
         }
     }
 
-    private void RefreshCosmicExplorationRecords()
+    private void BuildCosmicExplorationRecords()
     {
         byte index = 0;
 
