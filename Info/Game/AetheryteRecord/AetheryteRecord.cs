@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.AetheryteRecord.Data;
@@ -102,8 +101,7 @@ public record AetheryteRecord
     public void Update()
     {
         if (DService.Instance().ObjectTable.LocalPlayer == null ||
-            DService.Instance().Condition.IsBetweenAreas        ||
-            !AetheryteRecords.AethernetGroups.Contains(Group))
+            DService.Instance().Condition.IsBetweenAreas)
             return;
 
         var info = GetAetheryteState(this);
@@ -114,6 +112,10 @@ public record AetheryteRecord
     public static AetheryteRecord? Parse(Aetheryte data)
     {
         if (data.RowId <= 1) return null;
+
+        if (data.PlaceName.RowId is 1145 or 1160)
+            return null;
+
         var map = data.Map.RowId != 0 ? data.Map.Value : data.Territory.Value.Map.Value;
 
         var name = data.IsAetheryte
@@ -131,7 +133,7 @@ public record AetheryteRecord
                                   .Where(x => x.AethernetGroup == data.AethernetGroup)
                                   .ToList();
 
-            // 挑出飞艇坪等“其他”里也始终最后的 (同一区域但不同地图)
+            // 挑出飞艇坪等"其他"里也始终最后的 (同一区域但不同地图)
             var special = all.Where(x => x is { IsAetheryte: false, Map.RowId: > 0 })
                              .OrderBy(x => x.Territory.RowId)
                              .ThenBy(x => x.RowId)
@@ -141,7 +143,7 @@ public record AetheryteRecord
             // 挑出这一组的大水晶
             var aetheryteMain = all.FirstOrDefault(x => x.IsAetheryte);
 
-            // 挑出飞到野外的小水晶, 在“其他”里
+            // 挑出飞到野外的小水晶, 在"其他"里
             var outdoors = all.Where(x => LuminaGetter.TryGetRow<Level>(x.Level[0].RowId, out _))
                               .OrderBy(x => x.Territory.RowId)
                               .ThenBy(x => x.RowId)
@@ -231,77 +233,57 @@ public record AetheryteRecord
 
     public static unsafe (AetheryteRecordState State, uint Cost) GetAetheryteState(AetheryteRecord aetheryte)
     {
-        if (DService.Instance().AetheryteList.Count == 0) return default;
-
-        // 天穹街
-        // 伊修加德基础层
-        if (aetheryte.Group == 254)
-            return (AetheryteRecordState.None, DService.Instance().AetheryteList.FirstOrDefault(x => x.AetheryteID == 70)?.GilCost ?? 0);
-
-        // 宇宙探索
-        // 最佳威兔洞
-        if (aetheryte.Group == 253)
-            return (AetheryteRecordState.None, DService.Instance().AetheryteList.FirstOrDefault(x => x.AetheryteID == 175)?.GilCost ?? 0);
-
-        if (!aetheryte.IsAetheryte)
-        {
-            var mainAetheryte = DService.Instance().AetheryteList
-                                        .FirstOrDefault(x => x.AetheryteData.Value.AethernetGroup == aetheryte.Group);
-            if (mainAetheryte == null) return default;
-
-            var mainID      = mainAetheryte.AetheryteID;
-            var playerState = PlayerState.Instance();
-            if (playerState == null) return default;
-
-            // 主以太之光是免费传送点 → Cost=0, 用算法计算原始费用
-            if (playerState->FreeAetheryteId     == mainID ||
-                playerState->FreeAetherytePSPlus == mainID ||
-                playerState->FreeAetheryteNSO    == mainID)
-            {
-                var curTerritory = GameMain.Instance()->CurrentTerritoryTypeId;
-                var data         = mainAetheryte.AetheryteData.Value;
-                var baseCost     = TeleportCostCalculator.GetBaseTeleportCost(data, curTerritory);
-                return (AetheryteRecordState.None, baseCost);
-            }
-
-            // 主以太之光是收藏点 → Cost 是折半的, 反算全价
-            if (playerState->FavouriteAetherytes.Contains((ushort)mainID))
-                return (AetheryteRecordState.None, mainAetheryte.GilCost * 2);
-
-            // 主以太之光是返回点或普通 → Cost 即原始费用
-            return (AetheryteRecordState.None, mainAetheryte.GilCost);
-        }
-
-        var serviceState = DService.Instance().AetheryteList.FirstOrDefault(x => x.AetheryteID == aetheryte.RowID);
-        if (serviceState == null) return default;
-
-        var cost = serviceState.GilCost;
+        if (!GameState.IsLoggedIn) return default;
 
         var instance = PlayerState.Instance();
         if (instance == null) return default;
 
+        var data     = aetheryte.GetData();
+        var baseCost = TeleportCostCalculator.GetBaseTeleportCost(data, GameState.TerritoryType);
+
+        switch (aetheryte.Group)
+        {
+            // 天穹街 → 伊修加德基础层 (70)
+            case 254:
+            {
+                var ishgardData = LuminaGetter.GetRow<Aetheryte>(70).GetValueOrDefault();
+                baseCost = TeleportCostCalculator.GetBaseTeleportCost(ishgardData, GameState.TerritoryType);
+                return (AetheryteRecordState.None, baseCost);
+            }
+            // 宇宙探索 → 最佳威兔洞 (175)
+            case 253:
+            {
+                var burrowData = LuminaGetter.GetRow<Aetheryte>(175).GetValueOrDefault();
+                baseCost = TeleportCostCalculator.GetBaseTeleportCost(burrowData, GameState.TerritoryType);
+                return (AetheryteRecordState.None, baseCost);
+            }
+        }
+
+        if (!aetheryte.IsAetheryte)
+            return (AetheryteRecordState.None, baseCost);
+
         if (instance->FreeAetheryteId == aetheryte.RowID)
-            return (AetheryteRecordState.Free, cost);
+            return (AetheryteRecordState.Free, 0);
 
         if (instance->FreeAetherytePSPlus == aetheryte.RowID)
-            return (AetheryteRecordState.FreePS, cost);
+            return (AetheryteRecordState.FreePS, 0);
 
         if (instance->FreeAetheryteNSO == aetheryte.RowID)
-            return (AetheryteRecordState.FreeNSO, cost);
+            return (AetheryteRecordState.FreeNSO, 0);
 
         if (instance->FavouriteAetherytes.Contains((ushort)aetheryte.RowID))
-            return (AetheryteRecordState.Favorite, cost);
+            return (AetheryteRecordState.Favorite, baseCost / 2);
 
         if (instance->HomeAetheryteId == aetheryte.RowID)
-            return (AetheryteRecordState.Home, cost);
+            return (AetheryteRecordState.Home, baseCost);
 
-        if (serviceState.IsSharedHouse)
-            return (AetheryteRecordState.SharedHouse, cost);
+        if (aetheryte.IsHouse)
+        {
+            var houseCost = baseCost / 4;
+            return (AetheryteRecordState.None, houseCost);
+        }
 
-        if (serviceState.IsApartment)
-            return (AetheryteRecordState.Apart, cost);
-
-        return (AetheryteRecordState.None, cost);
+        return (AetheryteRecordState.None, baseCost);
     }
 
     public virtual bool Equals(AetheryteRecord? other) =>

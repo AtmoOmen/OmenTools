@@ -55,15 +55,15 @@ public static class TeleportCostCalculator
     ///     不包含收藏/免费/住宅折扣 (divisor=1, multiplier=100)
     /// </summary>
     /// <param name="targetAetheryteRow">目标以太之光的 Aetheryte 行</param>
-    /// <param name="currentTerritoryTypeID">当前 TerritoryTypeID (来自 GameMain.CurrentTerritoryTypeId)</param>
+    /// <param name="zoneID">当前 TerritoryTypeID (来自 GameMain.CurrentTerritoryTypeId)</param>
     /// <returns>原始传送费用 (Gil)</returns>
-    public static uint GetBaseTeleportCost(Aetheryte targetAetheryteRow, uint currentTerritoryTypeID)
+    public static uint GetBaseTeleportCost(Aetheryte targetAetheryteRow, uint zoneID)
     {
-        var targetTerritoryID = targetAetheryteRow.Territory.RowId;
+        var targetZoneID = targetAetheryteRow.Territory.RowId;
 
         // 获取两个 Territory 的 TerritoryTypeTelepo 行
-        if (!LuminaGetter.TryGetRow(currentTerritoryTypeID, out TerritoryTypeTelepo curRow) ||
-            !LuminaGetter.TryGetRow(targetTerritoryID,      out TerritoryTypeTelepo targetRow))
+        if (!LuminaGetter.TryGetRow(zoneID,       out TerritoryTypeTelepo curRow) ||
+            !LuminaGetter.TryGetRow(targetZoneID, out TerritoryTypeTelepo targetRow))
             return 999;
 
         // 获取当前 Relay 行
