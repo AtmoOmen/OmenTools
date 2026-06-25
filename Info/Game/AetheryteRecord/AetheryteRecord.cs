@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.AetheryteRecord.Data;
@@ -51,7 +52,7 @@ public record AetheryteRecord
                 // 冒险者住宅区
                 if (IsHouse)
                     name = LuminaWrapper.GetAddonText(8495);
-                
+
                 field = name;
             }
 
@@ -65,7 +66,7 @@ public record AetheryteRecord
         {
             if (isHouse != null)
                 return isHouse.Value;
-            
+
             isHouse = GetData().PlaceName.RowId is 1145 or 1160;
             return isHouse.Value;
         }
@@ -81,12 +82,12 @@ public record AetheryteRecord
 
     public Map GetMap() =>
         LuminaGetter.GetRow<Map>(MapID).GetValueOrDefault();
-    
+
     public unsafe bool IsUnlocked()
     {
         if (IsHouse)
             return true;
-        
+
         if (!AetheryteRecords.AethernetGroups.Contains(Group))
             return true;
 
@@ -94,7 +95,7 @@ public record AetheryteRecord
         if (Group is 254 or 253 &&
             GameState.CurrentWorld != GameState.HomeWorld)
             return false;
-        
+
         return UIState.Instance()->IsAetheryteUnlocked(RowID);
     }
 
@@ -236,7 +237,7 @@ public record AetheryteRecord
         // 伊修加德基础层
         if (aetheryte.Group == 254)
             return (AetheryteRecordState.None, DService.Instance().AetheryteList.FirstOrDefault(x => x.AetheryteID == 70)?.GilCost ?? 0);
-        
+
         // 宇宙探索
         // 最佳威兔洞
         if (aetheryte.Group == 253)
@@ -244,9 +245,30 @@ public record AetheryteRecord
 
         if (!aetheryte.IsAetheryte)
         {
-            var mainAetheryte = DService.Instance().AetheryteList.FirstOrDefault(x => x.AetheryteData.Value.AethernetGroup == aetheryte.Group);
+            var mainAetheryte = DService.Instance().AetheryteList
+                                        .FirstOrDefault(x => x.AetheryteData.Value.AethernetGroup == aetheryte.Group);
             if (mainAetheryte == null) return default;
 
+            var mainID      = mainAetheryte.AetheryteID;
+            var playerState = PlayerState.Instance();
+            if (playerState == null) return default;
+
+            // 主以太之光是免费传送点 → Cost=0, 用算法计算原始费用
+            if (playerState->FreeAetheryteId     == mainID ||
+                playerState->FreeAetherytePSPlus == mainID ||
+                playerState->FreeAetheryteNSO    == mainID)
+            {
+                var curTerritory = GameMain.Instance()->CurrentTerritoryTypeId;
+                var data         = mainAetheryte.AetheryteData.Value;
+                var baseCost     = TeleportCostCalculator.GetBaseTeleportCost(data, curTerritory);
+                return (AetheryteRecordState.None, baseCost);
+            }
+
+            // 主以太之光是收藏点 → Cost 是折半的, 反算全价
+            if (playerState->FavouriteAetherytes.Contains((ushort)mainID))
+                return (AetheryteRecordState.None, mainAetheryte.GilCost * 2);
+
+            // 主以太之光是返回点或普通 → Cost 即原始费用
             return (AetheryteRecordState.None, mainAetheryte.GilCost);
         }
 
@@ -263,7 +285,7 @@ public record AetheryteRecord
 
         if (instance->FreeAetherytePSPlus == aetheryte.RowID)
             return (AetheryteRecordState.FreePS, cost);
-        
+
         if (instance->FreeAetheryteNSO == aetheryte.RowID)
             return (AetheryteRecordState.FreeNSO, cost);
 
