@@ -18,9 +18,8 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     public string HouseSharedName        { get; set; } = "共享房屋";
     public string HouseFreeCompanyName   { get; set; } = "部队房屋";
     public string HousePersonalName      { get; set; } = "个人房屋";
-    
-    public Dictionary<string, List<AetheryteRecord>> Records      { get; private set; } = [];
-    public List<AetheryteRecord>                     HouseRecords { get; private set; } = [];
+
+    public Dictionary<string, List<AetheryteRecord>> Records { get; private set; } = [];
 
     public IEnumerable<AetheryteRecord> AllRecords
     {
@@ -28,9 +27,6 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
         {
             foreach (var list in Records.Values)
             foreach (var record in list)
-                yield return record;
-
-            foreach (var record in HouseRecords)
                 yield return record;
         }
     }
@@ -58,7 +54,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
         DService.Instance().ClientState.TerritoryChanged += OnZoneChanged;
         OnZoneChanged(0);
-        
+
         GameState.Instance().Login += OnLogin;
     }
 
@@ -88,10 +84,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
     private void RefreshRecords()
     {
-        Records      = [];
-        HouseRecords = [];
-
-        var otherName = LuminaWrapper.GetAddonText(832);
+        Records = [];
 
         foreach (var data in LuminaGetter.Get<Aetheryte>()
                                          .OrderBy(x => x.AethernetGroup)
@@ -103,17 +96,20 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                 record.IsHouse)
                 continue;
 
+            // 金碟游乐场
             if (record.Group == 5)
             {
-                Records.TryAdd(otherName, []);
-                Records[otherName].Add(record);
+                Records.TryAdd(VERSION_OTHER, []);
+                Records[VERSION_OTHER].Add(record);
             }
             else if (record.Version == 0)
             {
                 var regionRow = record.GetZone().PlaceNameRegion.Value;
+
+                // 拉诺西亚 / 萨纳兰 / 黑衣森林
                 var regionName = regionRow.RowId is 22 or 23 or 24
                                      ? record.GetZone().PlaceNameRegion.Value.Name.ToString()
-                                     : otherName;
+                                     : VERSION_OTHER; // 摩杜纳
 
                 Records.TryAdd(regionName, []);
                 Records[regionName].Add(record);
@@ -166,6 +162,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     private void RefreshCosmicExplorationRecords()
     {
         byte index = 0;
+
         foreach (var (territoryID, positions) in AetheryteRecords.CosmicExplorationPositions)
         {
             var territory   = LuminaGetter.GetRowOrDefault<TerritoryType>(territoryID);
@@ -173,7 +170,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
             var version     = territory.ExVersion.RowId;
             var versionName = $"{version + 2}.0";
             var offset      = AetheryteRecords.CosmicPlaceNameOffsets[territoryID];
-            
+
             foreach (var position in positions)
             {
                 var placeName = LuminaWrapper.GetPlaceName(index + offset);
@@ -205,13 +202,16 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                                             .Where(x => x.Map.ValueNullable != null)
                                             .ToList();
 
+        Records.TryAdd(VERSION_OTHER, []);
+
         foreach (var aetheryte in DService.Instance().AetheryteList)
         {
             if (!LuminaGetter.TryGetRow<Aetheryte>(aetheryte.AetheryteID, out var aetheryteRow)) continue;
             if (aetheryteRow.PlaceName.RowId is not (1145 or 1160)) continue;
 
             var housingMarkers = allHousingMarkers
-                                 .Where(x => x.Map.Value.TerritoryType.RowId == aetheryteRow.Territory.RowId).ToList();
+                                 .Where(x => x.Map.Value.TerritoryType.RowId == aetheryteRow.Territory.RowId)
+                                 .ToList();
 
             var territoryName = aetheryteRow.Territory.Value.ExtractPlaceName();
 
@@ -224,7 +224,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                 var aptMarker = housingMarkers.FirstOrDefault(x => x.SubrowId == 60);
                 if (aptMarker.RowId == 0) continue;
 
-                HouseRecords.Add
+                Records[VERSION_OTHER].Add
                 (
                     new AetheryteRecord
                     (
@@ -236,7 +236,14 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                         aptMarker.Map.RowId,
                         true,
                         new(aptMarker.X, aptMarker.Y, aptMarker.Z),
-                        string.Format(HouseApartmentTemplate, territoryName, LuminaWrapper.GetAddonText(6760), aptHouseInfo.WardIndex + 1, aptRoomInfo.RoomNumber)
+                        string.Format
+                        (
+                            HouseApartmentTemplate,
+                            territoryName,
+                            LuminaWrapper.GetAddonText(6760),
+                            aptHouseInfo.WardIndex + 1,
+                            aptRoomInfo.RoomNumber
+                        )
                     )
                 );
                 continue;
@@ -247,7 +254,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                 var sharedHouseMarker = housingMarkers.FirstOrDefault(x => x.SubrowId == aetheryte.Plot);
                 if (sharedHouseMarker.RowId == 0) continue;
 
-                HouseRecords.Add
+                Records[VERSION_OTHER].Add
                 (
                     new AetheryteRecord
                     (
@@ -259,62 +266,97 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                         sharedHouseMarker.Map.RowId,
                         true,
                         new(sharedHouseMarker.X, sharedHouseMarker.Y, sharedHouseMarker.Z),
-                        string.Format(HouseEstateTemplate, territoryName, HouseSharedName, aetheryte.Ward, aetheryte.Plot)
+                        string.Format
+                        (
+                            HouseEstateTemplate,
+                            territoryName,
+                            HouseSharedName,
+                            aetheryte.Ward,
+                            aetheryte.Plot
+                        )
                     )
                 );
                 continue;
             }
 
-            if (aetheryteRow.PlaceName.RowId == 1145)
+
+            switch (aetheryteRow.PlaceName.RowId)
             {
-                var fcHouseInfo = HousingManager.GetOwnedHouseId(EstateType.FreeCompanyEstate);
-                if (fcHouseInfo.Id == INVALID_HOUSE_ID) continue;
+                // 部队房屋
+                case 1145:
+                {
+                    var fcHouseInfo = HousingManager.GetOwnedHouseId(EstateType.FreeCompanyEstate);
+                    if (fcHouseInfo.Id == INVALID_HOUSE_ID) continue;
 
-                var fcMarker = housingMarkers.FirstOrDefault(x => x.SubrowId == fcHouseInfo.PlotIndex);
-                if (fcMarker.RowId == 0) continue;
+                    var fcMarker = housingMarkers.FirstOrDefault(x => x.SubrowId == fcHouseInfo.PlotIndex);
+                    if (fcMarker.RowId == 0) continue;
 
-                HouseRecords.Add
-                (
-                    new AetheryteRecord
+                    Records[VERSION_OTHER].Add
                     (
-                        aetheryte.AetheryteID,
-                        aetheryte.SubIndex,
-                        aetheryteRow.AethernetGroup,
-                        0,
-                        aetheryte.TerritoryID,
-                        fcMarker.Map.RowId,
-                        true,
-                        new(fcMarker.X, fcMarker.Y, fcMarker.Z),
-                        string.Format(HouseEstateTemplate, territoryName, HouseFreeCompanyName, fcHouseInfo.WardIndex + 1, fcHouseInfo.PlotIndex + 1)
-                    )
-                );
-                continue;
+                        new AetheryteRecord
+                        (
+                            aetheryte.AetheryteID,
+                            aetheryte.SubIndex,
+                            aetheryteRow.AethernetGroup,
+                            0,
+                            aetheryte.TerritoryID,
+                            fcMarker.Map.RowId,
+                            true,
+                            new(fcMarker.X, fcMarker.Y, fcMarker.Z),
+                            string.Format
+                            (
+                                HouseEstateTemplate,
+                                territoryName,
+                                HouseFreeCompanyName,
+                                fcHouseInfo.WardIndex + 1,
+                                fcHouseInfo.PlotIndex + 1
+                            )
+                        )
+                    );
+                    continue;
+                }
+
+                // 个人房屋
+                case 1160:
+                {
+                    var personalHouseInfo = HousingManager.GetOwnedHouseId(EstateType.PersonalEstate);
+                    if (personalHouseInfo.Id == INVALID_HOUSE_ID) continue;
+
+                    var personalMarker = housingMarkers.FirstOrDefault(x => x.SubrowId == personalHouseInfo.PlotIndex);
+                    if (personalMarker.RowId == 0) continue;
+
+                    Records[VERSION_OTHER].Add
+                    (
+                        new AetheryteRecord
+                        (
+                            aetheryte.AetheryteID,
+                            aetheryte.SubIndex,
+                            aetheryteRow.AethernetGroup,
+                            0,
+                            aetheryte.TerritoryID,
+                            personalMarker.Map.RowId,
+                            true,
+                            new(personalMarker.X, personalMarker.Y, personalMarker.Z),
+                            string.Format
+                            (
+                                HouseEstateTemplate,
+                                territoryName,
+                                HousePersonalName,
+                                personalHouseInfo.WardIndex + 1,
+                                personalHouseInfo.PlotIndex + 1
+                            )
+                        )
+                    );
+                    break;
+                }
             }
 
-            if (aetheryteRow.PlaceName.RowId == 1160)
-            {
-                var personalHouseInfo = HousingManager.GetOwnedHouseId(EstateType.PersonalEstate);
-                if (personalHouseInfo.Id == INVALID_HOUSE_ID) continue;
-
-                var personalMarker = housingMarkers.FirstOrDefault(x => x.SubrowId == personalHouseInfo.PlotIndex);
-                if (personalMarker.RowId == 0) continue;
-
-                HouseRecords.Add
-                (
-                    new AetheryteRecord
-                    (
-                        aetheryte.AetheryteID,
-                        aetheryte.SubIndex,
-                        aetheryteRow.AethernetGroup,
-                        0,
-                        aetheryte.TerritoryID,
-                        personalMarker.Map.RowId,
-                        true,
-                        new(personalMarker.X, personalMarker.Y, personalMarker.Z),
-                        string.Format(HouseEstateTemplate, territoryName, HousePersonalName, personalHouseInfo.WardIndex + 1, personalHouseInfo.PlotIndex + 1)
-                    )
-                );
-            }
         }
     }
+
+    #region 常量
+
+    private static readonly string VERSION_OTHER = LuminaWrapper.GetAddonText(832);
+
+    #endregion
 }
