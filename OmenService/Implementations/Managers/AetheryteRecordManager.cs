@@ -6,7 +6,6 @@ using OmenTools.Info.Game.AetheryteRecord.Data;
 using OmenTools.Info.Lumina.ExtraSheets;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
-using OmenTools.Threading.TaskHelper;
 
 namespace OmenTools.OmenService;
 
@@ -37,7 +36,11 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     )
     {
         var validAetherytes = AllRecords
-                              .Where(x => AetheryteRecords.AethernetGroups.Contains(x.Group) && x.ZoneID == zoneID)
+                              .Where
+                              (x => AetheryteRecords.AethernetGroups.Contains(x.Group) &&
+                                    x.ZoneID == zoneID                                 &&
+                                    x.IsUnlocked()
+                              )
                               .OrderBy(x => Vector3.DistanceSquared(x.Position, pos))
                               .ToList();
         return validAetherytes.Count == 0 ? null : validAetherytes.FirstOrDefault();
