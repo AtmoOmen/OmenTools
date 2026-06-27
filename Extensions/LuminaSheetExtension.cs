@@ -10,6 +10,7 @@ using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Enums;
 using OmenTools.Info.Lumina;
+using OmenTools.Info.Lumina.Enums;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
 
@@ -31,22 +32,24 @@ public static unsafe class LuminaSheetExtension
     
     extension(LgbFile file)
     {
-        public static LgbFile? GetPlanEvent(uint territoryTypeID) =>
-            LgbFile.GetPlanEvent(LuminaGetter.GetRowOrDefault<TerritoryType>(territoryTypeID));
+        public static LgbFile? Get(uint territoryTypeID, LGBFileType fileType) =>
+            LgbFile.Get(LuminaGetter.GetRowOrDefault<TerritoryType>(territoryTypeID), fileType);
         
-        public static LgbFile? GetPlanEvent(TerritoryType zone) =>
-            LgbFile.TryGetPlanEvent(zone, out var lgbFile) ? lgbFile : null;
+        public static LgbFile? Get(TerritoryType zone, LGBFileType fileType) =>
+            LgbFile.TryGet(zone, fileType, out var lgbFile) ? lgbFile : null;
 
-        public static bool TryGetPlanEvent
+        public static bool TryGet
         (
             uint                             territoryTypeID,
+            LGBFileType                      fileType,
             [NotNullWhen(true)] out LgbFile? lgbFile
         ) =>
-            LgbFile.TryGetPlanEvent(LuminaGetter.GetRowOrDefault<TerritoryType>(territoryTypeID), out lgbFile);
+            LgbFile.TryGet(LuminaGetter.GetRowOrDefault<TerritoryType>(territoryTypeID), fileType, out lgbFile);
         
-        public static bool TryGetPlanEvent
+        public static bool TryGet
         (
             TerritoryType                    zone,
+            LGBFileType                      fileType,
             [NotNullWhen(true)] out LgbFile? lgbFile
         )
         {
@@ -60,26 +63,40 @@ public static unsafe class LuminaSheetExtension
             if (levelIndex < 0)
                 return false;
 
-            var path = $"bg/{bgPath[..(levelIndex + 1)]}level/planevent.lgb";
+            var path = $"bg/{bgPath[..(levelIndex + 1)]}level/{fileType.ToString().ToLowerInvariant()}.lgb";
             lgbFile = IDataManager.Instance().GetFile<LgbFile>(path);
             return lgbFile != null;
         }
         
-        public List<LayerCommon.ExitRangeInstanceObject> GetExitRanges()
+        public List<LayerCommon.InstanceObject> GetInstanceObjects(LayerEntryType entryType)
         {
-            var result = new List<LayerCommon.ExitRangeInstanceObject>();
+            var result = new List<LayerCommon.InstanceObject>();
             
             foreach (var layer in file.Layers)
             foreach (var instanceObject in layer.InstanceObjects)
             {
-                if (instanceObject.AssetType != LayerEntryType.ExitRange)
+                if (instanceObject.AssetType != entryType)
                     continue;
 
-                var exitRange = (LayerCommon.ExitRangeInstanceObject)instanceObject.Object;
-                // 目标区域
-                if (!LuminaGetter.TryGetRow(exitRange.TerritoryType, out TerritoryType _)) continue;
+                switch (entryType)
+                {
+                    case LayerEntryType.ExitRange:
+                        var exitRange = (LayerCommon.ExitRangeInstanceObject)instanceObject.Object;
+                        if (!LuminaGetter.TryGetRow(exitRange.TerritoryType, out TerritoryType _)) continue;
+                        break;
+                    
+                    case LayerEntryType.EventNPC:
+                        var eNPC = (LayerCommon.ENPCInstanceObject)instanceObject.Object;
+                        if (!LuminaGetter.TryGetRow(eNPC.ParentData.ParentData.BaseId, out ENpcBase _)) continue;
+                        break;
+                    
+                    case LayerEntryType.Aetheryte:
+                        var aetheryte = (LayerCommon.AetheryteInstanceObject)instanceObject.Object;
+                        if (!LuminaGetter.TryGetRow(aetheryte.ParentData.BaseId, out Aetheryte _)) continue;
+                        break;
+                }
                 
-                result.Add(exitRange);
+                result.Add(instanceObject);
             }
 
             return result;
@@ -88,11 +105,11 @@ public static unsafe class LuminaSheetExtension
     
     extension(scoped in TerritoryType zone)
     {
-        public LgbFile? GetLGBPlanEvent() =>
-            LgbFile.GetPlanEvent(zone);
+        public LgbFile? GetLGB(LGBFileType fileType) =>
+            LgbFile.Get(zone, fileType);
 
-        public bool TryGetLGBPlanEvent([NotNullWhen(true)] out LgbFile? lgbFile) =>
-            LgbFile.TryGetPlanEvent(zone, out lgbFile);
+        public bool TryGetLGB(LGBFileType fileType, [NotNullWhen(true)] out LgbFile? lgbFile) =>
+            LgbFile.TryGet(zone, fileType, out lgbFile);
 
         public List<MapMarker> GetMapMarkers()
         {
@@ -101,14 +118,6 @@ public static unsafe class LuminaSheetExtension
                                .Where(x => x.TerritoryType.RowId == rowID)
                                .SelectMany(x => x.GetMapMarkers())
                                .ToList();
-        }
-
-        public List<LayerCommon.ExitRangeInstanceObject> GetExitRanges()
-        {
-            if (!zone.TryGetLGBPlanEvent(out var file))
-                return [];
-
-            return file.GetExitRanges();
         }
     }
     

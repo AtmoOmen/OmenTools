@@ -7,6 +7,7 @@ using Lumina.Excel.Sheets;
 using OmenTools.Dalamud;
 using OmenTools.Info.Game.ItemSource.Enums;
 using OmenTools.Info.Game.ItemSource.Models;
+using OmenTools.Info.Lumina.Enums;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService;
 
@@ -76,7 +77,7 @@ public sealed class ItemSourceInfo
             var territory = aetheryte.Territory.Value;
             if (addedAetheryte.Contains(territory.RowId)) continue;
 
-            if (!territory.TryGetLGBPlanEvent(out var file)) continue;
+            if (!territory.TryGetLGB(LGBFileType.PlanEvent, out var file)) continue;
 
             ParseLgbFile(file, territory, ref npcIDToLocations);
             addedAetheryte.Add(territory.RowId);
@@ -88,7 +89,7 @@ public sealed class ItemSourceInfo
             if (condition.ContentType.RowId is not (26 or 29 or 16))
                 continue;
 
-            if (!territory.TryGetLGBPlanEvent(out var file)) continue;
+            if (!territory.TryGetLGB(LGBFileType.PlanEvent, out var file)) continue;
 
             ParseLgbFile(file, territory, ref npcIDToLocations);
         }
