@@ -100,10 +100,6 @@ public record AetheryteRecord
 
     public void Update()
     {
-        if (DService.Instance().ObjectTable.LocalPlayer == null ||
-            DService.Instance().Condition.IsBetweenAreas)
-            return;
-
         var info = GetAetheryteState(this);
         State = info.State;
         Cost  = info.Cost;
