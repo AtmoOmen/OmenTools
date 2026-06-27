@@ -64,6 +64,26 @@ public static unsafe class LuminaSheetExtension
             lgbFile = IDataManager.Instance().GetFile<LgbFile>(path);
             return lgbFile != null;
         }
+        
+        public List<LayerCommon.ExitRangeInstanceObject> GetExitRanges()
+        {
+            var result = new List<LayerCommon.ExitRangeInstanceObject>();
+            
+            foreach (var layer in file.Layers)
+            foreach (var instanceObject in layer.InstanceObjects)
+            {
+                if (instanceObject.AssetType != LayerEntryType.ExitRange)
+                    continue;
+
+                var exitRange = (LayerCommon.ExitRangeInstanceObject)instanceObject.Object;
+                // 目标区域
+                if (!LuminaGetter.TryGetRow(exitRange.TerritoryType, out TerritoryType _)) continue;
+                
+                result.Add(exitRange);
+            }
+
+            return result;
+        }
     }
     
     extension(scoped in TerritoryType zone)
@@ -88,22 +108,7 @@ public static unsafe class LuminaSheetExtension
             if (!zone.TryGetLGBPlanEvent(out var file))
                 return [];
 
-            var result = new List<LayerCommon.ExitRangeInstanceObject>();
-            
-            foreach (var layer in file.Layers)
-            foreach (var instanceObject in layer.InstanceObjects)
-            {
-                if (instanceObject.AssetType != LayerEntryType.ExitRange)
-                    continue;
-
-                var exitRange = (LayerCommon.ExitRangeInstanceObject)instanceObject.Object;
-                // 目标区域
-                if (!LuminaGetter.TryGetRow(exitRange.TerritoryType, out TerritoryType _)) continue;
-                
-                result.Add(exitRange);
-            }
-
-            return result;
+            return file.GetExitRanges();
         }
     }
     
