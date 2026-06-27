@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Data.Files;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Enums;
@@ -14,8 +16,51 @@ namespace OmenTools.Extensions;
 
 public static unsafe class LuminaSheetExtension
 {
+    extension(LgbFile file)
+    {
+        public static LgbFile? GetPlanEvent(uint territoryTypeID) =>
+            LgbFile.GetPlanEvent(LuminaGetter.GetRowOrDefault<TerritoryType>(territoryTypeID));
+        
+        public static LgbFile? GetPlanEvent(TerritoryType zone) =>
+            LgbFile.TryGetPlanEvent(zone, out var lgbFile) ? lgbFile : null;
+
+        public static bool TryGetPlanEvent
+        (
+            uint                             territoryTypeID,
+            [NotNullWhen(true)] out LgbFile? lgbFile
+        ) =>
+            LgbFile.TryGetPlanEvent(LuminaGetter.GetRowOrDefault<TerritoryType>(territoryTypeID), out lgbFile);
+        
+        public static bool TryGetPlanEvent
+        (
+            TerritoryType                    zone,
+            [NotNullWhen(true)] out LgbFile? lgbFile
+        )
+        {
+            lgbFile = null;
+            
+            var bgPath = zone.Bg.ExtractText();
+            if (string.IsNullOrEmpty(bgPath))
+                return false;
+
+            var levelIndex = bgPath.IndexOf("/level/", StringComparison.Ordinal);
+            if (levelIndex < 0)
+                return false;
+
+            var path = $"bg/{bgPath[..(levelIndex + 1)]}level/planevent.lgb";
+            lgbFile = IDataManager.Instance().GetFile<LgbFile>(path);
+            return lgbFile != null;
+        }
+    }
+    
     extension(scoped in TerritoryType zone)
     {
+        public LgbFile? GetLGBPlanEvent() =>
+            LgbFile.GetPlanEvent(zone);
+
+        public bool TryGetLGBPlanEvent([NotNullWhen(true)] out LgbFile? lgbFile) =>
+            LgbFile.TryGetPlanEvent(zone, out lgbFile);
+
         public List<MapMarker> GetMapMarkers()
         {
             var rowID = zone.RowId;

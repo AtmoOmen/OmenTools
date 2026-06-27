@@ -76,8 +76,7 @@ public sealed class ItemSourceInfo
             var territory = aetheryte.Territory.Value;
             if (addedAetheryte.Contains(territory.RowId)) continue;
 
-            var file = GetLgbFileFromBg(territory.Bg.ToString());
-            if (file == null) continue;
+            if (!territory.TryGetLGBPlanEvent(out var file)) continue;
 
             ParseLgbFile(file, territory, ref npcIDToLocations);
             addedAetheryte.Add(territory.RowId);
@@ -89,8 +88,7 @@ public sealed class ItemSourceInfo
             if (condition.ContentType.RowId is not (26 or 29 or 16))
                 continue;
 
-            var file = GetLgbFileFromBg(territory.Bg.ToString());
-            if (file == null) continue;
+            if (!territory.TryGetLGBPlanEvent(out var file)) continue;
 
             ParseLgbFile(file, territory, ref npcIDToLocations);
         }
@@ -1100,9 +1098,6 @@ public sealed class ItemSourceInfo
             }
         }
     }
-
-    private static LgbFile? GetLgbFileFromBg(string bg) =>
-        DService.Instance().Data.GetFile<LgbFile>("bg/" + bg[..(bg.IndexOf("/level/", StringComparison.Ordinal) + 1)] + "level/planevent.lgb");
 
     private static bool HasRelevantEventHandler(ENpcBase npcBase)
     {
