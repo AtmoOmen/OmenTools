@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Lumina;
+using OmenTools.OmenService;
 
 namespace OmenTools.Interop.Game.Helpers;
 
@@ -115,5 +117,57 @@ public static class TeleportCostCalculator
 
         // divisor=1, multiplier=100 → 直接返回
         return (uint)cost;
+    }
+
+    public static unsafe uint GetTeleportCost
+    (
+        Aetheryte targetAetheryteRow,
+        uint      sourceZoneID,
+        uint      aetheryteRowID,
+        byte      aethernetGroup,
+        bool      isAetheryte,
+        bool      isHouse
+    )
+    {
+        var baseCost = GetBaseTeleportCost(targetAetheryteRow, sourceZoneID);
+
+        switch (aethernetGroup)
+        {
+            case 254:
+            {
+                var ishgardData = LuminaGetter.GetRow<Aetheryte>(70).GetValueOrDefault();
+                return GetBaseTeleportCost(ishgardData, sourceZoneID);
+            }
+            case 253:
+            {
+                var burrowData = LuminaGetter.GetRow<Aetheryte>(175).GetValueOrDefault();
+                return GetBaseTeleportCost(burrowData, sourceZoneID);
+            }
+        }
+
+        if (!isAetheryte)
+            return baseCost;
+
+        if (!GameState.IsLoggedIn) 
+            return baseCost;
+
+        var instance = PlayerState.Instance();
+        if (instance == null) return baseCost;
+
+        if (instance->FreeAetheryteId     == aetheryteRowID ||
+            instance->FreeAetherytePSPlus == aetheryteRowID ||
+            instance->FreeAetheryteNSO    == aetheryteRowID)
+            return 0;
+
+        if (instance->FavouriteAetherytes.Contains((ushort)aetheryteRowID))
+            return baseCost / 2;
+
+        if (instance->HomeAetheryteId == aetheryteRowID)
+            return baseCost;
+
+        if (isHouse)
+            return baseCost / 4;
+
+        return baseCost;
     }
 }
