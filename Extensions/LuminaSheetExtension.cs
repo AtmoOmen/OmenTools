@@ -5,6 +5,7 @@ using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Data.Files;
+using Lumina.Data.Parsing.Layer;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Enums;
@@ -16,6 +17,18 @@ namespace OmenTools.Extensions;
 
 public static unsafe class LuminaSheetExtension
 {
+    extension(LayerCommon.InstanceObject instanceObject)
+    {
+        /// <returns>世界坐标</returns>
+        public Vector3 GetPosition() =>
+            new
+            (
+                instanceObject.Transform.Translation.X,
+                instanceObject.Transform.Translation.Y,
+                instanceObject.Transform.Translation.Z
+            );
+    }
+    
     extension(LgbFile file)
     {
         public static LgbFile? GetPlanEvent(uint territoryTypeID) =>
@@ -68,6 +81,29 @@ public static unsafe class LuminaSheetExtension
                                .Where(x => x.TerritoryType.RowId == rowID)
                                .SelectMany(x => x.GetMapMarkers())
                                .ToList();
+        }
+
+        public List<LayerCommon.ExitRangeInstanceObject> GetExitRanges()
+        {
+            if (!zone.TryGetLGBPlanEvent(out var file))
+                return [];
+
+            var result = new List<LayerCommon.ExitRangeInstanceObject>();
+            
+            foreach (var layer in file.Layers)
+            foreach (var instanceObject in layer.InstanceObjects)
+            {
+                if (instanceObject.AssetType != LayerEntryType.ExitRange)
+                    continue;
+
+                var exitRange = (LayerCommon.ExitRangeInstanceObject)instanceObject.Object;
+                // 目标区域
+                if (!LuminaGetter.TryGetRow(exitRange.TerritoryType, out TerritoryType _)) continue;
+                
+                result.Add(exitRange);
+            }
+
+            return result;
         }
     }
     
