@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Dalamud.Hooking;
 using Dalamud.Interface.Textures.TextureWraps;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using OmenTools.Info.Game.Enums;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
@@ -26,6 +27,9 @@ public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
         if (!LuminaGetter.TryGetRow<LuminaAchievement>(id, out _))
             return false;
 
+        if (UIState.Instance()->Achievement.IsComplete((int)id))
+            Infos.TryAdd(id, new(id, 1, 1));
+        
         // 反正不管咋样更新就对了
         SendRequest(id);
 
