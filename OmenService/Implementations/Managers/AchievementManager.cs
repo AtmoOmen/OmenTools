@@ -28,7 +28,14 @@ public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
             return false;
 
         if (UIState.Instance()->Achievement.IsComplete((int)id))
-            Infos.TryAdd(id, new(id, 1, 1));
+        {
+            if (!Infos.TryAdd(id, new(id, 1, 1)))
+            {
+                var infoTemp = Infos[id];
+                if (!infoTemp.IsFinished)
+                    Infos[id] = new(id, infoTemp.Max, infoTemp.Max);
+            }
+        }
         
         // 反正不管咋样更新就对了
         SendRequest(id);
