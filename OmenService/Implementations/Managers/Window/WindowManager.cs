@@ -145,38 +145,34 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
 
     /// <summary>
     ///     用于添加一个唯一的窗口, 存放至 <see cref="UniqueWindows" />
-    ///     如果是可复用的窗口, 请使用 <see cref="AddWindow" />
+    ///     如果是可复用的窗口, 请使用 <see cref="AddWindow(Window, bool)" />
     ///     在强制添加时, 如果窗口实现了 <see cref="IDisposable" /> 接口, 则会自动为旧窗口调用 Dispose 方法
     /// </summary>
-    public bool AddWindow<T>(bool isForceToAdd = false) where T : Window
+    public bool AddWindow<T>(bool isForceToAdd = false) where T : Window =>
+        AddWindow(static () => Activator.CreateInstance<T>(), isForceToAdd);
+
+    /// <summary>
+    ///     通过工厂方法添加一个唯一的窗口, 存放至 <see cref="UniqueWindows" />
+    ///     用于需要带参构造的窗口
+    ///     在强制添加时, 如果窗口实现了 <see cref="IDisposable" /> 接口, 则会自动为旧窗口调用 Dispose 方法
+    /// </summary>
+    public bool AddWindow<T>(Func<T> factory, bool isForceToAdd = false) where T : Window
     {
-        if (isForceToAdd)
+        ArgumentNullException.ThrowIfNull(factory);
+
+        if (!isForceToAdd && UniqueWindows.ContainsKey(typeof(T)))
+            return false;
+
+        if (UniqueWindows.TryGetValue(typeof(T), out var window))
         {
-            if (UniqueWindows.TryGetValue(typeof(T), out var window))
-            {
-                WindowSystem.RemoveWindow(window);
-                if (window is IDisposable disposableWindow)
-                    disposableWindow.Dispose();
-            }
-
-            if (Activator.CreateInstance<T>() is not Window newWindow)
-                return false;
-
-            WindowSystem.AddWindow(newWindow);
-            UniqueWindows[typeof(T)] = newWindow;
-        }
-        else
-        {
-            if (UniqueWindows.TryGetValue(typeof(T), out _))
-                return false;
-
-            if (Activator.CreateInstance<T>() is not Window newWindow)
-                return false;
-
-            WindowSystem.AddWindow(newWindow);
-            UniqueWindows[typeof(T)] = newWindow;
+            WindowSystem.RemoveWindow(window);
+            if (window is IDisposable disposableWindow)
+                disposableWindow.Dispose();
         }
 
+        var newWindow = factory();
+        WindowSystem.AddWindow(newWindow);
+        UniqueWindows[typeof(T)] = newWindow;
         return true;
     }
 
