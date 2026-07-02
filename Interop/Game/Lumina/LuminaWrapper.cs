@@ -130,6 +130,9 @@ public static class LuminaWrapper
 
     public static string GetWeatherName(uint rowID) =>
         LuminaGetter.TryGetRow<Weather>(rowID, out var item) ? item.Name.ToString() : string.Empty;
+    
+    public static uint GetWeatherIcon(uint rowID) =>
+        LuminaGetter.TryGetRow<Weather>(rowID, out var item) ? (uint)item.Icon: 0;
 
     public static string GetFateName(uint rowID) =>
         LuminaGetter.TryGetRow<Fate>(rowID, out var item) ? item.Name.ToString() : string.Empty;
