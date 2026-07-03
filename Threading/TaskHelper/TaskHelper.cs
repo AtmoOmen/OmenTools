@@ -137,13 +137,13 @@ public partial class TaskHelper : IDisposable
     ///     全局任务重试时间 <br />
     ///     默认为 0 毫秒; 设置为 ≤ 0 以每帧重试 <br />
     /// </summary>
-    public int RetryIntervalMS { get; set; } = 0;
+    public int RetryIntervalMS { get; set; }
     
     /// <summary>
     ///     当前任务完成, 进入下一任务前的等待时间 <br />
     ///     默认为 0 毫秒; 设置为 ≤ 0 以每帧重试 <br />
     /// </summary>
-    public int TaskIntervalMS { get; set; } = 0;
+    public int TaskIntervalMS { get; set; }
 
     /// <summary>
     ///     是否已被销毁
@@ -169,7 +169,7 @@ public partial class TaskHelper : IDisposable
                     await TaskChannel.Reader.WaitToReadAsync(ct).ConfigureAwait(false);
 
                 var isBusy = false;
-                await DService.Instance().Framework.Run
+                await IFramework.Instance().Run
                 (
                     async () =>
                     {
@@ -202,7 +202,7 @@ public partial class TaskHelper : IDisposable
                 ).ConfigureAwait(false);
 
                 if (isBusy)
-                    await Task.Delay(1, ct).ConfigureAwait(false);
+                    await IFramework.Instance().DelayTicks(1, ct).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
