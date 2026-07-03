@@ -4,6 +4,9 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
+    public static void CenterCursorXFor(float itemWidth) =>
+        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (ImGui.GetContentRegionAvail().X - ImGui.GetFrameHeight()) / 2.0f);
+    
     public static void ClickToCopy
     (
         string           textToCopy,
