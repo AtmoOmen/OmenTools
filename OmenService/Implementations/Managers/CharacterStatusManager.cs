@@ -154,7 +154,7 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
             (
                 $"[Character Status Manager] Gain Status\n"                            +
                 $"玩家: {battleChara.Name} ({battleChara.EntityID})\n"                   +
-                $"状态效果: {LuminaWrapper.GetStatusName(statusID)} ({statusID})\n"        +
+                $"状态: {LuminaWrapper.GetStatusName(statusID)} ({statusID})\n"        +
                 $"剩余时间: {remainingTime:F1} 秒 | 参数: {statusParam} | 层数: {stackCount}\n" +
                 $"来源: {sourceName} ({sourceID})"
             );
@@ -184,7 +184,7 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
             (
                 $"[Character Status Manager] Lose Status\n"                     +
                 $"玩家: {battleChara.Name} ({battleChara.EntityID})\n"            +
-                $"状态效果: {LuminaWrapper.GetStatusName(statusID)} ({statusID})\n" +
+                $"状态: {LuminaWrapper.GetStatusName(statusID)} ({statusID})\n" +
                 $"参数: {statusParam} | 层数: {stackCount}\n"                       +
                 $"来源: {sourceName} ({sourceID})"
             );

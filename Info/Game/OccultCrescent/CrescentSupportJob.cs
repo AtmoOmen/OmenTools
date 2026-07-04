@@ -217,12 +217,12 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     public uint UnlockLink { get; }
 
     /// <summary>
-    ///     长效增益状态效果技能 ID (仅 辅助骑士 / 辅助武僧 / 辅助吟游诗人 / 辅助舞者)
+    ///     长效增益状态技能 ID (仅 辅助骑士 / 辅助武僧 / 辅助吟游诗人 / 辅助舞者)
     /// </summary>
     public uint LongTimeStatusActionID { get; init; }
 
     /// <summary>
-    ///     长效增益状态效果 ID (仅 辅助骑士 / 辅助武僧 / 辅助吟游诗人)
+    ///     长效增益状态 ID (仅 辅助骑士 / 辅助武僧 / 辅助吟游诗人)
     /// </summary>
     public uint LongTimeStatusID { get; init; }
 

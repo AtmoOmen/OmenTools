@@ -75,7 +75,7 @@ public enum ExecuteCommandFlag
     WithdrawMinion = 103,
 
     /// <summary>
-    ///     取消身上指定的状态效果
+    ///     取消身上指定的状态
     /// </summary>
     /// <remarks>
     ///     <para><c>param1</c>: Status ID</para>
