@@ -23,8 +23,7 @@ internal unsafe class GameObject
     public             ushort                ObjectIndex      => Struct->ObjectIndex;
     public             ObjectKind            ObjectKind       => (ObjectKind)Struct->ObjectKind;
     public             byte                  SubKind          => Struct->SubKind;
-    public             byte                  YalmDistanceX    => Struct->YalmDistanceFromPlayerX;
-    public             byte                  YalmDistanceZ    => Struct->YalmDistanceFromPlayerZ;
+    public             byte                  NextDistance     => Struct->YalmDistanceFromPlayerZ;
     public             Vector3               Position         => new(Struct->Position.X, Struct->Position.Y, Struct->Position.Z);
     public             float                 Rotation         => Struct->Rotation;
     public             float                 HitboxRadius     => Struct->HitboxRadius;
@@ -42,6 +41,7 @@ internal unsafe class GameObject
     public             float                 DefaultRotation  => Struct->DefaultRotation;
     public             bool                  IsDead           => Struct->IsDead();
     public             bool                  IsTargetable     => Struct->GetIsTargetable();
+    public             byte                  Distance         => Struct->YalmDistanceFromPlayerZ;
 
     public virtual ulong        TargetObjectID => 0;
     public virtual IGameObject? TargetObject   => DService.Instance().ObjectTable.SearchByID(TargetObjectID);

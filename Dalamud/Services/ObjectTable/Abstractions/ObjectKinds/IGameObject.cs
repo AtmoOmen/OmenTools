@@ -17,8 +17,7 @@ public interface IGameObject : IEquatable<IGameObject>
     ushort                ObjectIndex      { get; }
     ObjectKind            ObjectKind       { get; }
     byte                  SubKind          { get; }
-    byte                  YalmDistanceX    { get; }
-    byte                  YalmDistanceZ    { get; }
+    byte                  Distance         { get; }
     bool                  IsDead           { get; }
     bool                  IsTargetable     { get; }
     Vector3               Position         { get; }
