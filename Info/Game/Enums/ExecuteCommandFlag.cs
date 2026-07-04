@@ -2274,36 +2274,37 @@ public enum ExecuteCommandFlag
     RestorePrsimBoxSetItem = 2353,
 
     /// <summary>
-    ///     请求投影模板数据
+    ///     将投影台装备投影到指定装备上
+    /// <remarks>
+    ///     <para><c>param1</c>: 投影台中的索引</para>
+    ///     <para><c>param2</c>: 目标装备 Inventory Type</para>
+    ///     <para><c>param1</c>: 目标装备 Inventory Slot</para>
+    /// </remarks>
     /// </summary>
-    RequestGlamourPlate = 2355,
+    ApplyGlamour = 2355,
 
     /// <summary>
-    ///     进入/退出投影模板选择状态
+    ///     请求投影模版数据
+    /// </summary>
+    /// <seealso cref="GlamourPlateCommand" />
+    RequestGlamourPlate = 2356,
+
+    /// <summary>
+    ///     进入/退出应用投影模板状态
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 0 - 退出, 1 - 进入</para>
-    ///     <para><c>param2</c>: 未知, 可能为 0 或 1</para>
+    ///     <para><c>param1</c>: 0 - 退出; 1 - 进入</para>
     /// </remarks>
     /// <seealso cref="GlamourPlateCommand" />
-    ToggleGlamourPlateState = 2356,
+    ToggleGlamourPlateState = 2357,
 
     /// <summary>
-    ///     应用投影模板 (需要先进入投影模板选择状态)
-    /// </summary>
-    /// <remarks>
-    ///     <para><c>param1</c>: 投影模板索引</para>
-    /// </remarks>
-    /// <seealso cref="GlamourPlateCommand" />
-    ApplyGlamourPlate = 2357,
-
-    /// <summary>
-    ///     从投影台应用幻化模板
+    ///     应用投影模板
     /// </summary>
     /// <remarks>
     ///     <para><c>param1</c>: 模板索引</para>
     /// </remarks>
-    ApplyGlamourPlateFromPrismBox = 2358,
+    ApplyGlamourPlate = 2358,
 
     /// <summary>
     ///     为装备解除投影
