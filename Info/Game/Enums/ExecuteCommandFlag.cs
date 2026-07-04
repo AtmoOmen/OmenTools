@@ -2254,10 +2254,20 @@ public enum ExecuteCommandFlag
     RequestPrismBox = 2350,
 
     /// <summary>
+    ///     将物品存入投影台
+    /// </summary>
+    /// <remarks>
+    ///     <para><c>param1</c>: Inventory Type</para>
+    ///     <para><c>param1</c>: Inventory Slot</para>
+    /// </remarks>
+    /// <seealso cref="PrsimBoxCommand" />
+    StoreToPrsimBox = 2351,
+    
+    /// <summary>
     ///     取出投影台物品
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 投影台内部物品 ID (MirageManager.Instance().PrismBoxItemIds)</para>
+    ///     <para><c>param1</c>: 投影台内部物品 Index (MirageManager.Instance().PrismBoxItemIds[Index])</para>
     /// </remarks>
     /// <seealso cref="PrsimBoxCommand" />
     RestorePrsimBoxItem = 2352,
