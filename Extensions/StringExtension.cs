@@ -94,6 +94,52 @@ public static partial class StringExtension
     extension(string input)
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public string TrimQuotationMarks()
+        {
+            var start = 0;
+            var end   = input.Length - 1;
+
+            while (start <= end && IsQuotationMark(input[start]))
+                start++;
+
+            while (end >= start && IsQuotationMark(input[end]))
+                end--;
+
+            while (start <= end && char.IsWhiteSpace(input[start]))
+                start++;
+
+            while (end >= start && char.IsWhiteSpace(input[end]))
+                end--;
+
+            if (start > end)
+                return string.Empty;
+
+            if (start == 0 && end == input.Length - 1)
+                return input;
+
+            return input.Substring(start, end - start + 1);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static bool IsQuotationMark(char c) =>
+                c switch
+                {
+                    '"' or '\'' or
+                        '“' or '”' or
+                        '‘' or '’' or
+                        '«' or '»' or
+                        '„' or
+                        '‹' or '›' or
+                        '‚' or
+                        '「' or '」' or
+                        '『' or '』' or
+                        '﹁' or '﹂' or
+                        '﹃' or '﹄' => true,
+
+                    _ => false
+                };
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ToLowerAndHalfWidth()
         {
             if (string.IsNullOrEmpty(input))
