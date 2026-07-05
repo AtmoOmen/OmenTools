@@ -33,10 +33,7 @@ public sealed class TrayNotifier : IDisposable
     }
 
     private bool IsDisposed => Volatile.Read(ref isDisposed) != 0;
-
-    private static readonly TimeSpan MergeWindow   = TimeSpan.FromMilliseconds(500);
-    private static readonly TimeSpan DisplayWindow = TimeSpan.FromSeconds(7);
-
+    
     private readonly Channel<BalloonTipMessage> messageChannel = Channel.CreateUnbounded<BalloonTipMessage>
     (
         new()
@@ -48,27 +45,17 @@ public sealed class TrayNotifier : IDisposable
     );
 
     private readonly CancellationTokenSource disposalTokenSource = new();
-    private readonly Task?                   processingTask;
     private readonly TrayIconThread?         trayIconThread;
 
     private int isDisposed;
 
     public TrayNotifier()
     {
-        if (IsWine())
+        if (RuntimeInformation.IsWine())
             return;
 
         trayIconThread = new();
-        processingTask = Task.Run(ProcessLoopAsync);
-    }
-
-    private static bool IsWine()
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return false;
-
-        var ntdll = GetModuleHandle("ntdll.dll");
-        return ntdll != nint.Zero && GetProcAddress(ntdll, "wine_get_version") != nint.Zero;
+        _ = Task.Run(ProcessLoopAsync);
     }
 
     public void Dispose()
@@ -78,15 +65,6 @@ public sealed class TrayNotifier : IDisposable
 
         messageChannel.Writer.TryComplete();
         disposalTokenSource.Cancel();
-
-        try
-        {
-            processingTask?.GetAwaiter().GetResult();
-        }
-        catch (OperationCanceledException)
-        {
-            // ignored
-        }
 
         trayIconThread?.Dispose();
         disposalTokenSource.Dispose();
@@ -159,7 +137,8 @@ public sealed class TrayNotifier : IDisposable
         private WindowsFormsSynchronizationContext? context;
         private NotifyIcon?                         trayIcon;
         private Exception?                          initializationException;
-        private int                                 isDisposed;
+
+        private int isDisposed;
 
         public TrayIconThread()
         {
@@ -298,9 +277,10 @@ public sealed class TrayNotifier : IDisposable
         ToolTipIcon Icon
     );
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = false)]
-    private static extern nint GetModuleHandle(string moduleName);
+    #region 常量
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = false)]
-    private static extern nint GetProcAddress(nint moduleHandle, string procName);
+    private static readonly TimeSpan MergeWindow   = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan DisplayWindow = TimeSpan.FromSeconds(7);
+
+    #endregion
 }
