@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using OmenTools.OmenService;
 using Task = System.Threading.Tasks.Task;
@@ -27,7 +28,7 @@ public sealed class TrayNotifier : IDisposable
             ArgumentNullException.ThrowIfNull(value);
 
             Volatile.Write(ref field, value);
-            trayIconThread.SetIcon(value);
+            trayIconThread?.SetIcon(value);
         }
     }
 
@@ -47,15 +48,27 @@ public sealed class TrayNotifier : IDisposable
     );
 
     private readonly CancellationTokenSource disposalTokenSource = new();
-    private readonly Task                    processingTask;
-    private readonly TrayIconThread          trayIconThread;
+    private readonly Task?                   processingTask;
+    private readonly TrayIconThread?         trayIconThread;
 
     private int isDisposed;
 
     public TrayNotifier()
     {
+        if (IsWine())
+            return;
+
         trayIconThread = new();
         processingTask = Task.Run(ProcessLoopAsync);
+    }
+
+    private static bool IsWine()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return false;
+
+        var ntdll = GetModuleHandle("ntdll.dll");
+        return ntdll != nint.Zero && GetProcAddress(ntdll, "wine_get_version") != nint.Zero;
     }
 
     public void Dispose()
@@ -68,20 +81,20 @@ public sealed class TrayNotifier : IDisposable
 
         try
         {
-            processingTask.GetAwaiter().GetResult();
+            processingTask?.GetAwaiter().GetResult();
         }
         catch (OperationCanceledException)
         {
             // ignored
         }
 
-        trayIconThread.Dispose();
+        trayIconThread?.Dispose();
         disposalTokenSource.Dispose();
     }
 
     public void ShowBalloonTip(string title, string message, ToolTipIcon tooltipIcon = ToolTipIcon.Info)
     {
-        if (IsDisposed)
+        if (IsDisposed || trayIconThread is null)
             return;
 
         _ = messageChannel.Writer.TryWrite(new(title ?? string.Empty, message ?? string.Empty, tooltipIcon));
@@ -112,7 +125,7 @@ public sealed class TrayNotifier : IDisposable
 
                 ShowBatch(buffer);
                 await Task.Delay(DisplayWindow, token).ConfigureAwait(false);
-                trayIconThread.Hide();
+                trayIconThread?.Hide();
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -121,7 +134,7 @@ public sealed class TrayNotifier : IDisposable
         }
         finally
         {
-            trayIconThread.Hide();
+            trayIconThread?.Hide();
         }
     }
 
@@ -130,12 +143,12 @@ public sealed class TrayNotifier : IDisposable
         if (buffer.Count > 1)
         {
             var summary = string.Format(CultureInfo.CurrentCulture, MultiMessageTemplate, buffer.Count);
-            trayIconThread.ShowBalloonTip(5000, summary, summary, ToolTipIcon.Info);
+            trayIconThread?.ShowBalloonTip(5000, summary, summary, ToolTipIcon.Info);
             return;
         }
 
         var message = buffer[0];
-        trayIconThread.ShowBalloonTip(5000, message.Title, message.Message, message.Icon);
+        trayIconThread?.ShowBalloonTip(5000, message.Title, message.Message, message.Icon);
     }
 
     private sealed class TrayIconThread : IDisposable
@@ -284,4 +297,10 @@ public sealed class TrayNotifier : IDisposable
         string      Message,
         ToolTipIcon Icon
     );
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = false)]
+    private static extern nint GetModuleHandle(string moduleName);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = false)]
+    private static extern nint GetProcAddress(nint moduleHandle, string procName);
 }
