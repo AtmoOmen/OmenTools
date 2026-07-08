@@ -133,212 +133,138 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                                          .SelectMany(x => x)
                                          .Where(x => x.Map.ValueNullable != null)
                                          .ToList();
-        
+
         // 公寓
         var aptBuilding = HousingManager.GetOwnedHouseId(EstateType.ApartmentBuilding);
         var aptRoom     = HousingManager.GetOwnedHouseId(EstateType.ApartmentRoom);
-
         if (aptBuilding.Id != INVALID_HOUSE_ID && aptRoom.Id != INVALID_HOUSE_ID)
-        {
-            var zoneID = aptBuilding.TerritoryTypeId;
+            TryAddHouseRecord
+            (
+                housingMarkers,
+                aptBuilding.TerritoryTypeId,
+                GetApartmentAetheryteID,
+                60,
+                128, // 固定值
+                HouseApartmentTemplate,
+                [aptBuilding.WardIndex + 1, aptRoom.RoomNumber],
+                LuminaWrapper.GetAddonText(6760)
+            );
 
-            // 逆向来的
-            var aetheryteID = zoneID switch
-            {
-                339 => 59U,
-                340 => 60U,
-                341 => 61U,
-                641 => 97U,
-                979 => 165U
-            };
-            
-            var data = LuminaGetter.GetRowOrDefault<Aetheryte>(aetheryteID);
-            var marker = housingMarkers.Where(x => x.Map.Value.TerritoryType.RowId == zoneID)
-                                       .FirstOrDefault(x => x.SubrowId             == 60);
-
-            if (data.RowId != 0 && marker.RowId != 0)
-            {
-                var territoryName = data.Territory.Value.ExtractPlaceName();
-                var name = string.Format
-                (
-                    HouseApartmentTemplate,
-                    territoryName,
-                    LuminaWrapper.GetAddonText(6760),
-                    aptBuilding.WardIndex + 1,
-                    aptRoom.RoomNumber
-                );
-
-                var record = new AetheryteRecord
-                (
-                    data.RowId,
-                    128, // 固定值
-                    data.AethernetGroup,
-                    0,
-                    zoneID,
-                    marker.Map.RowId,
-                    true,
-                    new(marker.X, marker.Y, marker.Z),
-                    name
-                );
-
-                Records.TryAdd(VERSION_OTHER, []);
-                Records[VERSION_OTHER].Add(record);
-            }
-        }
-        
         // 个人房
         var personalInfo = HousingManager.GetOwnedHouseId(EstateType.PersonalEstate);
         if (personalInfo.Id != INVALID_HOUSE_ID)
-        {
-            var zoneID = personalInfo.TerritoryTypeId;
-
-            // 也是逆向来的
-            var aetheryteID = zoneID switch
-            {
-                339 => 59U,
-                340 => 60U,
-                341 => 61U,
-                641 => 97U,
-                979 => 165U
-            };
-            
-            var data = LuminaGetter.GetRowOrDefault<Aetheryte>(aetheryteID);
-            var marker = housingMarkers.Where(x => x.Map.Value.TerritoryType.RowId == zoneID)
-                                       .FirstOrDefault(x => x.SubrowId             == personalInfo.PlotIndex);
-
-            if (data.RowId != 0 && marker.RowId != 0)
-            {
-                var territoryName = data.Territory.Value.ExtractPlaceName();
-                var name = string.Format
-                (
-                    HouseEstateTemplate,
-                    territoryName,
-                    HousePersonalName,
-                    personalInfo.WardIndex + 1,
-                    personalInfo.PlotIndex + 1
-                );
-
-                var record = new AetheryteRecord
-                (
-                    data.RowId,
-                    0, // 固定值
-                    data.AethernetGroup,
-                    0,
-                    zoneID,
-                    marker.Map.RowId,
-                    true,
-                    new(marker.X, marker.Y, marker.Z),
-                    name
-                );
-
-                Records.TryAdd(VERSION_OTHER, []);
-                Records[VERSION_OTHER].Add(record);
-            }
-        }
+            TryAddHouseRecord
+            (
+                housingMarkers,
+                personalInfo.TerritoryTypeId,
+                GetApartmentAetheryteID,
+                personalInfo.PlotIndex,
+                0,
+                HouseEstateTemplate,
+                [personalInfo.WardIndex + 1, personalInfo.PlotIndex + 1],
+                HousePersonalName
+            );
 
         // 部队房
         var fcInfo = HousingManager.GetOwnedHouseId(EstateType.FreeCompanyEstate);
         if (fcInfo.Id != INVALID_HOUSE_ID)
-        {
-            var zoneID = fcInfo.TerritoryTypeId;
-            
-            // 依旧逆向来的
-            var aetheryteID = zoneID switch
-            {
-                339 => 56U,
-                340 => 57U,
-                341 => 58U,
-                641 => 96U,
-                979 => 164U
-            };
-            
-            var data = LuminaGetter.GetRowOrDefault<Aetheryte>(aetheryteID);
-            var marker = housingMarkers.Where(x => x.Map.Value.TerritoryType.RowId == zoneID)
-                                       .FirstOrDefault(x => x.SubrowId             == fcInfo.PlotIndex);
+            TryAddHouseRecord
+            (
+                housingMarkers,
+                fcInfo.TerritoryTypeId,
+                GetFreeCompanyAetheryteID,
+                fcInfo.PlotIndex,
+                0,
+                HouseEstateTemplate,
+                [fcInfo.WardIndex + 1, fcInfo.PlotIndex + 1],
+                HouseFreeCompanyName
+            );
 
-            if (data.RowId != 0 && marker.RowId != 0)
-            {
-                var territoryName = data.Territory.Value.ExtractPlaceName();
-                var name = string.Format
-                (
-                    HouseEstateTemplate,
-                    territoryName,
-                    HouseFreeCompanyName,
-                    fcInfo.WardIndex + 1,
-                    fcInfo.PlotIndex + 1
-                );
-
-                var record = new AetheryteRecord
-                (
-                    data.RowId,
-                    0, // 固定值
-                    data.AethernetGroup,
-                    0,
-                    zoneID,
-                    marker.Map.RowId,
-                    true,
-                    new(marker.X, marker.Y, marker.Z),
-                    name
-                );
-
-                Records.TryAdd(VERSION_OTHER, []);
-                Records[VERSION_OTHER].Add(record);
-            }
-        }
-        
         // 共享房屋
-        for (var i = 0; i < 2; i ++)
+        for (var i = 0; i < 2; i++)
         {
             var sharedInfo = HousingManager.GetOwnedHouseId(EstateType.SharedEstate, i);
-            if (sharedInfo.Id != INVALID_HOUSE_ID)
-            {
-                var zoneID = sharedInfo.TerritoryTypeId;
-
-                // 依旧逆向来的
-                var aetheryteID = zoneID switch
-                {
-                    339 => 59U,
-                    340 => 60U,
-                    341 => 61U,
-                    641 => 97U,
-                    979 => 165U
-                };
-                
-                var data = LuminaGetter.GetRowOrDefault<Aetheryte>(aetheryteID);
-                var marker = housingMarkers.Where(x => x.Map.Value.TerritoryType.RowId == zoneID)
-                                           .FirstOrDefault(x => x.SubrowId             == sharedInfo.PlotIndex);
-
-                if (data.RowId != 0 && marker.RowId != 0)
-                {
-                    var territoryName = data.Territory.Value.ExtractPlaceName();
-                    var name = string.Format
-                    (
-                        HouseEstateTemplate,
-                        territoryName,
-                        HouseSharedName,
-                        sharedInfo.WardIndex + 1,
-                        sharedInfo.PlotIndex + 1
-                    );
-
-                    var record = new AetheryteRecord
-                    (
-                        data.RowId,
-                        (byte)(i + 1),
-                        data.AethernetGroup,
-                        0,
-                        zoneID,
-                        marker.Map.RowId,
-                        true,
-                        new(marker.X, marker.Y, marker.Z),
-                        name
-                    );
-
-                    Records.TryAdd(VERSION_OTHER, []);
-                    Records[VERSION_OTHER].Add(record);
-                }
-            }
+            if (sharedInfo.Id == INVALID_HOUSE_ID) continue;
+            TryAddHouseRecord
+            (
+                housingMarkers,
+                sharedInfo.TerritoryTypeId,
+                GetApartmentAetheryteID,
+                sharedInfo.PlotIndex,
+                (byte)(i + 1),
+                HouseEstateTemplate,
+                [sharedInfo.WardIndex + 1, sharedInfo.PlotIndex + 1],
+                HouseSharedName
+            );
         }
     }
+
+    private void TryAddHouseRecord
+    (
+        List<HousingMapMarkerInfo> housingMarkers,
+        uint                       zoneID,
+        Func<uint, uint>           getAetheryteID,
+        uint                       markerSubrowID,
+        byte                       subIndex,
+        string                     nameTemplate,
+        object[]                   nameArgs,
+        string                     houseTypeName
+    )
+    {
+        var aetheryteID = getAetheryteID(zoneID);
+        var data        = LuminaGetter.GetRowOrDefault<Aetheryte>(aetheryteID);
+        var marker      = housingMarkers.Where(x => x.Map.Value.TerritoryType.RowId == zoneID)
+                                        .FirstOrDefault(x => x.SubrowId             == markerSubrowID);
+        if (data.RowId == 0 || marker.RowId == 0) return;
+
+        var territoryName = data.Territory.Value.ExtractPlaceName();
+        var name = string.Format
+        (
+            nameTemplate,
+            territoryName,
+            houseTypeName,
+            nameArgs[0],
+            nameArgs[1]
+        );
+
+        var record = new AetheryteRecord
+        (
+            data.RowId,
+            subIndex,
+            data.AethernetGroup,
+            0,
+            zoneID,
+            marker.Map.RowId,
+            true,
+            new(marker.X, marker.Y, marker.Z),
+            name
+        );
+
+        Records.TryAdd(VERSION_OTHER, []);
+        Records[VERSION_OTHER].Add(record);
+    }
+
+    // 逆向来的
+    private static uint GetApartmentAetheryteID(uint zoneID) =>
+        zoneID switch
+        {
+            339 => 59U,
+            340 => 60U,
+            341 => 61U,
+            641 => 97U,
+            979 => 165U
+        };
+
+    // 逆向来的
+    private static uint GetFreeCompanyAetheryteID(uint zoneID) =>
+        zoneID switch
+        {
+            339 => 56U,
+            340 => 57U,
+            341 => 58U,
+            641 => 96U,
+            979 => 164U
+        };
 
     private void BuildFirmamentRecords()
     {
