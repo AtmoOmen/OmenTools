@@ -66,9 +66,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     private static readonly SendPacketDelegate? SendPacket =
         new CompSig("E8 ?? ?? ?? ?? 48 8B D6 48 8B CF E8 ?? ?? ?? ?? 48 8B 8C 24").GetDelegate<SendPacketDelegate>();
 
-    private delegate bool SendPacketInternalDelegate(ZoneClient* zoneClient, nint packet, uint a3, uint a4, bool isPrioritize);
-
-    private Hook<SendPacketInternalDelegate>? SendPacketInternalHook;
+    private Hook<ZoneClient.Delegates.SendPacket>? SendPacketInternalHook;
 
     private delegate void ReceivePacketInternalDelegate(PacketDispatcher* dispatcher, uint targetID, nint packet);
 
@@ -82,26 +80,26 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     {
         Config = LoadConfig<GamePacketManagerConfig>() ?? new();
 
-        SendPacketInternalHook ??= DService.Instance().Hook.HookFromMemberFunction
-        (
-            typeof(ZoneClient.MemberFunctionPointers),
-            "SendPacket",
-            (SendPacketInternalDelegate)SendPacketInternalDetour
-        );
-        ReceivePacketInternalHook ??=
-            PacketDispatcher.StaticVirtualTablePointer->HookVFuncFromName("OnReceivePacket", (ReceivePacketInternalDelegate)ReceivePacketInternalDetour);
-
-        GameState.Instance().Login  += OnLogin;
-        GameState.Instance().Logout += OnLogout;
-        if (GameState.IsLoggedIn)
-            ToggleHooks(true);
+        SendPacketInternalHook =
+            DService.Instance().Hook.HookFromMemberFunction
+            (
+                typeof(ZoneClient.MemberFunctionPointers),
+                "SendPacket",
+                (ZoneClient.Delegates.SendPacket)SendPacketInternalDetour
+            );
+        SendPacketInternalHook.Enable();
+        
+        ReceivePacketInternalHook =
+            PacketDispatcher.StaticVirtualTablePointer->HookVFuncFromName
+            (
+                "OnReceivePacket",
+                (ReceivePacketInternalDelegate)ReceivePacketInternalDetour
+            );
+        ReceivePacketInternalHook.Enable();
     }
 
     protected override void Uninit()
     {
-        GameState.Instance().Login  -= OnLogin;
-        GameState.Instance().Logout -= OnLogout;
-
         SendPacketInternalHook?.Dispose();
         SendPacketInternalHook = null;
 
@@ -113,13 +111,14 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 
     #region Hook 与事件
 
-    private void OnLogin() =>
-        ToggleHooks(true);
-
-    private void OnLogout() =>
-        ToggleHooks(false);
-
-    private bool SendPacketInternalDetour(ZoneClient* zoneClient, nint packet, uint a3, uint a4, bool isPrioritize)
+    private bool SendPacketInternalDetour
+    (
+        ZoneClient* zoneClient,
+        nint        packet,
+        uint        a3,
+        uint        a4,
+        bool        isPrioritize
+    )
     {
         var opcode = *(ushort*)packet;
         LogKnownGamePacket(*(ushort*)packet, (byte*)packet, isPrioritize);
@@ -212,12 +211,6 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 
     private static void LogPacket<T>(byte* packet) where T : unmanaged, IUpstreamPacket =>
         DLog.Debug($"[Game Packet Manager] {((T*)packet)->Log()}");
-
-    private void ToggleHooks(bool isEnabled)
-    {
-        SendPacketInternalHook?.Toggle(isEnabled);
-        ReceivePacketInternalHook?.Toggle(isEnabled);
-    }
 
     private static void HandlePacketPriority(ref bool isPrioritize)
     {
