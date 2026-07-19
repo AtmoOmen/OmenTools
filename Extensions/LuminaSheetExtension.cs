@@ -135,7 +135,8 @@ public static unsafe class LuminaSheetExtension
         public string GetTexturePath()
         {
             var mapRow = map;
-            if (Sheets.MapToFinalTextureMap.TryGetValue(map.RowId, out var finalMapRow))
+            if (map.TerritoryType.Value.ContentFinderCondition.RowId == 0 &&
+                Sheets.MapToFinalTextureMap.TryGetValue(map.RowId, out var finalMapRow))
                 mapRow = finalMapRow;
 
             var mapKey = mapRow.Id.ToString();
