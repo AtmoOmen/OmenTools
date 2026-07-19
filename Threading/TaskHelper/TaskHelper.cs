@@ -184,8 +184,6 @@ public partial class TaskHelper : IDisposable
                                 await ExecuteCurrentTaskAsync();
                             else
                                 ExecuteCurrentTask();
-
-                            isBusy = true;
                             
                             // 任务还没有完成
                             if (CurrentTask != null && RetryIntervalMS > 0)
@@ -201,8 +199,8 @@ public partial class TaskHelper : IDisposable
                     ct
                 ).ConfigureAwait(false);
 
-                if (isBusy)
-                    await IFramework.Instance().DelayTicks(1, ct).ConfigureAwait(false);
+                // 占位用
+                _ = isBusy;
             }
         }
         catch (OperationCanceledException)
