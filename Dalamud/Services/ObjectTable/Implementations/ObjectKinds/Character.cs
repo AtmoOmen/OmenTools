@@ -99,8 +99,8 @@ internal unsafe class Character
     {
         get
         {
-            if (Struct->CompanionObject != null)
-                return Struct->CompanionObject->BaseId.ToLuminaRowRef<Companion>();
+            if (Struct->ChildObject != null)
+                return Struct->ChildObject->BaseId.ToLuminaRowRef<Companion>();
 
             var hiddenCompanionID = Struct->CompanionData.CompanionId;
             return hiddenCompanionID == 0 ? null : hiddenCompanionID.ToLuminaRowRef<Companion>();

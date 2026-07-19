@@ -58,7 +58,7 @@ public static class GameObjectExtension
                     return false;
 
                 return QuestIcons.IsQuest(ptr->NamePlateIconId) ||
-                       (ptr->ObjectKind == ObjectKind.EventObj && ptr->TargetStatus == 15);
+                       (ptr->ObjectKind == ObjectKind.EventObj && ptr->NextTargetStatus == 15);
             }
         }
 
