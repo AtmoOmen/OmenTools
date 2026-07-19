@@ -64,7 +64,16 @@ public static unsafe class LuminaSheetExtension
                 return false;
 
             var path = $"bg/{bgPath[..(levelIndex + 1)]}level/{fileType.ToString().ToLowerInvariant()}.lgb";
-            lgbFile = IDataManager.Instance().GetFile<LgbFile>(path);
+            
+            try
+            {
+                lgbFile = IDataManager.Instance().GetFile<LgbFile>(path);
+            }
+            catch
+            {
+                // ignored
+            }
+
             return lgbFile != null;
         }
         
