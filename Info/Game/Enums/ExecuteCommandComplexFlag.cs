@@ -111,7 +111,7 @@ public enum ExecuteCommandComplexFlag
     ///     <para><c>target</c>: 目标 Entity ID</para>
     ///     <para><c>param1</c>: BgcArmyAction ID</para>
     /// </remarks>
-    BgcArmyAction = 1810,
+    SquadronAction = 1810,
 
     /// <summary>
     ///     未知 (场地)
