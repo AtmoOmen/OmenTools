@@ -1380,21 +1380,21 @@ public enum ExecuteCommandFlag
     ///     请求成就进度数据
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 成就在 Achievement.csv 中的对应索引</para>
+    ///     <para><c>param1</c>: 成就在 Achievement 表中的对应索引</para>
     /// </remarks>
     /// <seealso cref="AchievementCommand" />
     RequestAchievement = 1000,
 
     /// <summary>
-    ///     请求已完成成就概览
+    ///     请求已完成成就
     /// </summary>
     RequestCompletedAchievement = 1001,
 
     /// <summary>
-    ///     请求接近达成成就概览 (不含具体成就内容)
+    ///     请求接近达成成就
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 未知, 固定为 1</para>
+    ///     <para><c>param1</c>: 类型, 0 - 登录时通知情报中的; 1 - 成就界面中的</para>
     /// </remarks>
     /// <seealso cref="AchievementCommand" />
     RequestNearCompletedAchievement = 1002,
