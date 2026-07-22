@@ -44,7 +44,7 @@ public enum ExecuteCommandFlag
     ///     <para><c>param3</c>: 参数 2</para>
     /// </remarks>
     /// <seealso cref="PVPCommand" />
-    SnedPVPQuickChat = 5,
+    SendPVPQuickChat = 5,
 
     /// <summary>
     ///     游戏管理员指令
