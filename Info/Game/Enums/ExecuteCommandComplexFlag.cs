@@ -25,7 +25,6 @@ public enum ExecuteCommandComplexFlag
     /// </summary>
     /// <remarks>
     ///     <para><c>location</c>: 校正后的本地玩家位置</para>
-    ///     <para><c>param1</c> 至 <c>param4</c>: 当前所有调用点均为 <c>0</c></para>
     /// </remarks>
     CompleteZoneLineWarp = 208,
 
@@ -35,7 +34,6 @@ public enum ExecuteCommandComplexFlag
     /// <remarks>
     ///     <para><c>location</c>: 触发出口时记录的位置</para>
     ///     <para><c>param1</c>: ExitRange InstanceKey</para>
-    ///     <para><c>param2</c> 至 <c>param4</c>: 均为 <c>0</c></para>
     /// </remarks>
     EnterInvisibleExitRange = 209,
 
@@ -45,7 +43,6 @@ public enum ExecuteCommandComplexFlag
     /// <remarks>
     ///     <para><c>location</c>: 触发出口时记录的位置</para>
     ///     <para><c>param1</c>: ExitRange InstanceKey</para>
-    ///     <para><c>param2</c> 至 <c>param4</c>: 均为 <c>0</c></para>
     /// </remarks>
     EnterLalafellOnlyExitRange = 212,
 
