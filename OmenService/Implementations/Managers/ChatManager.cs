@@ -6,6 +6,7 @@ using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Client.UI.Shell;
 using FFXIVClientStructs.FFXIV.Component.Shell;
 using Lumina.Text.ReadOnly;
@@ -281,6 +282,44 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
         ExecuteCommandInnerDetour((ShellCommandModule*)RaptureShellModule.Instance(), &utf8String, UIModule.Instance());
     }
 
+    public void ExecuteMacro(string commands)
+    {
+        ArgumentNullException.ThrowIfNull(commands);
+        
+        var commandLines = commands.Split(["\r\n", "\n", "\r"], StringSplitOptions.None);
+        if (commandLines.Length > MAX_MACRO_LINES)
+            throw new ArgumentOutOfRangeException(nameof(commands), $"宏命令不能超过 {MAX_MACRO_LINES} 行");
+
+        ExecuteMacro(commandLines);
+    }
+    
+    public void ExecuteMacro(string[] commands)
+    {
+        ArgumentNullException.ThrowIfNull(commands);
+        if (commands.Length > MAX_MACRO_LINES)
+            throw new ArgumentOutOfRangeException(nameof(commands), $"宏命令不能超过 {MAX_MACRO_LINES} 行");
+        if (commands.Length == 0) return;
+
+        var shellModule = RaptureShellModule.Instance();
+        if (shellModule is null) return;
+
+        var macro = new RaptureMacroModule.Macro();
+        for (var i = 0; i < commands.Length; i++)
+            macro.Lines[i].SetString(commands[i]);
+
+        ExecuteMacro(&macro);
+    }
+
+    public void ExecuteMacro(RaptureMacroModule.Macro* macro)
+    {
+        ArgumentNullException.ThrowIfNull(macro);
+
+        var shellModule = RaptureShellModule.Instance();
+        if (shellModule is null) return;
+        
+        shellModule->ExecuteMacro(macro);
+    }
+
     public static string SanitiseText(string text)
     {
         using var utf8String = new Utf8String();
@@ -291,6 +330,8 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
     }
 
     #endregion
+
+    private const int MAX_MACRO_LINES = 15;
 
     public class ChatManagerConfig : OmenServiceConfig
     {
