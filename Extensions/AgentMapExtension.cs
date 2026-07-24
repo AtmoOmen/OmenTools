@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Lumina;
@@ -24,13 +24,13 @@ public static class AgentMapExtension
 
             if (agent.IsAgentActive() && agent.SelectedMapId == zoneRow.Map.RowId)
                 agent.Hide();
-            
+
             if (!string.IsNullOrWhiteSpace(mapTitle))
                 agent.MapTitleString.SetString(mapTitle);
-            
+
             agent.OpenMapByMapId(zoneRow.Map.RowId, territoryTypeID);
         }
-        
+
         /// <summary>
         ///     设置地图标点后打开地图
         /// </summary>
@@ -42,16 +42,16 @@ public static class AgentMapExtension
         {
             if (!LuminaGetter.TryGetRow(mapID, out Map mapRow))
                 return;
-            
+
             if (agent.IsAgentActive() && agent.SelectedMapId == mapID)
                 agent.Hide();
-            
+
             if (!string.IsNullOrWhiteSpace(mapTitle))
                 agent.MapTitleString.SetString(mapTitle);
-            
+
             agent.OpenMapByMapId(mapID, mapRow.TerritoryType.RowId);
         }
-        
+
         /// <summary>
         ///     设置地图标点后打开地图
         /// </summary>
@@ -67,14 +67,11 @@ public static class AgentMapExtension
 
             if (agent.IsAgentActive() && agent.SelectedMapId == zoneRow.Map.RowId)
                 agent.Hide();
-            
-            if (!string.IsNullOrWhiteSpace(mapTitle))
-                agent.MapTitleString.SetString(mapTitle);
-            
+
             agent.SetFlagMapMarker(territoryTypeID, zoneRow.Map.RowId, worldPosition);
-            agent.OpenMapByMapId(zoneRow.Map.RowId, territoryTypeID);
+            agent.OpenMap(zoneRow.Map.RowId, territoryTypeID, mapTitle);
         }
-        
+
         /// <summary>
         ///     设置地图标点后打开地图
         /// </summary>
@@ -87,15 +84,12 @@ public static class AgentMapExtension
         {
             if (!LuminaGetter.TryGetRow(mapID, out Map mapRow))
                 return;
-            
+
             if (agent.IsAgentActive() && agent.SelectedMapId == mapID)
                 agent.Hide();
-            
-            if (!string.IsNullOrWhiteSpace(mapTitle))
-                agent.MapTitleString.SetString(mapTitle);
-            
+
             agent.SetFlagMapMarker(mapRow.TerritoryType.RowId, mapID, worldPosition);
-            agent.OpenMapByMapId(mapID, mapRow.TerritoryType.RowId);
+            agent.OpenMap(mapID, mapRow.TerritoryType.RowId, mapTitle);
         }
 
         /// <summary>
