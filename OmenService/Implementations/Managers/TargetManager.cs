@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using OmenTools.Dalamud;
 using OmenTools.OmenService.Abstractions;
 using CSGameObject = FFXIVClientStructs.FFXIV.Client.Game.Object.GameObject;
@@ -17,6 +18,8 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
     public TargetManagerConfig Config { get; private set; } = null!;
 
     #region Delegates
+    
+    public event Action<IGameObject?>? TargetChanged;
 
     public delegate void PreSetHardTargetDelegate
     (
@@ -88,26 +91,24 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
     [return: MarshalAs(UnmanagedType.U1)]
     private delegate bool SetHardTargetDelegate(TargetSystem* system, CSGameObject* target, bool ignoreTargetModes, bool a4, int a5);
-
     private Hook<SetHardTargetDelegate>? SetHardTargetHook;
 
     [return: MarshalAs(UnmanagedType.U1)]
     private delegate bool SetSoftTargetDelegate(TargetSystem* system, CSGameObject* target);
-
     private Hook<SetSoftTargetDelegate>? SetSoftTargetHook;
 
     private delegate void SetFocusTargetDelegate(TargetSystem* system, GameObjectId gameObjectID);
-
     private Hook<SetFocusTargetDelegate>? SetFocusTargetHook;
 
     private delegate ulong InteractWithObjectDelegate(TargetSystem* system, CSGameObject* target, bool checkLoS);
-
     private Hook<InteractWithObjectDelegate>? InteractWithObjectHook;
 
     private delegate void OpenObjectInteractionDelegate(TargetSystem* system, CSGameObject* target);
-
     private Hook<OpenObjectInteractionDelegate>? OpenObjectInteractionHook;
 
+    private delegate void AgentHUDUpdateTargetInfoDelegate(AgentHUD* agentHUD);
+    private Hook<AgentHUDUpdateTargetInfoDelegate>? AgentHUDUpdateTargetInfoHook;
+    
     private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
 
     protected override void Init()
@@ -153,6 +154,14 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
             (OpenObjectInteractionDelegate)OpenObjectInteractionDetour
         );
         OpenObjectInteractionHook.Enable();
+
+        AgentHUDUpdateTargetInfoHook ??= DService.Instance().Hook.HookFromMemberFunction
+        (
+            typeof(AgentHUD.MemberFunctionPointers),
+            "UpdateTargetInfo",
+            (AgentHUDUpdateTargetInfoDelegate)AgentHUDUpdateTargetInfoDetour
+        );
+        AgentHUDUpdateTargetInfoHook.Enable();
     }
 
     protected override void Uninit()
@@ -172,6 +181,9 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         OpenObjectInteractionHook?.Dispose();
         OpenObjectInteractionHook = null;
 
+        AgentHUDUpdateTargetInfoHook?.Dispose();
+        AgentHUDUpdateTargetInfoHook = null;
+        
         methodsCollection.Clear();
     }
 
@@ -464,8 +476,18 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         }
     }
 
-    #endregion
+    private void AgentHUDUpdateTargetInfoDetour(AgentHUD* agentHUD)
+    {
+        var counterBefore = agentHUD->TargetCounter;
+        
+        AgentHUDUpdateTargetInfoHook.Original(agentHUD);
 
+        if (counterBefore > agentHUD->TargetCounter)
+            TargetChanged?.Invoke(Target);
+    }
+
+    #endregion
+    
     #region Invokes
 
     public bool SetHardTarget(IGameObject? target, bool ignoreTargetModes = false, bool a4 = false, int a5 = 0) =>
