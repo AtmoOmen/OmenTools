@@ -7,6 +7,53 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
+    public static bool ToggleButton
+    (
+        string   id,
+        ref bool value,
+        float    height        = 0f,
+        Vector4? bgActiveColor = null,
+        Vector4? bgColor       = null
+    )
+    {
+        var resolvedHeight = height > 0f ?
+                                 height :
+                                 16f * ImGuiHelpers.GlobalScale;
+        var size = new Vector2(resolvedHeight * 1.875f, resolvedHeight);
+
+        var position = ImGui.GetCursorScreenPos();
+        var changed  = ImGui.InvisibleButton(id, size);
+
+        if (changed)
+            value = !value;
+
+        var colors = ImGui.GetStyle().Colors;
+        var backgroundColor = value ?
+                                  bgActiveColor ?? colors[(int)ImGuiCol.ButtonActive] :
+                                  bgColor       ?? colors[(int)ImGuiCol.FrameBg];
+
+        if (ImGui.IsItemActive())
+            backgroundColor = Vector4.Lerp(backgroundColor, colors[(int)ImGuiCol.Text], 0.24f);
+        else if (ImGui.IsItemHovered())
+            backgroundColor = Vector4.Lerp(backgroundColor, colors[(int)ImGuiCol.Text], 0.14f);
+
+        var radius     = size.Y * 0.5f;
+        var knobRadius = MathF.Max(radius - (2f * ImGuiHelpers.GlobalScale), 1f);
+        var knobCenter = new Vector2
+        (
+            value ?
+                position.X + size.X - radius :
+                position.X          + radius,
+            position.Y + radius
+        );
+        var drawList = ImGui.GetWindowDrawList();
+
+        drawList.AddRectFilled(position, position + size, ImGui.ColorConvertFloat4ToU32(backgroundColor), radius);
+        drawList.AddCircleFilled(knobCenter, knobRadius, ImGui.GetColorU32(ImGuiCol.Text));
+
+        return changed;
+    }
+
     public static bool ButtonImage
     (
         ImTextureID textureID,
