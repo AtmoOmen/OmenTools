@@ -7,6 +7,7 @@ using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Text;
 using Lumina.Text.ReadOnly;
+using OmenTools.Dalamud;
 using OmenTools.Interop.Windows;
 using OmenTools.OmenService.Abstractions;
 
@@ -343,6 +344,21 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     public static void SystemBeep(int frequency = 1000, int duration = 500) =>
         Task.Run(() => Console.Beep(frequency, duration));
+
+    #endregion
+
+    #region TTS
+
+    public static void Speak(string message) =>
+        EdgeTTSIPC.Speak(message);
+
+    public static Task SpeakAsync(string message, CancellationToken? token = null)
+    {
+        if (token?.IsCancellationRequested == true)
+            return Task.CompletedTask;
+
+        return EdgeTTSIPC.SpeakAsync(message, token ?? CancellationToken.None);
+    }
 
     #endregion
 }
