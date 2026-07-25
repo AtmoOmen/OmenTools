@@ -115,7 +115,7 @@ public sealed class CommandManager : OmenServiceBase<CommandManager>
 
         var helpMessage = new StringBuilder($"{MainCommand.Info.HelpMessage}\n");
         foreach (var (command, commandInfo) in SubCommands.Where(x => x.Value.ShowInHelp))
-            helpMessage.AppendLine($"{MainCommand.Command} {command} -> {commandInfo.HelpMessage}");
+            helpMessage.AppendLine($"{MainCommand.Command} {command} → {commandInfo.HelpMessage}");
 
         RemoveCommand(MainCommand.Command);
         AddCommand
