@@ -21,7 +21,7 @@ public sealed class DataShareManager : OmenServiceBase<DataShareManager>
 
     private static string[] DiscoverDataShareTags()
     {
-        HashSet<string> discoveredTags = new(StringComparer.Ordinal);
+        HashSet<string> discoveredTags = [with(StringComparer.Ordinal)];
 
         foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
         {

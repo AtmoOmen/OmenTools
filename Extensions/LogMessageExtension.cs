@@ -81,7 +81,7 @@ public static unsafe class LogMessageExtension
                     &utf8
                 );
 
-                return new(utf8.AsSpan());
+                return [with(utf8.AsSpan())];
             }
         }
     }

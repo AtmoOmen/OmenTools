@@ -14,7 +14,7 @@ internal unsafe class BattleChara
     protected new CSBattleChara* Struct => (CSBattleChara*)Address;
 
     private CSCastInfo     CastInfo            => Struct->CastInfo;
-    public  StatusListType StatusList          => new(Struct->GetStatusManager());
+    public  StatusListType StatusList          => [with(Struct->GetStatusManager())];
     public  bool           IsCasting           => CastInfo.IsCasting;
     public  bool           IsCastInterruptible => CastInfo.Interruptible;
     public  ActionType     CastActionType      => (ActionType)CastInfo.ActionType;

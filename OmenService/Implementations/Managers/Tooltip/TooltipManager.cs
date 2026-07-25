@@ -176,7 +176,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                     continue;
                 }
 
-                itemOriginalTexts[i] = new(new CStringPointer(textArray[i].Value).AsSpan());
+                itemOriginalTexts[i] = [with(new CStringPointer(textArray[i].Value).AsSpan())];
             }
         }
 
@@ -323,7 +323,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                     continue;
                 }
 
-                actionOriginalTexts[i] = new ReadOnlySeString(new CStringPointer(textArray[i].Value).AsSpan());
+                actionOriginalTexts[i] = [with(new CStringPointer(textArray[i].Value).AsSpan())];
             }
         }
 

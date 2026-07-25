@@ -110,7 +110,7 @@ public class AhoCorasick
     private static string[] NormalizePatterns(IEnumerable<string> source)
     {
         List<string>    normalizedPatterns = [];
-        HashSet<string> deduped            = new(StringComparer.Ordinal);
+        HashSet<string> deduped            = [with(StringComparer.Ordinal)];
 
         foreach (var pattern in source)
         {

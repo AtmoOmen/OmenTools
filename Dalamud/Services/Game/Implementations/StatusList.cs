@@ -86,7 +86,7 @@ public sealed unsafe partial class StatusList
         if (address == 0)
             return null;
 
-        return new StatusList(address);
+        return [with(address)];
     }
 
     public static IStatus? CreateStatusReference(nint address)

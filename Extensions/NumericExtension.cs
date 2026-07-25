@@ -28,7 +28,7 @@ public static class NumericExtension
         )
         {
             if (!ValidFormatLanguages.Contains(GameState.ClientLanguge) || T.IsZero(number))
-                return new ReadOnlySeString(number.ToString());
+                return [with(number.ToString())];
 
             const string STR_ZHAO = "兆";
             string       strYi    = "亿", strWan = "万", strZero = "零";
