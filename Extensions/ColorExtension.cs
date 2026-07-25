@@ -1,20 +1,13 @@
-using System.Buffers.Binary;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using OmenTools.Dalamud.DataShare.Attributes;
 
 namespace OmenTools.Extensions;
 
 public static unsafe class ColorExtension
 {
-    private static readonly Dictionary<ImGuiCol, Vector4>   ImGuiColToVector4    = [];
-    private static readonly Dictionary<ImGuiCol, uint>      ImGuiColToUInt       = [];
-    private static readonly Dictionary<KnownColor, Vector4> KnownColorToVector4  = [];
-    private static readonly Dictionary<KnownColor, uint>    KnownColorToUInt     = [];
-    private static readonly Dictionary<uint, Vector4>       UIntToVector4        = [];
-    private static readonly Dictionary<uint, Vector4>       ReverseUIntToVector4 = [];
-
     extension(ImGuiCol imguiCol)
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -101,4 +94,44 @@ public static unsafe class ColorExtension
             return new Vector4(r, g, b, a);
         }
     }
+    
+    #region 数据
+    
+    [DataShareTag]
+    private const string IMGUI_COL_TO_VECTOR4_TAG = "OmenTools.Extensions.ColorExtension.ImGuiColToVector4";
+
+    private static readonly Dictionary<ImGuiCol, Vector4> ImGuiColToVector4 =
+        DService.Instance().PI.GetOrCreateData(IMGUI_COL_TO_VECTOR4_TAG, static () => new Dictionary<ImGuiCol, Vector4>());
+
+    [DataShareTag]
+    private const string IMGUI_COL_TO_UINT_TAG = "OmenTools.Extensions.ColorExtension.ImGuiColToUInt";
+
+    private static readonly Dictionary<ImGuiCol, uint> ImGuiColToUInt =
+        DService.Instance().PI.GetOrCreateData(IMGUI_COL_TO_UINT_TAG, static () => new Dictionary<ImGuiCol, uint>());
+
+    [DataShareTag]
+    private const string KNOWN_COLOR_TO_VECTOR4_TAG = "OmenTools.Extensions.ColorExtension.KnownColorToVector4";
+
+    private static readonly Dictionary<KnownColor, Vector4> KnownColorToVector4 =
+        DService.Instance().PI.GetOrCreateData(KNOWN_COLOR_TO_VECTOR4_TAG, static () => new Dictionary<KnownColor, Vector4>());
+
+    [DataShareTag]
+    private const string KNOWN_COLOR_TO_UINT_TAG = "OmenTools.Extensions.ColorExtension.KnownColorToUInt";
+
+    private static readonly Dictionary<KnownColor, uint> KnownColorToUInt =
+        DService.Instance().PI.GetOrCreateData(KNOWN_COLOR_TO_UINT_TAG, static () => new Dictionary<KnownColor, uint>());
+
+    [DataShareTag]
+    private const string UINT_TO_VECTOR4_TAG = "OmenTools.Extensions.ColorExtension.UIntToVector4";
+
+    private static readonly Dictionary<uint, Vector4> UIntToVector4 =
+        DService.Instance().PI.GetOrCreateData(UINT_TO_VECTOR4_TAG, static () => new Dictionary<uint, Vector4>());
+
+    [DataShareTag]
+    private const string REVERSE_UINT_TO_VECTOR4_TAG = "OmenTools.Extensions.ColorExtension.ReverseUIntToVector4";
+
+    private static readonly Dictionary<uint, Vector4> ReverseUIntToVector4 =
+        DService.Instance().PI.GetOrCreateData(REVERSE_UINT_TO_VECTOR4_TAG, static () => new Dictionary<uint, Vector4>());
+    
+    #endregion
 }
