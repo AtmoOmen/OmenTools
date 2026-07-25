@@ -18,7 +18,7 @@ public static partial class ImGuiOm
     {
         var resolvedHeight = height > 0f ?
                                  height :
-                                 ImGui.GetFrameHeight();
+                                 ImGui.GetTextLineHeightWithSpacing();
         var size = new Vector2(resolvedHeight * 1.875f, resolvedHeight);
 
         var position = ImGui.GetCursorScreenPos();
