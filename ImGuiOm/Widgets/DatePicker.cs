@@ -109,7 +109,7 @@ public class DatePicker
     {
         using var font = ImRaii.PushFont(UiBuilder.DefaultFont);
 
-        using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.TextDisabled]);
+        using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.TextDisabled].ToUInt());
 
         foreach (var day in weekDays)
         {
@@ -140,7 +140,7 @@ public class DatePicker
             var isSelected = date.Date == currentDate.Date;
             var isToday    = date.Date == StandardTimeManager.Instance().Now.Date;
 
-            using var colorStack = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.CheckMark], isToday && !isSelected);
+            using var colorStack = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.CheckMark].ToUInt(), isToday && !isSelected);
 
             if (SelectableTextCentered(day.ToString(), isSelected, flags | ImGuiSelectableFlags.DontClosePopups))
             {
@@ -173,7 +173,7 @@ public class DatePicker
             var year       = startYear + i;
             var isSelected = year == currentYear;
 
-            using var color = ImRaii.PushColor(ImGuiCol.Button, ImGui.GetStyle().Colors[(int)ImGuiCol.Header], isSelected);
+            using var color = ImRaii.PushColor(ImGuiCol.Button, ImGui.GetStyle().Colors[(int)ImGuiCol.Header].ToUInt(), isSelected);
 
             if (ImGui.Button($"{year}", new(-1, 0)))
             {

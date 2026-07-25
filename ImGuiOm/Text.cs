@@ -74,11 +74,8 @@ public static partial class ImGuiOm
         return result;
     }
 
-    public static void TextOutlined(Vector4 textColor, string text, Vector4 outlineColor = default, float outlineThickness = 1.5f)
+    public static void TextOutlined(uint textColor, string text, uint outlineColor = 0xFF000000, float outlineThickness = 1.5f)
     {
-        if (outlineColor == default)
-            outlineColor = new Vector4(0, 0, 0, 1);
-
         var originalPos = ImGui.GetCursorPos();
 
         using (ImRaii.Group())
@@ -90,14 +87,31 @@ public static partial class ImGuiOm
                 if (x == 0 && y == 0) continue;
 
                 ImGui.SetCursorPos(originalPos + new Vector2(x, y));
-                ImGui.TextColored(outlineColor, text);
+                using (ImRaii.PushColor(ImGuiCol.Text, outlineColor))
+                    ImGui.TextUnformatted(text);
             }
 
             // 原始文字
             ImGui.SetCursorPos(originalPos);
-            ImGui.TextColored(textColor, text);
+            using (ImRaii.PushColor(ImGuiCol.Text, textColor))
+                ImGui.TextUnformatted(text);
         }
     }
+
+    public static void TextOutlined
+    (
+        Vector4 textColor,
+        string  text,
+        Vector4? outlineColor     = null,
+        float    outlineThickness = 1.5f
+    ) =>
+        TextOutlined
+        (
+            textColor.ToUInt(),
+            text,
+            outlineColor?.ToUInt() ?? 0xFF000000,
+            outlineThickness
+        );
 
     public static void TextOutlined
     (
@@ -134,7 +148,8 @@ public static partial class ImGuiOm
         var color      = ImGui.GetColorU32(ImGuiCol.Text);
         var hoverColor = ImGui.GetColorU32(ImGuiCol.ButtonHovered);
 
-        ImGui.TextColored(ImGui.ColorConvertU32ToFloat4(color), text);
+        using (ImRaii.PushColor(ImGuiCol.Text, color))
+            ImGui.TextUnformatted(text);
 
         var clicked = false;
         if (ImGui.IsItemHovered())

@@ -11,7 +11,7 @@ public static partial class ImGuiOm
 {
     private static readonly Dictionary<(string PlayerName, string WorldName), ReadOnlySeString> RenderedPlayerInfos = [];
 
-    public static Vector4 GetGradientColor()
+    public static uint GetGradientColor()
     {
         const float PERIOD = 1f;
 
@@ -20,7 +20,7 @@ public static partial class ImGuiOm
         var green = (MathF.Sin(2 * MathF.PI * (t + (1f / 3f))) + 1) / 2;
         var blue  = (MathF.Sin(2 * MathF.PI * (t + (2f / 3f))) + 1) / 2;
 
-        return new Vector4(red, green, blue, 1f);
+        return new Vector4(red, green, blue, 1f).ToUInt();
     }
 
     public static void RenderPlayerInfo(string name, string world)

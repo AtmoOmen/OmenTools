@@ -375,7 +375,7 @@ public static class ImGuiMarkdownRenderer
                 ImGui.PushStyleColor
                 (
                     ImGuiCol.Text,
-                    ImGui.GetStyle().Colors[(int)ImGuiCol.TextDisabled]
+                    ImGui.GetColorU32(ImGuiCol.TextDisabled)
                 );
                 ImGui.TextUnformatted(emphasis.Content);
                 ImGui.PopStyleColor();
@@ -391,7 +391,7 @@ public static class ImGuiMarkdownRenderer
                 ImGui.PushStyleColor
                 (
                     ImGuiCol.Text,
-                    ImGui.GetStyle().Colors[(int)ImGuiCol.ButtonHovered]
+                    ImGui.GetColorU32(ImGuiCol.ButtonHovered)
                 );
                 ImGui.TextUnformatted(hyperlink.Display);
                 ImGui.PopStyleColor();
@@ -409,7 +409,7 @@ public static class ImGuiMarkdownRenderer
                     (
                         min,
                         max,
-                        ImGui.GetColorU32(ImGui.GetStyle().Colors[(int)ImGuiCol.ButtonHovered]),
+                        ImGui.GetColorU32(ImGuiCol.ButtonHovered),
                         1.0f
                     );
 

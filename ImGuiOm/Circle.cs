@@ -8,8 +8,8 @@ public static partial class ImGuiOm
     (
         Vector2        center,
         float          radius,
-        Vector4        fillColor,
-        Vector4        outlineColor     = default,
+        uint           fillColor,
+        uint           outlineColor     = 0xFF000000,
         float          outlineThickness = 1.5f,
         float          opacity          = 1f,
         ImDrawListPtr? drawList         = null
@@ -17,16 +17,33 @@ public static partial class ImGuiOm
     {
         drawList ??= ImGui.GetBackgroundDrawList();
 
-        if (outlineColor == default)
-            outlineColor = new Vector4(0, 0, 0, 1);
+        var fillColorVector    = fillColor.ToVector4();
+        var outlineColorVector = outlineColor.ToVector4();
+        var fillColorWithOpacity    = fillColorVector with { W = fillColorVector.W * opacity };
+        var outlineColorWithOpacity = outlineColorVector with { W = outlineColorVector.W * opacity };
 
-        // 不透明度
-        var fillColorWithOpacity    = fillColor with { W = fillColor.W       * opacity };
-        var outlineColorWithOpacity = outlineColor with { W = outlineColor.W * opacity };
-
-        // 描边
-        drawList?.AddCircleFilled(center, radius + outlineThickness, ImGui.ColorConvertFloat4ToU32(outlineColorWithOpacity));
-        // 原始
-        drawList?.AddCircleFilled(center, radius, ImGui.ColorConvertFloat4ToU32(fillColorWithOpacity));
+        drawList?.AddCircleFilled(center, radius + outlineThickness, outlineColorWithOpacity.ToUInt());
+        drawList?.AddCircleFilled(center, radius, fillColorWithOpacity.ToUInt());
     }
+
+    public static void CircleOutlined
+    (
+        Vector2        center,
+        float          radius,
+        Vector4        fillColor,
+        Vector4?       outlineColor     = null,
+        float          outlineThickness = 1.5f,
+        float          opacity          = 1f,
+        ImDrawListPtr? drawList         = null
+    ) =>
+        CircleOutlined
+        (
+            center,
+            radius,
+            fillColor.ToUInt(),
+            outlineColor?.ToUInt() ?? 0xFF000000,
+            outlineThickness,
+            opacity,
+            drawList
+        );
 }

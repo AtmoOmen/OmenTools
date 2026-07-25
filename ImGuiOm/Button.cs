@@ -12,13 +12,13 @@ public static partial class ImGuiOm
         string   id,
         ref bool value,
         float    height        = 0f,
-        Vector4? bgActiveColor = null,
-        Vector4? bgColor       = null
+        uint?    bgActiveColor = null,
+        uint?    bgColor       = null
     )
     {
         var resolvedHeight = height > 0f ?
                                  height :
-                                 16f * ImGuiHelpers.GlobalScale;
+                                 ImGui.GetFrameHeight();
         var size = new Vector2(resolvedHeight * 1.875f, resolvedHeight);
 
         var position = ImGui.GetCursorScreenPos();
@@ -29,13 +29,13 @@ public static partial class ImGuiOm
 
         var colors = ImGui.GetStyle().Colors;
         var backgroundColor = value ?
-                                  bgActiveColor ?? colors[(int)ImGuiCol.ButtonActive] :
-                                  bgColor       ?? colors[(int)ImGuiCol.FrameBg];
+                                  bgActiveColor ?? ImGui.GetColorU32(ImGuiCol.ButtonActive) :
+                                  bgColor       ?? ImGui.GetColorU32(ImGuiCol.FrameBg);
 
         if (ImGui.IsItemActive())
-            backgroundColor = Vector4.Lerp(backgroundColor, colors[(int)ImGuiCol.Text], 0.24f);
+            backgroundColor = Vector4.Lerp(backgroundColor.ToVector4(), colors[(int)ImGuiCol.Text], 0.24f).ToUInt();
         else if (ImGui.IsItemHovered())
-            backgroundColor = Vector4.Lerp(backgroundColor, colors[(int)ImGuiCol.Text], 0.14f);
+            backgroundColor = Vector4.Lerp(backgroundColor.ToVector4(), colors[(int)ImGuiCol.Text], 0.14f).ToUInt();
 
         var radius     = size.Y * 0.5f;
         var knobRadius = MathF.Max(radius - (2f * ImGuiHelpers.GlobalScale), 1f);
@@ -48,11 +48,28 @@ public static partial class ImGuiOm
         );
         var drawList = ImGui.GetWindowDrawList();
 
-        drawList.AddRectFilled(position, position + size, ImGui.ColorConvertFloat4ToU32(backgroundColor), radius);
+        drawList.AddRectFilled(position, position + size, backgroundColor, radius);
         drawList.AddCircleFilled(knobCenter, knobRadius, ImGui.GetColorU32(ImGuiCol.Text));
 
         return changed;
     }
+
+    public static bool ToggleButton
+    (
+        string   id,
+        ref bool value,
+        Vector4? bgActiveColor,
+        Vector4? bgColor       = null,
+        float    height        = 0f
+    ) =>
+        ToggleButton
+        (
+            id,
+            ref value,
+            height,
+            bgActiveColor?.ToUInt(),
+            bgColor?.ToUInt()
+        );
 
     public static bool ButtonImage
     (
@@ -281,8 +298,8 @@ public static partial class ImGuiOm
         var iconText = icon.ToIconString();
         var size     = new Vector2(ImGui.GetContentRegionAvail().X, GetSingleLineHeight());
 
-        using var colorPush = ImRaii.PushColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive])
-                                    .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered])
+        using var colorPush = ImRaii.PushColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive].ToUInt())
+                                    .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered].ToUInt())
                                     .Push(ImGuiCol.Button,        0);
 
         bool result;
@@ -304,8 +321,8 @@ public static partial class ImGuiOm
 
         var size = new Vector2(MathF.Max(ImGui.GetContentRegionAvail().X, textSize.X + (2 * padding.X)), GetSingleLineHeight());
 
-        using var colorPush = ImRaii.PushColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive])
-                                    .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered])
+        using var colorPush = ImRaii.PushColor(ImGuiCol.ButtonActive, colors[(int)ImGuiCol.HeaderActive].ToUInt())
+                                    .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered].ToUInt())
                                     .Push(ImGuiCol.Button,        0);
 
         var result = ImGui.Button(text, size);

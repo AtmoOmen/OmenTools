@@ -137,7 +137,7 @@ public static partial class ImGuiOm
             new Vector2(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y),
             Vector2.Zero,
             Vector2.One,
-            ImGui.GetColorU32(Vector4.One)
+            0xFFFFFFFF
         );
 
         windowDrawList.AddText
@@ -187,7 +187,7 @@ public static partial class ImGuiOm
             new Vector2(imagePos.X + imageSize.X, imagePos.Y + imageSize.Y),
             Vector2.Zero,
             Vector2.One,
-            ImGui.GetColorU32(Vector4.One)
+            0xFFFFFFFF
         );
 
         windowDrawList.AddText
