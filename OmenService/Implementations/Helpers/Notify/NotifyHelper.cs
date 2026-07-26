@@ -352,6 +352,9 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     public static void Speak(string message) =>
         EdgeTTSIPC.Speak(message);
 
+    public static void Speak(string message, int? speed = null, int? pitch = null, int? volume = null) =>
+        EdgeTTSIPC.Speak(message, speed, pitch, volume);
+
     public static Task SpeakAsync(string message, CancellationToken? token = null)
     {
         if (token?.IsCancellationRequested == true)
@@ -360,5 +363,36 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         return EdgeTTSIPC.SpeakAsync(message, token ?? CancellationToken.None);
     }
 
+    public static Task SpeakAsync(string message, int? speed = null, int? pitch = null, int? volume = null, CancellationToken? token = null)
+    {
+        if (token?.IsCancellationRequested == true)
+            return Task.CompletedTask;
+
+        return EdgeTTSIPC.SpeakAsync(message, speed, pitch, volume, token ?? CancellationToken.None);
+    }
+
+    public static void Synthesize(string message) =>
+        EdgeTTSIPC.Synthesize(message);
+
+    public static void Synthesize(string message, int? speed = null, int? pitch = null, int? volume = null) =>
+        EdgeTTSIPC.Synthesize(message, speed, pitch, volume);
+
+    public static Task SynthesizeAsync(string message, CancellationToken? token = null)
+    {
+        if (token?.IsCancellationRequested == true)
+            return Task.CompletedTask;
+
+        return EdgeTTSIPC.SynthesizeAsync(message, token ?? CancellationToken.None);
+    }
+
+    public static Task SynthesizeAsync(string message, int? speed = null, int? pitch = null, int? volume = null, CancellationToken? token = null)
+    {
+        if (token?.IsCancellationRequested == true)
+            return Task.CompletedTask;
+
+        return EdgeTTSIPC.SynthesizeAsync(message, speed, pitch, volume, token ?? CancellationToken.None);
+    }
+
     #endregion
 }
+
