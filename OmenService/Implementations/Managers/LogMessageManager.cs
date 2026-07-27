@@ -34,6 +34,7 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
     [ThreadStatic]
     private static StringBuilder? LogMessageDebugBuilder;
 
+    // TODO: 等待 FFCS 合并
     private static readonly CompSig GetInstanceContentTextSig = new
     (
         "83 FA 0C 73 ?? 8B C2 48 6B D0 68 48 8D 81 ?? ?? ?? ?? 48 03 C2 C3"
@@ -42,6 +43,7 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
     private Hook<GetInstanceContentTextDelegate>? GetInstanceContentTextHook;
     private Utf8String* EmptyInstanceContentText;
 
+    // TODO: 等待 FFCS 合并
     private static readonly CompSig ResolveInstanceContentTextClipSig = new
     (
         "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 48 89 7C 24 ?? 41 56 48 83 EC ?? 48 8B 41 ?? 48 8B F9 8B 48"
