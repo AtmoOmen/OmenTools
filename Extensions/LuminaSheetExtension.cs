@@ -199,6 +199,12 @@ public static unsafe class LuminaSheetExtension
 
         public Vector2 GetPosition() => new(marker.X, marker.Y);
     }
+    
+    extension(scoped in MKDSupportJob job)
+    {
+        public uint GetIcon() =>
+            job.RowId + 82270 + 1;
+    }
 
     extension(scoped in ClassJob job)
     {
