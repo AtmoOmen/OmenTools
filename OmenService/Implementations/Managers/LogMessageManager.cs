@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -9,11 +8,10 @@ using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.Text;
-using InteropGenerator.Runtime;
 using OmenTools.Dalamud;
 using OmenTools.Interop.Game.Lumina;
+using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
-using CSCharacter = FFXIVClientStructs.FFXIV.Client.Game.Character.Character;
 
 namespace OmenTools.OmenService;
 
@@ -25,17 +23,34 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
 
     public delegate void PostLogMessageDelegate(uint logMessageID, LogMessageQueueItem item);
 
+    public delegate void PreInstanceContentTextDelegate(ref bool isPrevented, ref uint rowID);
+
+    public delegate void PostInstanceContentTextDelegate(uint rowID);
+
     #endregion
 
     public LogMessageManagerConfig Config { get; private set; } = null!;
 
-    private delegate void UpdateDelegate(RaptureLogModule* module);
-
     [ThreadStatic]
     private static StringBuilder? LogMessageDebugBuilder;
 
-    // ReSharper disable once InconsistentNaming
-    private Hook<UpdateDelegate>? UpdateHook;
+    private static readonly CompSig GetInstanceContentTextSig = new
+    (
+        "83 FA 0C 73 ?? 8B C2 48 6B D0 68 48 8D 81 ?? ?? ?? ?? 48 03 C2 C3"
+    );
+    private delegate Utf8String* GetInstanceContentTextDelegate(nint director, uint rowID);
+    private Hook<GetInstanceContentTextDelegate>? GetInstanceContentTextHook;
+    private Utf8String* EmptyInstanceContentText;
+
+    private static readonly CompSig ResolveInstanceContentTextClipSig = new
+    (
+        "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 48 89 7C 24 ?? 41 56 48 83 EC ?? 48 8B 41 ?? 48 8B F9 8B 48"
+    );
+    private delegate bool ResolveInstanceContentTextClipDelegate(InstanceContentTextClip* clip);
+    private Hook<ResolveInstanceContentTextClipDelegate>? ResolveInstanceContentTextClipHook;
+
+    private delegate void                  UpdateDelegate(RaptureLogModule* module);
+    private          Hook<UpdateDelegate>? UpdateHook;
 
     private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
 
@@ -53,12 +68,33 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         );
 
         UpdateHook?.Enable();
+
+        if (EmptyInstanceContentText == null)
+            EmptyInstanceContentText = Utf8String.CreateEmpty();
+
+        GetInstanceContentTextHook ??= GetInstanceContentTextSig.GetHook<GetInstanceContentTextDelegate>(GetInstanceContentTextDetour);
+        GetInstanceContentTextHook.Enable();
+
+        ResolveInstanceContentTextClipHook ??= ResolveInstanceContentTextClipSig.GetHook<ResolveInstanceContentTextClipDelegate>(ResolveInstanceContentTextClipDetour);
+        ResolveInstanceContentTextClipHook.Enable();
     }
 
     protected override void Uninit()
     {
         UpdateHook?.Dispose();
         UpdateHook = null;
+
+        GetInstanceContentTextHook?.Dispose();
+        GetInstanceContentTextHook = null;
+
+        ResolveInstanceContentTextClipHook?.Dispose();
+        ResolveInstanceContentTextClipHook = null;
+
+        if (EmptyInstanceContentText != null)
+        {
+            EmptyInstanceContentText->Dtor(true);
+            EmptyInstanceContentText = null;
+        }
 
         methodsCollection.Clear();
     }
@@ -97,6 +133,72 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         OnPostReceiveLogMessage(item);
     }
 
+    private Utf8String* GetInstanceContentTextDetour(nint director, uint rowID)
+    {
+        if (!OnPreInstanceContentText(ref rowID))
+            return EmptyInstanceContentText;
+
+        var result = GetInstanceContentTextHook.Original(director, rowID);
+        OnPostInstanceContentText(rowID);
+        return result;
+    }
+
+    private bool ResolveInstanceContentTextClipDetour(InstanceContentTextClip* clip)
+    {
+        if (clip == null || clip->Data == null)
+            return ResolveInstanceContentTextClipHook.Original(clip);
+
+        var rowID = clip->Data->RowID;
+        if (!OnPreInstanceContentText(ref rowID))
+            return true;
+
+        clip->Data->RowID = rowID;
+
+        var result = ResolveInstanceContentTextClipHook.Original(clip);
+        if (result)
+            OnPostInstanceContentText(rowID);
+
+        return result;
+    }
+
+    private bool OnPreInstanceContentText(ref uint rowID)
+    {
+        if (Config.ShowInstanceContentTextLog)
+        {
+            DLog.Debug
+            (
+                "[Log Message Manager] Instance Content Text\n" +
+                $"ID: {rowID}"
+            );
+        }
+
+        var isPrevented = false;
+
+        if (methodsCollection.TryGetValue(typeof(PreInstanceContentTextDelegate), out var preDelegates))
+        {
+            foreach (var preDelegate in preDelegates)
+            {
+                var preInstanceContentText = (PreInstanceContentTextDelegate)preDelegate;
+                preInstanceContentText(ref isPrevented, ref rowID);
+                if (isPrevented) return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void OnPostInstanceContentText(uint rowID)
+    {
+        if (methodsCollection.TryGetValue(typeof(PostInstanceContentTextDelegate), out var postDelegates))
+        {
+            foreach (var postDelegate in postDelegates)
+            {
+                var postInstanceContentText = (PostInstanceContentTextDelegate)postDelegate;
+                postInstanceContentText(rowID);
+            }
+        }
+    }
+
     private bool OnPreReceiveLogMessage(ref LogMessageQueueItem item)
     {
         if (Config.ShowLogMessageLog)
@@ -105,7 +207,7 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
 
             try
             {
-                sb.AppendLine("[Log Message Manager]");
+                sb.AppendLine("[Log Message Manager] Log Message");
                 sb.Append("ID: ").Append(item.LogMessageId).AppendLine();
                 sb.AppendLine("预览:");
                 sb.Append('\t').Append(item.ToReadOnlySeString()).AppendLine();
@@ -300,160 +402,43 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
 
     public bool RegPost(PostLogMessageDelegate method, params PostLogMessageDelegate[] methods) => RegisterGeneric(method, methods);
 
+    public bool RegPreInstanceContentText(PreInstanceContentTextDelegate method, params PreInstanceContentTextDelegate[] methods) =>
+        RegisterGeneric(method, methods);
+
+    public bool RegPostInstanceContentText(PostInstanceContentTextDelegate method, params PostInstanceContentTextDelegate[] methods) =>
+        RegisterGeneric(method, methods);
+
     public bool Unreg(params PreLogMessageDelegate[] methods) => UnregisterGeneric(methods);
 
     public bool Unreg(params PostLogMessageDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PreInstanceContentTextDelegate[] methods) => UnregisterGeneric(methods);
+
+    public bool Unreg(params PostInstanceContentTextDelegate[] methods) => UnregisterGeneric(methods);
 
     #endregion
 
     public class LogMessageManagerConfig : OmenServiceConfig
     {
         public bool ShowLogMessageLog;
+        public bool ShowInstanceContentTextLog;
 
         public void Save() =>
             this.Save(DService.Instance().GetOmenService<LogMessageManager>());
     }
-}
 
-[StructLayout(LayoutKind.Explicit, Size = 12)]
-public struct LogMessageParam
-{
-    [FieldOffset(0)]
-    public LogMessageParamType Type;
-
-    // union field
-    [FieldOffset(4)]
-    public int Int;
-
-    [FieldOffset(4)]
-    public long Long;
-
-    [FieldOffset(4)]
-    public uint UInt;
-
-    [FieldOffset(4)]
-    public ulong ULong;
-
-    [FieldOffset(4)]
-    public float Float;
-
-    /// <summary>
-    ///     如果手动修改了, 一定一定要手动调用析构函数 Dtor 掉, 不然会内存泄露
-    /// </summary>
-    [FieldOffset(4)]
-    public CStringPointer String;
-
-    [FieldOffset(4)]
-    public unsafe CSCharacter* Character;
-
-    public void SetType(LogMessageParamType type)
+    [StructLayout(LayoutKind.Explicit)]
+    private struct InstanceContentTextClip
     {
-        if (!Enum.IsDefined(type))
-            throw new ArgumentOutOfRangeException(nameof(type));
-
-        Type = type;
+        [FieldOffset(0x48)]
+        public InstanceContentTextClipData* Data;
     }
 
-    public bool SetInt(int value)
+    [StructLayout(LayoutKind.Explicit)]
+    private struct InstanceContentTextClipData
     {
-        SetType(LogMessageParamType.Int);
-
-        Int = value;
-        return true;
+        [FieldOffset(0x10)]
+        public uint RowID;
     }
 
-    /// <summary>
-    ///     如果手动修改了, 一定一定要手动调用析构函数 Dtor 掉, 不然会内存泄露
-    /// </summary>
-    public unsafe bool SetString(Utf8String* value)
-    {
-        if (value == null || value->IsEmpty || !value->StringPtr.HasValue)
-            return false;
-
-        return SetString(value->StringPtr);
-    }
-
-    /// <summary>
-    ///     如果手动修改了, 一定一定要手动调用析构函数 Dtor 掉, 不然会内存泄露
-    /// </summary>
-    public bool SetString(CStringPointer value)
-    {
-        if (!value.HasValue)
-            return false;
-
-        SetType(LogMessageParamType.String);
-        String = value;
-        return true;
-    }
-
-    public unsafe bool SetCharacter(CSCharacter* value)
-    {
-        if (value == null) return false;
-
-        SetType(LogMessageParamType.Character);
-        Character = value;
-        return true;
-    }
-
-    public unsafe bool SetCharacter(nint value)
-    {
-        var characterPtr = (CSCharacter*)value;
-        if (characterPtr == null) return false;
-
-        return SetCharacter(characterPtr);
-    }
-
-    public bool SetLong(long value)
-    {
-        SetType(LogMessageParamType.Long);
-        Long = value;
-        return true;
-    }
-
-    public bool SetUInt(uint value)
-    {
-        SetType(LogMessageParamType.UInt);
-        UInt = value;
-        return true;
-    }
-
-    public bool SetULong(ulong value)
-    {
-        SetType(LogMessageParamType.ULong);
-        ULong = value;
-        return true;
-    }
-
-    public bool SetFloat(float value)
-    {
-        SetType(LogMessageParamType.Float);
-        Float = value;
-        return true;
-    }
-
-    public override unsafe string ToString() =>
-        Type switch
-        {
-            LogMessageParamType.Int       => Int.ToString(),
-            LogMessageParamType.Long      => Long.ToString(),
-            LogMessageParamType.UInt      => UInt.ToString(),
-            LogMessageParamType.ULong     => ULong.ToString(),
-            LogMessageParamType.Float     => Float.ToString(CultureInfo.InvariantCulture),
-            LogMessageParamType.String    => String.ToString(),
-            LogMessageParamType.Character => Character == null ? "null" : $"{Character->NameString} [{(nint)Character:X}]",
-            _                             => "Undefined"
-        };
-}
-
-public enum LogMessageParamType
-{
-    Undefined,
-    Int,
-    Long,
-    UInt,
-    ULong,
-    Float,
-    Bool,
-    String,
-    Character
 }
