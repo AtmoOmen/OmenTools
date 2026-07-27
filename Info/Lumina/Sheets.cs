@@ -323,4 +323,46 @@ public static class Sheets
                 }
             }
         );
+    
+    [DataShareTag]
+    private const string PLAYER_SEARCH_PLACE_NAME_TO_ZONES_TAG = "OmenTools.Info.Game.Data.Sheets.PlayerSearchPlaceNameToZones";
+    
+    public static Dictionary<uint, HashSet<uint>> PlayerSearchPlaceNameToZones { get; } =
+        DService.Instance().PI.GetOrCreateData
+        (
+            PLAYER_SEARCH_PLACE_NAME_TO_ZONES_TAG,
+            () => LuminaGetter.Get<PlayerSearchSubLocation>()
+                              .Where(x => x.PlaceName.RowId is > 0 and not 519)
+                              .Select(x => x.PlaceName.RowId)
+                              .Distinct()
+                              .ToDictionary
+                              (
+                                  x => x,
+                                  x =>
+                                      LuminaGetter.Get<TerritoryType>()
+                                                  .Where
+                                                  (d => d.PlaceNameZone.RowId == x &&
+                                                        d.TerritoryIntendedUse.RowId is 0 or 1 or 23
+                                                  ) // 野外、主城和金碟
+                                                  .Select(d => d.RowId)
+                                                  .ToHashSet()
+                              )
+        );
+    
+    [DataShareTag]
+    private const string PLAYER_SEARCH_PLACE_NAMES_TAG = "OmenTools.Info.Game.Data.Sheets.PlayerSearchPlaceNames";
+
+    public static Dictionary<uint, PlayerSearchSubLocation> PlayerSearchPlaceNames { get; } =
+        DService.Instance().PI.GetOrCreateData
+        (
+            PLAYER_SEARCH_PLACE_NAMES_TAG,
+            () => LuminaGetter.Get<PlayerSearchSubLocation>()
+                              .Where(x => x.PlaceName.RowId is > 0 and not 519)
+                              .DistinctBy(x => x.PlaceName.RowId)
+                              .ToDictionary
+                              (
+                                  x => x.PlaceName.RowId,
+                                  x => x
+                              )
+        );
 }

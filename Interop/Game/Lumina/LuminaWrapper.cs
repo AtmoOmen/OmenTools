@@ -1,5 +1,6 @@
 using Lumina.Excel.Sheets;
 using Lumina.Text.ReadOnly;
+using OmenTools.Info.Game.Enums;
 using Action = Lumina.Excel.Sheets.Action;
 using Status = Lumina.Excel.Sheets.Status;
 
@@ -136,6 +137,12 @@ public static class LuminaWrapper
     
     public static uint GetWeatherIcon(uint rowID) =>
         LuminaGetter.TryGetRow<Weather>(rowID, out var item) ? (uint)item.Icon: 0;
+    
+    public static uint GetJobIcon(uint rowID, ClassJobIconType type = ClassJobIconType.Framed) =>
+        LuminaGetter.TryGetRow<ClassJob>(rowID, out var item) ? item.GetIcon(type): 0;
+    
+    public static uint GetMKDSupportJobIcon(uint rowID) =>
+        LuminaGetter.TryGetRow<MKDSupportJob>(rowID, out var item) ? item.GetIcon(): 0;
 
     public static string GetFateName(uint rowID) =>
         LuminaGetter.TryGetRow<Fate>(rowID, out var item) ? item.Name.ToString() : string.Empty;
