@@ -96,6 +96,46 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     public static CrescentSupportJob Dancer { get; } = new(15, CrescentSupportJobType.Dancer, CrescentSupportJobUnlockType.SilverPiece, 45043, 46603, 4798);
 
     /// <summary>
+    ///     辅助忍者
+    /// </summary>
+    public static CrescentSupportJob Ninja { get; } = new(16, CrescentSupportJobType.Ninja, CrescentSupportJobUnlockType.SilverObol, 51975);
+
+    /// <summary>
+    ///     辅助白魔法师
+    /// </summary>
+    public static CrescentSupportJob WhiteMage { get; } = new(17, CrescentSupportJobType.WhiteMage, CrescentSupportJobUnlockType.SilverObol, 51975);
+
+    /// <summary>
+    ///     辅助黑魔法师
+    /// </summary>
+    public static CrescentSupportJob BlackMage { get; } = new(18, CrescentSupportJobType.BlackMage, CrescentSupportJobUnlockType.SilverObol, 51975);
+
+    /// <summary>
+    ///     辅助龙骑士
+    /// </summary>
+    public static CrescentSupportJob Dragoon { get; } = new(19, CrescentSupportJobType.Dragoon, CrescentSupportJobUnlockType.GoldObol, 51976);
+
+    /// <summary>
+    ///     辅助召唤师
+    /// </summary>
+    public static CrescentSupportJob Summoner { get; } = new(20, CrescentSupportJobType.Summoner, CrescentSupportJobUnlockType.GoldObol, 51976);
+
+    /// <summary>
+    ///     辅助青魔法师
+    /// </summary>
+    public static CrescentSupportJob BlueMage { get; } = new(21, CrescentSupportJobType.BlueMage, CrescentSupportJobUnlockType.CriticalEncounter, 63);
+
+    /// <summary>
+    ///     辅助赤魔法师
+    /// </summary>
+    public static CrescentSupportJob RedMage { get; } = new(22, CrescentSupportJobType.RedMage, CrescentSupportJobUnlockType.SilverObol, 51975);
+
+    /// <summary>
+    ///     辅助亡灵法师
+    /// </summary>
+    public static CrescentSupportJob Necromancer { get; } = new(23, CrescentSupportJobType.Necromancer, CrescentSupportJobUnlockType.CriticalEncounter, 57);
+
+    /// <summary>
     ///     全部辅助职业
     /// </summary>
     public static List<CrescentSupportJob> AllJobs { get; } =
@@ -115,7 +155,15 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
         Thief,
         MysticKnight,
         Gladiator,
-        Dancer
+        Dancer,
+        Ninja,
+        WhiteMage,
+        BlackMage,
+        Dragoon,
+        Summoner,
+        BlueMage,
+        RedMage,
+        Necromancer
     ];
 
     /// <summary>
@@ -250,6 +298,8 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
             CrescentSupportJobUnlockType.CriticalEncounter => LuminaWrapper.GetAddonText(13988),
             CrescentSupportJobUnlockType.SilverPiece       => $"{LuminaWrapper.GetENPCName(1053614)} ({LuminaWrapper.GetENPCTitle(1053614)})",
             CrescentSupportJobUnlockType.GoldPiece         => $"{LuminaWrapper.GetENPCName(1053614)} ({LuminaWrapper.GetENPCTitle(1053614)})",
+            CrescentSupportJobUnlockType.SilverObol        => $"{LuminaWrapper.GetENPCName(1059485)} ({LuminaWrapper.GetENPCTitle(1059485)})",
+            CrescentSupportJobUnlockType.GoldObol          => $"{LuminaWrapper.GetENPCName(1059485)} ({LuminaWrapper.GetENPCTitle(1059485)})",
             _                                              => string.Empty
         };
 
@@ -259,6 +309,8 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
             CrescentSupportJobUnlockType.CriticalEncounter => LuminaWrapper.GetDynamicEventName(UnlockLink),
             CrescentSupportJobUnlockType.SilverPiece       => $"{LuminaWrapper.GetItemName(UnlockLink)} x1000",
             CrescentSupportJobUnlockType.GoldPiece         => $"{LuminaWrapper.GetItemName(UnlockLink)} x1600",
+            CrescentSupportJobUnlockType.SilverObol        => $"{LuminaWrapper.GetItemName(UnlockLink)} x1000",
+            CrescentSupportJobUnlockType.GoldObol          => $"{LuminaWrapper.GetItemName(UnlockLink)} x1600",
             _                                              => string.Empty
         };
 
@@ -445,7 +497,47 @@ public enum CrescentSupportJobType : byte
     /// <summary>
     ///     辅助舞者
     /// </summary>
-    Dancer = 15
+    Dancer = 15,
+
+    /// <summary>
+    ///     辅助忍者
+    /// </summary>
+    Ninja = 16,
+
+    /// <summary>
+    ///     辅助白魔法师
+    /// </summary>
+    WhiteMage = 17,
+
+    /// <summary>
+    ///     辅助黑魔法师
+    /// </summary>
+    BlackMage = 18,
+
+    /// <summary>
+    ///     辅助龙骑士
+    /// </summary>
+    Dragoon = 19,
+
+    /// <summary>
+    ///     辅助召唤师
+    /// </summary>
+    Summoner = 20,
+
+    /// <summary>
+    ///     辅助青魔法师
+    /// </summary>
+    BlueMage = 21,
+
+    /// <summary>
+    ///     辅助赤魔法师
+    /// </summary>
+    RedMage = 22,
+
+    /// <summary>
+    ///     辅助亡灵法师
+    /// </summary>
+    Necromancer = 23
 }
 
 public enum CrescentSupportJobUnlockType
@@ -464,6 +556,16 @@ public enum CrescentSupportJobUnlockType
     ///     十二城邦金币 (固定为 1600)
     /// </summary>
     GoldPiece,
+
+    /// <summary>
+    ///     十二城邦白银币
+    /// </summary>
+    SilverObol,
+
+    /// <summary>
+    ///     十二城邦白金币
+    /// </summary>
+    GoldObol,
 
     /// <summary>
     ///     紧急遭遇战
