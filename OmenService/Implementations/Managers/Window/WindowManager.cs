@@ -171,7 +171,9 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
         }
 
         var newWindow = factory();
-        WindowSystem.AddWindow(newWindow);
+        if (!AddWindow(newWindow, isForceToAdd))
+            return false;
+
         UniqueWindows[typeof(T)] = newWindow;
         return true;
     }
@@ -203,21 +205,20 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
         ArgumentNullException.ThrowIfNull(window);
 
         var addedWindows = WindowSystem.Windows;
+        var addedWindow  = addedWindows.FirstOrDefault
+        (
+            x => ReferenceEquals(x, window) || x.WindowName == window.WindowName
+        );
 
-        if (isForceToAdd)
+        if (addedWindow != null)
         {
-            if (addedWindows.Contains(window))
-            {
-                WindowSystem.RemoveWindow(window);
-                if (window is IDisposable disposableWindow)
-                    disposableWindow.Dispose();
-            }
-
-        }
-        else
-        {
-            if (addedWindows.Contains(window))
+            if (!isForceToAdd && ReferenceEquals(addedWindow, window))
                 return false;
+
+            WindowSystem.RemoveWindow(addedWindow);
+
+            if (!ReferenceEquals(addedWindow, window) && addedWindow is IDisposable disposableWindow)
+                disposableWindow.Dispose();
         }
 
         WindowSystem.AddWindow(window);
