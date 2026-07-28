@@ -60,7 +60,7 @@ public interface ICharacter : IGameObject
     IGameObject?            SoftTargetObject                     { get; }
     CharacterModes          Mode                                 { get; }
     byte                    ModeParam                            { get; }
-    byte                    WeaponFlags                          { get; }
+    bool                    IsOffhandDrawn                       { get; }
     bool                    IsWeaponDrawn                        { get; }
     bool                    IsSwimming                           { get; }
     bool                    IsMounted                            { get; }

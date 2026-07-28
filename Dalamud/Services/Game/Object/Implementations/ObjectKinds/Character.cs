@@ -65,7 +65,7 @@ internal unsafe class Character
     public IGameObject?     SoftTargetObject => DService.Instance().ObjectTable.SearchByID(SoftTargetObjectID);
     public CharacterModes   Mode => Struct->Mode;
     public byte             ModeParam => Struct->ModeParam;
-    public byte             WeaponFlags => Struct->WeaponFlags;
+    public bool             IsOffhandDrawn => Struct->LifeSkillContainer.IsOffhandDrawn;
     public bool             IsWeaponDrawn => Struct->IsWeaponDrawn;
     public bool             IsSwimming => Struct->MoveController.IsSwimming;
     public bool             IsMounted => Struct->IsMounted();
@@ -197,7 +197,7 @@ internal unsafe class Character
         (Struct->IsWeaponDrawn ?
              StatusFlags.WeaponOut :
              StatusFlags.None) |
-        (Struct->IsOffhandDrawn ?
+        (Struct->LifeSkillContainer.IsOffhandDrawn ?
              StatusFlags.OffhandOut :
              StatusFlags.None) |
         (Struct->IsPartyMember ?
