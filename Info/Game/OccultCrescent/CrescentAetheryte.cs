@@ -41,11 +41,49 @@ public class CrescentAetheryte
     public static CrescentAetheryte Stonemarsh { get; } = new(4947, new(-384.9f, 97.4f, 277.1f), CrescentAetherytePoint.Stonemarsh);
 
     /// <summary>
+    ///     北部调查队营地
+    /// </summary>
+    public static CrescentAetheryte NorthHornBaseCamp { get; } = new(5571, new(881.1f, 258.5f, 882.2f), CrescentAetherytePoint.NorthHornBaseCamp);
+
+    /// <summary>
+    ///     卡纳克城塞
+    /// </summary>
+    public static CrescentAetheryte CrownOfKarnak { get; } = new(5576, new(454.0f, 70.0f, 530.6f), CrescentAetherytePoint.CrownOfKarnak);
+
+    /// <summary>
+    ///     沉没圣堂前
+    /// </summary>
+    public static CrescentAetheryte SinkingSanctuary { get; } = new(5572, new(358.2f, 45.1f, -557.3f), CrescentAetherytePoint.SinkingSanctuary);
+
+    /// <summary>
+    ///     浮游遗迹
+    /// </summary>
+    public static CrescentAetheryte SuspendedMasonry { get; } = new(5573, new(-549.2f, 67.2f, 597.2f), CrescentAetherytePoint.SuspendedMasonry);
+
+    /// <summary>
+    ///     腐坏的街道前
+    /// </summary>
+    public static CrescentAetheryte MolderingOutskirts { get; } = new(5574, new(-386.6f, 39.2f, -437.6f), CrescentAetherytePoint.MolderingOutskirts);
+
+    /// <summary>
+    ///     妖火渔村
+    /// </summary>
+    public static CrescentAetheryte UnhallowedHamlet { get; } = new(5575, new(-15.7f, 2.1f, -44.5f), CrescentAetherytePoint.UnhallowedHamlet);
+
+    /// <summary>
     ///     南征之章中所有 魔路 / 简易魔路 数据
     /// </summary>
     public static List<CrescentAetheryte> SouthHornAetherytes { get; } =
     [
         ExpeditionBaseCamp, WanderersHaven, CrystallizedCaverns, Eldergrowth, Stonemarsh
+    ];
+
+    /// <summary>
+    ///     北征之章中所有 魔路 / 简易魔路 数据
+    /// </summary>
+    public static List<CrescentAetheryte> NorthHornAetherytes { get; } =
+    [
+        NorthHornBaseCamp, CrownOfKarnak, SinkingSanctuary, SuspendedMasonry, MolderingOutskirts, UnhallowedHamlet
     ];
 
     /// <summary>
@@ -166,5 +204,35 @@ public enum CrescentAetherytePoint : byte
     /// <summary>
     ///     石塔水沼
     /// </summary>
-    Stonemarsh = 4
+    Stonemarsh = 4,
+
+    /// <summary>
+    ///     北部调查队营地
+    /// </summary>
+    NorthHornBaseCamp = 5,
+
+    /// <summary>
+    ///     卡纳克城塞
+    /// </summary>
+    CrownOfKarnak = 6,
+
+    /// <summary>
+    ///     沉没圣堂前
+    /// </summary>
+    SinkingSanctuary = 7,
+
+    /// <summary>
+    ///     浮游遗迹
+    /// </summary>
+    SuspendedMasonry = 8,
+
+    /// <summary>
+    ///     腐坏的街道前
+    /// </summary>
+    MolderingOutskirts = 9,
+
+    /// <summary>
+    ///     妖火渔村
+    /// </summary>
+    UnhallowedHamlet = 10
 }
