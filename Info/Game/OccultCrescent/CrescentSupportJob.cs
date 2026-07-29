@@ -347,6 +347,13 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     }
 
     /// <summary>
+    ///     是否已经解锁指定辅助技能
+    /// </summary>
+    /// <returns>辅助技能不存在或在新月岛副本区域外调用返回 false</returns>
+    public bool IsActionUnlocked(uint actionID) =>
+        Actions.TryGetValue(actionID, out var levelRequired) && levelRequired <= CurrentLevel;
+
+    /// <summary>
     ///     是否该辅助职业的长效增益效果技能已解锁
     /// </summary>
     /// <returns>在新月岛副本区域外调用返回 false</returns>
@@ -354,10 +361,8 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     {
         if (LongTimeStatusActionID == 0 || LongTimeStatusID == 0)
             return false;
-        if (!Actions.TryGetValue(LongTimeStatusActionID, out var levelRequired))
-            return false;
 
-        return levelRequired <= CurrentLevel;
+        return IsActionUnlocked(LongTimeStatusActionID);
     }
 
     /// <summary>
@@ -365,7 +370,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// </summary>
     /// <returns>本地玩家为 null 时调用返回 false</returns>
     public bool IsWithLongTimeStatus() =>
-        LongTimeStatusID != 0 && GetCurrentSupportJob() == this && LocalPlayerState.HasStatus(LongTimeStatusID, out _);
+        LongTimeStatusID != 0 && LocalPlayerState.HasStatus(LongTimeStatusID, out _);
 
     /// <summary>
     ///     更换至该辅助职业
