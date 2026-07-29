@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Dalamud.Game.ClientState.Objects.Enums;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Common.Math;
@@ -351,7 +352,9 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// </summary>
     /// <returns>辅助技能不存在或在新月岛副本区域外调用返回 false</returns>
     public bool IsActionUnlocked(uint actionID) =>
-        Actions.TryGetValue(actionID, out var levelRequired) && levelRequired <= CurrentLevel;
+        Actions.TryGetValue(actionID, out var levelRequired) &&
+        levelRequired <= CurrentLevel                       &&
+        ActionManager.IsActionUnlocked(actionID);
 
     /// <summary>
     ///     是否该辅助职业的长效增益效果技能已解锁
