@@ -130,7 +130,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
 
         if (LuminaGetter.TryGetRow<DynamicEvent>(dataID, out _))
         {
-            HashSet<uint> forkTowers = [48];
+            HashSet<uint> forkTowers = [48, 64, 65];
             Type = forkTowers.Contains(dataID) ? CrescentEventType.ForkTower : CrescentEventType.CE;
 
             if (TryGetCEData(out var ceData))
@@ -143,7 +143,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         }
         else
         {
-            HashSet<uint> magicPots = [1976, 1977];
+            HashSet<uint> magicPots = [1976, 1977, 2072, 2073];
             Type = magicPots.Contains(dataID) ? CrescentEventType.MagicPot : CrescentEventType.FATE;
 
             if (TryGetFateData(out var fateData))
