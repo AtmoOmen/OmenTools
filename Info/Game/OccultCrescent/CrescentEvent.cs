@@ -52,9 +52,11 @@ public class CrescentEvent : IEquatable<CrescentEvent>
     public CrescentEventType Type { get; }
 
     /// <summary>
-    ///     掉落的 半魂晶 物品 ID (两岐塔 类型无此掉落)
+    ///     特殊武器制作所需要的材料物品 ID
+    ///     南征之章：半魂晶；北征之章：消幻晶
+    ///     (两岐塔 类型无此掉落)
     /// </summary>
-    public uint DemiatmaID { get; }
+    public uint SpecialWeaponMaterialID { get; }
 
     /// <summary>
     ///     特殊奖励物品 ID (仅 CE 类型有此掉落)
@@ -155,7 +157,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         }
 
         if (Type != CrescentEventType.ForkTower)
-            DemiatmaID = EventToItem.GetValueOrDefault(dataID, 0U);
+            SpecialWeaponMaterialID = EventToItem.GetValueOrDefault(dataID, 0U);
 
         if (Type == CrescentEventType.CE)
             SpecialRewards = CEToItems.GetValueOrDefault(dataID, []);
@@ -303,7 +305,41 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         [1964] = 47749,
         [1971] = 47749,
         [44]   = 47749,
-        [34]   = 47749
+        [34]   = 47749,
+
+        // 消幻晶α (50974)
+        [2074] = 50974,
+        [2077] = 50974,
+        [2081] = 50974,
+        [2082] = 50974,
+        [52]   = 50974,
+        [55]   = 50974,
+        [59]   = 50974,
+        [62]   = 50974,
+        [49]   = 50974,
+
+        // 消幻晶β (50975)
+        [2073] = 50975,
+        [2078] = 50975,
+        [2075] = 50975,
+        [2080] = 50975,
+        [2084] = 50975,
+        [51]   = 50975,
+        [53]   = 50975,
+        [54]   = 50975,
+        [57]   = 50975,
+        [60]   = 50975,
+
+        // 消幻晶γ (50976)
+        [2072] = 50976,
+        [2076] = 50976,
+        [2079] = 50976,
+        [2083] = 50976,
+        [50]   = 50976,
+        [56]   = 50976,
+        [58]   = 50976,
+        [61]   = 50976,
+        [63]   = 50976
     };
 
     public static Dictionary<uint, List<uint>> CEToItems { get; } = new()
@@ -321,7 +357,27 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         // 双足狮人——跃立狮
         [42] = [47757],
         // 黑色连队
-        [34] = [47752, 47732]
+        [34] = [47752, 47732],
+        // 禁书化形——古术魔典
+        [52] = [51979],
+        // 诅咒的继承者——惨白魔人
+        [59] = [51983, 51972],
+        // 纯白守护者——雪石膏之剑
+        [51] = [51987],
+        // 暗红尸骸——赤龙
+        [53] = [51986],
+        // 暴食咒鬼——阿尔戈尔
+        [54] = [51981],
+        // 天道好轮回——魔亡灵法师
+        [57] = [51984, 51974],
+        // 魔法军团——小小法师
+        [60] = [51980],
+        // 魔女复制体——卡洛菲斯提莉二重身
+        [50] = [51988, 49827],
+        // 孤岛的绑架犯——诱拐魔
+        [61] = [51985],
+        // 拟态使魔——变形法师
+        [63] = [51982]
     };
 
     public static HashSet<uint> LoreItems { get; } =
@@ -346,7 +402,27 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         // 魔陶洛斯
         47737,
         // 撒娇罐
-        47738
+        47738,
+        // 古术魔典
+        51979,
+        // 小小法师
+        51980,
+        // 阿尔戈尔
+        51981,
+        // 变形法师
+        51982,
+        // 惨白魔人
+        51983,
+        // 魔亡灵法师
+        51984,
+        // 诱拐魔
+        51985,
+        // 赤龙
+        51986,
+        // 雪石膏之剑
+        51987,
+        // 卡洛菲斯提莉二重身
+        51988
     ];
 
     public static Dictionary<uint, byte> JobItemToJob { get; } = new()
@@ -368,7 +444,11 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         // 药剂师
         [47758] = 10,
         // 盗贼
-        [47759] = 12
+        [47759] = 12,
+        // 青魔法师
+        [51972] = 21,
+        // 亡灵法师
+        [51974] = 23
     };
 
     #endregion
