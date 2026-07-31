@@ -20,11 +20,19 @@ namespace OmenTools.OmenService;
 
 public unsafe class GameState : OmenServiceBase<GameState>
 {
-    private static readonly CompSig FateDirectorSetupSig = new("E8 ?? ?? ?? ?? 48 39 37");
+    private static readonly CompSig ContentReplyManagerSig =
+        new("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 45 33 C0 48 8D 57 ?? 41 8B CE E8 ?? ?? ?? ?? 48 8D 8F");
+    private static readonly CompSig ZoneServerIDOffsetSig =
+        new
+        (
+            "0F 11 83 ?? ?? ?? ?? 0F 10 4F ?? 0F 11 8B ?? ?? ?? ?? 0F 10 47 ?? 0F 11 83 ?? ?? ?? ?? 0F 10 4F ?? 0F 11 8B ?? ?? ?? ?? 0F 10 47 ?? 0F 11 83 ?? ?? ?? ?? 0F 10 4F ?? 0F 11 8B ?? ?? ?? ?? 0F 10 47 ?? 0F 11 83 ?? ?? ?? ?? 0F 10 4F"
+        );
+    private static readonly nint ContentReplyManagerPtr = ContentReplyManagerSig.GetStatic();
+    private static readonly nint ZoneServerIDOffset     = ZoneServerIDOffsetSig.GetStatic();
 
-    private delegate nint FateDirectorSetupDelegate(uint rowID, nint a2, nint a3);
-
-    private Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
+    private static readonly CompSig                          FateDirectorSetupSig = new("E8 ?? ?? ?? ?? 48 39 37");
+    private delegate        nint                             FateDirectorSetupDelegate(uint rowID, nint a2, nint a3);
+    private                 Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
 
     private TaskHelper taskHelper = null!;
 
@@ -311,6 +319,12 @@ public unsafe class GameState : OmenServiceBase<GameState>
     /// </summary>
     public static Map MapData =>
         LuminaGetter.GetRow<Map>(Map).GetValueOrDefault();
+
+    /// <summary>
+    ///     当前区域服务器 ID
+    /// </summary>
+    public static ushort ZoneServerID =>
+        *(ushort*)(ContentReplyManagerPtr + ZoneServerIDOffset);
 
     /// <summary>
     ///     当前 TerritoryType ID
