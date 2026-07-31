@@ -1,7 +1,5 @@
 using System.Numerics;
-using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
-using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -9,77 +7,39 @@ using Lumina.Data;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Lumina;
-using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
-using OmenTools.Threading.TaskHelper;
 using Action = System.Action;
 using Map = Lumina.Excel.Sheets.Map;
 using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
 namespace OmenTools.OmenService;
 
-public unsafe class GameState : OmenServiceBase<GameState>
+public unsafe partial class GameState : OmenServiceBase<GameState>
 {
-    private static readonly CompSig ContentReplyManagerSig =
-        new("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 45 33 C0 48 8D 57 ?? 41 8B CE E8 ?? ?? ?? ?? 48 8D 8F");
-    private static readonly CompSig ZoneServerIDOffsetSig =
-        new
-        (
-            "0F 11 83 ?? ?? ?? ?? 0F 10 4F ?? 0F 11 8B ?? ?? ?? ?? 0F 10 47 ?? 0F 11 83 ?? ?? ?? ?? 0F 10 4F ?? 0F 11 8B ?? ?? ?? ?? 0F 10 47 ?? 0F 11 83 ?? ?? ?? ?? 0F 10 4F ?? 0F 11 8B ?? ?? ?? ?? 0F 10 47 ?? 0F 11 83 ?? ?? ?? ?? 0F 10 4F"
-        );
-    private static readonly nint ContentReplyManagerPtr = ContentReplyManagerSig.GetStatic();
-    private static readonly nint ZoneServerIDOffset     = ZoneServerIDOffsetSig.GetStatic();
+    #region 事件
 
-    private static readonly CompSig                          FateDirectorSetupSig = new("E8 ?? ?? ?? ?? 48 39 37");
-    private delegate        nint                             FateDirectorSetupDelegate(uint rowID, nint a2, nint a3);
-    private                 Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
+    /// <summary>
+    ///     进入临危受命范围时
+    /// </summary>
+    public event Action<uint>? EnterFate;
 
-    private TaskHelper taskHelper = null!;
+    /// <summary>
+    ///     登录且玩家可用时
+    /// </summary>
+    public event Action? Login;
 
-    protected override void Init()
-    {
-        taskHelper = new() { TimeoutMS = int.MaxValue };
+    /// <summary>
+    ///     登出时
+    /// </summary>
+    public event Action? Logout;
 
-        DService.Instance().ClientState.Login  += OnDalamudLogin;
-        DService.Instance().ClientState.Logout += OnDalamudLogout;
+    /// <summary>
+    ///     服务器变更时
+    /// </summary>
+    public event Action<uint>? WorldChanged;
 
-        FateDirectorSetupHook ??= FateDirectorSetupSig.GetHook<FateDirectorSetupDelegate>(FateDirectorSetupDetour);
-        FateDirectorSetupHook.Enable();
-    }
-
-    protected override void Uninit()
-    {
-        DService.Instance().ClientState.Login  -= OnDalamudLogin;
-        DService.Instance().ClientState.Logout -= OnDalamudLogout;
-
-        taskHelper.Dispose();
-        taskHelper = null;
-
-        FateDirectorSetupHook?.Dispose();
-        FateDirectorSetupHook = null;
-    }
-
-    private void OnDalamudLogin()
-    {
-        taskHelper.Abort();
-
-        taskHelper.Enqueue(() => IsLoggedIn);
-        taskHelper.Enqueue(() => Login?.Invoke());
-    }
-
-    private void OnDalamudLogout(int type, int code) =>
-        Logout?.Invoke();
-
-    private nint FateDirectorSetupDetour(uint rowID, nint a2, nint a3)
-    {
-        var original = FateDirectorSetupHook.Original(rowID, a2, a3);
-
-        if (rowID == 102401 && FateManager.Instance()->CurrentFate != null)
-            EnterFate?.Invoke(FateManager.Instance()->CurrentFate->FateId);
-
-        return original;
-    }
-
+    #endregion
+    
     /// <summary>
     ///     当前是否位于可以使用 PVE 战斗技能的区域
     /// </summary>
@@ -129,21 +89,6 @@ public unsafe class GameState : OmenServiceBase<GameState>
     /// </summary>
     public static bool IsKR => 
         Framework.Instance()->ClientLanguage == 6;
-
-    /// <summary>
-    ///     进入临危受命范围时
-    /// </summary>
-    public event Action<uint>? EnterFate;
-
-    /// <summary>
-    ///     登录且玩家可用时
-    /// </summary>
-    public event Action? Login;
-
-    /// <summary>
-    ///     登出时
-    /// </summary>
-    public event Action? Logout;
 
     /// <summary>
     ///     是否已经安全登录且玩家可用

@@ -48,16 +48,31 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     
     protected override void Init()
     {
-        DService.Instance().ClientState.TerritoryChanged += OnZoneChanged;
-        GameState.Instance().Login += OnLogin;
+        if (GameState.IsLoggedIn)
+        {
+            BuildRecords();
+            RefreshRecords();
+        }
         
-        OnLogin();
+        DService.Instance().ClientState.TerritoryChanged += OnZoneChanged;
+        GameState.Instance().Login                       += OnLogin;
+        GameState.Instance().WorldChanged                += OnWorldChanged;
     }
 
     protected override void Uninit()
     {
         DService.Instance().ClientState.TerritoryChanged -= OnZoneChanged;
         GameState.Instance().Login                       -= OnLogin;
+        GameState.Instance().WorldChanged                -= OnWorldChanged;
+    }
+    
+    private void OnWorldChanged
+    (
+        uint obj
+    )
+    {
+        BuildRecords();
+        RefreshRecords();
     }
 
     private void OnLogin()
