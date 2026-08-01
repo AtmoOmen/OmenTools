@@ -8,5 +8,11 @@ public enum LGBFileType
     
     PlanEvent,
     
-    BG
+    BG,
+    
+    PlanLive,
+    
+    Sound,
+    
+    VFX
 }
