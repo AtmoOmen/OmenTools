@@ -133,7 +133,11 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
                 preFunction(ref isPrevented, opcode, ref packet, ref isPrioritize);
 
                 if (isPrevented)
+                {
+                    if (Config.ShowReceivedPacketOpcodeLog)
+                        DLog.Debug("[Game Packet Manager] 上方该包已被阻止发送");
                     return false;
+                }
             }
         }
 
