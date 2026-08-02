@@ -124,7 +124,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
     /// <summary>
     ///     辅助青魔法师
     /// </summary>
-    public static CrescentSupportJob BlueMage { get; } = new(21, CrescentSupportJobType.BlueMage, CrescentSupportJobUnlockType.CriticalEncounter, 63);
+    public static CrescentSupportJob BlueMage { get; } = new(21, CrescentSupportJobType.BlueMage, CrescentSupportJobUnlockType.CriticalEncounter, 59);
 
     /// <summary>
     ///     辅助赤魔法师
