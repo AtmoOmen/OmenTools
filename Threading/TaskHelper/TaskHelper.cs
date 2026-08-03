@@ -90,6 +90,16 @@ public partial class TaskHelper : IDisposable
     public bool IsBusy => CurrentTasksCount > 0;
 
     /// <summary>
+    ///     当 TaskHelper 进入繁忙状态时执行
+    /// </summary>
+    public Action? EnterBusyAction { get; set; }
+
+    /// <summary>
+    ///     当 TaskHelper 离开繁忙状态时执行
+    /// </summary>
+    public Action? LeaveBusyAction { get; set; }
+
+    /// <summary>
     ///     当单一任务超时时的全局控制逻辑
     ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.TimeoutBehaviour" />) 则以任务的为判断标准
     /// </summary>
@@ -156,8 +166,9 @@ public partial class TaskHelper : IDisposable
     private Channel<ITaskHelperMessage>    TaskChannel  { get; } = CreateTaskChannel();
     private CancellationTokenSource        CancelSource { get; } = new();
 
-    private volatile int pendingTaskCount;
-    private volatile int queueTaskCount;
+    private volatile int  pendingTaskCount;
+    private volatile int  queueTaskCount;
+    private volatile bool isBusyState;
 
     private async Task ProcessChannelAsync(CancellationToken ct)
     {
@@ -168,7 +179,6 @@ public partial class TaskHelper : IDisposable
                 if (CurrentTask == null && queueTaskCount == 0 && pendingTaskCount == 0)
                     await TaskChannel.Reader.WaitToReadAsync(ct).ConfigureAwait(false);
 
-                var isBusy = false;
                 await IFramework.Instance().Run
                 (
                     async () =>
@@ -193,14 +203,11 @@ public partial class TaskHelper : IDisposable
                             if (CurrentTask == null && TaskIntervalMS > 0)
                                 await Task.Delay(TaskIntervalMS, ct).ConfigureAwait(false);
                         }
-                        else
-                            isBusy = queueTaskCount > 0 || pendingTaskCount > 0;
+
+                        UpdateBusyState();
                     },
                     ct
                 ).ConfigureAwait(false);
-
-                // 占位用
-                _ = isBusy;
             }
         }
         catch (OperationCanceledException)
@@ -210,6 +217,26 @@ public partial class TaskHelper : IDisposable
         catch (Exception ex)
         {
             LogWarning($"[TaskHelper] 异步轮询出现异常: {ex}");
+        }
+    }
+
+    private void UpdateBusyState()
+    {
+        var isBusy = IsBusy;
+        if (isBusy == isBusyState) return;
+
+        isBusyState = isBusy;
+
+        try
+        {
+            if (isBusy)
+                EnterBusyAction?.Invoke();
+            else
+                LeaveBusyAction?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            DLog.Error($"执行 {(isBusy ? "进入繁忙" : "离开繁忙")} 状态时的自定义逻辑发生错误", ex);
         }
     }
 
