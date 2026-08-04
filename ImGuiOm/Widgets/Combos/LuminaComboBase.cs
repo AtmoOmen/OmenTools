@@ -170,8 +170,6 @@ public abstract class LuminaComboBase<T>
     {
         if (mode == ComboSelectionMode.Radio)
         {
-            if (SelectedID == rowID) return false;
-
             SelectedID = rowID;
             return true;
         }
