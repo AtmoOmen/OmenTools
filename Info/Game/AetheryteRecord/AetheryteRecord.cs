@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.AetheryteRecord.Data;
 using OmenTools.Info.Game.AetheryteRecord.Enums;
@@ -103,6 +105,30 @@ public record AetheryteRecord
         var info = GetAetheryteState(this);
         State = info.State;
         Cost  = info.Cost;
+    }
+
+    public unsafe bool UseAethernet()
+    {
+        var agent = AgentTelepotTown.Instance();
+        if (agent == null ||
+            !agent->IsAgentActive())
+            return false;
+
+        var data = (byte*)agent->Data;
+        if (data == null) 
+            return false;
+
+        // TODO: FFCS
+        var entries = (AetheryteEntry*)(data + 12);
+        for (byte index = 0; index < data[9]; index++)
+        {
+            if (entries[index].AetheryteID != RowID) continue;
+
+            agent->TeleportToAetheryte(index);
+            return true;
+        }
+
+        return false;
     }
 
     public static AetheryteRecord? Parse(Aetheryte data)
@@ -292,4 +318,12 @@ public record AetheryteRecord
 
     public override int GetHashCode() =>
         HashCode.Combine(RowID, SubIndex, Group);
+
+    // TODO: FFCS
+    [StructLayout(LayoutKind.Explicit, Size = 0x18)]
+    private struct AetheryteEntry
+    {
+        [FieldOffset(0x00)] public uint AetheryteID;
+        [FieldOffset(0x13)] public byte Locked;
+    }
 }
