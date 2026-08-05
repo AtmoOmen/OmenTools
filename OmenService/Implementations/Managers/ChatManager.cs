@@ -286,7 +286,7 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
     {
         ArgumentNullException.ThrowIfNull(commands);
         
-        var commandLines = commands.Split(["\r\n", "\n", "\r"], StringSplitOptions.None);
+        var commandLines = commands.Split(["\r\n", "\n", "\r"], StringSplitOptions.RemoveEmptyEntries);
         if (commandLines.Length > MAX_MACRO_LINES)
             throw new ArgumentOutOfRangeException(nameof(commands), $"宏命令不能超过 {MAX_MACRO_LINES} 行");
 
@@ -305,7 +305,11 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
 
         var macro = new RaptureMacroModule.Macro();
         for (var i = 0; i < commands.Length; i++)
+        {
             macro.Lines[i].SetString(commands[i]);
+            if (i == 0)
+                macro.Lines[i + 1].SetString("\0");
+        }
 
         ExecuteMacro(&macro);
     }
