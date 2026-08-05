@@ -5,7 +5,11 @@ namespace OmenTools.ImGuiOm.Widgets.Combos;
 
 public class ItemSelectCombo : LuminaComboBase<Item>
 {
-    public ItemSelectCombo(string id, IEnumerable<Item> items = null) : base(id, null)
+    public ItemSelectCombo
+    (
+        string            id,
+        IEnumerable<Item> items = null
+    ) : base(id, null)
     {
         var data = items ?? LuminaGetter.Get<Item>().Where(x => !string.IsNullOrEmpty(x.Name.ToString()));
         Searcher = new LuminaSearcher<Item>
@@ -26,27 +30,39 @@ public class ItemSelectCombo : LuminaComboBase<Item>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    protected override string GetPreviewText(ComboSelectionMode mode)
+    protected override string GetPreviewText
+    (
+        ComboSelectionMode mode
+    )
     {
         if (mode == ComboSelectionMode.Radio)
         {
-            return SelectedItem.RowId == 0
-                       ? string.Empty
-                       : $"[{SelectedItem.LevelItem.RowId}] {SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
+            return SelectedItem.RowId == 0 ?
+                       string.Empty :
+                       $"[{SelectedItem.LevelItem.RowId}] {SelectedItem.Name.ToString()}";
         }
 
-        return SelectedItems.Count == 0
-                   ? string.Empty
-                   : $"[{SelectedItems.First().LevelItem.RowId}] {SelectedItems.First().Name.ToString()} ({SelectedItems.First().RowId})...";
+        return SelectedItems.Count == 0 ?
+                   string.Empty :
+                   $"[{SelectedItems.First().LevelItem.RowId}] {SelectedItems.First().Name.ToString()}...";
     }
 
     protected override int GetTableColumnCount() =>
         3;
 
-    protected override void SetupColumns(ComboSelectionMode mode)
+    protected override void SetupColumns
+    (
+        ComboSelectionMode mode
+    )
     {
         ImGui.TableSetupColumn
-            (mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
+        (
+            mode == ComboSelectionMode.Radio ?
+                "RadioButton" :
+                "Checkbox",
+            ImGuiTableColumnFlags.WidthFixed,
+            ImGui.GetTextLineHeightWithSpacing()
+        );
         ImGui.TableSetupColumn("ItemLevel", ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize($"14{LuminaWrapper.GetAddonText(7873)}").X);
         ImGui.TableSetupColumn("Item",      ImGuiTableColumnFlags.WidthStretch, 80);
     }
@@ -61,11 +77,16 @@ public class ItemSelectCombo : LuminaComboBase<Item>
         ImGui.TextUnformatted(LuminaWrapper.GetAddonText(520));
     }
 
-    protected override bool DrawDataColumns(Item item, ComboSelectionMode mode, bool isSelected)
+    protected override bool DrawDataColumns
+    (
+        Item               item,
+        ComboSelectionMode mode,
+        bool               isSelected
+    )
     {
         var itemName     = item.Name.ToString();
         var description  = item.Description.ToString();
-        var displayText  = $"{itemName} ({item.RowId})";
+        var displayText  = $"{itemName}";
         var selectableID = $"##Item_{item.RowId}_{itemName}";
 
         ImGui.TableNextColumn();
@@ -73,16 +94,16 @@ public class ItemSelectCombo : LuminaComboBase<Item>
 
         ImGui.TableNextColumn();
 
-        var clicked = DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out var texture)
-                          ? ImGuiOm.SelectableImageWithText
+        var clicked = DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out var texture) ?
+                          ImGuiOm.SelectableImageWithText
                           (
                               texture.GetWrapOrEmpty().Handle,
                               new(ImGui.GetTextLineHeightWithSpacing()),
                               displayText,
                               isSelected,
                               GetSelectableFlags(mode)
-                          )
-                          : ImGui.Selectable
+                          ) :
+                          ImGui.Selectable
                           (
                               $"{displayText}{selectableID}",
                               isSelected,

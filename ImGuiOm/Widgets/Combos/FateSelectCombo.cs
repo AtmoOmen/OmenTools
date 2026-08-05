@@ -5,7 +5,11 @@ namespace OmenTools.ImGuiOm.Widgets.Combos;
 
 public class FateSelectCombo : LuminaComboBase<Fate>
 {
-    public FateSelectCombo(string id, IEnumerable<Fate> fates = null) : base(id, null)
+    public FateSelectCombo
+    (
+        string            id,
+        IEnumerable<Fate> fates = null
+    ) : base(id, null)
     {
         var data = fates ?? LuminaGetter.Get<Fate>().Where(x => !string.IsNullOrEmpty(x.Name.ToString())).OrderBy(x => x.ClassJobLevel);
         Searcher = new LuminaSearcher<Fate>
@@ -24,30 +28,45 @@ public class FateSelectCombo : LuminaComboBase<Fate>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    protected override string GetPreviewText(ComboSelectionMode mode)
+    protected override string GetPreviewText
+    (
+        ComboSelectionMode mode
+    )
     {
         if (mode == ComboSelectionMode.Radio)
         {
-            return SelectedItem.RowId == 0
-                       ? string.Empty
-                       : $"{SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
+            return SelectedItem.RowId == 0 ?
+                       string.Empty :
+                       $"{SelectedItem.Name.ToString()}";
         }
 
-        return SelectedItems.Count == 0
-                   ? string.Empty
-                   : $"[{SelectedItems.Count}] {SelectedItems.First().Name.ToString()} ({SelectedItems.First().RowId})...";
+        return SelectedItems.Count == 0 ?
+                   string.Empty :
+                   $"[{SelectedItems.Count}] {SelectedItems.First().Name.ToString()}...";
     }
 
     protected override int GetTableColumnCount() =>
         3;
 
-    protected override bool CanDrawItem(Fate item) =>
+    protected override bool CanDrawItem
+    (
+        Fate item
+    ) =>
         DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out _);
 
-    protected override void SetupColumns(ComboSelectionMode mode)
+    protected override void SetupColumns
+    (
+        ComboSelectionMode mode
+    )
     {
         ImGui.TableSetupColumn
-            (mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
+        (
+            mode == ComboSelectionMode.Radio ?
+                "RadioButton" :
+                "Checkbox",
+            ImGuiTableColumnFlags.WidthFixed,
+            ImGui.GetTextLineHeightWithSpacing()
+        );
         ImGui.TableSetupColumn("Level", ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize("1234").X);
         ImGui.TableSetupColumn("Fate",  ImGuiTableColumnFlags.WidthStretch, 40);
     }
@@ -62,7 +81,12 @@ public class FateSelectCombo : LuminaComboBase<Fate>
         ImGui.TextUnformatted(LuminaWrapper.GetAddonText(1340));
     }
 
-    protected override bool DrawDataColumns(Fate fate, ComboSelectionMode mode, bool isSelected)
+    protected override bool DrawDataColumns
+    (
+        Fate               fate,
+        ComboSelectionMode mode,
+        bool               isSelected
+    )
     {
         DService.Instance().Texture.TryGetFromGameIcon(new(fate.Icon), out var texture);
 

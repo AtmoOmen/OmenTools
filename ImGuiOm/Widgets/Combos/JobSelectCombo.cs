@@ -6,7 +6,11 @@ namespace OmenTools.ImGuiOm.Widgets.Combos;
 
 public class JobSelectCombo : LuminaComboBase<ClassJob>
 {
-    public JobSelectCombo(string id, IEnumerable<ClassJob> jobs = null) : base(id, null)
+    public JobSelectCombo
+    (
+        string                id,
+        IEnumerable<ClassJob> jobs = null
+    ) : base(id, null)
     {
         var data = jobs ??
                    LuminaGetter.Get<ClassJob>()
@@ -30,29 +34,40 @@ public class JobSelectCombo : LuminaComboBase<ClassJob>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    protected override string GetPreviewText(ComboSelectionMode mode)
+    protected override string GetPreviewText
+    (
+        ComboSelectionMode mode
+    )
     {
         if (mode == ComboSelectionMode.Radio)
         {
-            return SelectedItem.RowId == 0
-                       ? string.Empty
-                       : $"[{SelectedItem.ClassJobCategory.ValueNullable?.Name.ToString()}] {SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
+            return SelectedItem.RowId == 0 ?
+                       string.Empty :
+                       $"[{SelectedItem.ClassJobCategory.ValueNullable?.Name.ToString()}] {SelectedItem.Name.ToString()}";
         }
 
-        return SelectedItems.Count == 0
-                   ? string.Empty
-                   : $"[{SelectedItems.First().ClassJobCategory.ValueNullable?.Name.ToString()}] " +
-                     $"{SelectedItems.First().Name.ToString()} "                                   +
-                     $"({SelectedItems.First().RowId})...";
+        return SelectedItems.Count == 0 ?
+                   string.Empty :
+                   $"[{SelectedItems.First().ClassJobCategory.ValueNullable?.Name.ToString()}] " +
+                   $"{SelectedItems.First().Name.ToString()}...";
     }
 
     protected override int GetTableColumnCount() =>
         4;
 
-    protected override void SetupColumns(ComboSelectionMode mode)
+    protected override void SetupColumns
+    (
+        ComboSelectionMode mode
+    )
     {
         ImGui.TableSetupColumn
-            (mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
+        (
+            mode == ComboSelectionMode.Radio ?
+                "RadioButton" :
+                "Checkbox",
+            ImGuiTableColumnFlags.WidthFixed,
+            ImGui.GetTextLineHeightWithSpacing()
+        );
         ImGui.TableSetupColumn("Icon",     ImGuiTableColumnFlags.WidthFixed,   ImGui.GetTextLineHeightWithSpacing());
         ImGui.TableSetupColumn("Job",      ImGuiTableColumnFlags.WidthStretch, 70);
         ImGui.TableSetupColumn("Category", ImGuiTableColumnFlags.WidthStretch, 30);
@@ -69,10 +84,18 @@ public class JobSelectCombo : LuminaComboBase<ClassJob>
         ImGui.TextUnformatted(LuminaWrapper.GetAddonText(7542));
     }
 
-    protected override bool DrawDataColumns(ClassJob job, ComboSelectionMode mode, bool isSelected)
+    protected override bool DrawDataColumns
+    (
+        ClassJob           job,
+        ComboSelectionMode mode,
+        bool               isSelected
+    )
     {
-        var iconID = 62100 + (job.RowId == 0 ? 44 : job.RowId);
-        var icon   = ImageHelper.GetGameIcon(iconID);
+        var iconID = 62100 +
+                     (job.RowId == 0 ?
+                          44 :
+                          job.RowId);
+        var icon = ImageHelper.GetGameIcon(iconID);
 
         ImGui.TableNextColumn();
         ImGui.Image(icon.Handle, new(ImGui.GetTextLineHeightWithSpacing()));

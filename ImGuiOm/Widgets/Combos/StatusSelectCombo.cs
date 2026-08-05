@@ -1,4 +1,3 @@
-using OmenTools.Info.Game.Data;
 using OmenTools.Info.Lumina;
 using OmenTools.Interop.Game.Lumina;
 using Status = Lumina.Excel.Sheets.Status;
@@ -7,7 +6,11 @@ namespace OmenTools.ImGuiOm.Widgets.Combos;
 
 public class StatusSelectCombo : LuminaComboBase<Status>
 {
-    public StatusSelectCombo(string id, IEnumerable<Status> statuses = null) : base(id, null)
+    public StatusSelectCombo
+    (
+        string              id,
+        IEnumerable<Status> statuses = null
+    ) : base(id, null)
     {
         var data = statuses ?? Sheets.Statuses.Values;
         Searcher = new LuminaSearcher<Status>
@@ -25,30 +28,45 @@ public class StatusSelectCombo : LuminaComboBase<Status>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    protected override string GetPreviewText(ComboSelectionMode mode)
+    protected override string GetPreviewText
+    (
+        ComboSelectionMode mode
+    )
     {
         if (mode == ComboSelectionMode.Radio)
         {
-            return SelectedItem.RowId == 0
-                       ? string.Empty
-                       : $"{SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
+            return SelectedItem.RowId == 0 ?
+                       string.Empty :
+                       $"{SelectedItem.Name.ToString()}";
         }
 
-        return SelectedItems.Count == 0
-                   ? string.Empty
-                   : $"[{SelectedItems.Count}] {SelectedItems.First().Name.ToString()} ({SelectedItems.First().RowId})...";
+        return SelectedItems.Count == 0 ?
+                   string.Empty :
+                   $"[{SelectedItems.Count}] {SelectedItems.First().Name.ToString()}...";
     }
 
     protected override int GetTableColumnCount() =>
         3;
 
-    protected override bool CanDrawItem(Status item) =>
+    protected override bool CanDrawItem
+    (
+        Status item
+    ) =>
         DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out _);
 
-    protected override void SetupColumns(ComboSelectionMode mode)
+    protected override void SetupColumns
+    (
+        ComboSelectionMode mode
+    )
     {
         ImGui.TableSetupColumn
-            (mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
+        (
+            mode == ComboSelectionMode.Radio ?
+                "RadioButton" :
+                "Checkbox",
+            ImGuiTableColumnFlags.WidthFixed,
+            ImGui.GetTextLineHeightWithSpacing()
+        );
         ImGui.TableSetupColumn("Job",    ImGuiTableColumnFlags.WidthStretch, 40);
         ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.WidthStretch, 50);
     }
@@ -63,7 +81,12 @@ public class StatusSelectCombo : LuminaComboBase<Status>
         ImGui.TextUnformatted(LuminaWrapper.GetAddonText(1340));
     }
 
-    protected override bool DrawDataColumns(Status status, ComboSelectionMode mode, bool isSelected)
+    protected override bool DrawDataColumns
+    (
+        Status             status,
+        ComboSelectionMode mode,
+        bool               isSelected
+    )
     {
         DService.Instance().Texture.TryGetFromGameIcon(new(status.Icon), out var texture);
 

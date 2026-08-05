@@ -5,7 +5,11 @@ namespace OmenTools.ImGuiOm.Widgets.Combos;
 
 public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
 {
-    public ZoneSelectCombo(string id, IEnumerable<TerritoryType> zones = null) : base(id, null)
+    public ZoneSelectCombo
+    (
+        string                     id,
+        IEnumerable<TerritoryType> zones = null
+    ) : base(id, null)
     {
         var data = zones ?? LuminaGetter.Get<TerritoryType>().Where(x => !string.IsNullOrEmpty(x.Name.ToString()));
         Searcher = new LuminaSearcher<TerritoryType>
@@ -25,27 +29,39 @@ public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    protected override string GetPreviewText(ComboSelectionMode mode)
+    protected override string GetPreviewText
+    (
+        ComboSelectionMode mode
+    )
     {
         if (mode == ComboSelectionMode.Radio)
         {
-            return SelectedItem.RowId == 0
-                       ? string.Empty
-                       : $"{SelectedItem.ExtractPlaceName()} ({SelectedItem.RowId})";
+            return SelectedItem.RowId == 0 ?
+                       string.Empty :
+                       $"{SelectedItem.ExtractPlaceName()}";
         }
 
-        return SelectedItems.Count == 0
-                   ? string.Empty
-                   : $"[{SelectedItems.Count}] {SelectedItems.First().ExtractPlaceName()} ({SelectedItems.First().RowId})...";
+        return SelectedItems.Count == 0 ?
+                   string.Empty :
+                   $"[{SelectedItems.Count}] {SelectedItems.First().ExtractPlaceName()}...";
     }
 
     protected override int GetTableColumnCount() =>
         3;
 
-    protected override void SetupColumns(ComboSelectionMode mode)
+    protected override void SetupColumns
+    (
+        ComboSelectionMode mode
+    )
     {
         ImGui.TableSetupColumn
-            (mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
+        (
+            mode == ComboSelectionMode.Radio ?
+                "RadioButton" :
+                "Checkbox",
+            ImGuiTableColumnFlags.WidthFixed,
+            ImGui.GetTextLineHeightWithSpacing()
+        );
         ImGui.TableSetupColumn("Region", ImGuiTableColumnFlags.WidthStretch, 40);
         ImGui.TableSetupColumn("Zone",   ImGuiTableColumnFlags.WidthStretch, 50);
     }
@@ -59,7 +75,12 @@ public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
         ImGui.TextUnformatted(LuminaWrapper.GetAddonText(870));
     }
 
-    protected override bool DrawDataColumns(TerritoryType zone, ComboSelectionMode mode, bool isSelected)
+    protected override bool DrawDataColumns
+    (
+        TerritoryType      zone,
+        ComboSelectionMode mode,
+        bool               isSelected
+    )
     {
         var zoneName   = zone.ExtractPlaceName();
         var regionName = zone.PlaceNameRegion.ValueNullable?.Name.ToString() ?? string.Empty;

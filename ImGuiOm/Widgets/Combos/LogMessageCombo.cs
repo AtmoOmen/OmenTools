@@ -6,7 +6,11 @@ namespace OmenTools.ImGuiOm.Widgets.Combos;
 
 public class LogMessageCombo : LuminaComboBase<LogMessage>
 {
-    public LogMessageCombo(string id, IEnumerable<LogMessage> logMessages = null) : base(id, null)
+    public LogMessageCombo
+    (
+        string                  id,
+        IEnumerable<LogMessage> logMessages = null
+    ) : base(id, null)
     {
         var data = logMessages ?? LuminaGetter.Get<LogMessage>();
         Searcher = new LuminaSearcher<LogMessage>
@@ -24,27 +28,39 @@ public class LogMessageCombo : LuminaComboBase<LogMessage>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    protected override string GetPreviewText(ComboSelectionMode mode)
+    protected override string GetPreviewText
+    (
+        ComboSelectionMode mode
+    )
     {
         if (mode == ComboSelectionMode.Radio)
         {
-            return SelectedItem.RowId == 0
-                       ? string.Empty
-                       : $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItem.RowId)} ({SelectedItem.RowId})";
+            return SelectedItem.RowId == 0 ?
+                       string.Empty :
+                       $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItem.RowId)}";
         }
 
-        return SelectedItems.Count == 0
-                   ? string.Empty
-                   : $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItems.First().RowId)} ({SelectedItems.First().RowId})...";
+        return SelectedItems.Count == 0 ?
+                   string.Empty :
+                   $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItems.First().RowId)}...";
     }
 
     protected override int GetTableColumnCount() =>
         2;
 
-    protected override void SetupColumns(ComboSelectionMode mode)
+    protected override void SetupColumns
+    (
+        ComboSelectionMode mode
+    )
     {
         ImGui.TableSetupColumn
-            (mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox", ImGuiTableColumnFlags.WidthFixed, ImGui.GetTextLineHeightWithSpacing());
+        (
+            mode == ComboSelectionMode.Radio ?
+                "RadioButton" :
+                "Checkbox",
+            ImGuiTableColumnFlags.WidthFixed,
+            ImGui.GetTextLineHeightWithSpacing()
+        );
         ImGui.TableSetupColumn("Text", ImGuiTableColumnFlags.WidthStretch);
     }
 
@@ -56,7 +72,12 @@ public class LogMessageCombo : LuminaComboBase<LogMessage>
         ImGui.TextUnformatted(LuminaWrapper.GetAddonText(2581));
     }
 
-    protected override bool DrawDataColumns(LogMessage logMessage, ComboSelectionMode mode, bool isSelected)
+    protected override bool DrawDataColumns
+    (
+        LogMessage         logMessage,
+        ComboSelectionMode mode,
+        bool               isSelected
+    )
     {
         ImGui.TableNextColumn();
 

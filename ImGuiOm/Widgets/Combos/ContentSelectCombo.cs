@@ -1,5 +1,4 @@
 using Lumina.Excel.Sheets;
-using OmenTools.Info.Game.Data;
 using OmenTools.Info.Lumina;
 using OmenTools.Interop.Game.Lumina;
 
@@ -7,7 +6,11 @@ namespace OmenTools.ImGuiOm.Widgets.Combos;
 
 public class ContentSelectCombo : LuminaComboBase<ContentFinderCondition>
 {
-    public ContentSelectCombo(string id, IEnumerable<ContentFinderCondition> contents = null) : base(id, null)
+    public ContentSelectCombo
+    (
+        string                              id,
+        IEnumerable<ContentFinderCondition> contents = null
+    ) : base(id, null)
     {
         var data = contents ?? Sheets.Contents.Values;
         Searcher = new LuminaSearcher<ContentFinderCondition>
@@ -25,30 +28,40 @@ public class ContentSelectCombo : LuminaComboBase<ContentFinderCondition>
     public override uint          SelectedID  { get; set; }
     public override HashSet<uint> SelectedIDs { get; set; } = [];
 
-    protected override string GetPreviewText(ComboSelectionMode mode)
+    protected override string GetPreviewText
+    (
+        ComboSelectionMode mode
+    )
     {
         if (mode == ComboSelectionMode.Radio)
         {
-            return SelectedItem.RowId == 0
-                       ? string.Empty
-                       : $"{SelectedItem.Name.ToString()} ({SelectedItem.RowId})";
+            return SelectedItem.RowId == 0 ?
+                       string.Empty :
+                       $"{SelectedItem.Name.ToString()}";
         }
 
-        return SelectedItems.Count == 0
-                   ? string.Empty
-                   : $"[{SelectedItems.Count}] {SelectedItems.First().Name.ToString()} ({SelectedItems.First().RowId})...";
+        return SelectedItems.Count == 0 ?
+                   string.Empty :
+                   $"[{SelectedItems.Count}] {SelectedItems.First().Name.ToString()}...";
     }
 
     protected override int GetTableColumnCount() =>
         5;
 
-    protected override void SetupColumns(ComboSelectionMode mode)
+    protected override void SetupColumns
+    (
+        ComboSelectionMode mode
+    )
     {
         ImGui.TableSetupColumn
         (
-            mode == ComboSelectionMode.Radio ? "RadioButton" : "Checkbox",
+            mode == ComboSelectionMode.Radio ?
+                "RadioButton" :
+                "Checkbox",
             ImGuiTableColumnFlags.WidthFixed,
-            mode == ComboSelectionMode.Radio ? 20f * GlobalUIScale : ImGui.GetTextLineHeightWithSpacing()
+            mode == ComboSelectionMode.Radio ?
+                20f * GlobalUIScale :
+                ImGui.GetTextLineHeightWithSpacing()
         );
         ImGui.TableSetupColumn("Icon",      ImGuiTableColumnFlags.WidthFixed,   20f * GlobalUIScale);
         ImGui.TableSetupColumn("Level",     ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize(LuminaWrapper.GetAddonText(335)).X);
@@ -69,7 +82,12 @@ public class ContentSelectCombo : LuminaComboBase<ContentFinderCondition>
         ImGui.TextUnformatted(LuminaWrapper.GetAddonText(870));
     }
 
-    protected override bool DrawDataColumns(ContentFinderCondition content, ComboSelectionMode mode, bool isSelected)
+    protected override bool DrawDataColumns
+    (
+        ContentFinderCondition content,
+        ComboSelectionMode     mode,
+        bool                   isSelected
+    )
     {
         var contentName = content.Name.ToString();
         var placeName   = content.TerritoryType.ValueNullable?.PlaceName.ValueNullable?.Name.ToString() ?? string.Empty;

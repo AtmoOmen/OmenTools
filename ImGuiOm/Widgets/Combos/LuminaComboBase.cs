@@ -41,28 +41,48 @@ public abstract class LuminaComboBase<T>
     public bool DrawCheckbox() =>
         DrawCore(ComboSelectionMode.Checkbox);
 
-    protected abstract string GetPreviewText(ComboSelectionMode mode);
+    protected abstract string GetPreviewText
+    (
+        ComboSelectionMode mode
+    );
 
     protected abstract int GetTableColumnCount();
 
     protected virtual ImGuiTableFlags GetTableFlags() =>
         ImGuiTableFlags.Borders | ImGuiTableFlags.ScrollY;
 
-    protected virtual bool CanDrawItem(T item) =>
+    protected virtual bool CanDrawItem
+    (
+        T item
+    ) =>
         true;
 
-    protected abstract void SetupColumns(ComboSelectionMode mode);
+    protected abstract void SetupColumns
+    (
+        ComboSelectionMode mode
+    );
 
     protected abstract void DrawHeaders();
 
-    protected abstract bool DrawDataColumns(T item, ComboSelectionMode mode, bool isSelected);
+    protected abstract bool DrawDataColumns
+    (
+        T                  item,
+        ComboSelectionMode mode,
+        bool               isSelected
+    );
 
-    protected static ImGuiSelectableFlags GetSelectableFlags(ComboSelectionMode mode) =>
-        mode == ComboSelectionMode.Radio
-            ? ImGuiSelectableFlags.SpanAllColumns
-            : ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups;
+    protected static ImGuiSelectableFlags GetSelectableFlags
+    (
+        ComboSelectionMode mode
+    ) =>
+        mode == ComboSelectionMode.Radio ?
+            ImGuiSelectableFlags.SpanAllColumns :
+            ImGuiSelectableFlags.SpanAllColumns | ImGuiSelectableFlags.DontClosePopups;
 
-    private bool DrawCore(ComboSelectionMode mode)
+    private bool DrawCore
+    (
+        ComboSelectionMode mode
+    )
     {
         using var drawID = ImRaii.PushId(ID);
 
@@ -122,7 +142,10 @@ public abstract class LuminaComboBase<T>
         return selectState;
     }
 
-    private List<T> BuildVisibleItems(ComboSelectionMode mode)
+    private List<T> BuildVisibleItems
+    (
+        ComboSelectionMode mode
+    )
     {
         var result = new List<T>();
         var seen   = new HashSet<uint>();
@@ -147,18 +170,31 @@ public abstract class LuminaComboBase<T>
         return result;
     }
 
-    private void AppendVisibleItem(T item, HashSet<uint> seen, List<T> result)
+    private void AppendVisibleItem
+    (
+        T             item,
+        HashSet<uint> seen,
+        List<T>       result
+    )
     {
         if (item.RowId == 0 || !CanDrawItem(item) || !seen.Add(item.RowId)) return;
         result.Add(item);
     }
 
-    private bool IsSelected(T item, ComboSelectionMode mode) =>
-        mode             == ComboSelectionMode.Radio
-            ? SelectedID == item.RowId
-            : SelectedIDs.Contains(item.RowId);
+    private bool IsSelected
+    (
+        T                  item,
+        ComboSelectionMode mode
+    ) =>
+        mode           == ComboSelectionMode.Radio ?
+            SelectedID == item.RowId :
+            SelectedIDs.Contains(item.RowId);
 
-    private static bool DrawSelector(ComboSelectionMode mode, bool isSelected)
+    private static bool DrawSelector
+    (
+        ComboSelectionMode mode,
+        bool               isSelected
+    )
     {
         if (mode == ComboSelectionMode.Radio)
             return ImGui.RadioButton(string.Empty, isSelected);
@@ -166,11 +202,17 @@ public abstract class LuminaComboBase<T>
         return ImGui.Checkbox(string.Empty, ref isSelected);
     }
 
-    private bool ApplySelection(uint rowID, ComboSelectionMode mode)
+    private bool ApplySelection
+    (
+        uint               rowID,
+        ComboSelectionMode mode
+    )
     {
         if (mode == ComboSelectionMode.Radio)
         {
-            SelectedID = rowID;
+            SelectedID = SelectedID == rowID ?
+                             0 :
+                             rowID;
             return true;
         }
 
