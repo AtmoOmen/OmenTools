@@ -307,6 +307,30 @@ public record AetheryteRecord
 
         return (AetheryteRecordState.None, baseCost);
     }
+    
+    public static unsafe bool UseAethernetToZone(uint territoryTypeID)
+    {
+        var agent = AgentTelepotTown.Instance();
+        if (agent == null ||
+            !agent->IsAgentActive())
+            return false;
+
+        var data = (byte*)agent->Data;
+        if (data == null) 
+            return false;
+
+        // TODO: FFCS
+        var entries = (AetheryteEntry*)(data + 12);
+        for (byte index = 0; index < data[9]; index++)
+        {
+            if (entries[index].TerritoryTypeID != territoryTypeID) continue;
+
+            agent->TeleportToAetheryte(index);
+            return true;
+        }
+
+        return false;
+    }
 
     public virtual bool Equals(AetheryteRecord? other) =>
         other?.RowID    == RowID    &&
@@ -323,7 +347,17 @@ public record AetheryteRecord
     [StructLayout(LayoutKind.Explicit, Size = 0x18)]
     private struct AetheryteEntry
     {
-        [FieldOffset(0x00)] public uint AetheryteID;
-        [FieldOffset(0x13)] public byte Locked;
+        [FieldOffset(0x00)] public  uint   AetheryteID;
+        [FieldOffset(0x04)] private uint   Unk04;           // only written when marker below is not found
+        [FieldOffset(0x08)] public  ushort PlaceNameID;     // Aetheryte.AethernetName
+        [FieldOffset(0x0A)] private ushort PlaceNameID2;    // written together with PlaceNameID
+        [FieldOffset(0x0C)] public  ushort MarkerIndex;     // index of the matching map marker, 100 when not found
+        [FieldOffset(0x0E)] public  ushort MapID;           // Aetheryte.Map
+        [FieldOffset(0x10)] public  ushort TerritoryTypeID; // Aetheryte.Territory
+        [FieldOffset(0x12)] public  byte   GroupIndex;      // index into the group table at AgentTelepotTownData+0x60C
+        [FieldOffset(0x13)] public  bool   IsLocked;
+        [FieldOffset(0x14)] public  bool   IsUnusable;
+        [FieldOffset(0x15)] public  bool   IsAetheryte;
+        [FieldOffset(0x16)] public  bool   IsCurrent;
     }
 }
