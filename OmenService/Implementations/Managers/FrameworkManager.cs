@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Threading;
 using OmenTools.Dalamud;
 using OmenTools.OmenService.Abstractions;
 
@@ -44,13 +45,22 @@ public class FrameworkManager : OmenServiceBase<FrameworkManager>
         return success;
     }
 
+    public bool ResetThrottle(IFramework.OnUpdateDelegate method)
+    {
+        if (!methodsCollection.TryGetValue(method, out var state))
+            return false;
+
+        Volatile.Write(ref state.NextExecutionTick, 0);
+        return true;
+    }
+
     private void OnUpdate(IFramework framework)
     {
         var currentTick = Stopwatch.GetTimestamp();
 
         foreach (var (method, state) in methodsCollection)
         {
-            if (currentTick < state.NextExecutionTick)
+            if (currentTick < Volatile.Read(ref state.NextExecutionTick))
                 continue;
 
             if (state.ThrottleTicks > 0)
