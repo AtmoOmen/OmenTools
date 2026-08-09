@@ -1,5 +1,6 @@
 using System.Numerics;
 using Dalamud.Game.ClientState.Objects.Enums;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
 using OmenTools.Dalamud.Services.Game.Object.Enums;
@@ -130,12 +131,12 @@ internal unsafe class Character
     public ulong FreeCompanyCrestDataValue => Struct->DrawData.FreeCompanyCrestData.Data;
     public byte FreeCompanyCrestCharge => Struct->DrawData.FreeCompanyCrestData.Charge;
     public byte FreeCompanyCrestOrdinaryTinctures => Struct->DrawData.FreeCompanyCrestData.OrdinaryTinctures;
-    public byte ReaperStanceChangeID => Struct->ReaperShroud.StanceChangeId;
-    public uint ReaperStanceChangeState => Struct->ReaperShroud.StanceChangeState;
-    public float ReaperTimer => Struct->ReaperShroud.Timer;
-    public ICharacter? ReaperCopyObject => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->ReaperShroud.CopyObject) as ICharacter;
-    public ShroudFlags ReaperFlags => Struct->ReaperShroud.Flags;
-    public ushort ReaperNPCEquipID => Struct->ReaperShroud.NpcEquipId;
+    public byte TransformationStanceChangeID => Struct->Transformation.StanceChangeId;
+    public uint TransformationStanceChangeState => Struct->Transformation.StanceChangeState;
+    public float TransformationTimer => Struct->Transformation.Timer;
+    public ICharacter? TransformationCopyObject => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->Transformation.CopyObject) as ICharacter;
+    public TransformationContainer.TransformationFlags TransformationFlags => Struct->Transformation.Flags;
+    public ushort TransformationNPCEquipID => Struct->Transformation.NpcEquipId;
     public float CurrentFloatHeight => Struct->Effects.CurrentFloatHeight;
     public float TargetFloatHeight => Struct->Effects.TargetFloatHeight;
     public float FloatHeightChangeSpeed => Struct->Effects.FloatHeightChangeSpeed;
