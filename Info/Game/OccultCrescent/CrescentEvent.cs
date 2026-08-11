@@ -228,26 +228,6 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         return true;
     }
 
-    /// <summary>
-    ///     获取范围内靠近边缘的任一点
-    /// </summary>
-    public Vector3 GetRandomPointNearEdge()
-    {
-        var y = Position.Y;
-
-        var randomValue = Random.Shared.NextDouble();
-        var edgeBias    = 1.0 - Math.Pow(1.0 - randomValue, 0.5); // 调整指数可以控制边缘集中程度
-
-        var randomRadius = (Radius == 0 ? 1 : Radius) * (float)edgeBias;
-
-        var randomAngle = Random.Shared.NextDouble() * 2 * MathF.PI;
-
-        var x = Position.X + (randomRadius * MathF.Cos((float)randomAngle));
-        var z = Position.Z + (randomRadius * MathF.Sin((float)randomAngle));
-
-        return new Vector3(x, y, z);
-    }
-
     public bool Equals(CrescentEvent? other) =>
         DataID == other?.DataID && Type == other?.Type;
 
