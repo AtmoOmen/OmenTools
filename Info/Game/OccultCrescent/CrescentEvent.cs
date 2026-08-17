@@ -132,8 +132,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
 
         if (LuminaGetter.TryGetRow<DynamicEvent>(dataID, out _))
         {
-            HashSet<uint> forkTowers = [48, 64, 65];
-            Type = forkTowers.Contains(dataID) ? CrescentEventType.ForkTower : CrescentEventType.CE;
+            Type = ForkTowers.Contains(dataID) ? CrescentEventType.ForkTower : CrescentEventType.CE;
 
             if (TryGetCEData(out var ceData))
             {
@@ -145,8 +144,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         }
         else
         {
-            HashSet<uint> magicPots = [1976, 1977, 2072, 2073];
-            Type = magicPots.Contains(dataID) ? CrescentEventType.MagicPot : CrescentEventType.FATE;
+            Type = MagicPots.Contains(dataID) ? CrescentEventType.MagicPot : CrescentEventType.FATE;
 
             if (TryGetFateData(out var fateData))
             {
@@ -245,6 +243,10 @@ public class CrescentEvent : IEquatable<CrescentEvent>
 
     #region 预置数据
 
+    public static readonly uint[] ForkTowers = [48, 64, 65];
+
+    public static readonly uint[] MagicPots = [1976, 1977, 2072, 2073];
+    
     public static Dictionary<uint, uint> EventToItem { get; } = new()
     {
         // 青色半魂晶 (47744)
