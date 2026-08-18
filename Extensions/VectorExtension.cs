@@ -11,6 +11,46 @@ public static class VectorExtension
             new(vector3.X, vector3.Z);
     }
 
+    extension
+    (
+        IEnumerable<Vector3> points
+    )
+    {
+        public float GetTotalDistance()
+        {
+            ArgumentNullException.ThrowIfNull(points);
+
+            var      total    = 0f;
+            Vector3? previous = null;
+
+            foreach (var point in points)
+            {
+                if (previous.HasValue)
+                    total += Vector3.Distance(previous.Value, point);
+                previous = point;
+            }
+
+            return total;
+        }
+        
+        public float GetTotalDistanceSquared()
+        {
+            ArgumentNullException.ThrowIfNull(points);
+
+            var      total    = 0f;
+            Vector3? previous = null;
+
+            foreach (var point in points)
+            {
+                if (previous.HasValue)
+                    total += Vector3.DistanceSquared(previous.Value, point);
+                previous = point;
+            }
+
+            return total;
+        }
+    }
+
     extension(scoped in CSVector3 vector3)
     {
         public Vector2 ToVector2() =>
