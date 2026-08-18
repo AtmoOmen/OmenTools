@@ -11,8 +11,8 @@ public static class vnavmeshIPC
 
     public static bool IsPluginEnabled() =>
         DService.Instance().PI.IsPluginEnabled(INTERNAL_NAME);
-    
-    
+
+
     [IPCSubscriber("vnavmesh.Nav.IsReady", DefaultValue = "false")]
     private static IPCSubscriber<bool>? NavIsReady;
 
@@ -27,6 +27,12 @@ public static class vnavmeshIPC
 
     [IPCSubscriber("vnavmesh.Nav.Pathfind")]
     private static IPCSubscriber<Vector3, Vector3, bool, Task<List<Vector3>>>? NavPathfind;
+
+    [IPCSubscriber("vnavmesh.Nav.PathfindWithTolerance")]
+    private static IPCSubscriber<Vector3, Vector3, bool, float, Task<List<Vector3>>>? NavPathfindWithTolerance;
+
+    [IPCSubscriber("vnavmesh.Nav.PathfindAvoid")]
+    private static IPCSubscriber<Vector3, Vector3, bool, Vector3, float, Task<List<Vector3>>>? NavPathfindAvoid;
 
     [IPCSubscriber("vnavmesh.Nav.PathfindCancelable")]
     private static IPCSubscriber<Vector3, Vector3, bool, CancellationToken, Task<List<Vector3>>>? NavPathfindCancelable;
@@ -46,11 +52,26 @@ public static class vnavmeshIPC
     [IPCSubscriber("vnavmesh.Nav.BuildBitmapBounded")]
     private static IPCSubscriber<Vector3, string, float, Vector3, Vector3, bool>? NavBuildBitmapBounded;
 
+    [IPCSubscriber("vnavmesh.Nav.BuildBitmapMulti")]
+    private static IPCSubscriber<List<Vector3>, string, float, bool>? NavBuildBitmapMulti;
+
+    [IPCSubscriber("vnavmesh.Nav.BuildBitmapMultiBounded")]
+    private static IPCSubscriber<List<Vector3>, string, float, Vector3, Vector3, bool>? NavBuildBitmapMultiBounded;
+
     [IPCSubscriber("vnavmesh.Query.Mesh.NearestPoint")]
     private static IPCSubscriber<Vector3, float, float, Vector3?>? QueryMeshNearestPoint;
 
+    [IPCSubscriber("vnavmesh.Query.Mesh.IsPointOnMesh")]
+    private static IPCSubscriber<Vector3, float, bool, bool>? QueryMeshIsPointOnMesh;
+
+    [IPCSubscriber("vnavmesh.Query.Mesh.NearestPointReachable")]
+    private static IPCSubscriber<Vector3, float, float, Vector3?>? QueryMeshNearestPointReachable;
+
     [IPCSubscriber("vnavmesh.Query.Mesh.PointOnFloor")]
     private static IPCSubscriber<Vector3, bool, float, Vector3?>? QueryPointOnFloor;
+
+    [IPCSubscriber("vnavmesh.Query.Mesh.FlagToPoint")]
+    private static IPCSubscriber<Vector3?>? QueryMeshFlagToPoint;
 
     [IPCSubscriber("vnavmesh.Path.MoveTo")]
     private static IPCSubscriber<List<Vector3>, bool, object>? PathMoveTo;
@@ -112,15 +133,6 @@ public static class vnavmeshIPC
     [IPCSubscriber("vnavmesh.DTR.SetShown")]
     private static IPCSubscriber<bool, object>? DTRSetShown;
 
-    [IPCSubscriber("vnavmesh.Path.GetDistance", DefaultValue = "0")]
-    private static IPCSubscriber<float>? PathGetDistance;
-
-    /// <summary>
-    ///     检查剩余路径距离
-    /// </summary>
-    public static float GetPathLeftDistance() =>
-        PathGetDistance ?? 0f;
-
     /// <summary>
     ///     检查导航网格是否准备就绪
     /// </summary>
@@ -154,8 +166,49 @@ public static class vnavmeshIPC
     /// <param name="to">终点</param>
     /// <param name="fly">是否飞行</param>
     /// <returns></returns>
-    public static Task<List<Vector3>>? Pathfind(Vector3 from, Vector3 to, bool fly = false) =>
+    public static Task<List<Vector3>>? Pathfind
+    (
+        Vector3 from,
+        Vector3 to,
+        bool    fly = false
+    ) =>
         NavPathfind?.InvokeFunc(from, to, fly);
+
+    /// <summary>
+    ///     带容差的寻路
+    /// </summary>
+    /// <param name="from">起点</param>
+    /// <param name="to">终点</param>
+    /// <param name="fly">是否飞行</param>
+    /// <param name="range">容差范围</param>
+    /// <returns></returns>
+    public static Task<List<Vector3>>? PathfindWithTolerance
+    (
+        Vector3 from,
+        Vector3 to,
+        bool    fly,
+        float   range
+    ) =>
+        NavPathfindWithTolerance?.InvokeFunc(from, to, fly, range);
+
+    /// <summary>
+    ///     避开指定区域的寻路
+    /// </summary>
+    /// <param name="from">起点</param>
+    /// <param name="to">终点</param>
+    /// <param name="fly">是否飞行</param>
+    /// <param name="avoidCenter">规避中心</param>
+    /// <param name="avoidRadius">规避半径</param>
+    /// <returns></returns>
+    public static Task<List<Vector3>>? PathfindAvoid
+    (
+        Vector3 from,
+        Vector3 to,
+        bool    fly,
+        Vector3 avoidCenter,
+        float   avoidRadius
+    ) =>
+        NavPathfindAvoid?.InvokeFunc(from, to, fly, avoidCenter, avoidRadius);
 
     /// <summary>
     ///     可取消的寻路
@@ -165,7 +218,13 @@ public static class vnavmeshIPC
     /// <param name="fly">是否飞行</param>
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns></returns>
-    public static Task<List<Vector3>>? PathfindCancelable(Vector3 from, Vector3 to, bool fly, CancellationToken cancellationToken) =>
+    public static Task<List<Vector3>>? PathfindCancelable
+    (
+        Vector3           from,
+        Vector3           to,
+        bool              fly,
+        CancellationToken cancellationToken
+    ) =>
         NavPathfindCancelable?.InvokeFunc(from, to, fly, cancellationToken);
 
     /// <summary>
@@ -182,7 +241,12 @@ public static class vnavmeshIPC
     /// <param name="filename">文件名</param>
     /// <param name="pixelSize">像素大小</param>
     /// <returns></returns>
-    public static bool BuildNavBitmap(Vector3 startingPos, string filename, float pixelSize) =>
+    public static bool BuildNavBitmap
+    (
+        Vector3 startingPos,
+        string  filename,
+        float   pixelSize
+    ) =>
         NavBuildBitmap?.InvokeFunc(startingPos, filename, pixelSize) ?? false;
 
     /// <summary>
@@ -194,8 +258,49 @@ public static class vnavmeshIPC
     /// <param name="minBounds">最小边界</param>
     /// <param name="maxBounds">最大边界</param>
     /// <returns></returns>
-    public static bool BuildNavBoundedBitmap(Vector3 startingPos, string filename, float pixelSize, Vector3 minBounds, Vector3 maxBounds) =>
+    public static bool BuildNavBoundedBitmap
+    (
+        Vector3 startingPos,
+        string  filename,
+        float   pixelSize,
+        Vector3 minBounds,
+        Vector3 maxBounds
+    ) =>
         NavBuildBitmapBounded?.InvokeFunc(startingPos, filename, pixelSize, minBounds, maxBounds) ?? false;
+
+    /// <summary>
+    ///     从多个起始位置构建导航网格的位图表示
+    /// </summary>
+    /// <param name="startingPositions">起始位置列表</param>
+    /// <param name="filename">文件名</param>
+    /// <param name="pixelSize">像素大小</param>
+    /// <returns></returns>
+    public static bool BuildNavMultiBitmap
+    (
+        List<Vector3> startingPositions,
+        string        filename,
+        float         pixelSize
+    ) =>
+        NavBuildBitmapMulti?.InvokeFunc(startingPositions, filename, pixelSize) ?? false;
+
+    /// <summary>
+    ///     在限定范围内从多个起始位置构建导航网格的位图表示
+    /// </summary>
+    /// <param name="startingPositions">起始位置列表</param>
+    /// <param name="filename">文件名</param>
+    /// <param name="pixelSize">像素大小</param>
+    /// <param name="minBounds">最小边界</param>
+    /// <param name="maxBounds">最大边界</param>
+    /// <returns></returns>
+    public static bool BuildNavMultiBoundedBitmap
+    (
+        List<Vector3> startingPositions,
+        string        filename,
+        float         pixelSize,
+        Vector3       minBounds,
+        Vector3       maxBounds
+    ) =>
+        NavBuildBitmapMultiBounded?.InvokeFunc(startingPositions, filename, pixelSize, minBounds, maxBounds) ?? false;
 
     /// <summary>
     ///     检查是否启用了自动加载
@@ -208,7 +313,10 @@ public static class vnavmeshIPC
     ///     设置是否启用自动加载
     /// </summary>
     /// <param name="value">值</param>
-    public static void SetIsAutoLoadNav(bool value) =>
+    public static void SetIsAutoLoadNav
+    (
+        bool value
+    ) =>
         NavSetAutoLoad?.InvokeAction(value);
 
     /// <summary>
@@ -225,8 +333,50 @@ public static class vnavmeshIPC
     /// <param name="halfExtentXZ">XZ半区</param>
     /// <param name="halfExtentY">Y半区</param>
     /// <returns></returns>
-    public static Vector3? QueryNearestPointOnMesh(Vector3 pos, float halfExtentXZ, float halfExtentY) =>
+    public static Vector3? QueryNearestPointOnMesh
+    (
+        Vector3 pos,
+        float   halfExtentXZ,
+        float   halfExtentY
+    ) =>
         QueryMeshNearestPoint?.InvokeFunc(pos, halfExtentXZ, halfExtentY);
+
+    /// <summary>
+    ///     检查点是否在网格上
+    /// </summary>
+    /// <param name="pos">位置</param>
+    /// <param name="halfExtentY">Y半区</param>
+    /// <param name="allowUnreachable">允许不可达</param>
+    /// <returns></returns>
+    public static bool QueryIsPointOnMesh
+    (
+        Vector3 pos,
+        float   halfExtentY,
+        bool    allowUnreachable
+    ) =>
+        QueryMeshIsPointOnMesh?.InvokeFunc(pos, halfExtentY, allowUnreachable) ?? false;
+
+    /// <summary>
+    ///     查询网格上最近的且可达的点
+    /// </summary>
+    /// <param name="pos">位置</param>
+    /// <param name="halfExtentXZ">XZ半区</param>
+    /// <param name="halfExtentY">Y半区</param>
+    /// <returns></returns>
+    public static Vector3? QueryNearestPointReachable
+    (
+        Vector3 pos,
+        float   halfExtentXZ,
+        float   halfExtentY
+    ) =>
+        QueryMeshNearestPointReachable?.InvokeFunc(pos, halfExtentXZ, halfExtentY);
+
+    /// <summary>
+    ///     查询网格的称号标记点
+    /// </summary>
+    /// <returns></returns>
+    public static Vector3? QueryFlagToPoint() =>
+        QueryMeshFlagToPoint?.InvokeFunc();
 
     /// <summary>
     ///     查询地板上的点
@@ -235,7 +385,12 @@ public static class vnavmeshIPC
     /// <param name="allowUnlandable">允许无法降落</param>
     /// <param name="halfExtentXZ">XZ半区</param>
     /// <returns></returns>
-    public static Vector3? QueryMeshPointOnFloor(Vector3 pos, bool allowUnlandable, float halfExtentXZ) =>
+    public static Vector3? QueryMeshPointOnFloor
+    (
+        Vector3 pos,
+        bool    allowUnlandable,
+        float   halfExtentXZ
+    ) =>
         QueryPointOnFloor?.InvokeFunc(pos, allowUnlandable, halfExtentXZ);
 
     /// <summary>
@@ -243,7 +398,11 @@ public static class vnavmeshIPC
     /// </summary>
     /// <param name="waypoints">路径点</param>
     /// <param name="fly">是否飞行</param>
-    public static void PathfindWithPath(List<Vector3> waypoints, bool fly) =>
+    public static void PathfindWithPath
+    (
+        List<Vector3> waypoints,
+        bool          fly
+    ) =>
         PathMoveTo?.InvokeAction(waypoints, fly);
 
     /// <summary>
@@ -284,7 +443,10 @@ public static class vnavmeshIPC
     ///     设置是否允许移动
     /// </summary>
     /// <param name="value">值</param>
-    public static void SetIsPathfindMovementAllowed(bool value) =>
+    public static void SetIsPathfindMovementAllowed
+    (
+        bool value
+    ) =>
         PathSetMovementAllowed?.InvokeAction(value);
 
     /// <summary>
@@ -298,7 +460,10 @@ public static class vnavmeshIPC
     ///     设置是否对齐镜头
     /// </summary>
     /// <param name="value">值</param>
-    public static void SetIsPathfindAlignCamera(bool value) =>
+    public static void SetIsPathfindAlignCamera
+    (
+        bool value
+    ) =>
         PathSetAlignCamera?.InvokeAction(value);
 
     /// <summary>
@@ -312,7 +477,10 @@ public static class vnavmeshIPC
     ///     设置容差
     /// </summary>
     /// <param name="tolerance">容差值</param>
-    public static void SetPathfindTolerance(float tolerance) =>
+    public static void SetPathfindTolerance
+    (
+        float tolerance
+    ) =>
         PathSetTolerance?.InvokeAction(tolerance);
 
     /// <summary>
@@ -321,7 +489,11 @@ public static class vnavmeshIPC
     /// <param name="pos">目标点</param>
     /// <param name="fly">是否飞行</param>
     /// <returns></returns>
-    public static bool PathfindAndMoveTo(Vector3 pos, bool fly) =>
+    public static bool PathfindAndMoveTo
+    (
+        Vector3 pos,
+        bool    fly
+    ) =>
         SimpleMovePathfindAndMoveTo?.InvokeFunc(pos, fly) ?? false;
 
     /// <summary>
@@ -331,7 +503,12 @@ public static class vnavmeshIPC
     /// <param name="fly">是否飞行</param>
     /// <param name="range">范围</param>
     /// <returns></returns>
-    public static bool PathfindAndMoveToClosely(Vector3 pos, bool fly, float range) =>
+    public static bool PathfindAndMoveToClosely
+    (
+        Vector3 pos,
+        bool    fly,
+        float   range
+    ) =>
         PathfindAndMoveToCloseTo?.InvokeFunc(pos, fly, range) ?? false;
 
     /// <summary>
@@ -358,7 +535,10 @@ public static class vnavmeshIPC
     ///     设置窗口是否打开
     /// </summary>
     /// <param name="value">值</param>
-    public static void SetIsWindowOpen(bool value) =>
+    public static void SetIsWindowOpen
+    (
+        bool value
+    ) =>
         WindowSetOpen?.InvokeAction(value);
 
     /// <summary>
@@ -372,6 +552,9 @@ public static class vnavmeshIPC
     ///     设置DTR栏信息是否显示
     /// </summary>
     /// <param name="value">值</param>
-    public static void SetIsDTRShown(bool value) =>
+    public static void SetIsDTRShown
+    (
+        bool value
+    ) =>
         DTRSetShown?.InvokeAction(value);
 }
