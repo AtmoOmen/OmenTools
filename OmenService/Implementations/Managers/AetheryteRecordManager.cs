@@ -32,7 +32,8 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     public AetheryteRecord? GetNearestAetheryte
     (
         uint    zoneID,
-        Vector3 pos
+        Vector3 pos,
+        bool    excludeAethernet = false
     )
     {
         var validAetherytes = AllRecords
@@ -41,6 +42,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                                     x.ZoneID == zoneID                                 &&
                                     x.IsUnlocked()
                               )
+                              .Where(x => !excludeAethernet || x.IsAetheryte)
                               .OrderBy(x => Vector3.DistanceSquared(x.Position, pos))
                               .ToList();
         return validAetherytes.Count == 0 ? null : validAetherytes.FirstOrDefault();
