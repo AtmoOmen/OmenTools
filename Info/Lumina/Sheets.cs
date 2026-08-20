@@ -103,6 +103,7 @@ public static class Sheets
                                     !string.IsNullOrEmpty(x.Name.ToString())         &&
                                     !string.IsNullOrEmpty(x.InternalName.ToString()) &&
                                     !x.Name.ToString().Contains('-')                 &&
+                                    !x.Name.ToString().Contains("Test")              && // 繁中测试服务器
                                     (x.Region - 1) * 1000 is var minWorldID          &&
                                     x.Region       * 1000 is var maxWorldID          &&
                                     x.RowId > minWorldID                             &&
