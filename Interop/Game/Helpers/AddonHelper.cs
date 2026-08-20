@@ -5,7 +5,12 @@ namespace OmenTools.Interop.Game.Helpers;
 
 public static class AddonHelper
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetPtrByName(string addonName, out nint addonPtr)
+    {
+        addonPtr = DService.Instance().GameGUI.GetAddonByName(addonName).Address;
+        return addonPtr != nint.Zero;
+    }
+    
     public static unsafe bool TryGetByName(string addonName, out AtkUnitBase* addonPtr)
     {
         var addon = DService.Instance().GameGUI.GetAddonByName(addonName).Address;
@@ -20,7 +25,6 @@ public static class AddonHelper
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe bool TryGetByName<T>(string addonName, out T* addonPtr) where T : unmanaged
     {
         var addon = DService.Instance().GameGUI.GetAddonByName(addonName).Address;
@@ -35,7 +39,6 @@ public static class AddonHelper
         return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe T* GetByName<T>(string addonName) where T : unmanaged
     {
         var a = DService.Instance().GameGUI.GetAddonByName(addonName).Address;
@@ -44,7 +47,6 @@ public static class AddonHelper
         return (T*)a;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe AtkUnitBase* GetByName(string name) =>
         GetByName<AtkUnitBase>(name);
 }
