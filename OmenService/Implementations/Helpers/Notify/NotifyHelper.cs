@@ -1,6 +1,7 @@
 using System.Media;
 using System.Runtime.CompilerServices;
 using Dalamud.Game.Gui.Toast;
+using Dalamud.Game.Text;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Textures;
 using Dalamud.Utility;
@@ -177,6 +178,37 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     #region Chat
 
+    /// <summary>
+    ///     输出聊天文本，可选前缀与颜色。
+    /// </summary>
+    public static void Chat
+    (
+        string  message,
+        string? messageTag = null,
+        ushort? tagColor   = null
+    ) =>
+        IChatGui.Instance().Print(message, messageTag, tagColor);
+    
+    /// <summary>
+    ///     输出完全自定义的聊天文本，可选前缀与颜色。
+    /// </summary>
+    public static void Chat
+    (
+        XivChatEntry entry
+    ) =>
+        IChatGui.Instance().Print(entry);
+
+    /// <summary>
+    ///     输出富文本聊天文本，可选前缀与颜色。
+    /// </summary>
+    public static void Chat
+    (
+        ReadOnlySpan<byte> message,
+        string?            messageTag = null,
+        ushort?            tagColor   = null
+    ) =>
+        IChatGui.Instance().Print(message, messageTag, tagColor);
+    
     /// <summary>
     ///     输出错误聊天文本，可选前缀与颜色。
     /// </summary>
