@@ -19,6 +19,11 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     #region 事件
 
     /// <summary>
+    ///     当接收市场出售数据时被服务器拒绝了。
+    /// </summary>
+    public event Action<int>? MarketListingsStuck;
+    
+    /// <summary>
     ///     进入临危受命范围时
     /// </summary>
     public event Action<uint>? EnterFate;
@@ -39,7 +44,12 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     public event Action<uint>? WorldChanged;
 
     #endregion
-    
+
+    /// <summary>
+    ///     当前在接收市场出售数据时是否被服务器拒绝了。
+    /// </summary>
+    public bool IsMarketListingsStuck { get; private set; }
+
     /// <summary>
     ///     当前是否位于可以使用 PVE 战斗技能的区域
     /// </summary>

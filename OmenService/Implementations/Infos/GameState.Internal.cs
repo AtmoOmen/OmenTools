@@ -1,5 +1,8 @@
 ﻿using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
+using Lumina.Excel.Sheets;
+using OmenTools.Interop.Game.Lumina;
 using OmenTools.Interop.Game.Models;
 using OmenTools.Threading.TaskHelper;
 
@@ -20,6 +23,8 @@ public unsafe partial class GameState
     private static readonly CompSig                          FateDirectorSetupSig = new("E8 ?? ?? ?? ?? 48 39 37");
     private delegate        nint                             FateDirectorSetupDelegate(uint rowID, nint a2, nint a3);
     private                 Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
+    
+    private Hook<InfoProxyItemSearch.Delegates.ProcessRequestResult>? ProcessRequestResultHook;
 
     private TaskHelper taskHelper = null!;
 
@@ -38,6 +43,14 @@ public unsafe partial class GameState
 
         FateDirectorSetupHook = FateDirectorSetupSig.GetHook<FateDirectorSetupDelegate>(FateDirectorSetupDetour);
         FateDirectorSetupHook.Enable();
+        
+        ProcessRequestResultHook = IGameInteropProvider.Instance().HookFromMemberFunction
+        (
+            typeof(InfoProxyItemSearch.MemberFunctionPointers),
+            "ProcessRequestResult",
+            (InfoProxyItemSearch.Delegates.ProcessRequestResult)ProcessRequestResultDetour
+        );
+        ProcessRequestResultHook.Enable();
     }
 
     protected override void Uninit()
@@ -52,8 +65,35 @@ public unsafe partial class GameState
 
         FateDirectorSetupHook?.Dispose();
         FateDirectorSetupHook = null;
+        
+        ProcessRequestResultHook?.Dispose();
+        ProcessRequestResultHook = null;
     }
 
+    private void ProcessRequestResultDetour
+    (
+        InfoProxyItemSearch* info,
+        byte                 resultCount,
+        int                  errorCode
+    )
+    {
+        ProcessRequestResultHook.Original(info, resultCount, errorCode);
+        
+        if (resultCount            == 0                                        &&
+            errorCode              > 0                                         &&
+            ContentFinderCondition == 0                                        &&
+            info->SearchItemId     != 0                                        &&
+            LuminaGetter.TryGetRow<Item>(info->SearchItemId, out var itemData) &&
+            itemData.ItemSearchCategory.RowId > 0)
+        {
+            MarketListingsStuck?.Invoke(errorCode);
+            IsMarketListingsStuck = true;
+            return;
+        }
+
+        IsMarketListingsStuck = false;
+    }
+    
     private void OnUpdate
     (
         IFramework framework
