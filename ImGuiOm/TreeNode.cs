@@ -13,7 +13,7 @@ public static partial class ImGuiOm
         var spacingText = new string(' ', spaceCount);
 
         var startCursorPos = ImGui.GetCursorPos();
-        var isOpen         = ImGui.TreeNodeEx($"{spacingText} {text}", flags);
+        var isOpen         = ImGui.TreeNodeEx($"{spacingText} {text}", flags | ImGuiTreeNodeFlags.SpanAvailWidth);
 
         ImGui.SameLine();
         ImGui.SetCursorPosX(startCursorPos.X + ImGui.GetTreeNodeToLabelSpacing());
