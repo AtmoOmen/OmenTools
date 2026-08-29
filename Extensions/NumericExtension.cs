@@ -11,13 +11,19 @@ namespace OmenTools.Extensions;
 
 public static class NumericExtension
 {
-    private static readonly HashSet<Language> ValidFormatLanguages =
-    [
-        Language.ChineseSimplified,
-        Language.ChineseTraditional,
-        Language.Japanese,
-        Language.TraditionalChinese
-    ];
+    private static bool IsValidFormatLanguage
+    (
+        Language language
+    ) =>
+        language switch
+        {
+            Language.ChineseSimplified or
+            Language.ChineseTraditional or
+            Language.Japanese or
+            Language.TraditionalChinese or
+            Language.Korean => true,
+            _ => false
+        };
 
     extension<T>(T number) where T : IBinaryInteger<T>, IFormattable
     {
@@ -27,11 +33,11 @@ public static class NumericExtension
             ushort? unitColor  = null
         )
         {
-            if (!ValidFormatLanguages.Contains(GameState.ClientLanguge) || T.IsZero(number))
+            if (!IsValidFormatLanguage(GameState.ClientLanguge) || T.IsZero(number))
                 return [with(number.ToString())];
 
-            const string STR_ZHAO = "兆";
-            string       strYi    = "亿", strWan = "万", strZero = "零";
+            string strZhao = "兆";
+            string strYi   = "亿", strWan = "万", strZero = "零";
 
             switch (GameState.ClientLanguge)
             {
@@ -43,6 +49,12 @@ public static class NumericExtension
                 case Language.ChineseTraditional or Language.TraditionalChinese:
                     strYi  = "億";
                     strWan = "萬";
+                    break;
+                case Language.Korean:
+                    strZhao = "조";
+                    strYi   = "억";
+                    strWan  = "만";
+                    strZero = "0";
                     break;
             }
 
@@ -84,11 +96,11 @@ public static class NumericExtension
                 if (unitColor != null)
                 {
                     builder.PushColorType(unitColor.Value)
-                           .Append(STR_ZHAO)
+                           .Append(strZhao)
                            .PopColorType();
                 }
                 else
-                    builder.Append(STR_ZHAO);
+                    builder.Append(strZhao);
 
                 hasPrinted = true;
             }
@@ -150,11 +162,10 @@ public static class NumericExtension
 
         public string ToChineseString()
         {
-            if (!ValidFormatLanguages.Contains(GameState.ClientLanguge) || T.IsZero(number))
+            if (!IsValidFormatLanguage(GameState.ClientLanguge) || T.IsZero(number))
                 return number.ToString("N0", null);
 
-            const char C_ZHAO = '兆';
-            char       cYi    = '亿', cWan = '万', cZero = '零';
+            char cZhao = '兆', cYi = '亿', cWan = '万', cZero = '零';
 
             switch (GameState.ClientLanguge)
             {
@@ -167,6 +178,12 @@ public static class NumericExtension
                 case Language.TraditionalChinese:
                     cYi  = '億';
                     cWan = '萬';
+                    break;
+                case Language.Korean:
+                    cZhao = '조';
+                    cYi   = '억';
+                    cWan  = '만';
+                    cZero = '0';
                     break;
             }
 
@@ -197,7 +214,7 @@ public static class NumericExtension
             if (zhao > 0)
             {
                 builder.Append(zhao);
-                builder.Append(C_ZHAO);
+                builder.Append(cZhao);
                 hasPrinted = true;
             }
 
@@ -248,7 +265,7 @@ public static class NumericExtension
         {
             Span<char> sourceBuffer = stackalloc char[128];
 
-            if (!ValidFormatLanguages.Contains(GameState.ClientLanguge) ||
+            if (!IsValidFormatLanguage(GameState.ClientLanguge) ||
                 !number.TryFormat(sourceBuffer, out var charsWritten, null, CultureInfo.InvariantCulture))
                 return number.ToString("N0", null) ?? string.Empty;
 
@@ -331,7 +348,7 @@ public static class NumericExtension
 
             Int128 result = 0;
 
-            var idx = span.IndexOf('兆');
+            var idx = span.IndexOfAny('兆', '조');
 
             if (idx >= 0)
             {
@@ -339,7 +356,7 @@ public static class NumericExtension
                 span   =  span[(idx + 1)..];
             }
 
-            idx = span.IndexOfAny('亿', '億');
+            idx = span.IndexOfAny('亿', '億', '억');
 
             if (idx >= 0)
             {
@@ -347,7 +364,7 @@ public static class NumericExtension
                 span   =  span[(idx + 1)..];
             }
 
-            idx = span.IndexOfAny('万', '萬');
+            idx = span.IndexOfAny('万', '萬', '만');
 
             if (idx >= 0)
             {
