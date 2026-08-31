@@ -58,7 +58,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
             CancelReload();
             DisposeConfiguredState(previousState);
 
-            if (options.EnableHotReload && options.Source.SupportsChangeNotifications)
+            if (options is { EnableHotReload: true, Source.SupportsChangeNotifications: true })
             {
                 EventHandler<LocalizationSourceChangedEventArgs> handler = OnLocalizationSourceChanged;
                 options.Source.ResourceChanged += handler;
@@ -280,7 +280,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         );
     }
 
-    private LanguageSnapshot BuildSnapshot(LocalizationOptions options, Language language)
+    private static LanguageSnapshot BuildSnapshot(LocalizationOptions options, Language language)
     {
         var resourceLanguages = EnumerateResourceLanguages(options, language);
         var resources         = new List<FrozenDictionary<string, string>>(resourceLanguages.Count);
@@ -347,7 +347,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         return false;
     }
 
-    private FrozenDictionary<string, string> LoadLanguageResource(LocalizationOptions options, Language language)
+    private static FrozenDictionary<string, string> LoadLanguageResource(LocalizationOptions options, Language language)
     {
         try
         {
@@ -369,7 +369,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         }
     }
 
-    private FrozenDictionary<Language, string> EnumerateAvailableLanguages(LocalizationOptions options)
+    private static FrozenDictionary<Language, string> EnumerateAvailableLanguages(LocalizationOptions options)
     {
         Dictionary<Language, string> availableLanguages = [];
 
