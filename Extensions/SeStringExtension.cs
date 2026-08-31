@@ -205,6 +205,53 @@ public static class SeStringExtension
         ReadOnlySeString
     )
     {
+        public static ReadOnlySeString CreateItemName
+        (
+            uint    itemID,
+            bool    isHQ                = false,
+            string? displayNameOverride = null
+        ) =>
+            ReadOnlySeString.CreateItemName
+            (
+                itemID,
+                isHQ ?
+                    ItemKind.Hq :
+                    ItemKind.Normal,
+                displayNameOverride
+            );
+        
+        /// <summary>
+        ///     非链接，仅为游戏原生风格的物品富文本
+        /// </summary>
+        public static ReadOnlySeString CreateItemName
+        (
+            uint     itemID,
+            ItemKind kind                = ItemKind.Normal,
+            string?  displayNameOverride = null
+        )
+        {
+            var rawID = ItemUtil.GetRawId(itemID, kind);
+
+            var displayName = displayNameOverride ?? ItemUtil.GetItemName(rawID);
+            if (displayName.IsEmpty)
+                throw new Exception("无法确定物品名称。");
+
+            var textColor     = ItemUtil.GetItemRarityColorType(rawID);
+            var textEdgeColor = textColor + 1u;
+
+            using var rssb = new RentedSeStringBuilder();
+
+            var itemName = rssb.Builder
+                               .PushColorType(textColor)
+                               .PushEdgeColorType(textEdgeColor)
+                               .Append(displayName)
+                               .PopEdgeColorType()
+                               .PopColorType()
+                               .ToReadOnlySeString();
+
+            return itemName;
+        }
+        
         public static ReadOnlySeString Format
         (
             string          value,
