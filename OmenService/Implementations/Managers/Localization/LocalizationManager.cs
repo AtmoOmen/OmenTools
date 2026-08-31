@@ -1,18 +1,13 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Globalization;
-using System.Text;
-using Dalamud.Game.Text;
-using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
 using Lumina.Data;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
+using OmenTools.Extensions;
 using OmenTools.Localization;
 using OmenTools.OmenService.Abstractions;
-using DSeString = Dalamud.Game.Text.SeStringHandling.SeString;
-using DSeStringBuilder = Dalamud.Game.Text.SeStringHandling.SeStringBuilder;
-using SeStringBuilder = Lumina.Text.SeStringBuilder;
 
 namespace OmenTools.OmenService;
 
@@ -150,33 +145,16 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         if (!TryResolveFormat(snapshot, key, out var format))
             return CreatePlainSeString(LogMissingKeyAndReturnKey(snapshot, key));
 
-        var template = snapshot.TemplateCache.GetOrAdd(key, _ => SeTemplate.Compile(format));
-
-        if (args.Length == 0 && template.IsLiteralOnly)
+        if (args.Length == 0)
             return snapshot.PlainTextSeCache.GetOrAdd(key, _ => CreatePlainSeString(format));
 
-        using var rented  = new RentedSeStringBuilder();
-        var       builder = rented.Builder;
-
-        foreach (var segment in template.Segments)
-        {
-            if (!segment.IsArgument)
-            {
-                builder.Append(segment.Text);
-                continue;
-            }
-
-            if ((uint)segment.ArgumentIndex < (uint)args.Length)
-            {
-                AppendArgument(builder, args[segment.ArgumentIndex]);
-                continue;
-            }
-
-            LogFormatError(snapshot, key, segment.Text);
-            builder.Append(segment.Text);
-        }
-
-        return builder.ToReadOnlySeString();
+        return ReadOnlySeString.Format
+        (
+            format,
+            CultureInfo.CurrentCulture,
+            args,
+            token => LogFormatError(snapshot, key, token)
+        );
     }
 
     private ConfiguredState GetConfiguredState()
@@ -390,59 +368,6 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
                    : availableLanguages.ToFrozenDictionary();
     }
 
-    private static void AppendArgument(SeStringBuilder builder, object? arg)
-    {
-        switch (arg)
-        {
-            case null:
-                return;
-
-            case DSeString dalamudSeString:
-                builder.Append(new ReadOnlySeString(dalamudSeString.Encode()));
-                return;
-
-            case DSeStringBuilder dalamudSeStringBuilder:
-                builder.Append(dalamudSeStringBuilder.Build().Encode());
-                return;
-
-            case Payload payload:
-                builder.Append(new ReadOnlySeString(new DSeString(payload).Encode()));
-                return;
-
-            case ReadOnlySeString readOnlySeString:
-                builder.Append(readOnlySeString);
-                return;
-
-            case ReadOnlySePayload readOnlySePayload:
-                builder.Append(readOnlySePayload);
-                return;
-
-            case RentedSeStringBuilder rentedSeStringBuilder:
-                builder.Append(rentedSeStringBuilder.Builder.ToReadOnlySeString());
-                return;
-
-            case SeStringBuilder seStringBuilder:
-                builder.Append(seStringBuilder.ToReadOnlySeString());
-                return;
-
-            case BitmapFontIcon icon:
-                builder.AppendIcon((uint)icon);
-                return;
-
-            case SeIconChar iconChar:
-                builder.Append(iconChar.ToIconString());
-                return;
-
-            case IFormattable formattable:
-                builder.Append(formattable.ToString(null, CultureInfo.CurrentCulture) ?? string.Empty);
-                return;
-
-            default:
-                builder.Append(arg.ToString() ?? string.Empty);
-                return;
-        }
-    }
-
     private static ReadOnlySeString CreatePlainSeString(string text)
     {
         using var rented = new RentedSeStringBuilder();
@@ -491,8 +416,6 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
 
         public string LoggerTag { get; } = loggerTag;
 
-        public ConcurrentDictionary<string, SeTemplate> TemplateCache { get; } = new(StringComparer.Ordinal);
-
         public ConcurrentDictionary<string, ReadOnlySeString> PlainTextSeCache { get; } = new(StringComparer.Ordinal);
 
         public ConcurrentDictionary<string, byte> MissingKeys { get; } = new(StringComparer.Ordinal);
@@ -500,102 +423,4 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         public ConcurrentDictionary<string, byte> FormatErrors { get; } = new(StringComparer.Ordinal);
     }
 
-    private readonly record struct TemplateSegment
-    (
-        string Text,
-        int    ArgumentIndex,
-        bool   IsArgument
-    );
-
-    private sealed class SeTemplate
-    (
-        TemplateSegment[] segments,
-        bool              isLiteralOnly
-    )
-    {
-        public TemplateSegment[] Segments { get; } = segments;
-
-        public bool IsLiteralOnly { get; } = isLiteralOnly;
-
-        public static SeTemplate Compile(string format)
-        {
-            List<TemplateSegment> segments       = [];
-            var                   literalBuilder = new StringBuilder();
-            var                   isLiteralOnly  = true;
-
-            for (var index = 0; index < format.Length;)
-            {
-                var current = format[index];
-
-                if (current == '{')
-                {
-                    if (index + 1 < format.Length && format[index + 1] == '{')
-                    {
-                        literalBuilder.Append('{');
-                        index += 2;
-                        continue;
-                    }
-
-                    if (TryReadPlaceholder(format, index, out var nextIndex, out var argumentIndex))
-                    {
-                        FlushLiteral(segments, literalBuilder);
-                        segments.Add(new(format[index..nextIndex], argumentIndex, true));
-                        isLiteralOnly = false;
-                        index         = nextIndex;
-                        continue;
-                    }
-                }
-                else if (current == '}' && index + 1 < format.Length && format[index + 1] == '}')
-                {
-                    literalBuilder.Append('}');
-                    index += 2;
-                    continue;
-                }
-
-                literalBuilder.Append(current);
-                index++;
-            }
-
-            FlushLiteral(segments, literalBuilder);
-
-            if (segments.Count == 0)
-                segments.Add(new(string.Empty, -1, false));
-
-            return new(segments.ToArray(), isLiteralOnly);
-        }
-
-        private static bool TryReadPlaceholder(string format, int startIndex, out int nextIndex, out int argumentIndex)
-        {
-            nextIndex     = startIndex;
-            argumentIndex = -1;
-
-            var index = startIndex + 1;
-            if (index >= format.Length || !char.IsAsciiDigit(format[index]))
-                return false;
-
-            var value = 0;
-
-            while (index < format.Length && char.IsAsciiDigit(format[index]))
-            {
-                value = (value * 10) + format[index] - '0';
-                index++;
-            }
-
-            if (index >= format.Length || format[index] != '}')
-                return false;
-
-            argumentIndex = value;
-            nextIndex     = index + 1;
-            return true;
-        }
-
-        private static void FlushLiteral(List<TemplateSegment> segments, StringBuilder literalBuilder)
-        {
-            if (literalBuilder.Length == 0)
-                return;
-
-            segments.Add(new(literalBuilder.ToString(), -1, false));
-            literalBuilder.Clear();
-        }
-    }
 }
