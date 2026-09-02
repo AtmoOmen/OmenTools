@@ -123,10 +123,12 @@ public static unsafe class LuminaSheetExtension
         public List<MapMarker> GetMapMarkers()
         {
             var rowID = zone.RowId;
-            return LuminaGetter.Get<Map>()
+            return
+            [
+                .. LuminaGetter.Get<Map>()
                                .Where(x => x.TerritoryType.RowId == rowID)
                                .SelectMany(x => x.GetMapMarkers())
-                               .ToList();
+            ];
         }
     }
     
@@ -147,10 +149,12 @@ public static unsafe class LuminaSheetExtension
         public List<MapMarker> GetMapMarkers()
         {
             var markerRange = map.MapMarkerRange;
-            return LuminaGetter.GetSub<MapMarker>()
+            return
+            [
+                .. LuminaGetter.GetSub<MapMarker>()
                                .SelectMany(x => x)
                                .Where(x => x.RowId == markerRange)
-                               .ToList();
+            ];
         }
     }
 
