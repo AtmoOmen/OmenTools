@@ -52,7 +52,7 @@ public class FateSelectCombo : LuminaComboBase<Fate>
     (
         Fate item
     ) =>
-        DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out _);
+        ITextureProvider.Instance().TryGetFromGameIcon(new(item.Icon), out _);
 
     protected override void SetupColumns
     (
@@ -88,7 +88,7 @@ public class FateSelectCombo : LuminaComboBase<Fate>
         bool               isSelected
     )
     {
-        DService.Instance().Texture.TryGetFromGameIcon(new(fate.Icon), out var texture);
+        ITextureProvider.Instance().TryGetFromGameIcon(new(fate.Icon), out var texture);
 
         ImGui.TableNextColumn();
         ImGui.TextUnformatted(fate.ClassJobLevel.ToString());

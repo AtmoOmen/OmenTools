@@ -110,13 +110,13 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
     {
         Config = LoadConfig<GameResourceManagerConfig>() ?? new();
 
-        GetResourceSyncHook ??= DService.Instance().Hook.HookFromMemberFunction
+        GetResourceSyncHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(ResourceManager.MemberFunctionPointers),
             "GetResourceSync",
             (ResourceManager.Delegates.GetResourceSync)GetResourceSyncDetour
         );
-        GetResourceAsyncHook ??= DService.Instance().Hook.HookFromMemberFunction
+        GetResourceAsyncHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(ResourceManager.MemberFunctionPointers),
             "GetResourceAsync",

@@ -66,22 +66,22 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     #region Toast
 
     public static void Toast(string message, ToastOptions? options = null) =>
-        DService.Instance().Toast.ShowNormal(message, options);
+        IToastGui.Instance().ShowNormal(message, options);
 
     public static void Toast(ReadOnlySeString message, ToastOptions? options = null) =>
-        DService.Instance().Toast.ShowNormal(message.ToDalamudString(), options);
+        IToastGui.Instance().ShowNormal(message.ToDalamudString(), options);
 
     public static void ToastError(string message) =>
-        DService.Instance().Toast.ShowError(message);
+        IToastGui.Instance().ShowError(message);
 
     public static void ToastError(ReadOnlySeString message) =>
-        DService.Instance().Toast.ShowError(message.ToDalamudString());
+        IToastGui.Instance().ShowError(message.ToDalamudString());
 
     public static void ToastQuest(string message, QuestToastOptions? options = null) =>
-        DService.Instance().Toast.ShowQuest(message, options);
+        IToastGui.Instance().ShowQuest(message, options);
 
     public static void ToastQuest(ReadOnlySeString message, QuestToastOptions? options = null) =>
-        DService.Instance().Toast.ShowQuest(message.ToDalamudString(), options);
+        IToastGui.Instance().ShowQuest(message.ToDalamudString(), options);
 
     #endregion
 
@@ -140,7 +140,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             TrayNotifier.ShowBalloonTip(plan.Title, plan.Message, icon);
         }
 
-        DService.Instance().DalamudNotification.AddNotification
+        INotificationManager.Instance().AddNotification
         (
             new()
             {
@@ -291,7 +291,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         else
             builder.Append(message);
 
-        var chat = DService.Instance().Chat;
+        var chat = IChatGui.Instance();
         if (isError)
             chat.PrintError(builder.ToReadOnlySeString());
         else
@@ -319,7 +319,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             builder.Append(payload);
         }
 
-        var chat = DService.Instance().Chat;
+        var chat = IChatGui.Instance();
         if (isError)
             chat.PrintError(builder.ToReadOnlySeString());
         else

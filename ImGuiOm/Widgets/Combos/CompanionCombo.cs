@@ -51,7 +51,7 @@ public class CompanionCombo : LuminaComboBase<Companion>
     (
         Companion item
     ) =>
-        DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out _);
+        ITextureProvider.Instance().TryGetFromGameIcon(new(item.Icon), out _);
 
     protected override void SetupColumns
     (
@@ -90,7 +90,7 @@ public class CompanionCombo : LuminaComboBase<Companion>
 
         ImGui.TableNextColumn();
 
-        var clicked = DService.Instance().Texture.TryGetFromGameIcon(new(companion.Icon), out var texture) ?
+        var clicked = ITextureProvider.Instance().TryGetFromGameIcon(new(companion.Icon), out var texture) ?
                           ImGuiOm.SelectableImageWithText
                           (
                               texture.GetWrapOrEmpty().Handle,

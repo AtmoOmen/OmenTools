@@ -37,12 +37,12 @@ public class LogMessageCombo : LuminaComboBase<LogMessage>
         {
             return SelectedItem.RowId == 0 ?
                        string.Empty :
-                       $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItem.RowId)}";
+                       $"{ISeStringEvaluator.Instance().EvaluateFromLogMessage(SelectedItem.RowId)}";
         }
 
         return SelectedItems.Count == 0 ?
                    string.Empty :
-                   $"{DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(SelectedItems.First().RowId)}...";
+                   $"{ISeStringEvaluator.Instance().EvaluateFromLogMessage(SelectedItems.First().RowId)}...";
     }
 
     protected override int GetTableColumnCount() =>
@@ -97,7 +97,7 @@ public class LogMessageCombo : LuminaComboBase<LogMessage>
 
         ImGui.SameLine();
         ImGui.SetCursorPos(cursorPos);
-        ImGuiHelpers.SeStringWrapped(DService.Instance().SeStringEvaluator.EvaluateFromLogMessage(logMessage.RowId));
+        ImGuiHelpers.SeStringWrapped(ISeStringEvaluator.Instance().EvaluateFromLogMessage(logMessage.RowId));
         return clicked;
     }
 }

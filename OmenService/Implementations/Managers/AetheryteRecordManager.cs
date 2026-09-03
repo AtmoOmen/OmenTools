@@ -56,14 +56,14 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
             RefreshRecords();
         }
         
-        DService.Instance().ClientState.TerritoryChanged += OnZoneChanged;
+        IClientState.Instance().TerritoryChanged += OnZoneChanged;
         GameState.Instance().Login                       += OnLogin;
         GameState.Instance().WorldChanged                += OnWorldChanged;
     }
 
     protected override void Uninit()
     {
-        DService.Instance().ClientState.TerritoryChanged -= OnZoneChanged;
+        IClientState.Instance().TerritoryChanged -= OnZoneChanged;
         GameState.Instance().Login                       -= OnLogin;
         GameState.Instance().WorldChanged                -= OnWorldChanged;
     }

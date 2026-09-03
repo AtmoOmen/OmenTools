@@ -30,7 +30,7 @@ internal unsafe class Character
 {
     protected internal new CSCharacter* Struct => (CSCharacter*)Address;
 
-    public IBattleChara? ContainerOwner => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->MoveController.OwnerObject) as IBattleChara;
+    public IBattleChara? ContainerOwner => IObjectTable.Instance().CreateObjectReference((nint)Struct->MoveController.OwnerObject) as IBattleChara;
 
     public short            TransformationID => Struct->TransformationId;
     public ushort           StatusLoopVfxID => Struct->CharacterData.StatusLoopVfxId;
@@ -63,7 +63,7 @@ internal unsafe class Character
     public ulong            AccountID => Struct->AccountId;
     public ulong            ContentID => Struct->ContentId;
     public ulong            SoftTargetObjectID => Struct->GetSoftTargetId();
-    public IGameObject?     SoftTargetObject => DService.Instance().ObjectTable.SearchByID(SoftTargetObjectID);
+    public IGameObject?     SoftTargetObject => IObjectTable.Instance().SearchByID(SoftTargetObjectID);
     public CharacterModes   Mode => Struct->Mode;
     public byte             ModeParam => Struct->ModeParam;
     public bool             IsOffhandDrawn => Struct->LifeSkillContainer.IsOffhandDrawn;
@@ -75,7 +75,7 @@ internal unsafe class Character
     public byte             RelationFlags => Struct->RelationFlags;
     public byte             ActorControlFlags => Struct->ActorControlFlags;
     public float            CastRotation => Struct->CastRotation;
-    public ICharacter?      ChildObject => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->ChildObject) as ICharacter;
+    public ICharacter?      ChildObject => IObjectTable.Instance().CreateObjectReference((nint)Struct->ChildObject) as ICharacter;
     public uint             CompanionOwnerID => Struct->CompanionOwnerId;
     public ObjectType       ObjectType => Struct->ObjectType;
     public byte             GMRank => Struct->GMRank;
@@ -84,12 +84,12 @@ internal unsafe class Character
     public ushort           MountID => Struct->Mount.MountId;
     public float            DismountTimer => Struct->Mount.DismountTimer;
     public byte             MountFlags => Struct->Mount.Flags;
-    public ICharacter?      MountObject => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->Mount.MountObject) as ICharacter;
+    public ICharacter?      MountObject => IObjectTable.Instance().CreateObjectReference((nint)Struct->Mount.MountObject) as ICharacter;
     public ushort           CompanionID => Struct->CompanionData.CompanionId;
     public ushort           FollowMountID => Struct->CompanionData.FollowMountId;
-    public ICharacter?      CompanionObject => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->CompanionData.CompanionObject) as ICharacter;
+    public ICharacter?      CompanionObject => IObjectTable.Instance().CreateObjectReference((nint)Struct->CompanionData.CompanionObject) as ICharacter;
     public ushort           OrnamentID => Struct->OrnamentData.OrnamentId;
-    public ICharacter?      OrnamentObject => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->OrnamentData.OrnamentObject) as ICharacter;
+    public ICharacter?      OrnamentObject => IObjectTable.Instance().CreateObjectReference((nint)Struct->OrnamentData.OrnamentObject) as ICharacter;
     public int              ModelCharaID2 => Struct->ModelContainer.ModelCharaId_2;
     public int              ModelSkeletonID2 => Struct->ModelContainer.ModelSkeletonId_2;
     public byte             ModelScaleID => Struct->ModelContainer.ModelScaleId;
@@ -134,7 +134,7 @@ internal unsafe class Character
     public byte TransformationStanceChangeID => Struct->Transformation.StanceChangeId;
     public uint TransformationStanceChangeState => Struct->Transformation.StanceChangeState;
     public float TransformationTimer => Struct->Transformation.Timer;
-    public ICharacter? TransformationCopyObject => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->Transformation.CopyObject) as ICharacter;
+    public ICharacter? TransformationCopyObject => IObjectTable.Instance().CreateObjectReference((nint)Struct->Transformation.CopyObject) as ICharacter;
     public TransformationContainer.TransformationFlags TransformationFlags => Struct->Transformation.Flags;
     public ushort TransformationNPCEquipID => Struct->Transformation.NpcEquipId;
     public float CurrentFloatHeight => Struct->Effects.CurrentFloatHeight;
@@ -170,11 +170,11 @@ internal unsafe class Character
     public NPCYellBalloonCloseType NPCYellCloseType => Struct->YellBalloon.CloseType;
     public byte NPCYellParentBone => Struct->YellBalloon.ParentBone;
     public NPCYellBalloonFlags NPCYellFlags => Struct->YellBalloon.Flags;
-    public ICharacter? NPCYellCharacter => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->YellBalloon.Character) as ICharacter;
+    public ICharacter? NPCYellCharacter => IObjectTable.Instance().CreateObjectReference((nint)Struct->YellBalloon.Character) as ICharacter;
     public RowRef<OnlineStatus> OnlineStatus => Struct->CharacterData.OnlineStatus.ToLuminaRowRef<OnlineStatus>();
     public ulong EmoteTargetObjectID => Struct->EmoteController.Target;
-    public IGameObject? EmoteTargetObject => DService.Instance().ObjectTable.SearchByID(EmoteTargetObjectID);
-    public IBattleChara? EmoteOwnerObject => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->EmoteController.OwnerObject) as IBattleChara;
+    public IGameObject? EmoteTargetObject => IObjectTable.Instance().SearchByID(EmoteTargetObjectID);
+    public IBattleChara? EmoteOwnerObject => IObjectTable.Instance().CreateObjectReference((nint)Struct->EmoteController.OwnerObject) as IBattleChara;
     public byte EmoteStance => Struct->EmoteController.Stance;
     public PoseType CurrentPoseType => Struct->EmoteController.CurrentPoseType;
     public byte CPoseState => Struct->EmoteController.CPoseState;

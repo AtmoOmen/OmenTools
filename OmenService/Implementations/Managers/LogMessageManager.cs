@@ -62,7 +62,7 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
     {
         Config = LoadConfig<LogMessageManagerConfig>() ?? new();
 
-        UpdateHook ??= DService.Instance().Hook.HookFromMemberFunction
+        UpdateHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(RaptureLogModule.MemberFunctionPointers),
             "Update",

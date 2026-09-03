@@ -10,7 +10,7 @@ internal unsafe class LuaActor
     private CSLuaActor* Struct => (CSLuaActor*)Address;
 
     public nint         Address { get; } = address;
-    public IGameObject? Object  => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->Object);
+    public IGameObject? Object  => IObjectTable.Instance().CreateObjectReference((nint)Struct->Object);
     public string       Value   => Struct->LuaString.ToString();
 
     public CSLuaActor* ToStruct() => Struct;

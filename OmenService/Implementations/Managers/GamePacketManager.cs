@@ -81,7 +81,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
         Config = LoadConfig<GamePacketManagerConfig>() ?? new();
 
         SendPacketInternalHook =
-            DService.Instance().Hook.HookFromMemberFunction
+            IGameInteropProvider.Instance().HookFromMemberFunction
             (
                 typeof(ZoneClient.MemberFunctionPointers),
                 "SendPacket",

@@ -6,41 +6,41 @@ namespace OmenTools.Dalamud;
 public static class DLog
 {
     public static void Verbose(string message) =>
-        DService.Instance().Log.Verbose(message);
+        IPluginLog.Instance().Verbose(message);
 
     public static void Verbose(string message, Exception ex) =>
-        DService.Instance().Log.Verbose(ex, message);
+        IPluginLog.Instance().Verbose(ex, message);
 
     public static void Verbose(Exception ex) =>
-        DService.Instance().Log.Verbose(ex, ex.ToString());
+        IPluginLog.Instance().Verbose(ex, ex.ToString());
 
 
     public static void Debug(string message) =>
-        DService.Instance().Log.Debug(message);
+        IPluginLog.Instance().Debug(message);
 
     public static void Debug(string message, Exception ex) =>
-        DService.Instance().Log.Debug(ex, message);
+        IPluginLog.Instance().Debug(ex, message);
 
     public static void Debug(Exception ex) =>
-        DService.Instance().Log.Debug(ex, ex.ToString());
+        IPluginLog.Instance().Debug(ex, ex.ToString());
 
 
     public static void Warning(string message) =>
-        DService.Instance().Log.Warning(message);
+        IPluginLog.Instance().Warning(message);
 
     public static void Warning(string message, Exception ex) =>
-        DService.Instance().Log.Warning(ex, message);
+        IPluginLog.Instance().Warning(ex, message);
 
     public static void Warning(Exception ex) =>
-        DService.Instance().Log.Warning(ex, ex.ToString());
+        IPluginLog.Instance().Warning(ex, ex.ToString());
 
 
     public static void Error(string message) =>
-        DService.Instance().Log.Error(message);
+        IPluginLog.Instance().Error(message);
 
     public static void Error(string message, Exception ex) =>
-        DService.Instance().Log.Error(ex, message);
+        IPluginLog.Instance().Error(ex, message);
 
     public static void Error(Exception ex) =>
-        DService.Instance().Log.Error(ex, ex.ToString());
+        IPluginLog.Instance().Error(ex, ex.ToString());
 }

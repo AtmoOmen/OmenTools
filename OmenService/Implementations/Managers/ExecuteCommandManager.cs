@@ -108,7 +108,7 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
     {
         Config = LoadConfig<ExecuteCommandManagerConfig>() ?? new();
 
-        ExecuteCommandHook ??= DService.Instance().Hook.HookFromMemberFunction
+        ExecuteCommandHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(GameMain.MemberFunctionPointers),
             "ExecuteCommand",
@@ -119,7 +119,7 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         ExecuteCommandComplexHook ??= ExecuteCommandComplexSig.GetHook<ExecuteCommandComplexDelegate>(ExecuteCommandComplexDetour);
         ExecuteCommandComplexHook?.Enable();
 
-        ExecuteCommandComplexLocationHook ??= DService.Instance().Hook.HookFromMemberFunction
+        ExecuteCommandComplexLocationHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(GameMain.MemberFunctionPointers),
             "ExecuteLocationCommand",

@@ -184,7 +184,7 @@ public class IPCSubscriber<T>
     Func<T>? defaultValueFactory = null
 ) : IPCResultSubscriberBase<ICallGateSubscriber<T>, T>(ipcName, defaultValueFactory)
 {
-    protected override ICallGateSubscriber<T> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T>(IPCName);
+    protected override ICallGateSubscriber<T> CreateSubscriber() => IDalamudPluginInterface.Instance().GetIpcSubscriber<T>(IPCName);
 
     /// <summary>
     ///     获取 IPC 值。如果调用失败，则返回默认值
@@ -235,7 +235,7 @@ public class IPCSubscriber<T1, TResult>
     Func<TResult>? defaultValueFactory = null
 ) : IPCResultSubscriberBase<ICallGateSubscriber<T1, TResult>, TResult>(ipcName, defaultValueFactory)
 {
-    protected override ICallGateSubscriber<T1, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, TResult>(IPCName);
+    protected override ICallGateSubscriber<T1, TResult> CreateSubscriber() => IDalamudPluginInterface.Instance().GetIpcSubscriber<T1, TResult>(IPCName);
 
     public TResult InvokeFunc(T1 arg1) => InvokeValue(subscriber => subscriber.InvokeFunc(arg1), deduplicateError: true);
 
@@ -255,7 +255,7 @@ public class IPCSubscriber<T1, T2, TResult>
     Func<TResult>? defaultValueFactory = null
 ) : IPCResultSubscriberBase<ICallGateSubscriber<T1, T2, TResult>, TResult>(ipcName, defaultValueFactory)
 {
-    protected override ICallGateSubscriber<T1, T2, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, TResult>(IPCName);
+    protected override ICallGateSubscriber<T1, T2, TResult> CreateSubscriber() => IDalamudPluginInterface.Instance().GetIpcSubscriber<T1, T2, TResult>(IPCName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2) => InvokeValue(subscriber => subscriber.InvokeFunc(arg1, arg2), deduplicateError: true);
 
@@ -275,7 +275,7 @@ public class IPCSubscriber<T1, T2, T3, TResult>
     Func<TResult>? defaultValueFactory = null
 ) : IPCResultSubscriberBase<ICallGateSubscriber<T1, T2, T3, TResult>, TResult>(ipcName, defaultValueFactory)
 {
-    protected override ICallGateSubscriber<T1, T2, T3, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, TResult>(IPCName);
+    protected override ICallGateSubscriber<T1, T2, T3, TResult> CreateSubscriber() => IDalamudPluginInterface.Instance().GetIpcSubscriber<T1, T2, T3, TResult>(IPCName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3) => InvokeValue(subscriber => subscriber.InvokeFunc(arg1, arg2, arg3), deduplicateError: true);
 
@@ -295,7 +295,7 @@ public class IPCSubscriber<T1, T2, T3, T4, TResult>
     Func<TResult>? defaultValueFactory = null
 ) : IPCResultSubscriberBase<ICallGateSubscriber<T1, T2, T3, T4, TResult>, TResult>(ipcName, defaultValueFactory)
 {
-    protected override ICallGateSubscriber<T1, T2, T3, T4, TResult> CreateSubscriber() => DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, TResult>(IPCName);
+    protected override ICallGateSubscriber<T1, T2, T3, T4, TResult> CreateSubscriber() => IDalamudPluginInterface.Instance().GetIpcSubscriber<T1, T2, T3, T4, TResult>(IPCName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4) => InvokeValue
         (subscriber => subscriber.InvokeFunc(arg1, arg2, arg3, arg4), deduplicateError: true);
@@ -317,7 +317,7 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, TResult>
 ) : IPCResultSubscriberBase<ICallGateSubscriber<T1, T2, T3, T4, T5, TResult>, TResult>(ipcName, defaultValueFactory)
 {
     protected override ICallGateSubscriber<T1, T2, T3, T4, T5, TResult> CreateSubscriber() =>
-        DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, T5, TResult>(IPCName);
+        IDalamudPluginInterface.Instance().GetIpcSubscriber<T1, T2, T3, T4, T5, TResult>(IPCName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) =>
         InvokeValue(subscriber => subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5), deduplicateError: true);
@@ -342,7 +342,7 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, TResult>
 ) : IPCResultSubscriberBase<ICallGateSubscriber<T1, T2, T3, T4, T5, T6, TResult>, TResult>(ipcName, defaultValueFactory)
 {
     protected override ICallGateSubscriber<T1, T2, T3, T4, T5, T6, TResult> CreateSubscriber() =>
-        DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, T5, T6, TResult>(IPCName);
+        IDalamudPluginInterface.Instance().GetIpcSubscriber<T1, T2, T3, T4, T5, T6, TResult>(IPCName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) =>
         InvokeValue(subscriber => subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6), deduplicateError: true);
@@ -367,7 +367,7 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult>
 ) : IPCResultSubscriberBase<ICallGateSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult>, TResult>(ipcName, defaultValueFactory)
 {
     protected override ICallGateSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult> CreateSubscriber() =>
-        DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult>(IPCName);
+        IDalamudPluginInterface.Instance().GetIpcSubscriber<T1, T2, T3, T4, T5, T6, T7, TResult>(IPCName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) =>
         InvokeValue(subscriber => subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6, arg7), deduplicateError: true);
@@ -392,7 +392,7 @@ public class IPCSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult>
 ) : IPCResultSubscriberBase<ICallGateSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult>, TResult>(ipcName, defaultValueFactory)
 {
     protected override ICallGateSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult> CreateSubscriber() =>
-        DService.Instance().PI.GetIpcSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(IPCName);
+        IDalamudPluginInterface.Instance().GetIpcSubscriber<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(IPCName);
 
     public TResult InvokeFunc(T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) =>
         InvokeValue(subscriber => subscriber.InvokeFunc(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8), deduplicateError: true);

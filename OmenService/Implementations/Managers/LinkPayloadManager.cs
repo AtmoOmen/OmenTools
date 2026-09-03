@@ -11,7 +11,7 @@ public class LinkPayloadManager : OmenServiceBase<LinkPayloadManager>
     {
         id = GetUniqueID();
 
-        var payload = DService.Instance().Chat.AddChatLinkHandler(id, commandAction);
+        var payload = IChatGui.Instance().AddChatLinkHandler(id, commandAction);
         distributedPayloads.TryAdd(id, payload);
         return payload;
     }
@@ -20,7 +20,7 @@ public class LinkPayloadManager : OmenServiceBase<LinkPayloadManager>
     {
         if (!distributedPayloads.TryRemove(id, out _)) return false;
 
-        DService.Instance().Chat.RemoveChatLinkHandler(id);
+        IChatGui.Instance().RemoveChatLinkHandler(id);
         return true;
     }
 
@@ -40,7 +40,7 @@ public class LinkPayloadManager : OmenServiceBase<LinkPayloadManager>
 
     protected override void Uninit()
     {
-        DService.Instance().Chat.RemoveChatLinkHandler();
+        IChatGui.Instance().RemoveChatLinkHandler();
         distributedPayloads.Clear();
     }
 

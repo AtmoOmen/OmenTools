@@ -13,11 +13,11 @@ public class FrameworkManager : OmenServiceBase<FrameworkManager>
     private readonly ConcurrentDictionary<IFramework.OnUpdateDelegate, MethodState> methodsCollection = [];
 
     protected override void Init() =>
-        DService.Instance().Framework.Update += OnUpdate;
+        IFramework.Instance().Update += OnUpdate;
 
     protected override void Uninit()
     {
-        DService.Instance().Framework.Update -= OnUpdate;
+        IFramework.Instance().Update -= OnUpdate;
         methodsCollection.Clear();
     }
 

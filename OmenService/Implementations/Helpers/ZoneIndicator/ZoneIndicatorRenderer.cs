@@ -74,14 +74,14 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
     protected override void Init()
     {
-        DService.Instance().ClientState.TerritoryChanged += OnZoneChanged;
+        IClientState.Instance().TerritoryChanged += OnZoneChanged;
         FrameworkManager.Instance().Reg(OnUpdate, 100);
         WindowManager.Instance().PostDraw += OnDraw;
     }
 
     protected override void Uninit()
     {
-        DService.Instance().ClientState.TerritoryChanged -= OnZoneChanged;
+        IClientState.Instance().TerritoryChanged -= OnZoneChanged;
         FrameworkManager.Instance().Unreg(OnUpdate);
         WindowManager.Instance().PostDraw -= OnDraw;
 
@@ -117,7 +117,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
             return;
         }
 
-        if (DService.Instance().ObjectTable.LocalPlayer is not { } localPlayer)
+        if (IObjectTable.Instance().LocalPlayer is not { } localPlayer)
         {
             cachedDrawStates = [];
             return;
@@ -177,7 +177,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
             for (var i = 0; i < state.Targets.Length; i++)
             {
                 var target     = state.Targets[i];
-                var isOnScreen = DService.Instance().GameGUI.WorldToScreen(target.WorldPosition, out var screenPosition);
+                var isOnScreen = IGameGui.Instance().WorldToScreen(target.WorldPosition, out var screenPosition);
 
                 try
                 {
@@ -392,7 +392,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
     private static void DrawSurrounding(ImDrawListPtr drawList, Vector3 worldPos, ZoneIndicatorSurrounding s)
     {
-        var gui   = DService.Instance().GameGUI;
+        var gui   = IGameGui.Instance();
         var color = s.Color.ToUInt();
 
         var unitOffsets = s.Type switch

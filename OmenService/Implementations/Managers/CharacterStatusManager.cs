@@ -149,7 +149,7 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
 
         if (Config.ShowGainStatusLog)
         {
-            var sourceName = sourceID == 0xE000_0000 ? "本地对象" : DService.Instance().ObjectTable.SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
+            var sourceName = sourceID == 0xE000_0000 ? "本地对象" : IObjectTable.Instance().SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
             DLog.Debug
             (
                 $"[Character Status Manager] Gain Status\n"                            +
@@ -179,7 +179,7 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
 
         if (Config.ShowLoseStatusLog)
         {
-            var sourceName = sourceID == 0xE000_0000 ? "本地对象" : DService.Instance().ObjectTable.SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
+            var sourceName = sourceID == 0xE000_0000 ? "本地对象" : IObjectTable.Instance().SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
             DLog.Debug
             (
                 $"[Character Status Manager] Lose Status\n"                     +

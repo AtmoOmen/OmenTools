@@ -90,7 +90,7 @@ public static class GameObjectExtension
     extension(scoped in Vector2 vector2)
     {
         public Vector3 ToPlayerHeight() =>
-            vector2.ToVector3(DService.Instance().ObjectTable.LocalPlayer?.Position.Y ?? 0);
+            vector2.ToVector3(IObjectTable.Instance().LocalPlayer?.Position.Y ?? 0);
     }
 
     extension(uint objStrID)

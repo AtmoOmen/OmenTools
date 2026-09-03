@@ -39,7 +39,7 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 
     protected override unsafe void Init()
     {
-        AgentMapUpdateHook ??= DService.Instance().Hook.HookFromAddress<AgentUpdateDelegate>
+        AgentMapUpdateHook ??= IGameInteropProvider.Instance().HookFromAddress<AgentUpdateDelegate>
             (AgentMap.Instance()->VirtualTable->GetVFuncByName("Update"), AgentMapUpdateDetour);
         AgentMapUpdateHook.Enable();
     }
@@ -80,7 +80,7 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     ///     当前玩家是否在小队中
     /// </summary>
     public static bool IsInAnyParty =>
-        InfoProxyCrossRealm.IsCrossRealmParty() || DService.Instance().PartyList.Length >= 2;
+        InfoProxyCrossRealm.IsCrossRealmParty() || IPartyList.Instance().Length >= 2;
 
     /// <summary>
     ///     当前玩家是否正处于步行模式
@@ -170,7 +170,7 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     ///     当前玩家对象
     /// </summary>
     public static IPlayerCharacter? Object =>
-        DService.Instance().ObjectTable.LocalPlayer;
+        IObjectTable.Instance().LocalPlayer;
 
     /// <summary>
     ///     获取当前玩家指定职业的等级

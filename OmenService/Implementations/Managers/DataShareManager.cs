@@ -14,7 +14,7 @@ public sealed class DataShareManager : OmenServiceBase<DataShareManager>
     protected override void Uninit()
     {
         foreach (var tag in dataShareTags)
-            DService.Instance().PI.RelinquishData(tag);
+            IDalamudPluginInterface.Instance().RelinquishData(tag);
 
         dataShareTags = [];
     }

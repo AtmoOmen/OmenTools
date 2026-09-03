@@ -17,8 +17,8 @@ public static class DalamudReflector
                throw new MissingMemberException(staticType.FullName, propertyName));
 
     public static object GetPluginManager() =>
-        DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Service`1", true)
-                ?.MakeGenericType(DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Plugin.Internal.PluginManager", true)!).GetMethod("Get")
+        IDalamudPluginInterface.Instance().GetType().Assembly.GetType("Dalamud.Service`1", true)
+                ?.MakeGenericType(IDalamudPluginInterface.Instance().GetType().Assembly.GetType("Dalamud.Plugin.Internal.PluginManager", true)!).GetMethod("Get")
                 ?.Invoke(null, BindingFlags.Default, null, [], null);
 
     public static async Task<List<object>> GetPluginMaster(string masterURL)
@@ -30,7 +30,7 @@ public static class DalamudReflector
             var happyHTTPClient = GetService("Dalamud.Networking.Http.HappyHttpClient");
             var pluginRepository = Activator.CreateInstance
             (
-                DService.Instance().PI.GetType().Assembly
+                IDalamudPluginInterface.Instance().GetType().Assembly
                         .GetType("Dalamud.Plugin.Internal.Types.PluginRepository")!,
                 happyHTTPClient,
                 masterURL,
@@ -80,8 +80,8 @@ public static class DalamudReflector
     }
 
     public static object GetService(string serviceFullName) =>
-        DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Service`1", true)
-                ?.MakeGenericType(DService.Instance().PI.GetType().Assembly.GetType(serviceFullName, true)!).GetMethod("Get")
+        IDalamudPluginInterface.Instance().GetType().Assembly.GetType("Dalamud.Service`1", true)
+                ?.MakeGenericType(IDalamudPluginInterface.Instance().GetType().Assembly.GetType(serviceFullName, true)!).GetMethod("Get")
                 ?.Invoke(null, BindingFlags.Default, null, [], null);
 
     public static bool TryGetLocalPlugin(IDalamudPlugin instance, out object localPlugin, out AssemblyLoadContext context, out Type type)
@@ -156,7 +156,7 @@ public static class DalamudReflector
             }
         }
 
-        var instance = Activator.CreateInstance(DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Configuration.ThirdPartyRepoSettings")!);
+        var instance = Activator.CreateInstance(IDalamudPluginInterface.Instance().GetType().Assembly.GetType("Dalamud.Configuration.ThirdPartyRepoSettings")!);
         if (instance == null) return;
 
         instance.SetFieldOrProperty("Url",       repoURL);
@@ -223,7 +223,7 @@ public static class DalamudReflector
 
     public static void MarkCurrentThreadAsMainThread()
     {
-        var threadSafetyType = DService.Instance().PI.GetType().Assembly.GetType("Dalamud.Utility.ThreadSafety", true);
+        var threadSafetyType = IDalamudPluginInterface.Instance().GetType().Assembly.GetType("Dalamud.Utility.ThreadSafety", true);
         var markMainThread   = threadSafetyType?.GetMethod("MarkMainThread", BindingFlags.Static | BindingFlags.NonPublic);
         markMainThread?.Invoke(null, null);
     }

@@ -40,7 +40,7 @@ public static class ReflectionExtension
             fixed (T* vtablePtr = &vtable)
             {
                 ArgumentNullException.ThrowIfNull(vtablePtr);
-                return DService.Instance().Hook.HookFromAddress(vtablePtr->GetVFuncByName(fieldName), detour);
+                return IGameInteropProvider.Instance().HookFromAddress(vtablePtr->GetVFuncByName(fieldName), detour);
             }
         }
     }

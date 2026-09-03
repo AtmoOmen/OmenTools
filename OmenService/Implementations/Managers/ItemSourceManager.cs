@@ -822,7 +822,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
     }
 
     private static string GetSnapshotPath() =>
-        Path.Join(DService.Instance().PI.GetPluginConfigDirectory(), "OmenTools", "Cache", "ItemSourceSnapshot.bin");
+        Path.Join(IDalamudPluginInterface.Instance().GetPluginConfigDirectory(), "OmenTools", "Cache", "ItemSourceSnapshot.bin");
 
     private enum RepositoryStatus
     {

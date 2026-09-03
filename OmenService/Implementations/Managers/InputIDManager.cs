@@ -46,28 +46,28 @@ public unsafe class InputIDManager : OmenServiceBase<InputIDManager>
 
     protected override void Init()
     {
-        IsInputIDDownHook ??= DService.Instance().Hook.HookFromMemberFunction
+        IsInputIDDownHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(InputData.MemberFunctionPointers),
             "IsInputIdDown",
             (IsInputIDDelegate)IsInputIDDownDetour
         );
 
-        IsInputIDHeldHook ??= DService.Instance().Hook.HookFromMemberFunction
+        IsInputIDHeldHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(InputData.MemberFunctionPointers),
             "IsInputIdHeld",
             (IsInputIDDelegate)IsInputIDHeldDetour
         );
 
-        IsInputIDPressedHook ??= DService.Instance().Hook.HookFromMemberFunction
+        IsInputIDPressedHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(InputData.MemberFunctionPointers),
             "IsInputIdPressed",
             (IsInputIDDelegate)IsInputIDPressedDetour
         );
 
-        IsInputIDReleasedHook ??= DService.Instance().Hook.HookFromMemberFunction
+        IsInputIDReleasedHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(InputData.MemberFunctionPointers),
             "IsInputIdReleased",

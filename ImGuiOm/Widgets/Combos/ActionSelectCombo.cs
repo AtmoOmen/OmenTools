@@ -53,7 +53,7 @@ public class ActionSelectCombo : LuminaComboBase<Action>
     (
         Action item
     ) =>
-        DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out _);
+        ITextureProvider.Instance().TryGetFromGameIcon(new(item.Icon), out _);
 
     protected override void SetupColumns
     (
@@ -92,7 +92,7 @@ public class ActionSelectCombo : LuminaComboBase<Action>
         bool               isSelected
     )
     {
-        DService.Instance().Texture.TryGetFromGameIcon(new(action.Icon), out var texture);
+        ITextureProvider.Instance().TryGetFromGameIcon(new(action.Icon), out var texture);
 
         var actionName = action.Name.ToString();
         var jobName    = action.ClassJobCategory.ValueNullable?.Name.ToString() ?? string.Empty;

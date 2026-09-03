@@ -10,7 +10,7 @@ public static class vnavmeshIPC
     public const string INTERNAL_NAME = "vnavmesh";
 
     public static bool IsPluginEnabled() =>
-        DService.Instance().PI.IsPluginEnabled(INTERNAL_NAME);
+        IDalamudPluginInterface.Instance().IsPluginEnabled(INTERNAL_NAME);
 
 
     [IPCSubscriber("vnavmesh.Nav.IsReady", DefaultValue = "false")]

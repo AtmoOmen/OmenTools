@@ -93,7 +93,7 @@ public class ContentSelectCombo : LuminaComboBase<ContentFinderCondition>
         var placeName   = content.TerritoryType.ValueNullable?.PlaceName.ValueNullable?.Name.ToString() ?? string.Empty;
 
         ImGui.TableNextColumn();
-        if (DService.Instance().Texture.TryGetFromGameIcon(new(content.ContentType.ValueNullable?.Icon ?? 0), out var icon))
+        if (ITextureProvider.Instance().TryGetFromGameIcon(new(content.ContentType.ValueNullable?.Icon ?? 0), out var icon))
             ImGui.Image(icon.GetWrapOrEmpty().Handle, ScaledVector2(20f));
 
         ImGui.TableNextColumn();
@@ -107,7 +107,7 @@ public class ContentSelectCombo : LuminaComboBase<ContentFinderCondition>
             GetSelectableFlags(mode)
         );
 
-        if (DService.Instance().Texture.TryGetFromGameIcon(new(content.Image), out var image) && ImGui.IsItemHovered())
+        if (ITextureProvider.Instance().TryGetFromGameIcon(new(content.Image), out var image) && ImGui.IsItemHovered())
         {
             using (ImRaii.Tooltip())
                 ImGui.Image(image.GetWrapOrEmpty().Handle, image.GetWrapOrEmpty().Size / 2);

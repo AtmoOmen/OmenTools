@@ -71,7 +71,7 @@ public class ImGuiMapRenderer
         {
             CurrentMap = row.Value;
             var texturePath = CurrentMap.Value.GetTexturePath();
-            mapTexture = DService.Instance().Texture.GetFromGame(texturePath);
+            mapTexture = ITextureProvider.Instance().GetFromGame(texturePath);
         }
         else
         {
@@ -321,7 +321,7 @@ public class ImGuiMapRenderer
                 {
                     if (!iconTextureCache.TryGetValue(marker.IconID.Value, out var iconTex))
                     {
-                        iconTex                               = DService.Instance().Texture.GetFromGameIcon(new(marker.IconID.Value));
+                        iconTex                               = ITextureProvider.Instance().GetFromGameIcon(new(marker.IconID.Value));
                         iconTextureCache[marker.IconID.Value] = iconTex;
                     }
 
@@ -411,7 +411,7 @@ public class ImGuiMapRenderer
             {
                 if (!iconTextureCache.TryGetValue(marker.IconID.Value, out var iconTex))
                 {
-                    iconTex                               = DService.Instance().Texture.GetFromGameIcon(new(marker.IconID.Value));
+                    iconTex                               = ITextureProvider.Instance().GetFromGameIcon(new(marker.IconID.Value));
                     iconTextureCache[marker.IconID.Value] = iconTex;
                 }
 

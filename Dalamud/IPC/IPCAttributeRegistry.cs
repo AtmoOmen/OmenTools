@@ -185,7 +185,7 @@ public static class IPCAttributeRegistry
             return null;
         }
 
-        return methodDefinition.MakeGenericMethod(genericTypes).Invoke(DService.Instance().PI, [ipcName]);
+        return methodDefinition.MakeGenericMethod(genericTypes).Invoke(IDalamudPluginInterface.Instance(), [ipcName]);
     }
 
     private static Type? CreateDelegateType(bool isAction, Type[] genericTypes)
@@ -254,7 +254,7 @@ public static class IPCAttributeRegistry
 
     private static ICallGateProvider CreateValueProviderCore<T>(object? instance, MemberInfo member, string ipcName)
     {
-        var provider = DService.Instance().PI.GetIpcProvider<T>(ipcName);
+        var provider = IDalamudPluginInterface.Instance().GetIpcProvider<T>(ipcName);
         provider.RegisterFunc(CreateMemberGetter<T>(member, instance));
         return provider;
     }

@@ -80,7 +80,7 @@ public class MountSelectCombo : LuminaComboBase<Mount>
     {
         ImGui.TableNextColumn();
 
-        return DService.Instance().Texture.TryGetFromGameIcon(new(mount.Icon), out var texture) ?
+        return ITextureProvider.Instance().TryGetFromGameIcon(new(mount.Icon), out var texture) ?
                    ImGuiOm.SelectableImageWithText
                    (
                        texture.GetWrapOrEmpty().Handle,

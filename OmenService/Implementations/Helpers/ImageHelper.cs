@@ -16,7 +16,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
     public static bool TryGetGameIcon(uint icon, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
     {
-        if (DService.Instance().Texture.TryGetFromGameIcon(new(icon, isHQ), out var immediateTexture))
+        if (ITextureProvider.Instance().TryGetFromGameIcon(new(icon, isHQ), out var immediateTexture))
         {
             texture = immediateTexture.GetWrapOrEmpty();
             return true;
@@ -45,7 +45,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
         result = new ImageLoadingResult
         {
-            ImmediateTexture = DService.Instance().Texture.GetFromGame(GetIconTexturePath(icon, GameState.ClientLanguge))
+            ImmediateTexture = ITextureProvider.Instance().GetFromGame(GetIconTexturePath(icon, GameState.ClientLanguge))
         };
 
         result.TryCompleteByTexture(StandardTimeManager.Instance().UTCNow, FailedCacheTTL);
@@ -243,13 +243,13 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
                         {
                             var content = await HTTPClient.GetByteArrayAsync(uri, token);
 
-                            result.TextureWrap = await DService.Instance().Texture.CreateFromImageAsync(content, url, token);
+                            result.TextureWrap = await ITextureProvider.Instance().CreateFromImageAsync(content, url, token);
                         }
                         else
                         {
                             result.ImmediateTexture = File.Exists(url)
-                                                          ? DService.Instance().Texture.GetFromFile(url)
-                                                          : DService.Instance().Texture.GetFromGame(url);
+                                                          ? ITextureProvider.Instance().GetFromFile(url)
+                                                          : ITextureProvider.Instance().GetFromGame(url);
                         }
 
                         result.TryCompleteByTexture(StandardTimeManager.Instance().UTCNow, FailedCacheTTL);

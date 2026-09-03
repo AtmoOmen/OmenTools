@@ -71,10 +71,10 @@ public sealed class CommandManager : OmenServiceBase<CommandManager>
 
     public bool AddCommand(string command, CommandInfo commandInfo, bool isForceToAdd = false)
     {
-        if (!isForceToAdd && DService.Instance().Command.Commands.ContainsKey(command)) return false;
+        if (!isForceToAdd && ICommandManager.Instance().Commands.ContainsKey(command)) return false;
 
         RemoveCommand(command);
-        DService.Instance().Command.AddHandler(command, commandInfo);
+        ICommandManager.Instance().AddHandler(command, commandInfo);
         Commands[command] = commandInfo;
 
         return true;
@@ -91,10 +91,10 @@ public sealed class CommandManager : OmenServiceBase<CommandManager>
 
     public bool RemoveCommand(string command)
     {
-        if (!DService.Instance().Command.Commands.ContainsKey(command))
+        if (!ICommandManager.Instance().Commands.ContainsKey(command))
             return false;
 
-        DService.Instance().Command.RemoveHandler(command);
+        ICommandManager.Instance().RemoveHandler(command);
         Commands.TryRemove(command, out _);
         return true;
     }

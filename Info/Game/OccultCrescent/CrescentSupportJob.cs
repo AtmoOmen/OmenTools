@@ -187,7 +187,7 @@ public class CrescentSupportJob : IEquatable<CrescentSupportJob>
         knowledgeCrystal = null;
         if (GameState.TerritoryIntendedUse != TerritoryIntendedUse.OccultCrescent) return false;
 
-        knowledgeCrystal = DService.Instance().ObjectTable.SearchObject
+        knowledgeCrystal = IObjectTable.Instance().SearchObject
         (
             x => x is IEventObj { ObjectKind: ObjectKind.EventObj, DataID: 2007457 } obj &&
                  string.IsNullOrEmpty(obj.Name)                                          &&

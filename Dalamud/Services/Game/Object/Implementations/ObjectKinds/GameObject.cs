@@ -79,7 +79,7 @@ internal unsafe class GameObject
     public byte                  Distance                       => Struct->NextDistance;
 
     public virtual ulong        TargetObjectID => 0;
-    public virtual IGameObject? TargetObject   => DService.Instance().ObjectTable.SearchByID(TargetObjectID);
+    public virtual IGameObject? TargetObject   => IObjectTable.Instance().SearchByID(TargetObjectID);
 
     public bool IsValid() => IsValid(this);
 

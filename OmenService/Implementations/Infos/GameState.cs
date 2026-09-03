@@ -168,7 +168,7 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     ///     原始 World
     /// </summary>
     public static uint HomeWorld =>
-        DService.Instance().ClientState.IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.HomeWorldId : 0;
+        IClientState.Instance().IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.HomeWorldId : 0;
 
     /// <summary>
     ///     原始 World 表数据
@@ -180,7 +180,7 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     ///     当前 World
     /// </summary>
     public static uint CurrentWorld =>
-        DService.Instance().ClientState.IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.CurrentWorldId : 0;
+        IClientState.Instance().IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.CurrentWorldId : 0;
 
     /// <summary>
     ///     当前 World 表数据

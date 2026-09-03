@@ -94,7 +94,7 @@ public class ItemSelectCombo : LuminaComboBase<Item>
 
         ImGui.TableNextColumn();
 
-        var clicked = DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out var texture) ?
+        var clicked = ITextureProvider.Instance().TryGetFromGameIcon(new(item.Icon), out var texture) ?
                           ImGuiOm.SelectableImageWithText
                           (
                               texture.GetWrapOrEmpty().Handle,

@@ -311,7 +311,7 @@ public static unsafe class LuminaSheetExtension
     #region RowRef<T>
 
     private static RowRef<T> ToLuminaRowRefInternal<T>(uint id) where T : struct, IExcelRow<T> =>
-        new(DService.Instance().Data.Excel, id);
+        new(IDataManager.Instance().Excel, id);
 
     extension(uint id)
     {

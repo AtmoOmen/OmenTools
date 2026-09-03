@@ -3,7 +3,6 @@ using System.Reflection;
 using System.Runtime.Loader;
 using Dalamud.Hooking;
 using Dalamud.IoC;
-using Dalamud.Plugin;
 using OmenTools.Dalamud;
 using OmenTools.Dalamud.Services.Game.UI;
 using OmenTools.Dalamud.Services.Game.Object;
@@ -96,7 +95,7 @@ public sealed class DService
         }
 
         var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
-        var owner = Instance().PI.GetPlugin(alc);
+        var owner = IDalamudPluginInterface.Instance().GetPlugin(alc);
         DLog.Debug($"[OmenTools] 卸载完成\tALC: {alc}; 持有方: {owner?.InternalName ?? "<shared>"}");
     }
 

@@ -22,7 +22,7 @@ internal readonly unsafe struct Status
 
     public uint SourceID => ptr->SourceObject.ObjectId;
 
-    public IGameObject? SourceObject => DService.Instance().ObjectTable.SearchByID(SourceID);
+    public IGameObject? SourceObject => IObjectTable.Instance().SearchByID(SourceID);
 
     public static bool operator ==(Status x, Status y) => x.Equals(y);
 

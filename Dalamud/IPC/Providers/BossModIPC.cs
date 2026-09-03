@@ -12,8 +12,8 @@ public static class BossModIPC
     public const string REBORN_INTERNAL_NAME = "BossModReborn";
 
     public static bool IsPluginEnabled() => 
-        DService.Instance().PI.IsPluginEnabled(INTERNAL_NAME) ||
-        DService.Instance().PI.IsPluginEnabled(REBORN_INTERNAL_NAME);
+        IDalamudPluginInterface.Instance().IsPluginEnabled(INTERNAL_NAME) ||
+        IDalamudPluginInterface.Instance().IsPluginEnabled(REBORN_INTERNAL_NAME);
     
 
     [IPCSubscriber("BossMod.HasModuleByDataId", DefaultValue = "false")]

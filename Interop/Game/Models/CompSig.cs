@@ -20,7 +20,7 @@ public record CompSig
     {
         try
         {
-            return DService.Instance().SigScanner.ScanText(Signature);
+            return ISigScanner.Instance().ScanText(Signature);
         }
         catch (Exception ex)
         {
@@ -37,7 +37,7 @@ public record CompSig
     {
         try
         {
-            return DService.Instance().SigScanner.GetStaticAddressFromSig(Signature, offset);
+            return ISigScanner.Instance().GetStaticAddressFromSig(Signature, offset);
         }
         catch (Exception ex)
         {
@@ -55,7 +55,7 @@ public record CompSig
 
     public Hook<T> GetHook<T>(T detour) where T : Delegate
     {
-        var hook = DService.Instance().Hook.HookFromSignature(Signature, detour);
+        var hook = IGameInteropProvider.Instance().HookFromSignature(Signature, detour);
         DService.Instance().RegHook(hook);
         return hook;
     }

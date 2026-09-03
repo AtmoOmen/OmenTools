@@ -26,7 +26,7 @@ public class CrescentEvent : IEquatable<CrescentEvent>
         else if (JobItemToJob.TryGetValue(specialReward, out var jobIndex))
             isObtained = PublicContentOccultCrescent.GetState()->SupportJobLevels[jobIndex] > 0;
         else if (LoreItems.Contains(specialReward) && LuminaGetter.TryGetRow(specialReward, out Item specialRewardRow))
-            isObtained = DService.Instance().UnlockState.IsItemUnlocked(specialRewardRow);
+            isObtained = IUnlockState.Instance().IsItemUnlocked(specialRewardRow);
 
         return isObtained;
     }

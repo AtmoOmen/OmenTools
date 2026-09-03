@@ -231,7 +231,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         previous?.Cancel();
         previous?.Dispose();
 
-        DService.Instance().Framework.RunOnTick
+        IFramework.Instance().RunOnTick
         (
             () =>
             {

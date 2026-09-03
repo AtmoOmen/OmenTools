@@ -16,7 +16,7 @@ internal unsafe class EventHandler
     public EventId      EventID          => Struct->GetEventId();
     public uint         IconID           => Struct->IconId;
     public short        Scene            => Struct->Scene;
-    public IGameObject? SceneGameObject  => DService.Instance().ObjectTable.CreateObjectReference((nint)Struct->SceneGameObject);
+    public IGameObject? SceneGameObject  => IObjectTable.Instance().CreateObjectReference((nint)Struct->SceneGameObject);
     public SceneFlag    SceneFlags       => Struct->SceneFlags;
     public LuaStatus    LuaStatus        => Struct->LuaStatus;
     public bool         HasTimer         => Struct->HasTimer();

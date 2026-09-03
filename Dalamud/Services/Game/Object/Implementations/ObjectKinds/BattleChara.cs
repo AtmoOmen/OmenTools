@@ -20,7 +20,7 @@ internal unsafe class BattleChara
     public  ActionType     CastActionType      => (ActionType)CastInfo.ActionType;
     public  uint           CastActionID        => CastInfo.ActionId;
     public  ulong          CastTargetObjectID  => CastInfo.TargetId;
-    public  IGameObject?   CastTargetObject    => DService.Instance().ObjectTable.SearchByID(CastTargetObjectID);
+    public  IGameObject?   CastTargetObject    => IObjectTable.Instance().SearchByID(CastTargetObjectID);
 
     public float CurrentCastTime => CastInfo.CurrentCastTime != 0 ?
                                         CastInfo.CurrentCastTime :

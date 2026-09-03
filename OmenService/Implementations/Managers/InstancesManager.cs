@@ -46,7 +46,7 @@ public class InstancesManager : OmenServiceBase<InstancesManager>
         ExecuteCommandManager.Instance().RegPost(OnPostExecuteCommand);
         GameState.Instance().Login += OnLogin;
 
-        if (DService.Instance().ClientState.IsLoggedIn)
+        if (IClientState.Instance().IsLoggedIn)
             EnqueueInstancesCountRetrieve(GameState.TerritoryType);
     }
 
@@ -84,7 +84,7 @@ public class InstancesManager : OmenServiceBase<InstancesManager>
         TaskHelper.Abort();
 
         TaskHelper.Enqueue(() => GameState.TerritoryType == zoneID);
-        TaskHelper.Enqueue(() => !DService.Instance().Condition.IsBetweenAreas && DService.Instance().ObjectTable.LocalPlayer != null && UIModule.IsScreenReady());
+        TaskHelper.Enqueue(() => !ICondition.Instance().IsBetweenAreas && IObjectTable.Instance().LocalPlayer != null && UIModule.IsScreenReady());
         TaskHelper.Enqueue
         (() =>
             {

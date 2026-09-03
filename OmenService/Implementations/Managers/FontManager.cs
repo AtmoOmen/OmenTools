@@ -13,7 +13,7 @@ namespace OmenTools.OmenService;
 
 public class FontManager : OmenServiceBase<FontManager>
 {
-    private static IFontAtlas FontAtlasGame => DService.Instance().UIBuilder.FontAtlas;
+    private static IFontAtlas FontAtlasGame => IUiBuilder.Instance().FontAtlas;
 
     private static readonly unsafe ushort[] DefaultFontRange =
         BuildRange
@@ -398,7 +398,7 @@ public class FontManager : OmenServiceBase<FontManager>
         fontTasks.Clear();
 
         FontAtlas?.Dispose();
-        FontAtlas = DService.Instance().UIBuilder.CreateFontAtlas(FontAtlasAutoRebuildMode.Disable);
+        FontAtlas = IUiBuilder.Instance().CreateFontAtlas(FontAtlasAutoRebuildMode.Disable);
     }
 
     public sealed class FontManagerConfig : OmenServiceConfig

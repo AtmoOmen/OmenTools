@@ -123,14 +123,14 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
     {
         TaskHelper ??= new() { TimeoutMS = 5_000 };
 
-        DService.Instance().ContextMenu.OnMenuOpened   += OnMenuOpened;
-        DService.Instance().GameGUI.HoveredItemChanged += OnHoveredItemChanged;
+        IContextMenu.Instance().OnMenuOpened   += OnMenuOpened;
+        IGameGui.Instance().HoveredItemChanged += OnHoveredItemChanged;
         FrameworkManager.Instance().Reg(OnUpdate);
 
-        DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
+        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PostRefresh, "CharacterInspect", OnAddon);
 
-        DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PostSetup,   Addons, OnAddon);
-        DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PreFinalize, Addons, OnAddon);
+        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PostSetup,   Addons, OnAddon);
+        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreFinalize, Addons, OnAddon);
 
         CharacterInspectItems.Clear();
 
@@ -167,10 +167,10 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
         MateriaAttachReceiveEventHook?.Dispose();
         MateriaAttachReceiveEventHook = null;
 
-        DService.Instance().AddonLifecycle.UnregisterListener(OnAddon);
+        IAddonLifecycle.Instance().UnregisterListener(OnAddon);
 
-        DService.Instance().GameGUI.HoveredItemChanged -= OnHoveredItemChanged;
-        DService.Instance().ContextMenu.OnMenuOpened   -= OnMenuOpened;
+        IGameGui.Instance().HoveredItemChanged -= OnHoveredItemChanged;
+        IContextMenu.Instance().OnMenuOpened   -= OnMenuOpened;
 
         TaskHelper?.Abort();
         TaskHelper?.Dispose();

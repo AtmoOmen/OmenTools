@@ -39,7 +39,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     /// </remarks>
     public void TriggerItemDetailUpdate()
     {
-        DService.Instance().Framework.RunOnFrameworkThread
+        IFramework.Instance().RunOnFrameworkThread
         (() =>
             {
                 if (!ItemDetail->IsAddonAndNodesReady()) return;
@@ -60,7 +60,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     /// </remarks>
     public void TriggerActionDetailUpdate()
     {
-        DService.Instance().Framework.RunOnFrameworkThread
+        IFramework.Instance().RunOnFrameworkThread
         (() =>
             {
                 if (!ActionDetail->IsAddonAndNodesReady()) return;
@@ -141,14 +141,14 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         agentItemDetailRefreshFlagOffset = Marshal.ReadInt32(AgentItemDetailRefreshFlagOffsetSig.ScanText() + 2);
         DLog.Debug($"[{nameof(TooltipManager)}] AgnetItemDetail 工具信息界面刷新标志偏移量: {agentItemDetailRefreshFlagOffset}");
 
-        DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PreRequestedUpdate, "ItemDetail",   OnItemDetailUpdate);
-        DService.Instance().AddonLifecycle.RegisterListener(AddonEvent.PreRequestedUpdate, "ActionDetail", OnActionDetailUpdate);
+        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreRequestedUpdate, "ItemDetail",   OnItemDetailUpdate);
+        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreRequestedUpdate, "ActionDetail", OnActionDetailUpdate);
     }
 
     protected override void Uninit()
     {
-        DService.Instance().AddonLifecycle.UnregisterListener(OnItemDetailUpdate);
-        DService.Instance().AddonLifecycle.UnregisterListener(OnActionDetailUpdate);
+        IAddonLifecycle.Instance().UnregisterListener(OnItemDetailUpdate);
+        IAddonLifecycle.Instance().UnregisterListener(OnActionDetailUpdate);
     }
 
     // 物品

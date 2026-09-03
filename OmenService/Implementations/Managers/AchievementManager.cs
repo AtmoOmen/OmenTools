@@ -57,7 +57,7 @@ public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
         GameState.Instance().Logout += OnLogout;
 
         ReceiveAchievementProgressHook ??=
-            DService.Instance().Hook.HookFromMemberFunction<ReceiveAchievementProgressDelegate>
+            IGameInteropProvider.Instance().HookFromMemberFunction<ReceiveAchievementProgressDelegate>
             (
                 typeof(Achievement.MemberFunctionPointers),
                 "ReceiveAchievementProgress",
@@ -102,7 +102,7 @@ public record AchievementInfo
     public string              Name        => GetData().Name.ToString()        ?? string.Empty;
     public string              Description => GetData().Description.ToString() ?? string.Empty;
     public uint                Icon        => GetData().Icon;
-    public IDalamudTextureWrap IconTexture => DService.Instance().Texture.GetFromGameIcon(new(Icon)).GetWrapOrEmpty();
+    public IDalamudTextureWrap IconTexture => ITextureProvider.Instance().GetFromGameIcon(new(Icon)).GetWrapOrEmpty();
     public bool                IsFinished  => Current == Max;
 
     public LuminaAchievement GetData() =>

@@ -194,21 +194,21 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
     {
         Config = LoadConfig<UseActionManagerConfig>() ?? new();
 
-        UseActionHook ??= DService.Instance().Hook.HookFromMemberFunction
+        UseActionHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(ActionManager.MemberFunctionPointers),
             "UseAction",
             (UseActionDelegate)UseActionDetour
         );
 
-        UseActionLocationHook ??= DService.Instance().Hook.HookFromMemberFunction
+        UseActionLocationHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(ActionManager.MemberFunctionPointers),
             "UseActionLocation",
             (UseActionLocationDelegate)UseActionLocationDetour
         );
 
-        IsActionOffCooldownHook ??= DService.Instance().Hook.HookFromMemberFunction
+        IsActionOffCooldownHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(ActionManager.MemberFunctionPointers),
             "IsActionOffCooldown",

@@ -35,8 +35,8 @@ public unsafe partial class GameState
     {
         taskHelper = new() { TimeoutMS = int.MaxValue };
 
-        DService.Instance().ClientState.Login  += OnDalamudLogin;
-        DService.Instance().ClientState.Logout += OnDalamudLogout;
+        IClientState.Instance().Login  += OnDalamudLogin;
+        IClientState.Instance().Logout += OnDalamudLogout;
 
         if (IsLoggedIn)
             worldID = CurrentWorld;
@@ -58,8 +58,8 @@ public unsafe partial class GameState
     {
         FrameworkManager.Instance().Unreg(OnUpdate);
         
-        DService.Instance().ClientState.Login  -= OnDalamudLogin;
-        DService.Instance().ClientState.Logout -= OnDalamudLogout;
+        IClientState.Instance().Login  -= OnDalamudLogin;
+        IClientState.Instance().Logout -= OnDalamudLogout;
 
         taskHelper.Dispose();
         taskHelper = null;

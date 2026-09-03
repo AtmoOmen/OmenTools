@@ -13,7 +13,7 @@ internal sealed unsafe partial class AetheryteList : IAetheryteList
     {
         get
         {
-            if (DService.Instance().ObjectTable.LocalPlayer == null)
+            if (IObjectTable.Instance().LocalPlayer == null)
                 return 0;
 
             Update();
@@ -32,7 +32,7 @@ internal sealed unsafe partial class AetheryteList : IAetheryteList
             if (index < 0 || index >= Length)
                 return null;
 
-            if (DService.Instance().ObjectTable.LocalPlayer == null)
+            if (IObjectTable.Instance().LocalPlayer == null)
                 return null;
 
             return new AetheryteEntry(telepoInstance->TeleportList[index]);
@@ -41,7 +41,7 @@ internal sealed unsafe partial class AetheryteList : IAetheryteList
 
     private void Update()
     {
-        if (DService.Instance().ObjectTable.LocalPlayer == null)
+        if (IObjectTable.Instance().LocalPlayer == null)
             return;
 
         telepoInstance->UpdateAetheryteList();

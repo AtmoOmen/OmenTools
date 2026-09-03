@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Dalamud.Interface.Windowing;
+using Dalamud.Plugin;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
@@ -14,9 +15,9 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
         {
             if (field != null) return field;
 
-            field = new(DService.Instance().PI.InternalName);
+            field = new(IDalamudPluginInterface.Instance().InternalName);
 
-            DService.Instance().UIBuilder.Draw += OnWindowManagerDraw;
+            IUiBuilder.Instance().Draw += OnWindowManagerDraw;
 
             return field;
         }
@@ -40,7 +41,7 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
 
     protected override void Uninit()
     {
-        DService.Instance().UIBuilder.Draw -= OnWindowManagerDraw;
+        IUiBuilder.Instance().Draw -= OnWindowManagerDraw;
         PreDraw                            =  null;
         PostDraw                           =  null;
         drawScopeRegistrations             =  [];

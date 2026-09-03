@@ -115,7 +115,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
     {
         Config = LoadConfig<TargetManagerConfig>() ?? new();
 
-        SetHardTargetHook ??= DService.Instance().Hook.HookFromMemberFunction
+        SetHardTargetHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(TargetSystem.MemberFunctionPointers),
             "SetHardTarget",
@@ -123,7 +123,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         );
         SetHardTargetHook.Enable();
 
-        SetSoftTargetHook ??= DService.Instance().Hook.HookFromMemberFunction
+        SetSoftTargetHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(TargetSystem.MemberFunctionPointers),
             "SetSoftTarget",
@@ -131,7 +131,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         );
         SetSoftTargetHook.Enable();
 
-        SetFocusTargetHook ??= DService.Instance().Hook.HookFromMemberFunction
+        SetFocusTargetHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(TargetSystem.MemberFunctionPointers),
             "SetFocusTargetByObjectId",
@@ -139,7 +139,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         );
         SetFocusTargetHook.Enable();
 
-        InteractWithObjectHook ??= DService.Instance().Hook.HookFromMemberFunction
+        InteractWithObjectHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(TargetSystem.MemberFunctionPointers),
             "InteractWithObject",
@@ -147,7 +147,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         );
         InteractWithObjectHook.Enable();
 
-        OpenObjectInteractionHook ??= DService.Instance().Hook.HookFromMemberFunction
+        OpenObjectInteractionHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(TargetSystem.MemberFunctionPointers),
             "OpenObjectInteraction",
@@ -155,7 +155,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         );
         OpenObjectInteractionHook.Enable();
 
-        AgentHUDUpdateTargetInfoHook ??= DService.Instance().Hook.HookFromMemberFunction
+        AgentHUDUpdateTargetInfoHook ??= IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(AgentHUD.MemberFunctionPointers),
             "UpdateTargetInfo",
@@ -290,7 +290,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
     private bool SetHardTargetDetour(TargetSystem* system, CSGameObject* target, bool ignoreTargetModes, bool a4, int a5)
     {
-        var gameObj = DService.Instance().ObjectTable.CreateObjectReference((nint)target);
+        var gameObj = IObjectTable.Instance().CreateObjectReference((nint)target);
 
         if (Config.ShowSetHardTargetLog)
         {
@@ -331,7 +331,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
     private bool SetSoftTargetDetour(TargetSystem* system, CSGameObject* target)
     {
-        var gameObj = DService.Instance().ObjectTable.CreateObjectReference((nint)target);
+        var gameObj = IObjectTable.Instance().CreateObjectReference((nint)target);
 
         if (Config.ShowSetSoftTargetLog)
         {
@@ -371,7 +371,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
     {
         if (Config.ShowSetFocusTargetLog)
         {
-            var gameObj = DService.Instance().ObjectTable.SearchByID(gameObjectID);
+            var gameObj = IObjectTable.Instance().SearchByID(gameObjectID);
             DLog.Debug
             (
                 $"[Target Manager] Set Focus Target\n"                                                           +
@@ -403,7 +403,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
     private ulong InteractWithObjectDetour(TargetSystem* system, CSGameObject* target, bool checkLoS)
     {
-        var gameObj = DService.Instance().ObjectTable.CreateObjectReference((nint)target);
+        var gameObj = IObjectTable.Instance().CreateObjectReference((nint)target);
 
         if (Config.ShowInteractWithObjectLog)
         {
@@ -442,7 +442,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
     private void OpenObjectInteractionDetour(TargetSystem* system, CSGameObject* target)
     {
-        var gameObj = DService.Instance().ObjectTable.CreateObjectReference((nint)target);
+        var gameObj = IObjectTable.Instance().CreateObjectReference((nint)target);
 
         if (Config.ShowOpenObjectInteractionLog)
         {
@@ -509,43 +509,43 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
     public static IGameObject? Target
     {
-        get => DService.Instance().ObjectTable.CreateObjectReference((nint)ToStruct()->GetHardTarget());
+        get => IObjectTable.Instance().CreateObjectReference((nint)ToStruct()->GetHardTarget());
         set => ToStruct()->SetHardTarget((CSGameObject*)value?.Address);
     }
 
     public static IGameObject? MouseOverTarget
     {
-        get => DService.Instance().ObjectTable.CreateObjectReference((nint)ToStruct()->MouseOverTarget);
+        get => IObjectTable.Instance().CreateObjectReference((nint)ToStruct()->MouseOverTarget);
         set => ToStruct()->MouseOverTarget = (CSGameObject*)value?.Address;
     }
 
     public static IGameObject? FocusTarget
     {
-        get => DService.Instance().ObjectTable.CreateObjectReference((nint)ToStruct()->FocusTarget);
+        get => IObjectTable.Instance().CreateObjectReference((nint)ToStruct()->FocusTarget);
         set => ToStruct()->FocusTarget = (CSGameObject*)value?.Address;
     }
 
     public static IGameObject? PreviousTarget
     {
-        get => DService.Instance().ObjectTable.CreateObjectReference((nint)ToStruct()->PreviousTarget);
+        get => IObjectTable.Instance().CreateObjectReference((nint)ToStruct()->PreviousTarget);
         set => ToStruct()->PreviousTarget = (CSGameObject*)value?.Address;
     }
 
     public static IGameObject? SoftTarget
     {
-        get => DService.Instance().ObjectTable.CreateObjectReference((nint)ToStruct()->GetSoftTarget());
+        get => IObjectTable.Instance().CreateObjectReference((nint)ToStruct()->GetSoftTarget());
         set => ToStruct()->SetSoftTarget((CSGameObject*)value?.Address);
     }
 
     public static IGameObject? GPoseTarget
     {
-        get => DService.Instance().ObjectTable.CreateObjectReference((nint)ToStruct()->GPoseTarget);
+        get => IObjectTable.Instance().CreateObjectReference((nint)ToStruct()->GPoseTarget);
         set => ToStruct()->GPoseTarget = (CSGameObject*)value?.Address;
     }
 
     public static IGameObject? MouseOverNameplateTarget
     {
-        get => DService.Instance().ObjectTable.CreateObjectReference((nint)ToStruct()->MouseOverNameplateTarget);
+        get => IObjectTable.Instance().CreateObjectReference((nint)ToStruct()->MouseOverNameplateTarget);
         set => ToStruct()->MouseOverNameplateTarget = (CSGameObject*)value?.Address;
     }
 

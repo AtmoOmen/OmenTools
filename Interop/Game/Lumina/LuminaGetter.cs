@@ -5,10 +5,10 @@ namespace OmenTools.Interop.Game.Lumina;
 public static class LuminaGetter
 {
     public static ExcelSheet<T> Get<T>() where T : struct, IExcelRow<T> =>
-        DService.Instance().Data.GetExcelSheet<T>();
+        IDataManager.Instance().GetExcelSheet<T>();
 
     public static SubrowExcelSheet<T> GetSub<T>() where T : struct, IExcelSubrow<T> =>
-        DService.Instance().Data.GetSubrowExcelSheet<T>();
+        IDataManager.Instance().GetSubrowExcelSheet<T>();
 
     public static bool TryGet<T>(out ExcelSheet<T> sheet) where T : struct, IExcelRow<T>
     {

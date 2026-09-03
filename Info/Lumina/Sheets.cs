@@ -13,7 +13,7 @@ public static class Sheets
     private const string DISPELLABLE_STATUSES_TAG = "OmenTools.Info.Game.Data.Sheets.DispellableStatuses";
 
     public static Dictionary<uint, Status> DispellableStatuses { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             DISPELLABLE_STATUSES_TAG,
             () => LuminaGetter.Get<Status>()
@@ -25,7 +25,7 @@ public static class Sheets
     private const string PLAYER_ACTIONS_TAG = "OmenTools.Info.Game.Data.Sheets.PlayerActions";
 
     public static Dictionary<uint, Action> PlayerActions { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             PLAYER_ACTIONS_TAG,
             () => LuminaGetter.Get<Action>()
@@ -51,7 +51,7 @@ public static class Sheets
     private const string STATUSES_TAG = "OmenTools.Info.Game.Data.Sheets.Statuses";
 
     public static Dictionary<uint, Status> Statuses { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             STATUSES_TAG,
             () => LuminaGetter.Get<Status>()
@@ -63,7 +63,7 @@ public static class Sheets
     private const string CONTENTS_TAG = "OmenTools.Info.Game.Data.Sheets.Contents";
 
     public static Dictionary<uint, ContentFinderCondition> Contents { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             CONTENTS_TAG,
             () => LuminaGetter.Get<ContentFinderCondition>()
@@ -78,7 +78,7 @@ public static class Sheets
     private const string GEARS_TAG = "OmenTools.Info.Game.Data.Sheets.Gears";
 
     public static Dictionary<uint, Item> Gears { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             GEARS_TAG,
             () => LuminaGetter.Get<Item>()
@@ -91,7 +91,7 @@ public static class Sheets
     private const string WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.Worlds";
 
     public static Dictionary<uint, World> Worlds { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             WORLDS_TAG,
             () => LuminaGetter.Get<World>()
@@ -116,7 +116,7 @@ public static class Sheets
     private const string CN_WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.CNWorlds";
 
     public static Dictionary<uint, World> CNWorlds { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             CN_WORLDS_TAG,
             () => Worlds
@@ -135,7 +135,7 @@ public static class Sheets
     private const string ZONES_TAG = "OmenTools.Info.Game.Data.Sheets.Zones";
 
     public static Dictionary<uint, TerritoryType> Zones { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             ZONES_TAG,
             () => LuminaGetter.Get<TerritoryType>()
@@ -147,7 +147,7 @@ public static class Sheets
     private const string MOUNTS_TAG = "OmenTools.Info.Game.Data.Sheets.Mounts";
 
     public static Dictionary<uint, Mount> Mounts { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             MOUNTS_TAG,
             () => LuminaGetter.Get<Mount>()
@@ -159,7 +159,7 @@ public static class Sheets
     private const string FOOD_TAG = "OmenTools.Info.Game.Data.Sheets.Food";
 
     public static Dictionary<uint, Item> Food { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             FOOD_TAG,
             () => LuminaGetter.Get<Item>()
@@ -171,7 +171,7 @@ public static class Sheets
     private const string SEEDS_TAG = "OmenTools.Info.Game.Data.Sheets.Seeds";
 
     public static Dictionary<uint, Item> Seeds { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             SEEDS_TAG,
             () => LuminaGetter.Get<Item>()
@@ -183,7 +183,7 @@ public static class Sheets
     private const string SOILS_TAG = "OmenTools.Info.Game.Data.Sheets.Soils";
 
     public static Dictionary<uint, Item> Soils { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             SOILS_TAG,
             () => LuminaGetter.Get<Item>()
@@ -195,7 +195,7 @@ public static class Sheets
     private const string FERTILIZERS_TAG = "OmenTools.Info.Game.Data.Sheets.Fertilizers";
 
     public static Dictionary<uint, Item> Fertilizers { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             FERTILIZERS_TAG,
             () => LuminaGetter.Get<Item>()
@@ -207,7 +207,7 @@ public static class Sheets
     private const string MATERIAS_TAG = "OmenTools.Info.Game.Data.Sheets.Materias";
 
     public static Dictionary<uint, Item> Materias { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             MATERIAS_TAG,
             () => LuminaGetter.Get<Item>()
@@ -219,7 +219,7 @@ public static class Sheets
     private const string SPEED_DETECTION_ZONES_TAG = "OmenTools.Info.Game.Data.Sheets.SpeedDetectionZones";
 
     public static Dictionary<uint, TerritoryType> SpeedDetectionZones { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             SPEED_DETECTION_ZONES_TAG,
             () =>
@@ -237,7 +237,7 @@ public static class Sheets
     private const string AETHERYTES_TAG = "OmenTools.Info.Game.Data.Sheets.Aetherytes";
 
     public static Dictionary<uint, Aetheryte> Aetherytes { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             AETHERYTES_TAG,
             () => LuminaGetter.Get<Aetheryte>()
@@ -249,7 +249,7 @@ public static class Sheets
     private const string TARGET_AREA_ACTIONS_TAG = "OmenTools.Info.Game.Data.Sheets.TargetAreaActions";
 
     public static Dictionary<uint, Action> TargetAreaActions { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             TARGET_AREA_ACTIONS_TAG,
             () => LuminaGetter.Get<Action>()
@@ -261,7 +261,7 @@ public static class Sheets
     private const string MAP_TO_FINAL_TEXTURE_MAP_TAG = "OmenTools.Info.Game.Data.Sheets.MapToFinalTextureMap";
 
     public static Dictionary<uint, Map> MapToFinalTextureMap { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             MAP_TO_FINAL_TEXTURE_MAP_TAG,
             () =>
@@ -329,7 +329,7 @@ public static class Sheets
     private const string PLAYER_SEARCH_PLACE_NAME_TO_ZONES_TAG = "OmenTools.Info.Game.Data.Sheets.PlayerSearchPlaceNameToZones";
     
     public static Dictionary<uint, HashSet<uint>> PlayerSearchPlaceNameToZones { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             PLAYER_SEARCH_PLACE_NAME_TO_ZONES_TAG,
             () => LuminaGetter.Get<PlayerSearchSubLocation>()
@@ -354,7 +354,7 @@ public static class Sheets
     private const string PLAYER_SEARCH_PLACE_NAMES_TAG = "OmenTools.Info.Game.Data.Sheets.PlayerSearchPlaceNames";
 
     public static Dictionary<uint, PlayerSearchSubLocation> PlayerSearchPlaceNames { get; } =
-        DService.Instance().PI.GetOrCreateData
+        IDalamudPluginInterface.Instance().GetOrCreateData
         (
             PLAYER_SEARCH_PLACE_NAMES_TAG,
             () => LuminaGetter.Get<PlayerSearchSubLocation>()

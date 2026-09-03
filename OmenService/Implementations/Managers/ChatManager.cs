@@ -52,14 +52,14 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
     {
         Config = LoadConfig<ChatManagerConfig>() ?? new();
 
-        ProcessChatBoxEntryHook = DService.Instance().Hook.HookFromAddress<ProcessChatBoxEntryDelegate>
+        ProcessChatBoxEntryHook = IGameInteropProvider.Instance().HookFromAddress<ProcessChatBoxEntryDelegate>
         (
             DalamudReflector.GetMemberFuncByName(typeof(UIModule.MemberFunctionPointers), "ProcessChatBoxEntry"),
             ProcessChatBoxEntryDetour
         );
         ProcessChatBoxEntryHook.Enable();
 
-        ExecuteCommandInnerHook = DService.Instance().Hook.HookFromAddress<ExecuteCommandInnerDelegate>
+        ExecuteCommandInnerHook = IGameInteropProvider.Instance().HookFromAddress<ExecuteCommandInnerDelegate>
         (
             DalamudReflector.GetMemberFuncByName(typeof(ShellCommandModule.MemberFunctionPointers), "ExecuteCommandInner"),
             ExecuteCommandInnerDetour

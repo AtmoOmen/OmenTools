@@ -45,7 +45,7 @@ public static class KeyEmulationHelper
                 break;
             }
             default:
-                DService.Instance().Log.Error($"尝试发送非法按键 {key}, 已阻止");
+                IPluginLog.Instance().Error($"尝试发送非法按键 {key}, 已阻止");
                 break;
         }
     }

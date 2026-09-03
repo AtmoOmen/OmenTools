@@ -52,7 +52,7 @@ public class StatusSelectCombo : LuminaComboBase<Status>
     (
         Status item
     ) =>
-        DService.Instance().Texture.TryGetFromGameIcon(new(item.Icon), out _);
+        ITextureProvider.Instance().TryGetFromGameIcon(new(item.Icon), out _);
 
     protected override void SetupColumns
     (
@@ -88,7 +88,7 @@ public class StatusSelectCombo : LuminaComboBase<Status>
         bool               isSelected
     )
     {
-        DService.Instance().Texture.TryGetFromGameIcon(new(status.Icon), out var texture);
+        ITextureProvider.Instance().TryGetFromGameIcon(new(status.Icon), out var texture);
 
         ImGui.TableNextColumn();
         var clicked = ImGui.Selectable

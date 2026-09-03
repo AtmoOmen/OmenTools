@@ -16,7 +16,7 @@ public abstract class OmenServiceBase
     {
         get
         {
-            var directory0 = Path.Join(DService.Instance().PI.GetPluginConfigDirectory(), "OmenTools");
+            var directory0 = Path.Join(IDalamudPluginInterface.Instance().GetPluginConfigDirectory(), "OmenTools");
             Directory.CreateDirectory(directory0);
 
             var directory1 = Path.Join(directory0, "Service");
