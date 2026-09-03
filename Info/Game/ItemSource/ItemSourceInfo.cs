@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Lumina.Data;
 using Lumina.Data.Files;
 using Lumina.Data.Parsing.Layer;
 using Lumina.Excel.Sheets;
@@ -1130,7 +1131,7 @@ public sealed class ItemSourceInfo
 
     private static Item ConvertCurrency(uint itemID, byte costType, SpecialShop specialShop)
     {
-        if (costType == 2 && CurrentBuildContext.TomestoneItemIds.TryGetValue(itemID, out var tomestoneItemID))
+        if (costType == 2 && CurrentBuildContext.TomestoneItemIDs.TryGetValue(itemID, out var tomestoneItemID))
             return LuminaGetter.GetRowOrDefault<Item>(tomestoneItemID);
 
         return itemID is >= 8 or 0
@@ -1139,7 +1140,7 @@ public sealed class ItemSourceInfo
             {
                 16 => LuminaGetter.GetRowOrDefault<Item>(Currencies[itemID]),
                 8  => LuminaGetter.GetRowOrDefault<Item>(1),
-                4 => CurrentBuildContext.TomestoneItemIds.TryGetValue(itemID, out tomestoneItemID)
+                4 => CurrentBuildContext.TomestoneItemIDs.TryGetValue(itemID, out tomestoneItemID)
                          ? LuminaGetter.GetRowOrDefault<Item>(tomestoneItemID)
                          : LuminaGetter.GetRowOrDefault<Item>(itemID),
                 _ => LuminaGetter.GetRowOrDefault<Item>(itemID)
@@ -1163,24 +1164,24 @@ public sealed class ItemSourceInfo
         private BuildContext
         (
             Dictionary<uint, string>                    achievementDescriptions,
-            Dictionary<ulong, uint>                     mapRowIds,
-            Dictionary<uint, uint>                      tomestoneItemIds,
+            Dictionary<ulong, uint>                     mapRowIDs,
+            Dictionary<uint, uint>                      tomestoneItemIDs,
             Dictionary<uint, List<GCScripShopCategory>> gcCategories,
             bool                                        shouldHideDefaultShopName
         )
         {
             AchievementDescriptions   = achievementDescriptions;
-            MapRowIds                 = mapRowIds;
-            TomestoneItemIds          = tomestoneItemIds;
+            MapRowIDs                 = mapRowIDs;
+            TomestoneItemIDs          = tomestoneItemIDs;
             GcCategories              = gcCategories;
             ShouldHideDefaultShopName = shouldHideDefaultShopName;
         }
 
         public Dictionary<uint, string> AchievementDescriptions { get; }
 
-        public Dictionary<ulong, uint> MapRowIds { get; }
+        public Dictionary<ulong, uint> MapRowIDs { get; }
 
-        public Dictionary<uint, uint> TomestoneItemIds { get; }
+        public Dictionary<uint, uint> TomestoneItemIDs { get; }
 
         public Dictionary<uint, List<GCScripShopCategory>> GcCategories { get; }
 
@@ -1189,8 +1190,8 @@ public sealed class ItemSourceInfo
         public static BuildContext Create()
         {
             Dictionary<uint, string>                    achievementDescriptions = [];
-            Dictionary<ulong, uint>                     mapRowIds               = [];
-            Dictionary<uint, uint>                      tomestoneItemIds        = [];
+            Dictionary<ulong, uint>                     mapRowIDs               = [];
+            Dictionary<uint, uint>                      tomestoneItemIDs        = [];
             Dictionary<uint, List<GCScripShopCategory>> gcCategories            = [];
 
             foreach (var achievement in LuminaGetter.Get<Achievement>())
@@ -1203,7 +1204,7 @@ public sealed class ItemSourceInfo
             }
 
             foreach (var map in LuminaGetter.Get<Map>())
-                mapRowIds.TryAdd(GetMapKey(map.TerritoryType.RowId, unchecked((uint)map.MapIndex)), map.RowId);
+                mapRowIDs.TryAdd(GetMapKey(map.TerritoryType.RowId, unchecked((uint)map.MapIndex)), map.RowId);
 
             foreach (var tomestonesItem in LuminaGetter.Get<TomestonesItem>())
             {
@@ -1212,7 +1213,7 @@ public sealed class ItemSourceInfo
                 if (tomestoneID == 0 || itemID == 0)
                     continue;
 
-                tomestoneItemIds.TryAdd(tomestoneID, itemID);
+                tomestoneItemIDs.TryAdd(tomestoneID, itemID);
             }
 
             foreach (var category in LuminaGetter.Get<GCScripShopCategory>())
@@ -1231,15 +1232,15 @@ public sealed class ItemSourceInfo
             return new
             (
                 achievementDescriptions,
-                mapRowIds,
-                tomestoneItemIds,
+                mapRowIDs,
+                tomestoneItemIDs,
                 gcCategories,
-                DService.Instance().ClientState.ClientLanguage != ClientLanguage.Japanese
+                GameState.ClientLanguge != Language.Japanese
             );
         }
 
         public bool TryGetMapRowID(uint territoryID, uint mapIndex, out uint mapRowID) =>
-            MapRowIds.TryGetValue(GetMapKey(territoryID, mapIndex), out mapRowID);
+            MapRowIDs.TryGetValue(GetMapKey(territoryID, mapIndex), out mapRowID);
 
         private static ulong GetMapKey(uint territoryID, uint mapIndex) =>
             ((ulong)territoryID << 32) | mapIndex;
