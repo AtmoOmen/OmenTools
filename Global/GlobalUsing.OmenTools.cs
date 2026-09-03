@@ -5,6 +5,8 @@
 global using OmenTools;
 global using OmenTools.ImGuiOm;
 global using OmenTools.Extensions;
+global using OmenTools.Info.Game.Enums;
+global using OmenTools.OmenService;
 global using IAetheryteList = OmenTools.Dalamud.Services.Game.UI.Abstractions.IAetheryteList;
 global using IAetheryteEntry = OmenTools.Dalamud.Services.Game.UI.Abstractions.IAetheryteEntry;
 global using IPlayerCharacter = OmenTools.Dalamud.Services.Game.Object.Abstractions.ObjectKinds.IPlayerCharacter;
@@ -34,6 +36,7 @@ global using Dalamud.Bindings.ImPlot;
 global using Dalamud.Interface;
 global using Dalamud.Interface.Utility.Raii;
 global using Dalamud.Game;
+global using Dalamud.Plugin;
 global using Dalamud.Plugin.Services;
 
 #endregion
