@@ -619,7 +619,7 @@ public sealed class ItemSourceInfo
                 if (!itemCost.ItemCost.IsValid || itemCost.ItemCost.Value.Name == string.Empty)
                     continue;
 
-                var currencyItem = ConvertCurrency(itemCost.ItemCost.Value.RowId, specialShop);
+                var currencyItem = ConvertCurrency(itemCost.ItemCost.Value.RowId, itemCost.CostType, specialShop);
                 costs.Add(new(itemCost.CurrencyCost, currencyItem.RowId));
             }
 
@@ -1128,18 +1128,23 @@ public sealed class ItemSourceInfo
                    or EventHandlerType.CollectablesShop;
     }
 
-    private static Item ConvertCurrency(uint itemID, SpecialShop specialShop) =>
-        itemID is >= 8 or 0
+    private static Item ConvertCurrency(uint itemID, byte costType, SpecialShop specialShop)
+    {
+        if (costType == 2 && CurrentBuildContext.TomestoneItemIds.TryGetValue(itemID, out var tomestoneItemID))
+            return LuminaGetter.GetRowOrDefault<Item>(tomestoneItemID);
+
+        return itemID is >= 8 or 0
             ? LuminaGetter.GetRowOrDefault<Item>(itemID)
             : specialShop.UseCurrencyType switch
             {
                 16 => LuminaGetter.GetRowOrDefault<Item>(Currencies[itemID]),
                 8  => LuminaGetter.GetRowOrDefault<Item>(1),
-                4 => CurrentBuildContext.TomestoneItemIds.TryGetValue(itemID, out var tomestoneItemID)
+                4 => CurrentBuildContext.TomestoneItemIds.TryGetValue(itemID, out tomestoneItemID)
                          ? LuminaGetter.GetRowOrDefault<Item>(tomestoneItemID)
                          : LuminaGetter.GetRowOrDefault<Item>(itemID),
                 _ => LuminaGetter.GetRowOrDefault<Item>(itemID)
             };
+    }
 
     #endregion
 

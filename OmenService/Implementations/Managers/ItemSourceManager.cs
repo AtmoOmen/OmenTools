@@ -875,7 +875,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
     
     #region 常量
 
-    private const int  SNAPSHOT_FORMAT_VERSION = 2;
+    private const int  SNAPSHOT_FORMAT_VERSION = 3;
     private const uint SNAPSHOT_MAGIC          = 0x49535243; // ISRC
     private const int  HOT_CACHE_CAPACITY      = 30;
 
