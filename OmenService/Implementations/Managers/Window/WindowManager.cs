@@ -2,7 +2,6 @@ using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using Dalamud.Interface.Windowing;
-using Dalamud.Plugin;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
@@ -42,9 +41,10 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
     protected override void Uninit()
     {
         IUiBuilder.Instance().Draw -= OnWindowManagerDraw;
-        PreDraw                            =  null;
-        PostDraw                           =  null;
-        drawScopeRegistrations             =  [];
+        
+        PreDraw                = null;
+        PostDraw               = null;
+        drawScopeRegistrations = [];
 
         WindowSystem.RemoveAllWindows();
 
@@ -64,8 +64,6 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
 
         try
         {
-            PreDraw?.Invoke();
-
             if (!regs.IsDefaultOrEmpty)
             {
                 activeScopes = ArrayPool<IDisposable?>.Shared.Rent(regs.Length);
@@ -74,7 +72,8 @@ public sealed class WindowManager : OmenServiceBase<WindowManager>
                 for (var i = 0; i < regs.Length; i++)
                     activeScopes[i] = regs[i].Factory();
             }
-
+            
+            PreDraw?.Invoke();
             WindowSystem.Draw();
             PostDraw?.Invoke();
         }
