@@ -7,7 +7,7 @@ public struct StyleInfo
     public string Name;
     public string Data;
 
-    private readonly StyleModelV1 built;
+    private readonly StyleModel built;
 
     private readonly StyleModelWrapper wrapper;
 
@@ -15,7 +15,7 @@ public struct StyleInfo
     {
         Name    = name;
         Data    = data;
-        built   = (StyleModelV1)StyleModel.Deserialize(data);
+        built   = StyleModel.Deserialize(data);
         wrapper = new(built);
     }
 
@@ -27,7 +27,7 @@ public struct StyleInfo
 
     private class StyleModelWrapper
     (
-        StyleModelV1 styleModel
+        StyleModel styleModel
     ) : IDisposable
     {
         public void Dispose() =>
