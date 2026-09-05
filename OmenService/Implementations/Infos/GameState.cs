@@ -46,6 +46,25 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     #endregion
 
     /// <summary>
+    ///     当前游戏界面缩放比例。
+    /// </summary>
+    public static float GameUIScale
+    {
+        get
+        {
+            var orig = IGameConfig.Instance().System.GetUInt("UiHighScale");
+            
+            return orig switch
+            {
+                0 => 1,
+                1 => 1.5f,
+                2 => 2f,
+                3 => 3f
+            };
+        }
+    }
+    
+    /// <summary>
     ///     当前在接收市场出售数据时是否被服务器拒绝了。
     /// </summary>
     public bool IsMarketListingsStuck { get; private set; }
