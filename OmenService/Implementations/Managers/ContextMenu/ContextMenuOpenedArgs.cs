@@ -10,20 +10,20 @@ public sealed unsafe class ContextMenuOpenedArgs
 {
     internal ContextMenuOpenedArgs
     (
-        AgentContext* agent
+        AgentContext* agentContext
     )
     {
-        Agent        = (AgentInterface*)agent;
-        DefaultAgent = agent;
+        Agent               = (AgentInterface*)agentContext;
+        DefaultAgentContext = agentContext;
     }
 
     internal ContextMenuOpenedArgs
     (
-        AgentInventoryContext* agent
+        AgentInventoryContext* agentContext
     )
     {
-        Agent          = (AgentInterface*)agent;
-        InventoryAgent = agent;
+        Agent                 = (AgentInterface*)agentContext;
+        InventoryAgentContext = agentContext;
     }
 
     internal ContextMenuOpenedArgs
@@ -35,26 +35,26 @@ public sealed unsafe class ContextMenuOpenedArgs
     internal ContextMenuOpenedArgs Clone() =>
         new(Agent)
         {
-            Addon             = Addon,
-            AddonName         = AddonName,
-            OwnerAddonID      = OwnerAddonID,
-            TargetObjectID    = TargetObjectID,
-            TargetContentID   = TargetContentID,
-            TargetHomeWorldID = TargetHomeWorldID,
-            TargetName        = TargetName,
-            TargetCharacter   = TargetCharacter,
-            TargetItem        = TargetItem,
-            TargetInventoryID = TargetInventoryID,
-            TargetSlot        = TargetSlot,
-            DefaultAgent      = DefaultAgent,
-            InventoryAgent    = InventoryAgent
+            Addon                 = Addon,
+            AddonName             = AddonName,
+            OwnerAddonID          = OwnerAddonID,
+            TargetObjectID        = TargetObjectID,
+            TargetContentID       = TargetContentID,
+            TargetHomeWorldID     = TargetHomeWorldID,
+            TargetName            = TargetName,
+            TargetCharacter       = TargetCharacter,
+            TargetItem            = TargetItem,
+            TargetInventoryID     = TargetInventoryID,
+            TargetSlot            = TargetSlot,
+            DefaultAgentContext   = DefaultAgentContext,
+            InventoryAgentContext = InventoryAgentContext
         };
 
     public AgentInterface* Agent { get; }
 
-    public AgentContext* DefaultAgent { get; internal set; }
+    public AgentContext* DefaultAgentContext { get; internal set; }
 
-    public AgentInventoryContext* InventoryAgent { get; internal set; }
+    public AgentInventoryContext* InventoryAgentContext { get; internal set; }
 
     public AtkUnitBase* Addon { get; internal set; }
 
@@ -86,8 +86,8 @@ public sealed unsafe class ContextMenuOpenedArgs
     public bool IsTargetPlayer => TargetContentID != 0 && TargetCharacter is not null;
 
     public AgentContext* AsDefaultContext() =>
-        DefaultAgent;
+        DefaultAgentContext;
 
     public AgentInventoryContext* AsInventoryContext() =>
-        InventoryAgent;
+        InventoryAgentContext;
 }

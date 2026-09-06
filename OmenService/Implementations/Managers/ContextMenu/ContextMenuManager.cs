@@ -18,6 +18,8 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 {
     public ReadOnlySeString? DefaultPrefix { get; set; }
 
+    public ContextMenuManagerConfig Config { get; private set; } = null!;
+
     #region Hook 定义
 
     private delegate ushort OpenAddonByAgentDelegate
@@ -52,7 +54,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
     private          List<ContextMenuItem>? currentSubmenuItems;
     private          List<ContextMenuItem>  menuItemsInOrder        = [];
     private readonly HashSet<nint>          selectedEventInterfaces = [];
-    private readonly List<int>              menuCallbackIds         = [];
+    private readonly List<int>              menuCallbackIDs         = [];
 
     private ContextMenuOpenedArgs? currentArgs;
 
@@ -81,6 +83,8 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     protected override void Init()
     {
+        Config = LoadConfig<ContextMenuManagerConfig>() ?? new();
+
         var atkModuleVTable = (nint*)RaptureAtkModule.StaticVirtualTablePointer;
         OpenAddonByAgentHook ??= IGameInteropProvider.Instance().HookFromAddress<OpenAddonByAgentDelegate>
         (
@@ -110,7 +114,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         selectedItems       = null;
         currentSubmenuItems = null;
         currentArgs         = null;
-        menuCallbackIds.Clear();
+        menuCallbackIDs.Clear();
     }
 
     #region 菜单注入
@@ -257,7 +261,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             int             idx
         )
         {
-            menuCallbackIds.Add(idx);
+            menuCallbackIDs.Add(idx);
 
             if (hasAnyDisabled)
             {
@@ -283,7 +287,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             FillData(disabledData, nameData, i, entry.Item, entry.Idx);
         }
 
-        menuCallbackIds.AddRange(Enumerable.Range(0, nativeMenuSize).Select(i => -i - 1));
+        menuCallbackIDs.AddRange(Enumerable.Range(0, nativeMenuSize).Select(i => -i - 1));
 
         for (var i = prefixMenuSize + nativeMenuSize; i < prefixMenuSize + nativeMenuSize + suffixMenuSize; ++i)
         {
@@ -330,15 +334,15 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
         if (addonNameSpan.SequenceEqual("ContextMenu"u8))
         {
-            menuCallbackIds.Clear();
+            menuCallbackIDs.Clear();
             selectedAgent = agent;
             selectedEventInterfaces.Clear();
 
             if (selectedAgent == (AgentInterface*)AgentInventoryContext.Instance())
-                selectedMenuType = ContextMenuType.Inventory;
+                selectedMenuType = ContextMenuType.AgentInventoryContext;
             else if (selectedAgent == (AgentInterface*)AgentContext.Instance())
             {
-                selectedMenuType = ContextMenuType.Default;
+                selectedMenuType = ContextMenuType.AgentContext;
 
                 var menu     = AgentContext.Instance()->CurrentContextMenu;
                 var handlers = menu->EventHandlers;
@@ -360,6 +364,27 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             if (selectedMenuType is not null)
             {
                 currentArgs = BuildArgs(selectedAgent);
+
+                if (Config.ShowOpenMenuLog)
+                {
+                    DLog.Debug
+                    (
+                        $"[Context Menu Manager] 打开菜单\n"                                                    +
+                        $"类型：{selectedMenuType}\n"                                                          +
+                        $"Addon：{currentArgs.AddonName ?? "[空]"} ({currentArgs.OwnerAddonID})\n"            +
+                        $"目标名称：{currentArgs.TargetName ?? "[空]"}\n"                                         +
+                        $"目标 Object ID：0x{currentArgs.TargetObjectID:X}\n"                                  +
+                        $"目标 Content ID：{currentArgs.TargetContentID}\n"                                    +
+                        $"目标 Home World ID：{currentArgs.TargetHomeWorldID}\n"                               +
+                        $"目标角色：0x{(nint)currentArgs.TargetCharacter:X}（玩家: {currentArgs.IsTargetPlayer}）\n" +
+                        $"物品 ID：{currentArgs.TargetItemID}\n"                                               +
+                        $"Inventory Type：{currentArgs.TargetInventoryID?.ToString() ?? "[空]"}\n"            +
+                        $"Inventory Slot：{currentArgs.TargetSlot?.ToString()        ?? "[空]"}\n"            +
+                        $"Default Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"              +
+                        $"Inventory Agent Context：0x{(nint)currentArgs.InventoryAgentContext:X}"
+                    );
+                }
+
                 var createdItems = new List<ContextMenuItem>();
 
                 foreach (var entry in OrderedSnapshot())
@@ -383,7 +408,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         }
         else if (addonNameSpan.SequenceEqual("AddonContextSub"u8))
         {
-            menuCallbackIds.Clear();
+            menuCallbackIDs.Clear();
 
             if (currentSubmenuItems is { } submenuItems)
             {
@@ -392,7 +417,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             }
         }
         else if (addonNameSpan.SequenceEqual("AddonContextMenuTitle"u8))
-            menuCallbackIds.Clear();
+            menuCallbackIDs.Clear();
 
         var ret = OpenAddonByAgentHook.Original(module, addonName, valueCount, values, agent, a7, a8);
         if (values != oldValues)
@@ -463,14 +488,14 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
         switch (selectedMenuType)
         {
-            case ContextMenuType.Default:
+            case ContextMenuType.AgentContext:
             {
                 var ownerAddonID = ((AgentContext*)selectedAgent)->OwnerAddon;
                 module->OpenAddon(GetAddonContextSubNameID(), (uint)valueCount, values, &selectedAgent->AtkEventInterface, 71, checked((ushort)ownerAddonID), 4);
                 break;
             }
 
-            case ContextMenuType.Inventory:
+            case ContextMenuType.AgentInventoryContext:
             {
                 var ownerAddonID = ((AgentInventoryContext*)selectedAgent)->OwnerAddonId;
                 module->OpenAddon(GetAddonContextSubNameID(), (uint)valueCount, values, &selectedAgent->AtkEventInterface, 0, checked((ushort)ownerAddonID), 4);
@@ -491,14 +516,14 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         var items = currentSubmenuItems ?? selectedItems;
         if (items == null)
             goto original;
-        if (menuCallbackIds.Count == 0)
+        if (menuCallbackIDs.Count == 0)
             goto original;
         if (selectedIdx < 0)
             goto original;
-        if (selectedIdx >= menuCallbackIds.Count)
+        if (selectedIdx >= menuCallbackIDs.Count)
             goto original;
 
-        var callbackID = menuCallbackIds[selectedIdx];
+        var callbackID = menuCallbackIDs[selectedIdx];
 
         if (callbackID < 0)
             selectedIdx = -callbackID - 1;
@@ -633,8 +658,8 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     private enum ContextMenuType
     {
-        Default,
-        Inventory
+        AgentContext,
+        AgentInventoryContext
     }
 
     private sealed class LocalMenuItemEntry
@@ -650,5 +675,13 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             ContextMenuOpenedArgs args
         ) =>
             item;
+    }
+
+    public class ContextMenuManagerConfig : OmenServiceConfig
+    {
+        public bool ShowOpenMenuLog;
+
+        public void Save() =>
+            this.Save(DService.Instance().GetOmenService<ContextMenuManager>());
     }
 }
