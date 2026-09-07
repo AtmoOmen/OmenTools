@@ -44,23 +44,17 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     public ReadOnlySeString? ChatPrefix { get; set; }
 
-    public ushort ChatErrorTextColor { get; set; } = 17;
-
-    public ushort ChatErrorSeStringTextColor { get; set; } = 17;
-
     public bool RelayToTrayWhenBackground { get; set; } = true;
 
     protected override void Uninit()
     {
         TrayNotifier?.Dispose();
 
-        NotificationMinimizedText  = null;
-        NotificationIconSource     = null;
-        TrayNotifier               = null;
-        NotificationIcon           = null;
-        ChatPrefix                 = null;
-        ChatErrorTextColor         = 0;
-        ChatErrorSeStringTextColor = 0;
+        NotificationMinimizedText = null;
+        NotificationIconSource    = null;
+        TrayNotifier              = null;
+        NotificationIcon          = null;
+        ChatPrefix                = null;
     }
 
     #region Toast
@@ -212,34 +206,34 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     输出错误聊天文本，可选前缀与颜色。
     /// </summary>
-    public void ChatError(string message, ReadOnlySeString? prefix = null, ushort? textColor = null)
+    public void ChatError(string message, ReadOnlySeString? prefix = null)
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        PrintChat(message, prefix, true, textColor ?? Instance().ChatErrorTextColor);
+        PrintChat(message, prefix, true);
     }
 
     /// <summary>
     ///     输出带富文本的错误聊天消息，仅对纯文本片段着色。
     /// </summary>
-    public void ChatError(ReadOnlySeString message, ReadOnlySeString? prefix = null, ushort? rawTextColor = null) =>
-        PrintChat(message, prefix, true, rawTextColor ?? Instance().ChatErrorSeStringTextColor);
+    public void ChatError(ReadOnlySeString message, ReadOnlySeString? prefix = null) =>
+        PrintChat(message, prefix, true);
 
     /// <summary>
     ///     输出普通聊天文本，可选前缀与颜色。
     /// </summary>
-    public void Chat(string message, ReadOnlySeString? prefix = null, ushort? textColor = null)
+    public void Chat(string message, ReadOnlySeString? prefix = null)
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        PrintChat(message, prefix, false, textColor);
+        PrintChat(message, prefix, false);
     }
 
     /// <summary>
     ///     输出带富文本的普通聊天消息。
     /// </summary>
-    public void Chat(ReadOnlySeString message, ReadOnlySeString? prefix = null, ushort? rawTextColor = null) =>
-        PrintChat(message, prefix, false, rawTextColor);
+    public void Chat(ReadOnlySeString message, ReadOnlySeString? prefix = null) =>
+        PrintChat(message, prefix, false);
 
     #endregion
 
@@ -275,21 +269,13 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         );
     }
 
-    private void PrintChat(string message, ReadOnlySeString? prefix, bool isError, ushort? textColor)
+    private void PrintChat(string message, ReadOnlySeString? prefix, bool isError)
     {
         using var rented  = new RentedSeStringBuilder();
         var       builder = rented.Builder;
 
         AppendPrefix(builder, prefix ?? ChatPrefix);
-
-        if (textColor is { } color)
-        {
-            builder.PushColorType(color)
-                   .Append(message)
-                   .PopColorType();
-        }
-        else
-            builder.Append(message);
+        builder.Append(message);
 
         var chat = IChatGui.Instance();
         if (isError)
@@ -298,26 +284,13 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             chat.Print(builder.ToReadOnlySeString());
     }
 
-    private void PrintChat(ReadOnlySeString message, ReadOnlySeString? prefix, bool isError, ushort? textColor)
+    private void PrintChat(ReadOnlySeString message, ReadOnlySeString? prefix, bool isError)
     {
         using var rented  = new RentedSeStringBuilder();
         var       builder = rented.Builder;
 
         AppendPrefix(builder, prefix ?? ChatPrefix);
-
-        foreach (var payload in message)
-        {
-            if (textColor is { } color && payload.Type == ReadOnlySePayloadType.Text)
-            {
-                builder.PushColorType(color)
-                       .Append(payload)
-                       .PopColorType();
-
-                continue;
-            }
-
-            builder.Append(payload);
-        }
+        builder.Append(message);
 
         var chat = IChatGui.Instance();
         if (isError)
