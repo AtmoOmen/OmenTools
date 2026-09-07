@@ -2,6 +2,8 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Excel;
+using Lumina.Excel.Sheets;
 using InventoryItem = FFXIVClientStructs.FFXIV.Client.Game.InventoryItem;
 
 namespace OmenTools.OmenService;
@@ -43,8 +45,10 @@ public sealed unsafe class ContextMenuOpenedArgs
             TargetHomeWorldID     = TargetHomeWorldID,
             TargetName            = TargetName,
             TargetCharacter       = TargetCharacter,
-            TargetItem            = TargetItem,
-            TargetInventoryID     = TargetInventoryID,
+            TargetInventoryItem   = TargetInventoryItem,
+            TargetItemID          = TargetItemID,
+            TargetGlamourID       = TargetGlamourID,
+            TargetInventoryType   = TargetInventoryType,
             TargetSlot            = TargetSlot,
             DefaultAgentContext   = DefaultAgentContext,
             InventoryAgentContext = InventoryAgentContext
@@ -72,18 +76,30 @@ public sealed unsafe class ContextMenuOpenedArgs
 
     public InfoProxyCommonList.CharacterData* TargetCharacter { get; internal set; }
 
-    public InventoryItem? TargetItem { get; internal set; }
-
-    public uint TargetItemID =>
-        TargetItem is { } item ?
-            item.GetItemId() :
-            0;
-
-    public InventoryType? TargetInventoryID { get; internal set; }
+    public InventoryItem? TargetInventoryItem { get; internal set; }
+    
+    public InventoryType? TargetInventoryType { get; internal set; }
 
     public int? TargetSlot { get; internal set; }
 
-    public bool IsTargetPlayer => TargetContentID != 0 && TargetCharacter is not null;
+    /// <remarks>
+    ///     当前菜单目标的基础物品 ID，事件物品保留其原始 ID。
+    /// </remarks>
+    public uint TargetItemID { get; internal set; }
+
+    public RowRef<Item> TargetItemRow =>
+        TargetItemID == 0 ? default : TargetItemID.ToLuminaRowRef<Item>();
+
+    /// <remarks>
+    ///     当前菜单目标的幻化物品 ID，未应用幻化时为 0。
+    /// </remarks>
+    public uint TargetGlamourID { get; internal set; }
+
+    public RowRef<Item> TargetGlamourRow =>
+        TargetGlamourID == 0 ? default : TargetGlamourID.ToLuminaRowRef<Item>();
+
+    public bool IsTargetPlayer => 
+        TargetContentID != 0 && TargetCharacter is not null;
 
     public AgentContext* AsDefaultContext() =>
         DefaultAgentContext;

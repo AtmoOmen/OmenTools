@@ -32,6 +32,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         nint            a7,
         bool            a8
     );
+
     private Hook<OpenAddonByAgentDelegate>? OpenAddonByAgentHook;
 
     private delegate bool OnMenuSelectedDelegate
@@ -40,6 +41,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         int               selectedIdx,
         byte              a3
     );
+
     private Hook<OnMenuSelectedDelegate>? OnMenuSelectedHook;
 
     #endregion
@@ -52,11 +54,11 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
     private          ContextMenuType?       selectedMenuType;
     private          List<ContextMenuItem>? selectedItems;
     private          List<ContextMenuItem>? currentSubmenuItems;
-    private          List<ContextMenuItem>  menuItemsInOrder        = [];
-    private readonly HashSet<nint>          selectedEventInterfaces = [];
-    private readonly List<int>              menuCallbackIDs         = [];
+    private          List<ContextMenuItem>  menuItemsInOrder = [];
+    private readonly List<int>              menuCallbackIDs  = [];
 
-    private ContextMenuOpenedArgs? currentArgs;
+    private          ContextMenuOpenedArgs?  currentArgs;
+    private readonly ContextMenuItemResolver itemResolver = new();
 
     private readonly ConcurrentDictionary<ContextMenuEntry, byte> entries = [];
 
@@ -84,6 +86,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
     protected override void Init()
     {
         Config = LoadConfig<ContextMenuManagerConfig>() ?? new();
+        itemResolver.Init();
 
         var atkModuleVTable = (nint*)RaptureAtkModule.StaticVirtualTablePointer;
         OpenAddonByAgentHook ??= IGameInteropProvider.Instance().HookFromAddress<OpenAddonByAgentDelegate>
@@ -103,6 +106,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     protected override void Uninit()
     {
+        itemResolver.Dispose();
         OpenAddonByAgentHook?.Dispose();
         OpenAddonByAgentHook = null;
 
@@ -336,34 +340,18 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         {
             menuCallbackIDs.Clear();
             selectedAgent = agent;
-            selectedEventInterfaces.Clear();
 
             if (selectedAgent == (AgentInterface*)AgentInventoryContext.Instance())
                 selectedMenuType = ContextMenuType.AgentInventoryContext;
             else if (selectedAgent == (AgentInterface*)AgentContext.Instance())
-            {
                 selectedMenuType = ContextMenuType.AgentContext;
-
-                var menu     = AgentContext.Instance()->CurrentContextMenu;
-                var handlers = menu->EventHandlers;
-                var ids      = menu->EventIds;
-                var count    = (int)values[0].UInt;
-                handlers = handlers.Slice(7, count);
-                ids      = ids.Slice(7, count);
-
-                for (var i = 0; i < count; ++i)
-                {
-                    if (ids[i] <= 106)
-                        continue;
-                    selectedEventInterfaces.Add((nint)handlers[i].Value);
-                }
-            }
             else
                 selectedMenuType = null;
 
             if (selectedMenuType is not null)
             {
                 currentArgs = BuildArgs(selectedAgent);
+                itemResolver.Resolve(currentArgs, (int)values[0].UInt);
 
                 if (Config.ShowOpenMenuLog)
                 {
@@ -378,9 +366,10 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
                         $"目标 Home World ID：{currentArgs.TargetHomeWorldID}\n"                               +
                         $"目标角色：0x{(nint)currentArgs.TargetCharacter:X}（玩家: {currentArgs.IsTargetPlayer}）\n" +
                         $"物品 ID：{currentArgs.TargetItemID}\n"                                               +
-                        $"Inventory Type：{currentArgs.TargetInventoryID?.ToString() ?? "[空]"}\n"            +
-                        $"Inventory Slot：{currentArgs.TargetSlot?.ToString()        ?? "[空]"}\n"            +
-                        $"Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"              +
+                        $"幻化物品 ID：{currentArgs.TargetGlamourID}\n"                                          +
+                        $"Inventory Type：{currentArgs.TargetInventoryType?.ToString() ?? "[空]"}\n"          +
+                        $"Inventory Slot：{currentArgs.TargetSlot?.ToString()          ?? "[空]"}\n"          +
+                        $"Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"                      +
                         $"Inventory Agent Context：0x{(nint)currentArgs.InventoryAgentContext:X}"
                     );
                 }
@@ -606,10 +595,10 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
     #region 工具
 
     private List<ContextMenuEntry> OrderedSnapshot() =>
-        [
-            .. entries.Keys.OrderBy(e => e.Identifier, StringComparer.Ordinal)
-                           .ThenBy(e => e.Priority ?? 0)
-        ];
+    [
+        .. entries.Keys.OrderBy(e => e.Identifier, StringComparer.Ordinal)
+                  .ThenBy(e => e.Priority ?? 0)
+    ];
 
     private static ContextMenuOpenedArgs BuildArgs
     (
@@ -621,23 +610,30 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         if (agent == (AgentInterface*)AgentInventoryContext.Instance())
         {
             var inventoryAgent = AgentInventoryContext.Instance();
-            args.OwnerAddonID      = inventoryAgent->OwnerAddonId;
-            args.Addon             = GetAddonByID(inventoryAgent->OwnerAddonId);
-            args.TargetInventoryID = inventoryAgent->TargetInventoryId;
-            args.TargetSlot        = inventoryAgent->TargetInventorySlotId;
+            args.InventoryAgentContext = inventoryAgent;
+            args.OwnerAddonID          = inventoryAgent->OwnerAddonId;
+            args.Addon                 = GetAddonByID(inventoryAgent->OwnerAddonId);
+            args.TargetInventoryType   = inventoryAgent->TargetInventoryId;
+            args.TargetSlot            = inventoryAgent->TargetInventorySlotId;
+
             if (inventoryAgent->TargetInventorySlot is not null)
-                args.TargetItem = *inventoryAgent->TargetInventorySlot;
+            {
+                args.TargetInventoryItem = *inventoryAgent->TargetInventorySlot;
+                args.TargetItemID        = inventoryAgent->TargetInventorySlot->GetBaseItemId();
+                args.TargetGlamourID     = inventoryAgent->TargetInventorySlot->GetGlamourId();
+            }
         }
         else if (agent == (AgentInterface*)AgentContext.Instance())
         {
             var contextAgent = AgentContext.Instance();
-            args.OwnerAddonID      = contextAgent->OwnerAddon;
-            args.Addon             = GetAddonByID(contextAgent->OwnerAddon);
-            args.TargetObjectID    = contextAgent->TargetObjectId;
-            args.TargetContentID   = contextAgent->TargetContentId;
-            args.TargetHomeWorldID = contextAgent->TargetHomeWorldId;
-            args.TargetName        = contextAgent->TargetName.ToString();
-            args.TargetCharacter   = contextAgent->CurrentContextMenuTarget;
+            args.DefaultAgentContext = contextAgent;
+            args.OwnerAddonID        = contextAgent->OwnerAddon;
+            args.Addon               = GetAddonByID(contextAgent->OwnerAddon);
+            args.TargetObjectID      = contextAgent->TargetObjectId;
+            args.TargetContentID     = contextAgent->TargetContentId;
+            args.TargetHomeWorldID   = contextAgent->TargetHomeWorldId;
+            args.TargetName          = contextAgent->TargetName.ToString();
+            args.TargetCharacter     = contextAgent->CurrentContextMenuTarget;
         }
 
         args.AddonName = args.Addon is null ?
