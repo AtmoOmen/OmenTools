@@ -33,7 +33,17 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
     /// <summary>
     ///     当前是否有有效的物品ID
     /// </summary>
-    public bool IsValidItem => CurrentItemID > 0;
+    public bool IsValidItem
+    {
+        get
+        {
+            if (CurrentItemID > 0) return true;
+            if (!TryUpdateInventoryTarget()) return false;
+
+            UpdateCurrentItemInfo();
+            return CurrentItemID > 0;
+        }
+    }
 
     /// <summary>
     ///     获取当前物品的Item对象
@@ -353,6 +363,8 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
     private void OnMenuOpened(IMenuOpenedArgs args)
     {
         ResetLastItems();
+        CurrentItemID    = 0;
+        CurrentGlamourID = 0;
 
         HandleInventoryTarget(args);
         HandleSpecificAddons(args);
@@ -403,6 +415,19 @@ public unsafe class ContextMenuItemManager : OmenServiceBase<ContextMenuItemMana
         else if (rawID > 500_000)
             rawID %= 500_000;
         return (uint)rawID;
+    }
+
+    private bool TryUpdateInventoryTarget()
+    {
+        var agent = AgentInventoryContext.Instance();
+        if (agent == null || agent->TargetInventorySlot == null) return false;
+
+        var target = agent->TargetInventorySlot;
+        return ProcessItem
+        (
+            ProcessRawItemID(target->ItemId),
+            ProcessRawItemID(target->GlamourId)
+        );
     }
 
     private bool HandleInventoryTarget(IMenuOpenedArgs args)
