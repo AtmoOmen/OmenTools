@@ -435,7 +435,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
         public bool IsFailureCooldownActive(DateTime nowUTC) =>
             State == ImageLoadState.Failed && nowUTC.Ticks < Volatile.Read(ref failedUntilTicks);
 
-        public void TryCompleteByTexture(DateTime nowUTC, TimeSpan failedTtl)
+        public void TryCompleteByTexture(DateTime nowUTC, TimeSpan failedTTL)
         {
             if (Texture != null)
             {
@@ -444,12 +444,12 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
                 return;
             }
 
-            TryCompleteFailure(nowUTC, failedTtl);
+            TryCompleteFailure(nowUTC, failedTTL);
         }
 
-        public void TryCompleteFailure(DateTime nowUTC, TimeSpan failedTtl)
+        public void TryCompleteFailure(DateTime nowUTC, TimeSpan failedTTL)
         {
-            Volatile.Write(ref failedUntilTicks, nowUTC.Ticks + failedTtl.Ticks);
+            Volatile.Write(ref failedUntilTicks, nowUTC.Ticks + failedTTL.Ticks);
             Volatile.Write(ref stateValue,       (int)ImageLoadState.Failed);
             CompletionSource.TrySetResult(null);
         }
