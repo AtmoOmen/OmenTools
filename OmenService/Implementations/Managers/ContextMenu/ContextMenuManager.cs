@@ -380,7 +380,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
                         $"物品 ID：{currentArgs.TargetItemID}\n"                                               +
                         $"Inventory Type：{currentArgs.TargetInventoryID?.ToString() ?? "[空]"}\n"            +
                         $"Inventory Slot：{currentArgs.TargetSlot?.ToString()        ?? "[空]"}\n"            +
-                        $"Default Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"              +
+                        $"Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"              +
                         $"Inventory Agent Context：0x{(nint)currentArgs.InventoryAgentContext:X}"
                     );
                 }
