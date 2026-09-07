@@ -28,7 +28,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DailyRoutines.CodeAnalysis" Version="2.4.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+        <PackageReference Include="AngleSharp" Version="1.8.0" />
+        <PackageReference Include="DailyRoutines.CodeAnalysis" Version="2.6.0" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
         <PackageReference Include="GuerrillaNtp" Version="3.1.0"/>
         <PackageReference Include="TinyPinyin" Version="1.1.0"/>
     </ItemGroup>

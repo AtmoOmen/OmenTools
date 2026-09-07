@@ -2,11 +2,17 @@
   "version": 1,
   "dependencies": {
     "net10.0-windows7.0": {
+      "AngleSharp": {
+        "type": "Direct",
+        "requested": "[1.8.0, )",
+        "resolved": "1.8.0",
+        "contentHash": "vRW/0M11Jlfd7WkT5Kr0tXXmnWNVdxyII2S2b6AsgZCJEBGaXCUnti6nKIJTvAjmnmKcQbvn+SJ3lpt8dqoLIA=="
+      },
       "DailyRoutines.CodeAnalysis": {
         "type": "Direct",
-        "requested": "[2.4.0, )",
-        "resolved": "2.4.0",
-        "contentHash": "+G2MANDREROWvWMFQ3Ft+G0/zoDsNh3sQ4etCNysvC73JctGos6Wn4fvB//ZLCXOmxTsFDFD4q59yjSG28RvQA=="
+        "requested": "[2.6.0, )",
+        "resolved": "2.6.0",
+        "contentHash": "14sYsFdtHB1Dm++alMmm8K5QM2LsXg3EvcveXgiDxBt0TmQ1eRDOkpiZ5Hz9GYuNqg6A108ljVaDS31YegnZ8Q=="
       },
       "DotNet.ReproducibleBuilds": {
         "type": "Direct",
