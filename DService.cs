@@ -244,24 +244,39 @@ public sealed class DService
     [PluginService]
     public IAgentLifecycle AgentLifecycle { get; private set; } = null!;
 
+    /// <summary>
+    ///     尽量不要直接使用，用 FFXIVClientStruct。
+    /// </summary>
     [PluginService]
     public IBuddyList BuddyList { get; private set; } = null!;
 
+    /// <summary>
+    ///     尽量不要直接使用，大部分功能有其他替代方案。
+    /// </summary>
     [PluginService]
     public IChatGui Chat { get; private set; } = null!;
 
     [PluginService]
     public IClientState ClientState { get; private set; } = null!;
 
+    /// <summary>
+    ///     尽量不要直接使用，大部分功能有其他替代方案。
+    /// </summary>
     [PluginService]
     public ICommandManager Command { get; private set; } = null!;
 
     [PluginService]
     public ICondition Condition { get; private set; } = null!;
 
+    /// <summary>
+    ///     尽量不要直接使用，大部分功能有其他替代方案。
+    /// </summary>
     [PluginService]
     public IContextMenu ContextMenu { get; private set; } = null!;
 
+    /// <summary>
+    ///     尽量不要直接使用，大部分功能有其他替代方案。
+    /// </summary>
     [PluginService]
     public IDataManager Data { get; private set; } = null!;
 
@@ -271,6 +286,9 @@ public sealed class DService
     [PluginService]
     public IDutyState DutyState { get; private set; } = null!;
 
+    /// <summary>
+    ///     尽量不要直接使用，用 FFXIVClientStruct。
+    /// </summary>
     [PluginService]
     public IFateTable Fate { get; private set; } = null!;
 
