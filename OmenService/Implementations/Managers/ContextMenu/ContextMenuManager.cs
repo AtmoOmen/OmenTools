@@ -1,15 +1,15 @@
 using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using Dalamud.Game.Addon.Lifecycle;
+using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
 using Dalamud.Utility;
-using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using InteropGenerator.Runtime;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
+using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
@@ -22,27 +22,9 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     #region Hook 定义
 
-    private delegate ushort OpenAddonByAgentDelegate
-    (
-        AtkModule*      module,
-        CStringPointer  addonName,
-        int             valueCount,
-        AtkValue*       values,
-        AgentInterface* agent,
-        nint            a7,
-        bool            a8
-    );
+    private Hook<RaptureAtkModule.Delegates.OpenAddon>? OpenAddonHook;
 
-    private Hook<OpenAddonByAgentDelegate>? OpenAddonByAgentHook;
-
-    private delegate bool OnMenuSelectedDelegate
-    (
-        AddonContextMenu* addon,
-        int               selectedIdx,
-        byte              a3
-    );
-
-    private Hook<OnMenuSelectedDelegate>? OnMenuSelectedHook;
+    private Hook<AtkUnitBase.Delegates.FireCallback>? FireCallbackHook;
 
     #endregion
 
@@ -50,12 +32,9 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     private uint? addonContextSubNameID;
 
-    private          AgentInterface*        selectedAgent;
-    private          ContextMenuType?       selectedMenuType;
-    private          List<ContextMenuItem>? selectedItems;
-    private          List<ContextMenuItem>? currentSubmenuItems;
-    private          List<ContextMenuItem>  menuItemsInOrder = [];
-    private readonly List<int>              menuCallbackIDs  = [];
+    private          ContextMenuFrame?       currentMenu;
+    private readonly Stack<ContextMenuFrame> parentMenus = [];
+    private          bool                    isNavigating;
 
     private          ContextMenuOpenedArgs?  currentArgs;
     private readonly ContextMenuItemResolver itemResolver = new();
@@ -88,37 +67,42 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         Config = LoadConfig<ContextMenuManagerConfig>() ?? new();
         itemResolver.Init();
 
-        var atkModuleVTable = (nint*)RaptureAtkModule.StaticVirtualTablePointer;
-        OpenAddonByAgentHook ??= IGameInteropProvider.Instance().HookFromAddress<OpenAddonByAgentDelegate>
+        OpenAddonHook ??= IGameInteropProvider.Instance().HookFromAddress<RaptureAtkModule.Delegates.OpenAddon>
         (
-            atkModuleVTable[22],
-            OpenAddonByAgentDetour
+            (nint)RaptureAtkModule.MemberFunctionPointers.OpenAddon,
+            OpenAddonDetour
         );
-        OpenAddonByAgentHook.Enable();
+        OpenAddonHook.Enable();
 
-        OnMenuSelectedHook ??= IGameInteropProvider.Instance().HookFromAddress<OnMenuSelectedDelegate>
+        FireCallbackHook ??= IGameInteropProvider.Instance().HookFromAddress<AtkUnitBase.Delegates.FireCallback>
         (
-            (nint)AddonContextMenu.StaticVirtualTablePointer->OnMenuSelected,
-            OnMenuSelectedDetour
+            (nint)AtkUnitBase.MemberFunctionPointers.FireCallback,
+            FireCallbackDetour
         );
-        OnMenuSelectedHook.Enable();
+        FireCallbackHook.Enable();
+
+        foreach (var name in new[] { "ContextMenu", "AddonContextSub", "AddonContextMenuTitle" })
+        {
+            IAddonLifecycle.Instance().RegisterListener(AddonEvent.PostHide,    name, OnMenuClosed);
+            IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreFinalize, name, OnMenuClosed);
+        }
     }
 
     protected override void Uninit()
     {
         itemResolver.Dispose();
-        OpenAddonByAgentHook?.Dispose();
-        OpenAddonByAgentHook = null;
+        IAddonLifecycle.Instance().UnregisterListener(OnMenuClosed);
+        CloseMenu();
 
-        OnMenuSelectedHook?.Dispose();
-        OnMenuSelectedHook = null;
+        OpenAddonHook?.Dispose();
+        OpenAddonHook = null;
+
+        FireCallbackHook?.Dispose();
+        FireCallbackHook = null;
 
         DefaultPrefix = null;
 
-        selectedItems       = null;
-        currentSubmenuItems = null;
-        currentArgs         = null;
-        menuCallbackIDs.Clear();
+        ClearMenus();
     }
 
     #region 菜单注入
@@ -128,306 +112,294 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         if (addonContextSubNameID is { } id)
             return id;
 
-        id = 0;
         var index = 0;
 
         foreach (var name in RaptureAtkModule.Instance()->AddonNames)
         {
             if (name.EqualToString("AddonContextSub"))
             {
-                id = (uint)index;
-                break;
+                addonContextSubNameID = (uint)index;
+                return addonContextSubNameID.Value;
             }
 
             index++;
         }
 
-        addonContextSubNameID = id;
-        return id;
+        throw new InvalidOperationException("找不到 AddonContextSub 的名称 ID");
     }
 
-    private static AtkValue* ExpandContextMenuArray
+    private ContextMenuFrame CreateMenuFrame
     (
-        Span<AtkValue> oldValues,
-        int            newSize
+        uint                   addonNameID,
+        ReadOnlySpan<AtkValue> nativeValues,
+        AgentInterface*        agent,
+        ulong                  eventKind,
+        ushort                 ownerAddonID,
+        int                    depthLayer,
+        List<ContextMenuItem>  items,
+        bool                   isSubmenu
     )
     {
-        if (oldValues.Length >= newSize)
-            return (AtkValue*)Unsafe.AsPointer(ref oldValues[0]);
-
-        var size     = (sizeof(AtkValue) * newSize) + 8;
-        var newArray = (nint)IMemorySpace.GetUISpace()->Malloc((ulong)size, 0);
-        if (newArray == nint.Zero)
-            throw new OutOfMemoryException();
-        NativeMemory.Fill((void*)newArray, (nuint)size, 0);
-
-        *(ulong*)newArray = (ulong)newSize;
-
-        if (!oldValues.IsEmpty)
-            oldValues.CopyTo(new((void*)(newArray + 8), oldValues.Length));
-
-        return (AtkValue*)(newArray + 8);
-    }
-
-    private static void FreeExpandedContextMenuArray
-    (
-        AtkValue* newValues,
-        int       newSize
-    ) =>
-        IMemorySpace.Free((void*)((nint)newValues - 8), (ulong)((newSize * sizeof(AtkValue)) + 8));
-
-    private static AtkValue* CreateEmptySubmenuContextMenuArray
-    (
-        ReadOnlySeString name,
-        int              x,
-        int              y,
-        out int          valueCount
-    )
-    {
-        valueCount = 8;
-        var values = ExpandContextMenuArray([], valueCount);
-        values[0].SetUInt(0);
-        SetManagedStringValue(&values[1], name);
-        values[2].SetInt(x);
-        values[3].SetInt(y);
-        values[4].SetBool(false);
-        values[5].SetUInt(0);
-        values[6].SetUInt(0);
-        values[7].SetUInt(1);
-        return values;
-    }
-
-    private void SetupGenericMenu
-    (
-        int                            headerCount,
-        int                            sizeHeaderIdx,
-        int                            returnHeaderIdx,
-        int                            submenuHeaderIdx,
-        IReadOnlyList<ContextMenuItem> items,
-        ref int                        valueCount,
-        ref AtkValue*                  values
-    )
-    {
-        var prefixItems = items.Select((item, idx) => new { Item = item, Idx = idx }).Where(x => x.Item.Priority < 0).ToArray();
-        var suffixItems = items.Select((item, idx) => new { Item = item, Idx = idx }).Where(x => x.Item.Priority >= 0).ToArray();
-
-        var nativeMenuSize = (int)values[sizeHeaderIdx].UInt;
-        var prefixMenuSize = prefixItems.Length;
-        var suffixMenuSize = suffixItems.Length;
-
-        var hasGameDisabled   = valueCount - headerCount - nativeMenuSize > 0;
-        var hasCustomDisabled = items.Any(item => !item.IsEnabled);
-        var hasAnyDisabled    = hasGameDisabled || hasCustomDisabled;
-
-        values = ExpandContextMenuArray
+        const int HEADER_COUNT      = 8;
+        var       nativeCount       = (int)nativeValues[0].UInt;
+        var       count             = nativeCount + items.Count;
+        var       hasNativeDisabled = nativeCount > 0 && nativeValues.Length >= HEADER_COUNT + (nativeCount * 2);
+        var       hasDisabled       = hasNativeDisabled || items.Any(item => !item.IsEnabled);
+        var frame = new ContextMenuFrame
         (
-            new(values, valueCount),
-            valueCount = ((nativeMenuSize + items.Count) *
-                          (hasAnyDisabled ?
-                               2 :
-                               1)) +
-                         headerCount
-        );
-        var offsetData = new Span<AtkValue>(values,               headerCount);
-        var nameData   = new Span<AtkValue>(values + headerCount, nativeMenuSize + items.Count);
-        var disabledData = hasAnyDisabled ?
-                               new Span<AtkValue>(values + headerCount + nativeMenuSize + items.Count, nativeMenuSize + items.Count) :
-                               [];
-
-        var returnMask  = offsetData[returnHeaderIdx].UInt;
-        var submenuMask = offsetData[submenuHeaderIdx].UInt;
-
-        nameData[..nativeMenuSize].CopyTo(nameData.Slice(prefixMenuSize, nativeMenuSize));
-
-        if (hasAnyDisabled)
-        {
-            if (hasGameDisabled)
-            {
-                var oldDisabledData = new Span<AtkValue>(values + headerCount + nativeMenuSize, nativeMenuSize);
-                oldDisabledData.CopyTo(disabledData.Slice(prefixMenuSize, nativeMenuSize));
-            }
-            else
-            {
-                for (var i = prefixMenuSize; i < prefixMenuSize + nativeMenuSize; ++i)
-                    disabledData[i].SetInt(0);
-            }
-        }
-
-        returnMask  <<= prefixMenuSize;
-        submenuMask <<= prefixMenuSize;
-
-        for (var i = 0; i < prefixMenuSize; ++i)
-        {
-            var entry = prefixItems[i];
-            FillData(disabledData, nameData, i, entry.Item, entry.Idx);
-        }
-
-        menuCallbackIDs.AddRange(Enumerable.Range(0, nativeMenuSize).Select(i => -i - 1));
-
-        for (var i = prefixMenuSize + nativeMenuSize; i < prefixMenuSize + nativeMenuSize + suffixMenuSize; ++i)
-        {
-            var entry = suffixItems[i - prefixMenuSize - nativeMenuSize];
-            FillData(disabledData, nameData, i, entry.Item, entry.Idx);
-        }
-
-        offsetData[returnHeaderIdx].UInt  =  returnMask;
-        offsetData[submenuHeaderIdx].UInt =  submenuMask;
-        offsetData[sizeHeaderIdx].UInt    += (uint)items.Count;
-
-        menuItemsInOrder = [.. items];
-        return;
-
-        void FillData
-        (
-            Span<AtkValue>  disabledData,
-            Span<AtkValue>  nameData,
-            int             i,
-            ContextMenuItem item,
-            int             idx
+            HEADER_COUNT +
+            (count *
+             (hasDisabled ?
+                  2 :
+                  1))
         )
         {
-            menuCallbackIDs.Add(idx);
+            AddonNameID  = addonNameID,
+            Agent        = agent,
+            EventKind    = eventKind,
+            OwnerAddonID = ownerAddonID,
+            DepthLayer   = depthLayer,
+            IsSubmenu    = isSubmenu,
+            Items        = [.. items],
+            CallbackIDs  = new int[count]
+        };
 
-            if (hasAnyDisabled)
+        try
+        {
+            for (var i = 0; i < HEADER_COUNT; i++)
             {
-                disabledData[i].SetInt
+                var value = nativeValues[i];
+                frame.CopyValue(i, &value);
+            }
+
+            var returnIndex = isSubmenu ?
+                                  6 :
+                                  2;
+            var submenuIndex = isSubmenu ?
+                                   5 :
+                                   3;
+            var returnMask   = 0u;
+            var submenuMask  = 0u;
+            var displayIndex = 0;
+
+            for (var i = 0; i < items.Count; i++)
+                if (items[i].Priority < 0 && !(isSubmenu && items[i].IsReturn))
+                    AddItem(i);
+
+            for (var i = 0; i < nativeCount; i++)
+            {
+                var value = nativeValues[HEADER_COUNT + i];
+                frame.CopyValue(HEADER_COUNT + displayIndex, &value);
+                frame.CallbackIDs[displayIndex] = -i - 1;
+
+                if (hasDisabled)
+                {
+                    var disabled = hasNativeDisabled ?
+                                       nativeValues[HEADER_COUNT + nativeCount + i].Int :
+                                       0;
+                    frame.Values[HEADER_COUNT + count + displayIndex].SetInt(disabled);
+                }
+
+                if ((nativeValues[returnIndex].UInt & (1u << i)) != 0)
+                    returnMask |= 1u << displayIndex;
+                if ((nativeValues[submenuIndex].UInt & (1u << i)) != 0)
+                    submenuMask |= 1u << displayIndex;
+                displayIndex++;
+            }
+
+            for (var i = 0; i < items.Count; i++)
+                if (items[i].Priority >= 0 && !(isSubmenu && items[i].IsReturn))
+                    AddItem(i);
+
+            if (isSubmenu)
+            {
+                for (var i = 0; i < items.Count; i++)
+                    if (items[i].IsReturn)
+                        AddItem(i);
+            }
+
+            frame.Values[0].SetUInt((uint)count);
+            frame.Values[returnIndex].SetUInt(returnMask);
+            frame.Values[submenuIndex].SetUInt(submenuMask);
+
+            if (!isSubmenu && nativeValues[1].Type == AtkValueType.UInt)
+            {
+                var selectedIndex = Array.IndexOf(frame.CallbackIDs, -(int)nativeValues[1].UInt - 1);
+                frame.SelectedIndex = Math.Max(0, selectedIndex);
+                frame.Values[1].SetUInt((uint)frame.SelectedIndex);
+            }
+
+            return frame;
+
+            void AddItem
+            (
+                int itemIndex
+            )
+            {
+                var item = items[itemIndex];
+                frame.CallbackIDs[displayIndex] = itemIndex;
+                SetManagedStringValue(frame.Values + HEADER_COUNT + displayIndex, GetDisplayText(item));
+                if (hasDisabled)
+                    frame.Values[HEADER_COUNT + count + displayIndex].SetInt
+                    (
+                        item.IsEnabled ?
+                            0 :
+                            1
+                    );
+                if (item.IsReturn)
+                    returnMask |= 1u << displayIndex;
+                else if (item.Submenu is not null)
+                    submenuMask |= 1u << displayIndex;
+                displayIndex++;
+            }
+        }
+        catch
+        {
+            frame.Dispose();
+            throw;
+        }
+    }
+
+    private ushort OpenAddonDetour
+    (
+        RaptureAtkModule*                     module,
+        uint                                  addonNameID,
+        uint                                  valueCount,
+        AtkValue*                             values,
+        AtkModuleInterface.AtkEventInterface* eventInterface,
+        ulong                                 eventKind,
+        ushort                                parentAddonID,
+        int                                   depthLayer
+    )
+    {
+        var addonNames = module->AddonNames.AsSpan();
+        if (addonNameID >= addonNames.Length)
+            return OpenAddonHook.Original(module, addonNameID, valueCount, values, eventInterface, eventKind, parentAddonID, depthLayer);
+
+        var addonName = addonNames[(int)addonNameID].AsSpan();
+        if (!addonName.SequenceEqual("ContextMenu"u8)     &&
+            !addonName.SequenceEqual("AddonContextSub"u8) &&
+            !addonName.SequenceEqual("AddonContextMenuTitle"u8))
+            return OpenAddonHook.Original(module, addonNameID, valueCount, values, eventInterface, eventKind, parentAddonID, depthLayer);
+
+        if (currentMenu is { IsSubmenu: true } previous)
+        {
+            var wasNavigating = isNavigating;
+            isNavigating = true;
+
+            try
+            {
+                var previousAddon = GetAddonByID(previous.AddonID);
+                if (previousAddon is not null)
+                    previousAddon->Hide(true, false, 0);
+            }
+            finally
+            {
+                isNavigating = wasNavigating;
+            }
+        }
+
+        ClearMenus();
+        var agent = (AgentInterface*)eventInterface;
+        var menuType = agent == (AgentInterface*)AgentContext.Instance()          ? ContextMenuType.AgentContext :
+                       agent == (AgentInterface*)AgentInventoryContext.Instance() ? ContextMenuType.AgentInventoryContext :
+                                                                                    (ContextMenuType?)null;
+        if (menuType is null                          ||
+            !addonName.SequenceEqual("ContextMenu"u8) ||
+            valueCount     < 8                        ||
+            values[0].UInt > 31                       ||
+            valueCount     < 8 + values[0].UInt)
+            return OpenAddonHook.Original(module, addonNameID, valueCount, values, eventInterface, eventKind, parentAddonID, depthLayer);
+
+        ContextMenuFrame frame;
+
+        try
+        {
+            currentArgs = BuildArgs(agent);
+            itemResolver.Resolve(currentArgs, (int)values[0].UInt);
+
+            if (Config.ShowOpenMenuLog)
+            {
+                DLog.Debug
                 (
-                    item.IsEnabled ?
-                        0 :
-                        1
+                    $"[Context Menu Manager] 打开菜单\n"                                                    +
+                    $"类型：{menuType}\n"                                                                  +
+                    $"Addon：{currentArgs.AddonName ?? "[空]"} ({currentArgs.OwnerAddonID})\n"            +
+                    $"目标名称：{currentArgs.TargetName ?? "[空]"}\n"                                         +
+                    $"目标 Object ID：0x{currentArgs.TargetObjectID:X}\n"                                  +
+                    $"目标 Content ID：{currentArgs.TargetContentID}\n"                                    +
+                    $"目标 Home World ID：{currentArgs.TargetHomeWorldID}\n"                               +
+                    $"目标角色：0x{(nint)currentArgs.TargetCharacter:X}（玩家: {currentArgs.IsTargetPlayer}）\n" +
+                    $"物品 ID：{currentArgs.TargetItemID}\n"                                               +
+                    $"幻化物品 ID：{currentArgs.TargetGlamourID}\n"                                          +
+                    $"Inventory Type：{currentArgs.TargetInventoryType?.ToString() ?? "[空]"}\n"          +
+                    $"Inventory Slot：{currentArgs.TargetSlot?.ToString()          ?? "[空]"}\n"          +
+                    $"Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"                      +
+                    $"Inventory Agent Context：0x{(nint)currentArgs.InventoryAgentContext:X}"
                 );
             }
 
-            if (item.IsReturn)
-                returnMask |= 1u << i;
-            if (item.Submenu is not null)
-                submenuMask |= 1u << i;
+            var createdItems = new List<ContextMenuItem>();
 
-            SetManagedStringValue((AtkValue*)Unsafe.AsPointer(ref nameData[i]), GetDisplayText(item));
-        }
-    }
-
-    private void SetupContextMenu
-    (
-        IReadOnlyList<ContextMenuItem> items,
-        ref int                        valueCount,
-        ref AtkValue*                  values
-    ) =>
-        SetupGenericMenu(8, 0, 2, 3, items, ref valueCount, ref values);
-
-    private void SetupContextSubMenu
-    (
-        IReadOnlyList<ContextMenuItem> items,
-        ref int                        valueCount,
-        ref AtkValue*                  values
-    ) =>
-        SetupGenericMenu(8, 0, 6, 5, items, ref valueCount, ref values);
-
-    private ushort OpenAddonByAgentDetour
-    (
-        AtkModule*      module,
-        CStringPointer  addonName,
-        int             valueCount,
-        AtkValue*       values,
-        AgentInterface* agent,
-        nint            a7,
-        bool            a8
-    )
-    {
-        var oldValues     = values;
-        var addonNameSpan = addonName.AsSpan();
-
-        if (addonNameSpan.SequenceEqual("ContextMenu"u8))
-        {
-            menuCallbackIDs.Clear();
-            selectedAgent = agent;
-
-            if (selectedAgent == (AgentInterface*)AgentInventoryContext.Instance())
-                selectedMenuType = ContextMenuType.AgentInventoryContext;
-            else if (selectedAgent == (AgentInterface*)AgentContext.Instance())
-                selectedMenuType = ContextMenuType.AgentContext;
-            else
-                selectedMenuType = null;
-
-            if (selectedMenuType is not null)
+            foreach (var entry in OrderedSnapshot())
             {
-                currentArgs = BuildArgs(selectedAgent);
-                itemResolver.Resolve(currentArgs, (int)values[0].UInt);
+                var item = entry.Create(currentArgs);
+                if (item is null)
+                    continue;
 
-                if (Config.ShowOpenMenuLog)
-                {
-                    DLog.Debug
-                    (
-                        $"[Context Menu Manager] 打开菜单\n"                                                    +
-                        $"类型：{selectedMenuType}\n"                                                          +
-                        $"Addon：{currentArgs.AddonName ?? "[空]"} ({currentArgs.OwnerAddonID})\n"            +
-                        $"目标名称：{currentArgs.TargetName ?? "[空]"}\n"                                         +
-                        $"目标 Object ID：0x{currentArgs.TargetObjectID:X}\n"                                  +
-                        $"目标 Content ID：{currentArgs.TargetContentID}\n"                                    +
-                        $"目标 Home World ID：{currentArgs.TargetHomeWorldID}\n"                               +
-                        $"目标角色：0x{(nint)currentArgs.TargetCharacter:X}（玩家: {currentArgs.IsTargetPlayer}）\n" +
-                        $"物品 ID：{currentArgs.TargetItemID}\n"                                               +
-                        $"幻化物品 ID：{currentArgs.TargetGlamourID}\n"                                          +
-                        $"Inventory Type：{currentArgs.TargetInventoryType?.ToString() ?? "[空]"}\n"          +
-                        $"Inventory Slot：{currentArgs.TargetSlot?.ToString()          ?? "[空]"}\n"          +
-                        $"Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"                      +
-                        $"Inventory Agent Context：0x{(nint)currentArgs.InventoryAgentContext:X}"
-                    );
-                }
-
-                var createdItems = new List<ContextMenuItem>();
-
-                foreach (var entry in OrderedSnapshot())
-                {
-                    var item = entry.Create(currentArgs);
-
-                    if (item is not null)
-                    {
-                        item.Entry = entry;
-                        createdItems.Add(item);
-                    }
-                }
-
-                selectedItems = FixupMenuList(createdItems, (int)values[0].UInt);
-                SetupContextMenu(selectedItems, ref valueCount, ref values);
+                item.Entry = entry;
+                createdItems.Add(item);
             }
-            else
-                selectedItems = null;
 
-            currentSubmenuItems = null;
+            var items = FixupMenuList(createdItems, (int)values[0].UInt);
+            frame = CreateMenuFrame(addonNameID, new(values, (int)valueCount), agent, eventKind, parentAddonID, depthLayer, items, false);
         }
-        else if (addonNameSpan.SequenceEqual("AddonContextSub"u8))
+        catch (Exception ex)
         {
-            menuCallbackIDs.Clear();
-
-            if (currentSubmenuItems is { } submenuItems)
-            {
-                currentSubmenuItems = FixupMenuList(submenuItems.ToList(), (int)values[0].UInt);
-                SetupContextSubMenu(currentSubmenuItems, ref valueCount, ref values);
-            }
+            ClearMenus();
+            DLog.Error("[ContextMenuManager] 构建 ContextMenu 时发生错误", ex);
+            return OpenAddonHook.Original(module, addonNameID, valueCount, values, eventInterface, eventKind, parentAddonID, depthLayer);
         }
-        else if (addonNameSpan.SequenceEqual("AddonContextMenuTitle"u8))
-            menuCallbackIDs.Clear();
 
-        var ret = OpenAddonByAgentHook.Original(module, addonName, valueCount, values, agent, a7, a8);
-        if (values != oldValues)
-            FreeExpandedContextMenuArray(values, valueCount);
-        return ret;
+        currentMenu = frame;
+        frame.Retain();
+
+        try
+        {
+            frame.AddonID = OpenAddonHook.Original(module, addonNameID, (uint)frame.ValueCount, frame.Values, eventInterface, eventKind, parentAddonID, depthLayer);
+            if (frame.AddonID == 0 && currentMenu == frame)
+                ClearMenus();
+            return frame.AddonID;
+        }
+        catch
+        {
+            if (currentMenu == frame)
+                ClearMenus();
+            throw;
+        }
+        finally
+        {
+            frame.Dispose();
+        }
     }
 
     private static List<ContextMenuItem> FixupMenuList
     (
         List<ContextMenuItem> items,
-        int                   nativeMenuSize
+        int                   nativeMenuSize,
+        int                   reservedItems = 0
     )
     {
-        const int maxMenuItems = 31;
+        const int MAX_MENU_ITEMS = 31;
+        var       availableItems = MAX_MENU_ITEMS - nativeMenuSize - reservedItems;
+        if (availableItems <= 0)
+            return [];
 
-        if (items.Count + nativeMenuSize > maxMenuItems)
+        if (items.Count > availableItems)
         {
             var orderedItems = items.OrderBy(i => i.Priority).ToArray();
-            var newItems     = orderedItems[..(maxMenuItems - nativeMenuSize - 1)];
-            var submenuItems = orderedItems[(maxMenuItems   - nativeMenuSize - 1)..];
+            var newItems     = orderedItems[..(availableItems - 1)];
+            var submenuItems = orderedItems[(availableItems   - 1)..];
 
             var entries = submenuItems.Select(ContextMenuEntry (item) => new LocalMenuItemEntry(item)).ToArray();
             return
@@ -452,108 +424,317 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     private void OpenSubmenu
     (
-        ReadOnlySeString                name,
-        IReadOnlyList<ContextMenuEntry> submenuEntries,
-        int                             posX,
-        int                             posY
+        ContextMenuFrame   parent,
+        ContextMenuSubmenu submenu
     )
     {
-        var submenuItems = new List<ContextMenuItem>();
+        if (currentMenu != parent)
+            return;
 
-        foreach (var entry in submenuEntries)
+        var addon = GetAddonByID(parent.AddonID);
+        if (addon is null || !addon->IsVisible)
+            return;
+
+        var              submenuItems = new List<ContextMenuItem>();
+        ContextMenuItem? returnItem   = null;
+
+        foreach (var entry in submenu.Entries)
         {
             var item = entry.Create(currentArgs!);
+            if (item is null)
+                continue;
 
-            if (item is not null)
-            {
+            if (entry is not LocalMenuItemEntry)
                 item.Entry = entry;
+            if (item.IsReturn)
+                returnItem ??= item;
+            else
                 submenuItems.Add(item);
-            }
         }
 
-        currentSubmenuItems = submenuItems;
+        if (currentMenu != parent)
+            return;
 
-        var module = RaptureAtkModule.Instance();
-        var values = CreateEmptySubmenuContextMenuArray(name, posX, posY, out var valueCount);
+        addon = GetAddonByID(parent.AddonID);
+        if (addon is null || !addon->IsVisible)
+            return;
 
-        switch (selectedMenuType)
+        submenuItems = FixupMenuList(submenuItems, 0, 1);
+        submenuItems.Add
+        (
+            returnItem ??
+            new ContextMenuItem
+            {
+                Name     = LuminaWrapper.GetAddonTextSeString(2440),
+                IsReturn = true
+            }
+        );
+
+        short x, y;
+        addon->GetPosition(&x, &y);
+        parent.X = x;
+        parent.Y = y;
+        var values = stackalloc AtkValue[8];
+        new Span<AtkValue>(values, 8).Clear();
+        ContextMenuFrame frame;
+
+        try
         {
-            case ContextMenuType.AgentContext:
-            {
-                var ownerAddonID = ((AgentContext*)selectedAgent)->OwnerAddon;
-                module->OpenAddon(GetAddonContextSubNameID(), (uint)valueCount, values, &selectedAgent->AtkEventInterface, 71, checked((ushort)ownerAddonID), 4);
-                break;
-            }
-
-            case ContextMenuType.AgentInventoryContext:
-            {
-                var ownerAddonID = ((AgentInventoryContext*)selectedAgent)->OwnerAddonId;
-                module->OpenAddon(GetAddonContextSubNameID(), (uint)valueCount, values, &selectedAgent->AtkEventInterface, 0, checked((ushort)ownerAddonID), 4);
-                break;
-            }
+            values[0].SetUInt(0);
+            SetManagedStringValue(&values[1], submenu.Title);
+            values[2].SetInt(x);
+            values[3].SetInt(y);
+            values[4].SetBool(false);
+            values[5].SetUInt(0);
+            values[6].SetUInt(0);
+            values[7].SetUInt(1);
+            frame = CreateMenuFrame
+            (
+                GetAddonContextSubNameID(),
+                new(values, 8),
+                parent.Agent,
+                parent.EventKind,
+                parent.OwnerAddonID,
+                parent.DepthLayer,
+                submenuItems,
+                true
+            );
+        }
+        finally
+        {
+            for (var i = 0; i < 8; i++)
+                values[i].Dtor();
         }
 
-        FreeExpandedContextMenuArray(values, valueCount);
+        frame.X = x;
+        frame.Y = y;
+
+        try
+        {
+            if (!ShowMenu(frame, addon))
+            {
+                frame.Dispose();
+                return;
+            }
+        }
+        catch
+        {
+            frame.Dispose();
+            throw;
+        }
+
+        parentMenus.Push(parent);
+        currentMenu = frame;
     }
 
-    private bool OnMenuSelectedDetour
+    private bool ShowMenu
     (
-        AddonContextMenu* addon,
-        int               selectedIdx,
-        byte              a3
+        ContextMenuFrame frame,
+        AtkUnitBase*     previousAddon
     )
     {
-        var items = currentSubmenuItems ?? selectedItems;
-        if (items == null)
-            goto original;
-        if (menuCallbackIDs.Count == 0)
-            goto original;
-        if (selectedIdx < 0)
-            goto original;
-        if (selectedIdx >= menuCallbackIDs.Count)
-            goto original;
+        var previous      = currentMenu;
+        var wasNavigating = isNavigating;
+        isNavigating = true;
+        frame.Retain();
 
-        var callbackID = menuCallbackIDs[selectedIdx];
+        try
+        {
+            if (frame.IsSubmenu)
+            {
+                frame.Values[2].SetInt(frame.X);
+                frame.Values[3].SetInt(frame.Y);
+            }
+            else
+            {
+                frame.Values[1].SetUInt((uint)frame.SelectedIndex);
+                frame.Values[4].SetUInt(frame.Values[4].UInt | 1u);
+            }
+
+            var id = OpenAddonHook.Original
+            (
+                RaptureAtkModule.Instance(),
+                frame.AddonNameID,
+                (uint)frame.ValueCount,
+                frame.Values,
+                &frame.Agent->AtkEventInterface,
+                frame.EventKind,
+                frame.OwnerAddonID,
+                frame.DepthLayer
+            );
+            if (id == 0 || currentMenu != previous)
+                return false;
+
+            frame.AddonID        = id;
+            frame.Agent->AddonId = id;
+            if (previousAddon is not null && previousAddon->Id != id)
+                previousAddon->Hide(true, false, 0);
+
+            var addon = GetAddonByID(id);
+            if (addon is not null)
+                addon->SetPosition(frame.X, frame.Y);
+            return true;
+        }
+        finally
+        {
+            frame.Dispose();
+            isNavigating = wasNavigating;
+        }
+    }
+
+    private bool ReturnToParent
+    (
+        AtkUnitBase* addon
+    )
+    {
+        if (!parentMenus.TryPeek(out var parent))
+            return CloseMenu();
+
+        if (ShowMenu(parent, addon))
+        {
+            var previous = currentMenu;
+            currentMenu = parentMenus.Pop();
+            previous?.Dispose();
+        }
+
+        return false;
+    }
+
+    private bool FireCallbackDetour
+    (
+        AtkUnitBase* addon,
+        uint         valueCount,
+        AtkValue*    values,
+        bool         close
+    )
+    {
+        if (isNavigating && addon->NameString is "ContextMenu" or "AddonContextSub" or "AddonContextMenuTitle")
+            return false;
+
+        var frame = currentMenu;
+
+        if (frame is null || frame.AddonID != addon->Id)
+            return parentMenus.All(parent => parent.AddonID != addon->Id) && 
+                   FireCallbackHook.Original(addon, valueCount, values, close);
+
+        if (valueCount < 2 || values[0].Type != AtkValueType.Int || values[0].Int != 0 || values[1].Type != AtkValueType.Int)
+            return FireCallbackHook.Original(addon, valueCount, values, close);
+
+        var selectedIndex = values[1].Int;
+
+        if (selectedIndex < 0)
+        {
+            if (!frame.IsSubmenu)
+                return FireCallbackHook.Original(addon, valueCount, values, close);
+
+            if (valueCount > 2 && values[2].Type == AtkValueType.UInt && values[2].UInt != 0)
+            {
+                try
+                {
+                    return ReturnToParent(addon);
+                }
+                catch (Exception ex)
+                {
+                    DLog.Error("[ContextMenuManager] 返回 ContextMenu 上级菜单时发生错误", ex);
+                    return CloseMenu();
+                }
+            }
+
+            return CloseMenu();
+        }
+
+        if (selectedIndex >= frame.CallbackIDs.Length)
+            return false;
+
+        var callbackID = frame.CallbackIDs[selectedIndex];
 
         if (callbackID < 0)
-            selectedIdx = -callbackID - 1;
-        else
         {
-            var item          = menuItemsInOrder[callbackID];
-            var openedSubmenu = false;
+            values[1].Int = -callbackID - 1;
 
             try
             {
-                short x, y;
-                addon->AtkUnitBase.GetPosition(&x, &y);
-                var posX = x;
-                var posY = y;
-
-                if (item.Submenu is { } submenu)
-                {
-                    OpenSubmenu(submenu.Title, submenu.Entries, posX, posY);
-                    openedSubmenu = true;
-                }
-                else
-                {
-                    item.OnClicked?.Invoke
-                    (
-                        new ContextMenuItemClickedArgs(currentArgs!.Clone(), clickedSubmenu => OpenSubmenu(clickedSubmenu.Title, clickedSubmenu.Entries, posX, posY))
-                    );
-                }
+                return FireCallbackHook.Original(addon, valueCount, values, close);
             }
-            catch (Exception ex)
+            finally
             {
-                DLog.Error("处理 ContextMenu 点击时发生错误", ex);
+                values[1].Int = selectedIndex;
             }
-
-            if (!openedSubmenu)
-                addon->AtkUnitBase.FireCallbackInt(-2);
-            return false;
         }
 
-        original:
-        return OnMenuSelectedHook.Original(addon, selectedIdx, a3);
+        var item = frame.Items[callbackID];
+        if (!item.IsEnabled)
+            return false;
+
+        frame.SelectedIndex = selectedIndex;
+
+        try
+        {
+            if (item.IsReturn)
+                return ReturnToParent(addon);
+
+            if (item.Submenu is { } submenu)
+            {
+                OpenSubmenu(frame, submenu);
+                return false;
+            }
+
+            item.OnClicked?.Invoke(new ContextMenuItemClickedArgs(currentArgs!.Clone(), x => OpenSubmenu(frame, x)));
+        }
+        catch (Exception ex)
+        {
+            DLog.Error("[ContextMenuManager] 处理 ContextMenu 点击时发生错误", ex);
+        }
+
+        return currentMenu == frame && CloseMenu();
+    }
+
+    private bool CloseMenu()
+    {
+        var frame = currentMenu;
+        if (frame is null)
+            return false;
+
+        var wasNavigating = isNavigating;
+        isNavigating = true;
+
+        try
+        {
+            var addon = GetAddonByID(frame.AddonID);
+            if (addon is null)
+                return false;
+
+            var value = new AtkValue { Type = AtkValueType.Int, Int = -2 };
+            return FireCallbackHook.Original(addon, 1, &value, true);
+        }
+        finally
+        {
+            if (currentMenu == frame)
+                ClearMenus();
+            
+            isNavigating = wasNavigating;
+        }
+    }
+
+    private void OnMenuClosed
+    (
+        AddonEvent type,
+        AddonArgs  args
+    )
+    {
+        if (!isNavigating && currentMenu is { } frame && ((AtkUnitBase*)args.Addon.Address)->Id == frame.AddonID)
+            ClearMenus();
+    }
+
+    private void ClearMenus()
+    {
+        currentMenu?.Dispose();
+        currentMenu = null;
+        
+        while (parentMenus.TryPop(out var parent))
+            parent.Dispose();
+        
+        currentArgs = null;
     }
 
     private ReadOnlySeString GetDisplayText
@@ -561,6 +742,9 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         ContextMenuItem item
     )
     {
+        if (item is { IsReturn: true, Entry: null, Prefix: null })
+            return item.Name;
+
         var prefix = item.Prefix ?? item.Entry?.Prefix;
         if (prefix is null && item.Entry?.OmitPrefix != true)
             prefix = DefaultPrefix;
