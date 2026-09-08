@@ -256,6 +256,27 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         returnMask  <<= prefixMenuSize;
         submenuMask <<= prefixMenuSize;
 
+        for (var i = 0; i < prefixMenuSize; ++i)
+        {
+            var entry = prefixItems[i];
+            FillData(disabledData, nameData, i, entry.Item, entry.Idx);
+        }
+
+        menuCallbackIDs.AddRange(Enumerable.Range(0, nativeMenuSize).Select(i => -i - 1));
+
+        for (var i = prefixMenuSize + nativeMenuSize; i < prefixMenuSize + nativeMenuSize + suffixMenuSize; ++i)
+        {
+            var entry = suffixItems[i - prefixMenuSize - nativeMenuSize];
+            FillData(disabledData, nameData, i, entry.Item, entry.Idx);
+        }
+
+        offsetData[returnHeaderIdx].UInt  =  returnMask;
+        offsetData[submenuHeaderIdx].UInt =  submenuMask;
+        offsetData[sizeHeaderIdx].UInt    += (uint)items.Count;
+
+        menuItemsInOrder = [.. items];
+        return;
+
         void FillData
         (
             Span<AtkValue>  disabledData,
@@ -284,26 +305,6 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
             SetManagedStringValue((AtkValue*)Unsafe.AsPointer(ref nameData[i]), GetDisplayText(item));
         }
-
-        for (var i = 0; i < prefixMenuSize; ++i)
-        {
-            var entry = prefixItems[i];
-            FillData(disabledData, nameData, i, entry.Item, entry.Idx);
-        }
-
-        menuCallbackIDs.AddRange(Enumerable.Range(0, nativeMenuSize).Select(i => -i - 1));
-
-        for (var i = prefixMenuSize + nativeMenuSize; i < prefixMenuSize + nativeMenuSize + suffixMenuSize; ++i)
-        {
-            var entry = suffixItems[i - prefixMenuSize - nativeMenuSize];
-            FillData(disabledData, nameData, i, entry.Item, entry.Idx);
-        }
-
-        offsetData[returnHeaderIdx].UInt  =  returnMask;
-        offsetData[submenuHeaderIdx].UInt =  submenuMask;
-        offsetData[sizeHeaderIdx].UInt    += (uint)items.Count;
-
-        menuItemsInOrder = [.. items];
     }
 
     private void SetupContextMenu
