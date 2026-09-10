@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
+using Dalamud.Game.Text;
 using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -238,7 +239,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             {
                 var item = items[itemIndex];
                 frame.CallbackIDs[displayIndex] = itemIndex;
-                SetManagedStringValue(frame.Values + HEADER_COUNT + displayIndex, GetDisplayText(item));
+                SetManagedStringValue(frame.Values + HEADER_COUNT + displayIndex, GetDisplayText(item, isSubmenu));
                 if (hasDisabled)
                     frame.Values[HEADER_COUNT + count + displayIndex].SetInt
                     (
@@ -383,7 +384,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         }
     }
 
-    private static List<ContextMenuItem> FixupMenuList
+    private List<ContextMenuItem> FixupMenuList
     (
         List<ContextMenuItem> items,
         int                   nativeMenuSize,
@@ -401,18 +402,20 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             var newItems     = orderedItems[..(availableItems - 1)];
             var submenuItems = orderedItems[(availableItems   - 1)..];
 
+            var title = LuminaWrapper.GetAddonText(1763);
+            
             var entries = submenuItems.Select(ContextMenuEntry (item) => new LocalMenuItemEntry(item)).ToArray();
             return
             [
                 .. newItems,
                 new ContextMenuItem
                 {
-                    Name     = "更多功能",
-                    Prefix   = "Ⓓ",
+                    Name     = title,
+                    Prefix   = DefaultPrefix,
                     Priority = int.MaxValue,
                     Submenu = new ContextMenuSubmenu
                     {
-                        Title   = "更多功能",
+                        Title   = title,
                         Entries = entries
                     }
                 }
@@ -465,7 +468,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             returnItem ??
             new ContextMenuItem
             {
-                Name     = LuminaWrapper.GetAddonTextSeString(2440),
+                Name     = LuminaWrapper.GetAddonText(2440),
                 IsReturn = true
             }
         );
@@ -606,8 +609,8 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         var maxX = Math.Max(0f, screenWidth  - addon->GetScaledWidth(true));
         var maxY = Math.Max(0f, screenHeight - addon->GetScaledHeight(true));
 
-        return ((short)Math.Clamp((float)x, 0f, maxX),
-                (short)Math.Clamp((float)y, 0f, maxY));
+        return ((short)Math.Clamp(x, 0f, maxX),
+                (short)Math.Clamp(y, 0f, maxY));
     }
 
     private bool ReturnToParent
@@ -767,14 +770,15 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     private ReadOnlySeString GetDisplayText
     (
-        ContextMenuItem item
+        ContextMenuItem item,
+        bool isSubmenu
     )
     {
         if (item is { IsReturn: true, Entry: null, Prefix: null })
             return item.Name;
 
         var prefix = item.Prefix ?? item.Entry?.Prefix;
-        if (prefix is null && item.Entry?.OmitPrefix != true)
+        if (prefix is null && item.Entry?.OmitPrefix != true && !isSubmenu)
             prefix = DefaultPrefix;
 
         if (prefix is null)
