@@ -1014,6 +1014,7 @@ public static unsafe class Addons
     public static AtkUnitBase* XBMItemDetail                   => AddonHelper.GetByName("XBMItemDetail");
     public static AtkUnitBase* XBMBattleMonsterDetail          => AddonHelper.GetByName("XBMBattleMonsterDetail");
     public static AtkUnitBase* XBMMonsterNotebook              => AddonHelper.GetByName("XBMMonsterNotebook");
+    public static AtkUnitBase* XBMMonsterBookDetail            => AddonHelper.GetByName("XBMMonsterBookDetail");
     public static AtkUnitBase* XBMMonsterNotebookDetail        => AddonHelper.GetByName("XBMMonsterNotebookDetail");
     public static AtkUnitBase* XBMMonsterNotebookFilterSetting => AddonHelper.GetByName("XBMMonsterNotebookFilterSetting");
     public static AtkUnitBase* XBMActivePet                    => AddonHelper.GetByName("XBMActivePet");
