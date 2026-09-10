@@ -146,4 +146,7 @@ public static class LuminaWrapper
 
     public static string GetFateName(uint rowID) =>
         LuminaGetter.TryGetRow<Fate>(rowID, out var item) ? item.Name.ToString() : string.Empty;
+    
+    public static string GetPetName(uint rowID) =>
+        LuminaGetter.TryGetRow<Pet>(rowID, out var item) ? item.Name.ToString() : string.Empty;
 }
