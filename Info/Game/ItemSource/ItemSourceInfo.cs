@@ -16,8 +16,6 @@ namespace OmenTools.Info.Game.ItemSource;
 
 public sealed class ItemSourceInfo
 {
-    private const string DEFAULT_SHOP_NAME = "アイテムの購入";
-
     private static BuildState? ActiveBuildState { get; set; }
 
     public uint               ItemID                 { get; init; }
@@ -87,7 +85,7 @@ public sealed class ItemSourceInfo
         foreach (var territory in LuminaGetter.Get<TerritoryType>())
         {
             var condition = territory.ContentFinderCondition.Value;
-            if (condition.ContentType.RowId is not (26 or 29 or 16))
+            if (condition.ContentType.RowId is not (26 or 29 or 16 or 38))
                 continue;
 
             if (!territory.TryGetLGB(LGBFileType.PlanEvent, out var file)) continue;
@@ -276,10 +274,15 @@ public sealed class ItemSourceInfo
 
                 foreach (var script in customTalk.Script)
                 {
-                    if (scriptIndex == 2)
-                        scriptArg2 = script.ScriptArg;
-                    else if (scriptIndex == 4)
-                        scriptArg4 = script.ScriptArg;
+                    switch (scriptIndex)
+                    {
+                        case 2:
+                            scriptArg2 = script.ScriptArg;
+                            break;
+                        case 4:
+                            scriptArg4 = script.ScriptArg;
+                            break;
+                    }
 
                     scriptIndex++;
                 }
@@ -1324,6 +1327,8 @@ public sealed class ItemSourceInfo
     }
 
     #region 常量
+    
+    private const string DEFAULT_SHOP_NAME = "アイテムの購入";
 
     private static readonly FrozenDictionary<uint, uint> Currencies = new Dictionary<uint, uint>
     {
@@ -1368,7 +1373,7 @@ public sealed class ItemSourceInfo
     }.ToFrozenDictionary();
 
     private static readonly List<Item> GrandCompanySeals =
-        LuminaGetter.Get<Item>().Where(i => i.RowId is >= 20 and <= 22).Select(i => i).ToList();
+        [.. LuminaGetter.Get<Item>().Where(i => i.RowId is >= 20 and <= 22).Select(i => i)];
 
     #endregion
 }
