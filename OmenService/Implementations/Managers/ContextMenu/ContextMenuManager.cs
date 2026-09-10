@@ -572,7 +572,10 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
             var addon = GetAddonByID(id);
             if (addon is not null)
-                addon->SetPosition(frame.X, frame.Y);
+            {
+                var (x, y) = GetScreenClampedPosition(addon, frame.X, frame.Y);
+                addon->SetPosition(x, y);
+            }
             return true;
         }
         finally
@@ -580,6 +583,31 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             frame.Dispose();
             isNavigating = wasNavigating;
         }
+    }
+
+    private static unsafe (short X, short Y) GetScreenClampedPosition
+    (
+        AtkUnitBase* addon,
+        short        x,
+        short        y
+    )
+    {
+        var stage = AtkStage.Instance();
+
+        var screenWidth  = (float)stage->ScreenSize.Width;
+        var screenHeight = (float)stage->ScreenSize.Height;
+
+        if (stage->IsScreenSizeScaled)
+        {
+            screenWidth  *= stage->ScreenSizeScale;
+            screenHeight *= stage->ScreenSizeScale;
+        }
+
+        var maxX = Math.Max(0f, screenWidth  - addon->GetScaledWidth(true));
+        var maxY = Math.Max(0f, screenHeight - addon->GetScaledHeight(true));
+
+        return ((short)Math.Clamp((float)x, 0f, maxX),
+                (short)Math.Clamp((float)y, 0f, maxY));
     }
 
     private bool ReturnToParent
