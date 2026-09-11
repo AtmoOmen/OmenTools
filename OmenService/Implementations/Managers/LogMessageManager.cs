@@ -1,16 +1,16 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using Dalamud.Hooking;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game.InstanceContent;
+using FFXIVClientStructs.FFXIV.Client.System.Scheduler.Clip;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.Text;
 using OmenTools.Dalamud;
 using OmenTools.Interop.Game.Lumina;
-using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
@@ -34,22 +34,11 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
     [ThreadStatic]
     private static StringBuilder? LogMessageDebugBuilder;
 
-    // TODO: 等待 FFCS 合并
-    private static readonly CompSig GetInstanceContentTextSig = new
-    (
-        "83 FA 0C 73 ?? 8B C2 48 6B D0 68 48 8D 81 ?? ?? ?? ?? 48 03 C2 C3"
-    );
-    private delegate Utf8String* GetInstanceContentTextDelegate(nint director, uint rowID);
-    private Hook<GetInstanceContentTextDelegate>? GetInstanceContentTextHook;
     private Utf8String* EmptyInstanceContentText;
+    
+    private Hook<InstanceContentDirector.Delegates.GetInstanceContentText>? GetInstanceContentTextHook;
 
-    // TODO: 等待 FFCS 合并
-    private static readonly CompSig ResolveInstanceContentTextClipSig = new
-    (
-        "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 48 89 7C 24 ?? 41 56 48 83 EC ?? 48 8B 41 ?? 48 8B F9 8B 48"
-    );
-    private delegate bool ResolveInstanceContentTextClipDelegate(InstanceContentTextClip* clip);
-    private Hook<ResolveInstanceContentTextClipDelegate>? ResolveInstanceContentTextClipHook;
+    private Hook<InstanceContentTextClip.Delegates.ResolveText>? ResolveTextHook;
 
     private delegate void                  UpdateDelegate(RaptureLogModule* module);
     private          Hook<UpdateDelegate>? UpdateHook;
@@ -68,17 +57,24 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
             "Update",
             (UpdateDelegate)UpdateDetour
         );
-
         UpdateHook?.Enable();
 
         if (EmptyInstanceContentText == null)
             EmptyInstanceContentText = Utf8String.CreateEmpty();
-
-        GetInstanceContentTextHook ??= GetInstanceContentTextSig.GetHook<GetInstanceContentTextDelegate>(GetInstanceContentTextDetour);
+        
+        GetInstanceContentTextHook = InstanceContentDirector.StaticVirtualTablePointer->HookVFuncFromName
+        (
+            "GetInstanceContentText",
+            (InstanceContentDirector.Delegates.GetInstanceContentText)GetInstanceContentTextDetour
+        );
         GetInstanceContentTextHook.Enable();
-
-        ResolveInstanceContentTextClipHook ??= ResolveInstanceContentTextClipSig.GetHook<ResolveInstanceContentTextClipDelegate>(ResolveInstanceContentTextClipDetour);
-        ResolveInstanceContentTextClipHook.Enable();
+        
+        ResolveTextHook = InstanceContentTextClip.StaticVirtualTablePointer->HookVFuncFromName
+        (
+            "ResolveText",
+            (InstanceContentTextClip.Delegates.ResolveText)ResolveInstanceContentTextClipDetour
+        );
+        ResolveTextHook.Enable();
     }
 
     protected override void Uninit()
@@ -89,8 +85,8 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         GetInstanceContentTextHook?.Dispose();
         GetInstanceContentTextHook = null;
 
-        ResolveInstanceContentTextClipHook?.Dispose();
-        ResolveInstanceContentTextClipHook = null;
+        ResolveTextHook?.Dispose();
+        ResolveTextHook = null;
 
         if (EmptyInstanceContentText != null)
         {
@@ -135,7 +131,7 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         OnPostReceiveLogMessage(item);
     }
 
-    private Utf8String* GetInstanceContentTextDetour(nint director, uint rowID)
+    private Utf8String* GetInstanceContentTextDetour(InstanceContentDirector* director, uint rowID)
     {
         if (!OnPreInstanceContentText(ref rowID))
             return EmptyInstanceContentText;
@@ -148,15 +144,15 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
     private bool ResolveInstanceContentTextClipDetour(InstanceContentTextClip* clip)
     {
         if (clip == null || clip->Data == null)
-            return ResolveInstanceContentTextClipHook.Original(clip);
+            return ResolveTextHook.Original(clip);
 
-        var rowID = clip->Data->RowID;
+        var rowID = clip->TypedData->RowId;
         if (!OnPreInstanceContentText(ref rowID))
             return true;
 
-        clip->Data->RowID = rowID;
+        clip->TypedData->RowId = rowID;
 
-        var result = ResolveInstanceContentTextClipHook.Original(clip);
+        var result = ResolveTextHook.Original(clip);
         if (result)
             OnPostInstanceContentText(rowID);
 
@@ -428,19 +424,4 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         public void Save() =>
             this.Save(DService.Instance().GetOmenService<LogMessageManager>());
     }
-
-    [StructLayout(LayoutKind.Explicit)]
-    private struct InstanceContentTextClip
-    {
-        [FieldOffset(0x48)]
-        public InstanceContentTextClipData* Data;
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    private struct InstanceContentTextClipData
-    {
-        [FieldOffset(0x10)]
-        public uint RowID;
-    }
-
 }
