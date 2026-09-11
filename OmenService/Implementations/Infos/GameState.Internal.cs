@@ -1,5 +1,6 @@
 ﻿using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Excel.Sheets;
 using OmenTools.Dalamud;
@@ -26,6 +27,8 @@ public unsafe partial class GameState
     private                 Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
     
     private Hook<InfoProxyItemSearch.Delegates.ProcessRequestResult>? ProcessRequestResultHook;
+    
+    private Hook<WarpInfo.Delegates.CompleteWarp>? CompleteWarpHook;
 
     private TaskHelper taskHelper = null!;
 
@@ -34,8 +37,7 @@ public unsafe partial class GameState
     protected override void Init()
     {
         taskHelper = new() { TimeoutMS = int.MaxValue };
-
-        IClientState.Instance().Login  += OnDalamudLogin;
+        
         IClientState.Instance().Logout += OnDalamudLogout;
 
         if (IsLoggedIn)
@@ -52,13 +54,20 @@ public unsafe partial class GameState
             (InfoProxyItemSearch.Delegates.ProcessRequestResult)ProcessRequestResultDetour
         );
         ProcessRequestResultHook.Enable();
+        
+        CompleteWarpHook = IGameInteropProvider.Instance().HookFromMemberFunction
+        (
+            typeof(WarpInfo.MemberFunctionPointers),
+            "CompleteWarp",
+            (WarpInfo.Delegates.CompleteWarp)CompleteWarpDetour
+        );
+        CompleteWarpHook.Enable();
     }
 
     protected override void Uninit()
     {
         FrameworkManager.Instance().Unreg(OnUpdate);
         
-        IClientState.Instance().Login  -= OnDalamudLogin;
         IClientState.Instance().Logout -= OnDalamudLogout;
 
         taskHelper.Dispose();
@@ -69,6 +78,9 @@ public unsafe partial class GameState
         
         ProcessRequestResultHook?.Dispose();
         ProcessRequestResultHook = null;
+        
+        CompleteWarpHook?.Dispose();
+        CompleteWarpHook = null;
     }
 
     private void ProcessRequestResultDetour
@@ -111,12 +123,19 @@ public unsafe partial class GameState
         }
     }
 
-    private void OnDalamudLogin()
+    private void CompleteWarpDetour
+    (
+        WarpInfo* instance,
+        int       eventParam,
+        int       eventID
+    )
     {
-        taskHelper.Abort();
-
-        taskHelper.Enqueue(() => IsLoggedIn);
-        taskHelper.Enqueue(() => Login?.Invoke());
+        var isLogin = instance->WarpType == WarpType.Login;
+        
+        CompleteWarpHook.Original(instance, eventParam, eventID);
+        
+        if (isLogin)
+            Login?.Invoke();
     }
 
     private void OnDalamudLogout
