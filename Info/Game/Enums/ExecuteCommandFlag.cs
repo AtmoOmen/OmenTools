@@ -100,13 +100,13 @@ public enum ExecuteCommandFlag
     RidePillion = 106,
 
     /// <summary>
-    ///     共同骑乘 (自动分配座位)
+    ///     操纵弩炮（需要交互进入开炮模式的那种固定式对象）向目标开火
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 骑乘者的 EntityID</para>
+    ///     <para><c>param1</c>: 目标 EntityID</para>
     /// </remarks>
     /// <seealso cref="MountCommand" />
-    RidePillionAuto = 107,
+    FireBallista = 107,
 
     /// <summary>
     ///     请求加载小队成员角色数据

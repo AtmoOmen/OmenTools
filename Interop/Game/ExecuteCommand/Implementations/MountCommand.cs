@@ -13,12 +13,6 @@ public sealed class MountCommand : ExecuteCommandBase
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Dismount, enqueue ? 1U : 0U);
 
     /// <summary>
-    ///     共同骑乘指定目标的任意空余位置
-    /// </summary>
-    public static void RidePillion(uint targetID) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RidePillionAuto, targetID);
-
-    /// <summary>
     ///     共同骑乘指定目标的指定位置
     /// </summary>
     public static void RidePillion(uint targetID, uint seatIndex) =>
