@@ -43,6 +43,11 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     /// </summary>
     public event Action<uint>? WorldChanged;
 
+    /// <summary>
+    ///     各种移动完成时
+    /// </summary>
+    public event Action<WarpType>? WarpComplete;
+
     #endregion
 
     /// <summary>

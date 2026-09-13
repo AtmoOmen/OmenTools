@@ -130,11 +130,13 @@ public unsafe partial class GameState
         int       eventID
     )
     {
-        var isLogin = instance->WarpType == WarpType.Login;
+        var warpType = instance->WarpType;
         
         CompleteWarpHook.Original(instance, eventParam, eventID);
         
-        if (isLogin)
+        if (warpType != WarpType.None)
+            WarpComplete?.Invoke(instance->WarpType);
+        if (warpType == WarpType.Login)
             Login?.Invoke();
     }
 
