@@ -46,6 +46,20 @@ public static class Sheets
                               .ThenBy(x => x.ClassJobLevel)
                               .ToDictionary(x => x.RowId, x => x)
         );
+    
+    [DataShareTag]
+    private const string PVP_ACTIONS_TAG = "OmenTools.Info.Game.Data.Sheets.PVPActions";
+
+    public static Dictionary<uint, Action> PVPActions { get; } =
+        IDalamudPluginInterface.Instance().GetOrCreateData
+        (
+            PVP_ACTIONS_TAG,
+            () => LuminaGetter.GetSub<PvPActionSort>()
+                              .SelectMany(x => x)
+                              .Where(x => x.ActionType == 1)
+                              .DistinctBy(x => x.Action.RowId)
+                              .ToDictionary(x => x.Action.RowId, x => LuminaGetter.GetRowOrDefault<Action>(x.Action.RowId))
+        );
 
     [DataShareTag]
     private const string STATUSES_TAG = "OmenTools.Info.Game.Data.Sheets.Statuses";
