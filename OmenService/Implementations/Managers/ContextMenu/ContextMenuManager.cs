@@ -675,7 +675,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         }
 
         if (selectedIndex >= frame.CallbackIDs.Length)
-            return false;
+            return FireCallbackHook.Original(addon, valueCount, values, close);
 
         var callbackID = frame.CallbackIDs[selectedIndex];
 
