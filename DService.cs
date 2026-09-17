@@ -8,6 +8,7 @@ using OmenTools.Dalamud.Services.Game.UI;
 using OmenTools.Dalamud.Services.Game.Object;
 using OmenTools.Interop.Game;
 using OmenTools.OmenService.Abstractions;
+using OmenTools.Threading;
 using OmenTools.Threading.TaskHelper;
 
 namespace OmenTools;
@@ -79,6 +80,8 @@ public sealed class DService
             InternalInstance.DisposeTrackedHooks();
 
             InternalInstance.ResetServiceState();
+            
+            Throttler.Shared.Clear();
 
             InternalInstance.ObjectTable   = null;
             InternalInstance.AetheryteList = null;

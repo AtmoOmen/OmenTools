@@ -6,6 +6,8 @@ namespace OmenTools.Threading;
 public class Throttler
 {
     public static Throttler<string> Shared { get; } = new();
+
+    internal static readonly double TicksPerMillisecond = Stopwatch.Frequency / 1000.0;
 }
 
 /// <summary>
@@ -14,12 +16,7 @@ public class Throttler
 /// <typeparam name="T">节流标识符的类型，必须为非空类型</typeparam>
 public class Throttler<T> : Throttler where T : notnull
 {
-    private readonly ConcurrentDictionary<T, long> throttlers = new();
-
-    /// <summary>
-    ///     获取当前所有被节流的标识符集合
-    /// </summary>
-    public ICollection<T> ThrottleNames => throttlers.Keys;
+    private readonly ConcurrentDictionary<T, long> throttlers = [];
 
     /// <summary>
     ///     获取当前时间戳（Tick）
@@ -34,11 +31,8 @@ public class Throttler<T> : Throttler where T : notnull
     /// <param name="milliseconds">节流持续时间（毫秒），默认 500 毫秒</param>
     /// <param name="reThrottle">是否重新开始节流计时</param>
     /// <returns>如果成功应用节流返回 true，如果已在节流中且 reThrottle 为 false 则返回 false</returns>
-    public bool Throttle(T name, uint milliseconds = 500, bool reThrottle = false)
-    {
-        var durationTicks = (long)(milliseconds * Stopwatch.Frequency / 1000.0);
-        return ThrottleInternal(name, durationTicks, reThrottle);
-    }
+    public bool Throttle(T name, uint milliseconds = 500, bool reThrottle = false) =>
+        ThrottleInternal(name, (long)(milliseconds * TicksPerMillisecond), reThrottle);
 
     /// <summary>
     ///     对指定标识符进行节流操作
@@ -47,29 +41,30 @@ public class Throttler<T> : Throttler where T : notnull
     /// <param name="duration">节流持续时间</param>
     /// <param name="reThrottle">是否重新开始节流计时</param>
     /// <returns>如果成功应用节流返回 true，如果已在节流中且 reThrottle 为 false 则返回 false</returns>
-    public bool Throttle(T name, TimeSpan duration, bool reThrottle = false)
-    {
-        var durationTicks = (long)(duration.TotalSeconds * Stopwatch.Frequency);
-        return ThrottleInternal(name, durationTicks, reThrottle);
-    }
+    public bool Throttle(T name, TimeSpan duration, bool reThrottle = false) =>
+        ThrottleInternal(name, (long)(duration.TotalSeconds * Stopwatch.Frequency), reThrottle);
 
     private bool ThrottleInternal(T name, long durationTicks, bool reThrottle)
     {
         var currentTimestamp = GetCurrentTimestamp();
         var newExpiration    = currentTimestamp + durationTicks;
 
-        return throttlers.AddOrUpdate
-               (
-                   name,
-                   _ => newExpiration,
-                   (_, existingExpiration) =>
-                   {
-                       if (reThrottle || currentTimestamp > existingExpiration)
-                           return newExpiration;
-                       return existingExpiration;
-                   }
-               ) ==
-               newExpiration;
+        while (true)
+        {
+            if (!throttlers.TryGetValue(name, out var existingExpiration))
+            {
+                if (throttlers.TryAdd(name, newExpiration))
+                    return true;
+
+                continue;
+            }
+
+            if (!reThrottle && currentTimestamp <= existingExpiration)
+                return false;
+
+            if (throttlers.TryUpdate(name, newExpiration, existingExpiration))
+                return true;
+        }
     }
 
     /// <summary>
@@ -79,25 +74,6 @@ public class Throttler<T> : Throttler where T : notnull
     /// <returns>如果未节流或节流已过期返回 true，如果仍在节流期内返回 false</returns>
     public bool Check(T name) =>
         !throttlers.TryGetValue(name, out var expirationTime) || GetCurrentTimestamp() > expirationTime;
-
-    /// <summary>
-    ///     获取指定标识符剩余的节流时间（毫秒）
-    /// </summary>
-    /// <param name="name">要查询的标识符</param>
-    /// <param name="allowNegative">是否允许返回负值（true：返回实际剩余时间，可能为负；false：返回0或正数）</param>
-    /// <returns>剩余的节流时间（毫秒），如果 allowNegative 为 false 则最小返回0</returns>
-    public long GetRemainingTime(T name, bool allowNegative = false)
-    {
-        var currentTimestamp = GetCurrentTimestamp();
-
-        if (!throttlers.TryGetValue(name, out var expirationTime))
-            return allowNegative ? -(long)(currentTimestamp * 1000.0 / Stopwatch.Frequency) : 0;
-
-        var remainingTicks = expirationTime - currentTimestamp;
-        var remainingMs    = (long)(remainingTicks * 1000.0 / Stopwatch.Frequency);
-
-        return allowNegative ? remainingMs : Math.Max(remainingMs, 0);
-    }
 
     /// <summary>
     ///     移除指定标识符的节流限制
