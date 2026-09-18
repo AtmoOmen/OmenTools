@@ -282,14 +282,8 @@ public record AetheryteRecord
         if (!aetheryte.IsAetheryte)
             return (AetheryteRecordState.None, baseCost);
 
-        if (instance->FreeAetheryteIds[0] == aetheryte.RowID)
+        if (instance->FreeAetheryteIds.Contains((ushort)aetheryte.RowID))
             return (AetheryteRecordState.Free, 0);
-
-        if (instance->FreeAetheryteIds[1] == aetheryte.RowID)
-            return (AetheryteRecordState.FreePS, 0);
-
-        if (instance->FreeAetheryteIds[2] == aetheryte.RowID)
-            return (AetheryteRecordState.FreeNSO, 0);
 
         if (instance->FavouriteAetherytes.Contains((ushort)aetheryte.RowID))
             return (AetheryteRecordState.Favorite, baseCost / 2);

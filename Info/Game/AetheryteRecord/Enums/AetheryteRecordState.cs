@@ -13,16 +13,6 @@ public enum AetheryteRecordState
     Free,
 
     /// <summary>
-    ///     免费点 (PlayStation Plus 会员赠送)
-    /// </summary>
-    FreePS,
-
-    /// <summary>
-    ///     免费点 (Nintendon Switch Online 会员赠送)
-    /// </summary>
-    FreeNSO,
-
-    /// <summary>
     ///     返回点
     /// </summary>
     Home,
