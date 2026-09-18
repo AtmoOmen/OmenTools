@@ -154,9 +154,7 @@ public static class TeleportCostCalculator
         var instance = PlayerState.Instance();
         if (instance == null) return baseCost;
 
-        if (instance->FreeAetheryteId     == aetheryteRowID ||
-            instance->FreeAetherytePSPlus == aetheryteRowID ||
-            instance->FreeAetheryteNSO    == aetheryteRowID)
+        if (instance->FreeAetheryteIds.Contains((ushort)aetheryteRowID))
             return 0;
 
         if (instance->FavouriteAetherytes.Contains((ushort)aetheryteRowID))
