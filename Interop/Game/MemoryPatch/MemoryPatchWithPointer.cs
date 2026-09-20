@@ -11,8 +11,13 @@ public class MemoryPatchWithPointer<T> : MemoryPatch
 
     private bool isPatched;
 
-    public void Set(T value)
+    public void Set
+    (
+        T value
+    )
     {
+        if (!IsEnabled) return;
+
         if (!isPatched)
         {
             if (!SafeMemory.Read<T>(PointerAddress, out var result)) return;
@@ -27,7 +32,7 @@ public class MemoryPatchWithPointer<T> : MemoryPatch
 
     public void Reset()
     {
-        if (!isPatched) return;
+        if (!isPatched || !IsEnabled) return;
         if (!SafeMemory.Write(PointerAddress, OriginalValue)) return;
 
         CurrentValue = OriginalValue;
@@ -38,21 +43,48 @@ public class MemoryPatchWithPointer<T> : MemoryPatch
     {
         Reset();
         base.Dispose();
+        GC.SuppressFinalize(this);
     }
 
-    public MemoryPatchWithPointer(nint address, IReadOnlyCollection<byte?> bytes, nint pointerOffset = 0, bool startEnabled = false)
+    public MemoryPatchWithPointer
+    (
+        nint                       address,
+        IReadOnlyCollection<byte?> bytes,
+        nint                       pointerOffset = 0,
+        bool                       startEnabled  = false
+    )
         : base(address, bytes, startEnabled) =>
         PointerAddress = address + pointerOffset;
 
-    public MemoryPatchWithPointer(nint address, string bytesString, nint pointerOffset = 0, bool startEnabled = false)
+    public MemoryPatchWithPointer
+    (
+        nint   address,
+        string bytesString,
+        nint   pointerOffset = 0,
+        bool   startEnabled  = false
+    )
         : base(address, bytesString, startEnabled) =>
         PointerAddress = address + pointerOffset;
 
-    public MemoryPatchWithPointer(string sig, IReadOnlyCollection<byte?> bytes, nint scanOffset = 0, nint pointerOffset = 0, bool startEnabled = false)
+    public MemoryPatchWithPointer
+    (
+        string                     sig,
+        IReadOnlyCollection<byte?> bytes,
+        nint                       scanOffset    = 0,
+        nint                       pointerOffset = 0,
+        bool                       startEnabled  = false
+    )
         : base(sig, bytes, scanOffset, startEnabled) =>
         PointerAddress = Address + pointerOffset;
 
-    public MemoryPatchWithPointer(string sig, string bytesString, nint scanOffset = 0, nint pointerOffset = 0, bool startEnabled = false)
+    public MemoryPatchWithPointer
+    (
+        string sig,
+        string bytesString,
+        nint   scanOffset    = 0,
+        nint   pointerOffset = 0,
+        bool   startEnabled  = false
+    )
         : base(sig, bytesString, scanOffset, startEnabled) =>
         PointerAddress = Address + pointerOffset;
 }
