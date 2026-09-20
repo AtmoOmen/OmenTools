@@ -15,7 +15,7 @@ namespace OmenTools.Extensions;
 
 public static class GameObjectExtension
 {
-    private static readonly HashSet<ObjectKind> ValidMTQObjectKinds = [ObjectKind.EventObj, ObjectKind.EventNpc];
+    private static readonly ObjectKind[] ValidMTQObjectKinds = [ObjectKind.EventObj, ObjectKind.EventNpc];
 
     extension(IGameObject? gameObject)
     {
@@ -52,8 +52,7 @@ public static class GameObjectExtension
             {
                 if (ptr == null) return false;
 
-                if (ptr->RenderFlags != 0   ||
-                    !ptr->GetIsTargetable() ||
+                if (!ptr->TargetableStatus.IsSet(ObjectTargetableFlags.ReadyToDraw) ||
                     !ValidMTQObjectKinds.Contains(ptr->ObjectKind))
                     return false;
 
