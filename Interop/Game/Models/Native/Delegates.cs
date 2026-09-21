@@ -13,10 +13,23 @@ public unsafe delegate AtkValue* AgentReceiveEventDelegate
     ulong           eventKind
 );
 
-public unsafe delegate void AgentUpdateDelegate(AgentInterface* agent, uint frameCount);
+public unsafe delegate void AgentUpdateDelegate
+(
+    AgentInterface* agent,
+    uint            frameCount
+);
 
-public unsafe delegate void AgentShowDelegate(AgentInterface* agent);
+public unsafe delegate void AgentShowDelegate
+(
+    AgentInterface* agent
+);
 
-public unsafe delegate void AgentHideDelegate(AgentInterface* agent);
+public unsafe delegate void AgentHideDelegate
+(
+    AgentInterface* agent
+);
 
-public unsafe delegate ulong LuaFunctionDelegate(lua_State* state);
+public unsafe delegate ulong LuaFunctionDelegate
+(
+    lua_State* state
+);

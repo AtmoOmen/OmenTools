@@ -10,6 +10,7 @@ using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
+using AccountInfo = OmenTools.Interop.Game.Models.Native.AccountInfo;
 using AgentUpdateDelegate = OmenTools.Interop.Game.Models.Native.AgentUpdateDelegate;
 using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
 using CurrencyManager = FFXIVClientStructs.FFXIV.Client.Game.CurrencyManager;
@@ -20,37 +21,74 @@ namespace OmenTools.OmenService;
 
 public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 {
-    private delegate nint GetAccountInfoInstanceDelegate();
+    private static readonly CompSig AccountInfoUpdateSig =
+        new("40 56 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B 01");
+    private unsafe delegate bool AccountInfoUpdateDelegate
+    (
+        AccountInfo* accountInfo,
+        ulong        accountID,
+        byte         forceReload
+    );
+    private Hook<AccountInfoUpdateDelegate>? AccountInfoUpdateHook;
 
-    private static readonly GetAccountInfoInstanceDelegate GetAccountInfoInstance =
-        new CompSig("48 8B 05 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC CC 83 39").GetDelegate<GetAccountInfoInstanceDelegate>();
+    private static readonly CompSig AccountInfoCacheLoadSig =
+        new("4C 8B DC 55 41 56 49 8D 6B ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 48 8B 05");
+    private unsafe delegate nint AccountInfoCacheLoadDelegate
+    (
+        ulong accountID,
+        nint  arg2,
+        nint  data,
+        nuint dataSize,
+        byte  arg5,
+        byte  arg6
+    );
+    private Hook<AccountInfoCacheLoadDelegate>? AccountInfoCacheLoadHook;
 
     private delegate bool IsLocalPlayerInPartyDelegate();
-
     private static readonly IsLocalPlayerInPartyDelegate IsLocalPlayerInParty =
         new CompSig("E8 ?? ?? ?? ?? 84 C0 74 25 48 8B 8D ?? ?? ?? ??").GetDelegate<IsLocalPlayerInPartyDelegate>();
 
     private delegate bool IsLocalPlayerPartyLeaderDelegate();
-
     private static readonly IsLocalPlayerPartyLeaderDelegate IsLocalPlayerPartyLeader =
         new CompSig("48 83 EC ?? E8 ?? ?? ?? ?? 84 C0 74 ?? 48 83 C4").GetDelegate<IsLocalPlayerPartyLeaderDelegate>();
 
     private Hook<AgentUpdateDelegate>? AgentMapUpdateHook;
 
+    private ulong lastAccountID;
+
     protected override unsafe void Init()
     {
         AgentMapUpdateHook ??= IGameInteropProvider.Instance().HookFromAddress<AgentUpdateDelegate>
-            (AgentMap.Instance()->VirtualTable->GetVFuncByName("Update"), AgentMapUpdateDetour);
+        (
+            AgentMap.Instance()->VirtualTable->GetVFuncByName("Update"),
+            AgentMapUpdateDetour
+        );
         AgentMapUpdateHook.Enable();
+
+        AccountInfoUpdateHook ??= AccountInfoUpdateSig.GetHook<AccountInfoUpdateDelegate>(AccountInfoUpdateDetour);
+        AccountInfoUpdateHook.Enable();
+
+        AccountInfoCacheLoadHook ??= AccountInfoCacheLoadSig.GetHook<AccountInfoCacheLoadDelegate>(AccountInfoCacheLoadDetour);
+        AccountInfoCacheLoadHook.Enable();
     }
 
     protected override void Uninit()
     {
         AgentMapUpdateHook?.Dispose();
         AgentMapUpdateHook = null;
+
+        AccountInfoUpdateHook?.Dispose();
+        AccountInfoUpdateHook = null;
+
+        AccountInfoCacheLoadHook?.Dispose();
+        AccountInfoCacheLoadHook = null;
     }
 
-    private unsafe void AgentMapUpdateDetour(AgentInterface* agent, uint frameCount)
+    private unsafe void AgentMapUpdateDetour
+    (
+        AgentInterface* agent,
+        uint            frameCount
+    )
     {
         AgentMapUpdateHook.Original(agent, frameCount);
 
@@ -60,10 +98,53 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         IsMoving = isMovingNow;
     }
 
+    private unsafe bool AccountInfoUpdateDetour
+    (
+        AccountInfo* accountInfo,
+        ulong        accountID,
+        byte         forceReload
+    )
+    {
+        var result = AccountInfoUpdateHook.Original(accountInfo, accountID, forceReload);
+        NotifyAccountIDChanged();
+        return result;
+    }
+
+    private unsafe nint AccountInfoCacheLoadDetour
+    (
+        ulong accountID,
+        nint  arg2,
+        nint  data,
+        nuint dataSize,
+        byte  arg5,
+        byte  arg6
+    )
+    {
+        var result = AccountInfoCacheLoadHook.Original(accountID, arg2, data, dataSize, arg5, arg6);
+        NotifyAccountIDChanged();
+        return result;
+    }
+
+    private unsafe void NotifyAccountIDChanged()
+    {
+        var accountInfo = AccountInfo.Instance();
+        if (accountInfo == null) return;
+
+        var accountID = accountInfo->AccountID;
+        if (Interlocked.Exchange(ref lastAccountID, accountID) == accountID) return;
+
+        AccountIDChanged?.Invoke(accountID);
+    }
+
     /// <summary>
     ///     玩家移动状态变更时
     /// </summary>
     public event Action<bool>? PlayerMoveStateChanged;
+
+    /// <summary>
+    ///     当前玩家的 AccountID 变更时
+    /// </summary>
+    public event Action<ulong>? AccountIDChanged;
 
     /// <summary>
     ///     当前玩家所属的大国防联军
@@ -110,7 +191,7 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     ///     当前玩家的 AccountID
     /// </summary>
     public static unsafe ulong AccountID =>
-        *(ulong*)(GetAccountInfoInstance() + 8);
+        AccountInfo.Instance()->AccountID;
 
     /// <summary>
     ///     当前 ClassJob 表数据
@@ -175,13 +256,23 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     /// <summary>
     ///     获取当前玩家指定职业的等级
     /// </summary>
-    public static unsafe ushort GetClassJobLevel(uint classJobID, bool shouldGetSynced = true) =>
-        ClassJob == classJobID ? CurrentLevel : PlayerState.Instance()->GetClassJobLevel((int)classJobID, shouldGetSynced);
+    public static unsafe ushort GetClassJobLevel
+    (
+        uint classJobID,
+        bool shouldGetSynced = true
+    ) =>
+        ClassJob == classJobID ?
+            CurrentLevel :
+            PlayerState.Instance()->GetClassJobLevel((int)classJobID, shouldGetSynced);
 
     /// <summary>
     ///     获取当前玩家第一个可用的职业套装
     /// </summary>
-    public static unsafe bool TryFindClassJobGearset(uint classJobID, out byte gearsetID)
+    public static unsafe bool TryFindClassJobGearset
+    (
+        uint     classJobID,
+        out byte gearsetID
+    )
     {
         gearsetID = 0;
 
@@ -207,7 +298,11 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     /// <summary>
     ///     获取当前玩家第一个可用的职业套装
     /// </summary>
-    public static unsafe bool TryFindClassJobGearsetData(uint classJobID, out RaptureGearsetModule.GearsetEntry gearsetData)
+    public static unsafe bool TryFindClassJobGearsetData
+    (
+        uint                                  classJobID,
+        out RaptureGearsetModule.GearsetEntry gearsetData
+    )
     {
         gearsetData = default;
 
@@ -232,7 +327,10 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 
     private static bool IsOnClassJobChanging;
 
-    public static unsafe bool SwitchGearset(uint classJob)
+    public static unsafe bool SwitchGearset
+    (
+        uint classJob
+    )
     {
         if (!LuminaGetter.TryGetRow<ClassJob>(classJob, out var jobData)) return false;
         if (Object == null) return false;
@@ -294,7 +392,10 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return false;
     }
 
-    public static unsafe bool SwitchGearset(byte gearsetID)
+    public static unsafe bool SwitchGearset
+    (
+        byte gearsetID
+    )
     {
         if (Object == null) return false;
 
@@ -308,7 +409,12 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return true;
     }
 
-    public static unsafe bool HasStatus(uint statusID, out int index, uint sourceID = 0xE0000000)
+    public static unsafe bool HasStatus
+    (
+        uint    statusID,
+        out int index,
+        uint    sourceID = 0xE0000000
+    )
     {
         index = -1;
         if (Object == null) return false;
@@ -317,17 +423,23 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return index != -1;
     }
 
-    public static unsafe uint GetItemCount(uint itemID)
+    public static unsafe uint GetItemCount
+    (
+        uint itemID
+    )
     {
         var manager = CurrencyManager.Instance();
         if (manager->HasItem(itemID))
             return manager->GetItemCount(itemID);
-        
+
         var instance = InventoryManager.Instance();
         return (uint)(instance->GetInventoryItemCount(itemID) + instance->GetInventoryItemCount(itemID, true));
     }
 
-    public static float DistanceTo3D(Vector3 target)
+    public static float DistanceTo3D
+    (
+        Vector3 target
+    )
     {
         if (Object == null)
             return float.MaxValue;
@@ -335,7 +447,10 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return Vector3.Distance(Object.Position, target);
     }
 
-    public static float DistanceTo3DSquared(Vector3 target)
+    public static float DistanceTo3DSquared
+    (
+        Vector3 target
+    )
     {
         if (Object == null)
             return float.MaxValue;
@@ -343,7 +458,10 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return Vector3.DistanceSquared(Object.Position, target);
     }
 
-    public static float DistanceTo2D(Vector2 target)
+    public static float DistanceTo2D
+    (
+        Vector2 target
+    )
     {
         if (Object == null)
             return float.MaxValue;
@@ -351,7 +469,10 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return Vector2.Distance(Object.Position.ToVector2(), target);
     }
 
-    public static float DistanceTo2DSquared(Vector2 target)
+    public static float DistanceTo2DSquared
+    (
+        Vector2 target
+    )
     {
         if (Object == null)
             return float.MaxValue;
@@ -359,7 +480,11 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return Vector2.DistanceSquared(Object.Position.ToVector2(), target);
     }
 
-    public static float DistanceToObject2D(IGameObject? target, bool ignoreRadius = true)
+    public static float DistanceToObject2D
+    (
+        IGameObject? target,
+        bool         ignoreRadius = true
+    )
     {
         if (target == null || Object == null)
             return float.MaxValue;
@@ -379,7 +504,11 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return DistanceTo2D(target.Position.ToVector2());
     }
 
-    public static float DistanceToObject2DSquared(IGameObject? target, bool ignoreRadius = true)
+    public static float DistanceToObject2DSquared
+    (
+        IGameObject? target,
+        bool         ignoreRadius = true
+    )
     {
         if (target == null || Object == null)
             return float.MaxValue;
@@ -398,7 +527,11 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return DistanceTo2DSquared(target.Position.ToVector2());
     }
 
-    public static float DistanceToObject3D(IGameObject? target, bool ignoreRadius = true)
+    public static float DistanceToObject3D
+    (
+        IGameObject? target,
+        bool         ignoreRadius = true
+    )
     {
         if (target == null || Object == null)
             return float.MaxValue;
@@ -418,7 +551,11 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return DistanceTo3D(target.Position);
     }
 
-    public static float DistanceToObject3DSquared(IGameObject? target, bool ignoreRadius = true)
+    public static float DistanceToObject3DSquared
+    (
+        IGameObject? target,
+        bool         ignoreRadius = true
+    )
     {
         if (target == null || Object == null)
             return float.MaxValue;
@@ -437,7 +574,10 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return DistanceTo3DSquared(target.Position);
     }
 
-    public static Vector3 GetNearestPointToObject(IGameObject? target)
+    public static Vector3 GetNearestPointToObject
+    (
+        IGameObject? target
+    )
     {
         if (target == null || Object == null)
             return Vector3.One;
