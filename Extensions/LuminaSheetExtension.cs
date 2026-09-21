@@ -189,7 +189,7 @@ public static unsafe class LuminaSheetExtension
 
     extension(scoped in MapMarker marker)
     {
-        private string GetMarkerPlaceName()
+        public string GetMarkerPlaceName()
         {
             var placeName = marker.GetMarkerLabel();
             if (placeName != string.Empty) return placeName;
