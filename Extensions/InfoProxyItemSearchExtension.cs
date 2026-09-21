@@ -10,10 +10,13 @@ public static unsafe class InfoProxyItemSearchExtension
         scoped ref InfoProxyItemSearch proxy
     )
     {
-        public static bool IsListingsStuck => 
+        public static bool IsListingsStuck =>
             GameState.Instance().IsMarketListingsStuck;
-        
-        public bool IsFullyReceived(uint itemID = 0)
+
+        public bool IsFullyReceived
+        (
+            uint itemID = 0
+        )
         {
             fixed (InfoProxyItemSearch* ptr = &proxy)
             {
@@ -26,18 +29,24 @@ public static unsafe class InfoProxyItemSearchExtension
                     return false;
 
                 var searchItemID = ptr->SearchItemId;
-                var currentCount = ptr->Listings
-                                   .ToArray()
-                                   .Count(x => x.ItemId == searchItemID && x.UnitPrice != 0);
-        
-                if (currentCount != ptr->ListingCount)
+                var listingCount = (int)ptr->ListingCount;
+                var listings     = ptr->Listings.ToArray();
+
+                if (listingCount > listings.Length)
                     return false;
+
+                // 购买成功时客户端只会前移条目并递减计数, 残留的尾巴不会被清理, 因此只能校验计数范围内的条目。
+                for (var i = 0; i < listingCount; i++)
+                {
+                    if (listings[i].ItemId != searchItemID || listings[i].UnitPrice == 0)
+                        return false;
+                }
 
                 return ptr->EntryCount switch
                 {
-                    > 10 => ptr->ListingCount >= 10,
+                    > 10 => listingCount >= 10,
                     0    => true,
-                    _    => ptr->ListingCount != 0
+                    _    => listingCount != 0
                 };
             }
         }
