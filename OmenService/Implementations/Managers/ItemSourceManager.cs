@@ -15,7 +15,10 @@ namespace OmenTools.OmenService;
 
 public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
 {
-    public ItemSourceQueryResult Query(uint itemID)
+    public ItemSourceQueryResult Query
+    (
+        uint itemID
+    )
     {
         if (itemID == 0)
             return ItemSourceQueryResult.NotFound;
@@ -35,7 +38,19 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         }
 
         if (currentOffsets.TryGetValue(itemID, out var itemOffset) && currentHandle != null)
-            return hotCache.GetOrAdd(itemID, _ => DecodeItem(currentHandle, itemOffset, currentStrings, currentLocations.ToList()));
+        {
+            return hotCache.GetOrAdd
+            (
+                itemID,
+                _ => DecodeItem
+                (
+                    currentHandle,
+                    itemOffset,
+                    currentStrings,
+                    [.. currentLocations]
+                )
+            );
+        }
 
         return currentStatus switch
         {
@@ -45,7 +60,10 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         };
     }
 
-    public ExchangeItemsQueryResult QueryExchangeItems(uint costItemID)
+    public ExchangeItemsQueryResult QueryExchangeItems
+    (
+        uint costItemID
+    )
     {
         if (costItemID == 0)
             return ExchangeItemsQueryResult.NotFound;
@@ -71,7 +89,15 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
             return reverseHotCache.GetOrAdd
             (
                 costItemID,
-                _ => BuildExchangeQueryResult(costItemID, targetItemIDs, currentHandle, currentOffsets, currentStrings, currentLocations)
+                _ => BuildExchangeQueryResult
+                (
+                    costItemID,
+                    targetItemIDs,
+                    currentHandle,
+                    currentOffsets,
+                    currentStrings,
+                    currentLocations
+                )
             );
         }
 
@@ -82,22 +108,22 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
             _                       => ExchangeItemsQueryResult.Building
         };
     }
-    
-    
+
+
     private static readonly FrozenDictionary<uint, ItemOffset> EmptyOffsets =
         new Dictionary<uint, ItemOffset>().ToFrozenDictionary();
 
     private static readonly FrozenDictionary<uint, uint[]> EmptyReverseLookup =
         new Dictionary<uint, uint[]>().ToFrozenDictionary();
 
-    private readonly Lock                                         snapshotGate    = new();
-    private readonly LRUCache<uint, ItemSourceQueryResult> hotCache        = new(HOT_CACHE_CAPACITY);
+    private readonly Lock                                     snapshotGate    = new();
+    private readonly LRUCache<uint, ItemSourceQueryResult>    hotCache        = new(HOT_CACHE_CAPACITY);
     private readonly LRUCache<uint, ExchangeItemsQueryResult> reverseHotCache = new(HOT_CACHE_CAPACITY);
 
-    private FrozenDictionary<uint, ItemOffset> itemOffsets        = EmptyOffsets;
-    private FrozenDictionary<uint, uint[]>     reverseItemLookup  = EmptyReverseLookup;
-    private string[]                           stringTable        = [];
-    private ShopNPCLocation[]                  locationTable      = [];
+    private FrozenDictionary<uint, ItemOffset> itemOffsets       = EmptyOffsets;
+    private FrozenDictionary<uint, uint[]>     reverseItemLookup = EmptyReverseLookup;
+    private string[]                           stringTable       = [];
+    private ShopNPCLocation[]                  locationTable     = [];
     private FileStream?                        snapshotStream;
 
     private RepositoryStatus status = RepositoryStatus.Building;
@@ -123,11 +149,11 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         lock (snapshotGate)
         {
             snapshotStream?.Dispose();
-            snapshotStream     = null;
-            itemOffsets        = EmptyOffsets;
-            reverseItemLookup  = EmptyReverseLookup;
-            stringTable        = [];
-            locationTable      = [];
+            snapshotStream    = null;
+            itemOffsets       = EmptyOffsets;
+            reverseItemLookup = EmptyReverseLookup;
+            stringTable       = [];
+            locationTable     = [];
         }
     }
 
@@ -184,7 +210,10 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         );
     }
 
-    private bool TryLoadSnapshot(out string? failureReason)
+    private bool TryLoadSnapshot
+    (
+        out string? failureReason
+    )
     {
         failureReason = null;
 
@@ -300,7 +329,17 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
                     var costItemID       = reader.ReadUInt32();
                     var hasCollectablity = reader.ReadBoolean();
                     var collectablity    = reader.ReadUInt32();
-                    costInfos.Add(new(cost, costItemID, hasCollectablity ? collectablity : null));
+                    costInfos.Add
+                    (
+                        new
+                        (
+                            cost,
+                            costItemID,
+                            hasCollectablity ?
+                                collectablity :
+                                null
+                        )
+                    );
                 }
 
                 npcInfos.Add
@@ -311,7 +350,9 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
                         Name      = npcName,
                         ShopName  = shopName,
                         CostInfos = costInfos,
-                        Location  = locationID >= 0 ? locations[locationID] : null
+                        Location = locationID >= 0 ?
+                                       locations[locationID] :
+                                       null
                     }
                 );
             }
@@ -370,7 +411,11 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return ExchangeItemsQueryResult.Ready(new() { CostItemID = costItemID, Items = items });
     }
 
-    private static ExchangeItemInfo? BuildReverseItemInfo(ItemSourceInfo itemInfo, uint costItemID)
+    private static ExchangeItemInfo? BuildReverseItemInfo
+    (
+        ItemSourceInfo itemInfo,
+        uint           costItemID
+    )
     {
         List<ExchangeItemNPCInfo> npcInfos = [];
 
@@ -408,7 +453,11 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         };
     }
 
-    private static async Task WriteSnapshotAsync(string path, Dictionary<uint, ItemSourceInfo> items)
+    private static async Task WriteSnapshotAsync
+    (
+        string                           path,
+        Dictionary<uint, ItemSourceInfo> items
+    )
     {
         var stringIndexBuilder   = new Dictionary<string, int>(StringComparer.Ordinal);
         var stringTableBuilder   = new List<string>();
@@ -491,7 +540,10 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         await WriteAllBytesAtomicallyAsync(path, outputStream.ToArray()).ConfigureAwait(false);
     }
 
-    private static byte[] BuildStringSection(List<string> strings)
+    private static byte[] BuildStringSection
+    (
+        List<string> strings
+    )
     {
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream, Encoding.UTF8, true);
@@ -503,7 +555,10 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return stream.ToArray();
     }
 
-    private static byte[] BuildLocationSection(List<ShopNPCLocation> locations)
+    private static byte[] BuildLocationSection
+    (
+        List<ShopNPCLocation> locations
+    )
     {
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream, Encoding.UTF8, true);
@@ -521,7 +576,10 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return stream.ToArray();
     }
 
-    private static byte[] BuildIndexSection(IReadOnlyList<IndexEntry> entries)
+    private static byte[] BuildIndexSection
+    (
+        IReadOnlyList<IndexEntry> entries
+    )
     {
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream, Encoding.UTF8, true);
@@ -538,7 +596,10 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return stream.ToArray();
     }
 
-    private static byte[] BuildReverseIndexSection(Dictionary<uint, HashSet<uint>> reverseIndex)
+    private static byte[] BuildReverseIndexSection
+    (
+        Dictionary<uint, HashSet<uint>> reverseIndex
+    )
     {
         using var stream = new MemoryStream();
         using var writer = new BinaryWriter(stream, Encoding.UTF8, true);
@@ -557,29 +618,40 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return stream.ToArray();
     }
 
-    private static SectionInfo WriteSection(Stream stream, byte[] bytes)
+    private static SectionInfo WriteSection
+    (
+        Stream stream,
+        byte[] bytes
+    )
     {
         var offset = stream.Position;
         stream.Write(bytes);
         return new(offset, bytes.Length, ComputeChecksum(bytes));
     }
 
-    private static SnapshotHeader ReadHeader(BinaryReader reader)
+    private static SnapshotHeader ReadHeader
+    (
+        BinaryReader reader
+    )
     {
-        var magic           = reader.ReadUInt32();
-        var formatVersion   = reader.ReadInt32();
-        var clientVersion   = reader.ReadString();
-        var clientLanguage  = (Language)reader.ReadInt32();
-        var stringSection   = ReadSectionInfo(reader);
-        var locationSection = ReadSectionInfo(reader);
-        var indexSection    = ReadSectionInfo(reader);
+        var magic               = reader.ReadUInt32();
+        var formatVersion       = reader.ReadInt32();
+        var clientVersion       = reader.ReadString();
+        var clientLanguage      = (Language)reader.ReadInt32();
+        var stringSection       = ReadSectionInfo(reader);
+        var locationSection     = ReadSectionInfo(reader);
+        var indexSection        = ReadSectionInfo(reader);
         var reverseIndexSection = ReadSectionInfo(reader);
-        var dataSection     = ReadSectionInfo(reader);
+        var dataSection         = ReadSectionInfo(reader);
 
         return new(magic, formatVersion, clientVersion, clientLanguage, stringSection, locationSection, indexSection, reverseIndexSection, dataSection);
     }
 
-    private static void WriteHeader(BinaryWriter writer, SnapshotHeader header)
+    private static void WriteHeader
+    (
+        BinaryWriter   writer,
+        SnapshotHeader header
+    )
     {
         writer.Write(header.Magic);
         writer.Write(header.FormatVersion);
@@ -592,7 +664,11 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         WriteSectionInfo(writer, header.DataSection);
     }
 
-    private static void ValidateHeader(SnapshotHeader header, int fileLength)
+    private static void ValidateHeader
+    (
+        SnapshotHeader header,
+        int            fileLength
+    )
     {
         if (header.Magic != SNAPSHOT_MAGIC)
             throw new InvalidDataException($"快照魔数不匹配: {header.Magic}");
@@ -600,14 +676,18 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         if (header.FormatVersion != SNAPSHOT_FORMAT_VERSION)
             throw new InvalidDataException($"快照格式版本不匹配: {header.FormatVersion}");
 
-        ValidateSection(header.StringSection,   fileLength);
-        ValidateSection(header.LocationSection, fileLength);
-        ValidateSection(header.IndexSection,    fileLength);
+        ValidateSection(header.StringSection,       fileLength);
+        ValidateSection(header.LocationSection,     fileLength);
+        ValidateSection(header.IndexSection,        fileLength);
         ValidateSection(header.ReverseIndexSection, fileLength);
-        ValidateSection(header.DataSection,     fileLength);
+        ValidateSection(header.DataSection,         fileLength);
     }
 
-    private static void ValidateSection(SectionInfo section, int fileLength)
+    private static void ValidateSection
+    (
+        SectionInfo section,
+        int         fileLength
+    )
     {
         if (section.Offset < 0 || section.Length < 0)
             throw new InvalidDataException("快照区段目录存在非法负值");
@@ -616,14 +696,22 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
             throw new InvalidDataException("快照区段越界");
     }
 
-    private static void ValidateChecksum(byte[] bytes, SectionInfo section)
+    private static void ValidateChecksum
+    (
+        byte[]      bytes,
+        SectionInfo section
+    )
     {
         var actual = ComputeChecksum(bytes.AsSpan((int)section.Offset, section.Length));
         if (actual != section.Checksum)
             throw new InvalidDataException($"快照区段校验失败, Offset: {section.Offset}, Length: {section.Length}");
     }
 
-    private static string[] ReadStringSection(byte[] bytes, SectionInfo section)
+    private static string[] ReadStringSection
+    (
+        byte[]      bytes,
+        SectionInfo section
+    )
     {
         using var stream = new MemoryStream(bytes, (int)section.Offset, section.Length, false);
         using var reader = new BinaryReader(stream, Encoding.UTF8, false);
@@ -636,7 +724,11 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return result;
     }
 
-    private static ShopNPCLocation[] ReadLocationSection(byte[] bytes, SectionInfo section)
+    private static ShopNPCLocation[] ReadLocationSection
+    (
+        byte[]      bytes,
+        SectionInfo section
+    )
     {
         using var stream = new MemoryStream(bytes, (int)section.Offset, section.Length, false);
         using var reader = new BinaryReader(stream, Encoding.UTF8, false);
@@ -656,7 +748,12 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return result;
     }
 
-    private static FrozenDictionary<uint, ItemOffset> ReadIndexSection(byte[] bytes, SectionInfo section, long dataSectionOffset)
+    private static FrozenDictionary<uint, ItemOffset> ReadIndexSection
+    (
+        byte[]      bytes,
+        SectionInfo section,
+        long        dataSectionOffset
+    )
     {
         using var stream = new MemoryStream(bytes, (int)section.Offset, section.Length, false);
         using var reader = new BinaryReader(stream, Encoding.UTF8, false);
@@ -675,7 +772,11 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return builder.ToFrozenDictionary();
     }
 
-    private static FrozenDictionary<uint, uint[]> ReadReverseIndexSection(byte[] bytes, SectionInfo section)
+    private static FrozenDictionary<uint, uint[]> ReadReverseIndexSection
+    (
+        byte[]      bytes,
+        SectionInfo section
+    )
     {
         using var stream = new MemoryStream(bytes, (int)section.Offset, section.Length, false);
         using var reader = new BinaryReader(stream, Encoding.UTF8, false);
@@ -701,17 +802,27 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
     private static int GetHeaderSizeHint() =>
         512;
 
-    private static SectionInfo ReadSectionInfo(BinaryReader reader) =>
+    private static SectionInfo ReadSectionInfo
+    (
+        BinaryReader reader
+    ) =>
         new(reader.ReadInt64(), reader.ReadInt32(), reader.ReadUInt32());
 
-    private static void WriteSectionInfo(BinaryWriter writer, SectionInfo info)
+    private static void WriteSectionInfo
+    (
+        BinaryWriter writer,
+        SectionInfo  info
+    )
     {
         writer.Write(info.Offset);
         writer.Write(info.Length);
         writer.Write(info.Checksum);
     }
 
-    private static uint ComputeChecksum(ReadOnlySpan<byte> data)
+    private static uint ComputeChecksum
+    (
+        ReadOnlySpan<byte> data
+    )
     {
         const uint offsetBasis = 2166136261;
         const uint prime       = 16777619;
@@ -727,10 +838,17 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return hash;
     }
 
-    private static uint ComputeChecksum(byte[] bytes) =>
+    private static uint ComputeChecksum
+    (
+        byte[] bytes
+    ) =>
         ComputeChecksum(bytes.AsSpan());
 
-    private static string ReadRequiredString(IReadOnlyList<string> strings, int index)
+    private static string ReadRequiredString
+    (
+        IReadOnlyList<string> strings,
+        int                   index
+    )
     {
         if ((uint)index >= strings.Count)
             throw new InvalidDataException($"字符串索引越界: {index}");
@@ -738,10 +856,21 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return strings[index];
     }
 
-    private static string? ReadOptionalString(IReadOnlyList<string> strings, int index) =>
-        index < 0 ? null : ReadRequiredString(strings, index);
+    private static string? ReadOptionalString
+    (
+        IReadOnlyList<string> strings,
+        int                   index
+    ) =>
+        index < 0 ?
+            null :
+            ReadRequiredString(strings, index);
 
-    private static int GetRequiredStringID(string value, IDictionary<string, int> indices, ICollection<string> table)
+    private static int GetRequiredStringID
+    (
+        string                   value,
+        IDictionary<string, int> indices,
+        ICollection<string>      table
+    )
     {
         if (indices.TryGetValue(value, out var id))
             return id;
@@ -752,8 +881,15 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return id;
     }
 
-    private static int GetOptionalStringID(string? value, IDictionary<string, int> indices, ICollection<string> table) =>
-        string.IsNullOrEmpty(value) ? -1 : GetRequiredStringID(value, indices, table);
+    private static int GetOptionalStringID
+    (
+        string?                  value,
+        IDictionary<string, int> indices,
+        ICollection<string>      table
+    ) =>
+        string.IsNullOrEmpty(value) ?
+            -1 :
+            GetRequiredStringID(value, indices, table);
 
     private static int GetLocationID
     (
@@ -775,7 +911,12 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         return id;
     }
 
-    private static void AddReverseIndexEntry(Dictionary<uint, HashSet<uint>> reverseIndex, uint costItemID, uint itemID)
+    private static void AddReverseIndexEntry
+    (
+        Dictionary<uint, HashSet<uint>> reverseIndex,
+        uint                            costItemID,
+        uint                            itemID
+    )
     {
         ref var targetItems = ref CollectionsMarshal.GetValueRefOrAddDefault(reverseIndex, costItemID, out var exists);
         if (!exists || targetItems == null)
@@ -784,7 +925,11 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         targetItems.Add(itemID);
     }
 
-    private static async Task WriteAllBytesAtomicallyAsync(string path, byte[] bytes)
+    private static async Task WriteAllBytesAtomicallyAsync
+    (
+        string path,
+        byte[] bytes
+    )
     {
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(directory))
@@ -808,7 +953,10 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         }
     }
 
-    private static void TryDeleteSnapshot(string path)
+    private static void TryDeleteSnapshot
+    (
+        string path
+    )
     {
         try
         {
@@ -872,7 +1020,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
         SectionInfo ReverseIndexSection,
         SectionInfo DataSection
     );
-    
+
     #region 常量
 
     private const int  SNAPSHOT_FORMAT_VERSION = 4;
