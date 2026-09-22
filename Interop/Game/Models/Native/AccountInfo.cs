@@ -6,11 +6,8 @@ namespace OmenTools.Interop.Game.Models.Native;
 [StructLayout(LayoutKind.Explicit, Size = 48)]
 public unsafe struct AccountInfo
 {
-    private static readonly CompSig GetInstanceSig =
-        new("48 8B 05 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC CC 83 39");
-
-    private delegate AccountInfo* GetInstanceDelegate();
-
+    private static readonly CompSig             GetInstanceSig = new("48 8B 05 ?? ?? ?? ?? C3 CC CC CC CC CC CC CC CC 83 39");
+    private delegate        AccountInfo*        GetInstanceDelegate();
     private static readonly GetInstanceDelegate GetInstance = GetInstanceSig.GetDelegate<GetInstanceDelegate>();
 
     [FieldOffset(0)]
