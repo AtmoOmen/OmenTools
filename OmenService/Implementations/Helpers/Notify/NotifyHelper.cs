@@ -45,6 +45,8 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     public ReadOnlySeString? ChatPrefix { get; set; }
 
     public bool RelayToTrayWhenBackground { get; set; } = true;
+    
+    public bool SendTrayOnlyBackground { get; set; } = true;
 
     protected override void Uninit()
     {
@@ -102,6 +104,54 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     public void ContentHintRed(string message, TimeSpan? duration = null) =>
         ContentHint(message, RaptureAtkModule.TextGimmickHintStyle.Warning, duration);
+
+    #endregion
+
+    #region Tray
+
+    public void TrayInfo
+    (
+        string  message,
+        string? title = null
+    ) =>
+        Tray(message, ToolTipIcon.Info, title);
+    
+    public void TrayNone
+    (
+        string  message,
+        string? title = null
+    ) =>
+        Tray(message, ToolTipIcon.None, title);
+    
+    public void TrayWarning
+    (
+        string  message,
+        string? title = null
+    ) =>
+        Tray(message, ToolTipIcon.Warning, title);
+    
+    public void TrayError
+    (
+        string  message,
+        string? title = null
+    ) =>
+        Tray(message, ToolTipIcon.Error, title);
+    
+    public void Tray
+    (
+        string      message,
+        ToolTipIcon icon  = ToolTipIcon.None,
+        string?     title = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(TrayNotifier);
+        ArgumentNullException.ThrowIfNull(message);
+
+        if (SendTrayOnlyBackground && GameState.IsForeground)
+            return;
+
+        TrayNotifier.ShowBalloonTip(title ?? message, message, icon);
+    }
 
     #endregion
 
