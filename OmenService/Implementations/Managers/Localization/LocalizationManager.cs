@@ -5,7 +5,6 @@ using Dalamud.Utility;
 using Lumina.Data;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
-using OmenTools.Extensions;
 using OmenTools.Localization;
 using OmenTools.OmenService.Abstractions;
 
@@ -40,7 +39,12 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         Interlocked.Exchange(ref currentSnapshot, LanguageSnapshot.Empty);
     }
 
-    public void Configure(LocalizationOptions options, Language initialLanguage, Language preferredLanguage)
+    public void Configure
+    (
+        LocalizationOptions options,
+        Language            initialLanguage,
+        Language            preferredLanguage
+    )
     {
         ArgumentNullException.ThrowIfNull(options);
         ValidateOptions(options);
@@ -74,7 +78,11 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         }
     }
 
-    public Language NormalizeLanguage(Language requestedLanguage, Language preferredLanguage)
+    public Language NormalizeLanguage
+    (
+        Language requestedLanguage,
+        Language preferredLanguage
+    )
     {
         var state              = GetConfiguredState();
         var options            = state.Options!;
@@ -101,7 +109,10 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         return options.DefaultLanguage;
     }
 
-    public void LoadLanguage(Language language)
+    public void LoadLanguage
+    (
+        Language language
+    )
     {
         var state   = GetConfiguredState();
         var options = state.Options!;
@@ -113,15 +124,24 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         Interlocked.Exchange(ref currentSnapshot, snapshot);
     }
 
-    public string Get(string key)
+    public string Get
+    (
+        string key
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
 
         var snapshot = GetSnapshot();
-        return TryResolveFormat(snapshot, key, out var format) ? format : LogMissingKeyAndReturnKey(snapshot, key);
+        return TryResolveFormat(snapshot, key, out var format) ?
+                   format :
+                   LogMissingKeyAndReturnKey(snapshot, key);
     }
 
-    public string Get(string key, params object[] args)
+    public string Get
+    (
+        string          key,
+        params object[] args
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(args);
@@ -136,7 +156,27 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         return string.Format(CultureInfo.CurrentCulture, format, args);
     }
 
-    public ReadOnlySeString GetSe(string key, params object[] args)
+    public string Get
+    (
+        string                              key,
+        IReadOnlyDictionary<string, object> args
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(args);
+
+        var snapshot = GetSnapshot();
+        if (!TryResolveFormat(snapshot, key, out var format))
+            return LogMissingKeyAndReturnKey(snapshot, key);
+
+        return ReadOnlySeString.FormatText(format, args, snapshot.Language, message => LogIcuFormatError(snapshot, key, message));
+    }
+
+    public ReadOnlySeString GetSe
+    (
+        string          key,
+        params object[] args
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         ArgumentNullException.ThrowIfNull(args);
@@ -157,6 +197,33 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         );
     }
 
+    public ReadOnlySeString GetSe
+    (
+        string                              key,
+        IReadOnlyDictionary<string, object> args
+    )
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(args);
+
+        var snapshot = GetSnapshot();
+        if (!TryResolveFormat(snapshot, key, out var format))
+            return CreatePlainSeString(LogMissingKeyAndReturnKey(snapshot, key));
+
+        return ReadOnlySeString.Format(format, args, snapshot.Language, message => LogIcuFormatError(snapshot, key, message));
+    }
+
+    private static void LogIcuFormatError
+    (
+        LanguageSnapshot snapshot,
+        string           key,
+        string           message
+    )
+    {
+        if (snapshot.FormatErrors.TryAdd(key, 0))
+            DLog.Warning($"[{snapshot.LoggerTag}] 本地化键 {key} 的 ICU 格式化失败: {message}");
+    }
+
     private ConfiguredState GetConfiguredState()
     {
         var state = Volatile.Read(ref configuredState);
@@ -172,7 +239,10 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         return Volatile.Read(ref currentSnapshot);
     }
 
-    private static void ValidateOptions(LocalizationOptions options)
+    private static void ValidateOptions
+    (
+        LocalizationOptions options
+    )
     {
         ArgumentNullException.ThrowIfNull(options.SupportedLanguages);
         ArgumentNullException.ThrowIfNull(options.FileNameResolver);
@@ -207,7 +277,10 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         current?.Dispose();
     }
 
-    private static void DisposeConfiguredState(ConfiguredState state)
+    private static void DisposeConfiguredState
+    (
+        ConfiguredState state
+    )
     {
         if (!state.IsConfigured || state.Options == null)
             return;
@@ -218,7 +291,11 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         state.Options.Source.Dispose();
     }
 
-    private void OnLocalizationSourceChanged(object? sender, LocalizationSourceChangedEventArgs e)
+    private void OnLocalizationSourceChanged
+    (
+        object?                            sender,
+        LocalizationSourceChangedEventArgs e
+    )
     {
         var state = Volatile.Read(ref configuredState);
         if (!state.IsConfigured || state.Options == null)
@@ -258,7 +335,11 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         );
     }
 
-    private static LanguageSnapshot BuildSnapshot(LocalizationOptions options, Language language)
+    private static LanguageSnapshot BuildSnapshot
+    (
+        LocalizationOptions options,
+        Language            language
+    )
     {
         var resourceLanguages = EnumerateResourceLanguages(options, language);
         var resources         = new List<FrozenDictionary<string, string>>(resourceLanguages.Count);
@@ -275,7 +356,11 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         return new(language, EnumerateAvailableLanguages(options), [.. resources], options.LoggerTag);
     }
 
-    private static List<Language> EnumerateResourceLanguages(LocalizationOptions options, Language language)
+    private static List<Language> EnumerateResourceLanguages
+    (
+        LocalizationOptions options,
+        Language            language
+    )
     {
         HashSet<Language> deduped = [];
         List<Language>    ordered = [];
@@ -289,7 +374,10 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
 
         return ordered;
 
-        void AddLanguage(Language value)
+        void AddLanguage
+        (
+            Language value
+        )
         {
             if (!options.SupportedLanguages.ContainsKey(value))
                 return;
@@ -301,7 +389,11 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         }
     }
 
-    private static IEnumerable<Language> EnumerateFallbackLanguages(LocalizationOptions options, Language language)
+    private static IEnumerable<Language> EnumerateFallbackLanguages
+    (
+        LocalizationOptions options,
+        Language            language
+    )
     {
         if (!options.SupportedLanguages.ContainsKey(language))
             yield break;
@@ -310,10 +402,20 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
             yield return fallbackLanguage;
     }
 
-    private static bool IsLanguageAvailable(LocalizationOptions options, FrozenDictionary<Language, string> availableLanguages, Language language) =>
+    private static bool IsLanguageAvailable
+    (
+        LocalizationOptions                options,
+        FrozenDictionary<Language, string> availableLanguages,
+        Language                           language
+    ) =>
         options.SupportedLanguages.ContainsKey(language) && availableLanguages.ContainsKey(language);
 
-    private static bool TryResolveFormat(LanguageSnapshot snapshot, string key, out string format)
+    private static bool TryResolveFormat
+    (
+        LanguageSnapshot snapshot,
+        string           key,
+        out string       format
+    )
     {
         foreach (var resource in snapshot.Resources)
         {
@@ -325,7 +427,11 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         return false;
     }
 
-    private static FrozenDictionary<string, string> LoadLanguageResource(LocalizationOptions options, Language language)
+    private static FrozenDictionary<string, string> LoadLanguageResource
+    (
+        LocalizationOptions options,
+        Language            language
+    )
     {
         try
         {
@@ -338,7 +444,9 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
                 return EmptyResource;
 
             var resource = options.Parser.Parse(stream);
-            return resource.Count == 0 ? EmptyResource : resource;
+            return resource.Count == 0 ?
+                       EmptyResource :
+                       resource;
         }
         catch (Exception ex)
         {
@@ -347,7 +455,10 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         }
     }
 
-    private static FrozenDictionary<Language, string> EnumerateAvailableLanguages(LocalizationOptions options)
+    private static FrozenDictionary<Language, string> EnumerateAvailableLanguages
+    (
+        LocalizationOptions options
+    )
     {
         Dictionary<Language, string> availableLanguages = [];
 
@@ -363,19 +474,26 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
             availableLanguages[language.Key] = language.Value;
         }
 
-        return availableLanguages.Count == 0
-                   ? FrozenDictionary<Language, string>.Empty
-                   : availableLanguages.ToFrozenDictionary();
+        return availableLanguages.Count == 0 ?
+                   FrozenDictionary<Language, string>.Empty :
+                   availableLanguages.ToFrozenDictionary();
     }
 
-    private static ReadOnlySeString CreatePlainSeString(string text)
+    private static ReadOnlySeString CreatePlainSeString
+    (
+        string text
+    )
     {
         using var rented = new RentedSeStringBuilder();
         rented.Builder.Append(text);
         return rented.Builder.ToReadOnlySeString();
     }
 
-    private static string LogMissingKeyAndReturnKey(LanguageSnapshot snapshot, string key)
+    private static string LogMissingKeyAndReturnKey
+    (
+        LanguageSnapshot snapshot,
+        string           key
+    )
     {
         if (snapshot.MissingKeys.TryAdd(key, 0))
             DLog.Error($"[{snapshot.LoggerTag}] 未在当前语言链中找到本地化键 {key}");
@@ -383,7 +501,12 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         return key;
     }
 
-    private static void LogFormatError(LanguageSnapshot snapshot, string key, string token)
+    private static void LogFormatError
+    (
+        LanguageSnapshot snapshot,
+        string           key,
+        string           token
+    )
     {
         var logKey = $"{key}|{token}";
         if (snapshot.FormatErrors.TryAdd(logKey, 0))
@@ -422,5 +545,4 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
 
         public ConcurrentDictionary<string, byte> FormatErrors { get; } = new(StringComparer.Ordinal);
     }
-
 }
