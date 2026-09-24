@@ -17,7 +17,7 @@ public unsafe partial struct AgentRetainer {
     [FieldOffset(0x4B84)] public int ContextMenuIndex;
     [FieldOffset(0x4B88)] public int SellListEntryCount;
 
-    [FieldOffset(0x4B90), FixedSizeArray] internal fixed byte SellListEntriesData[0x168 * 20];
+    [FieldOffset(0x4B90)] internal fixed byte SellListEntriesData[0x168 * 20];
     
     public Span<SellListEntry> SellListEntries
     {
@@ -33,7 +33,7 @@ public unsafe partial struct AgentRetainer {
     [FieldOffset(0x68B0)] public ShopEventHandler* ShopEventHandler;
 
     public static AgentRetainer* Instance() =>
-        (AgentRetainer*)AgentModule.Instance()->GetAgentByInternalId(AgentId.RetainerList);
+        (AgentRetainer*)AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer);
 
     [StructLayout(LayoutKind.Explicit, Size = 0x168)]
     public struct SellListEntry {
