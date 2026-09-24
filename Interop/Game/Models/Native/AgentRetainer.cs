@@ -38,6 +38,26 @@ public unsafe partial struct AgentRetainer {
     public static AgentRetainer* Instance() =>
         (AgentRetainer*)AgentModule.Instance()->GetAgentByInternalId(AgentId.Retainer);
 
+    private static readonly CompSig OpenRetainerSellSig = 
+        new("40 55 53 56 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B 01");
+    private delegate void OpenRetainerSellDelegate
+    (
+        AgentRetainer* agent,
+        InventoryType  inventoryType,
+        ushort         inventorySlot
+    );
+    private static readonly OpenRetainerSellDelegate OpenRetainerSellPtr = OpenRetainerSellSig.GetDelegate<OpenRetainerSellDelegate>();
+
+    public void OpenRetainerSell
+    (
+        InventoryType type,
+        ushort        inventorySlot
+    )
+    {
+        fixed (AgentRetainer* ptr = &this)
+            OpenRetainerSellPtr(ptr, type, inventorySlot);
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 0x168)]
     public struct SellListEntry {
         [FieldOffset(0x00)]  public uint       ItemID;
