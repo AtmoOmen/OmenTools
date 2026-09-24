@@ -12,8 +12,15 @@ public abstract class ContextMenuEntry
 
     public virtual ReadOnlySeString? Prefix { get; }
 
-    public abstract ContextMenuItem? Create
+    public virtual IReadOnlyList<ContextMenuItem>? CreateMultiple
     (
         ContextMenuOpenedArgs args
-    );
+    ) =>
+        null;
+
+    public virtual ContextMenuItem? Create
+    (
+        ContextMenuOpenedArgs args
+    ) =>
+        null;
 }

@@ -344,6 +344,17 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
             foreach (var entry in OrderedSnapshot())
             {
+                var multipleItems = entry.CreateMultiple(currentArgs);
+
+                if (multipleItems is not null)
+                {
+                    foreach (var multipleItem in multipleItems)
+                    {
+                        multipleItem.Entry = entry;
+                        createdItems.Add(multipleItem);
+                    }
+                }
+
                 var item = entry.Create(currentArgs);
                 if (item is null)
                     continue;
@@ -403,7 +414,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             var submenuItems = orderedItems[(availableItems   - 1)..];
 
             var title = LuminaWrapper.GetAddonText(1763);
-            
+
             var entries = submenuItems.Select(ContextMenuEntry (item) => new LocalMenuItemEntry(item)).ToArray();
             return
             [
@@ -443,6 +454,21 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
         foreach (var entry in submenu.Entries)
         {
+            var multipleItems = entry.CreateMultiple(currentArgs!);
+
+            if (multipleItems is not null)
+            {
+                foreach (var multipleItem in multipleItems)
+                {
+                    if (entry is not LocalMenuItemEntry)
+                        multipleItem.Entry = entry;
+                    if (multipleItem.IsReturn)
+                        returnItem ??= multipleItem;
+                    else
+                        submenuItems.Add(multipleItem);
+                }
+            }
+
             var item = entry.Create(currentArgs!);
             if (item is null)
                 continue;
@@ -574,11 +600,13 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
                 previousAddon->Hide(true, false, 0);
 
             var addon = GetAddonByID(id);
+
             if (addon is not null)
             {
                 var (x, y) = GetScreenClampedPosition(addon, frame.X, frame.Y);
                 addon->SetPosition(x, y);
             }
+
             return true;
         }
         finally
@@ -609,8 +637,8 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         var maxX = Math.Max(0f, screenWidth  - addon->GetScaledWidth(true));
         var maxY = Math.Max(0f, screenHeight - addon->GetScaledHeight(true));
 
-        return ((short)Math.Clamp(x, 0f, maxX),
-                (short)Math.Clamp(y, 0f, maxY));
+        return ((short)Math.Clamp(x,    0f, maxX),
+                   (short)Math.Clamp(y, 0f, maxY));
     }
 
     private bool ReturnToParent
@@ -645,7 +673,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         var frame = currentMenu;
 
         if (frame is null || frame.AddonID != addon->Id)
-            return parentMenus.All(parent => parent.AddonID != addon->Id) && 
+            return parentMenus.All(parent => parent.AddonID != addon->Id) &&
                    FireCallbackHook.Original(addon, valueCount, values, close);
 
         if (valueCount < 2 || values[0].Type != AtkValueType.Int || values[0].Int != 0 || values[1].Type != AtkValueType.Int)
@@ -742,7 +770,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         {
             if (currentMenu == frame)
                 ClearMenus();
-            
+
             isNavigating = wasNavigating;
         }
     }
@@ -761,17 +789,17 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
     {
         currentMenu?.Dispose();
         currentMenu = null;
-        
+
         while (parentMenus.TryPop(out var parent))
             parent.Dispose();
-        
+
         currentArgs = null;
     }
 
     private ReadOnlySeString GetDisplayText
     (
         ContextMenuItem item,
-        bool isSubmenu
+        bool            isSubmenu
     )
     {
         if (item is { IsReturn: true, Entry: null, Prefix: null })
