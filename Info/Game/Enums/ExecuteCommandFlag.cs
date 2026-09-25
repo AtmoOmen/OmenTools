@@ -233,13 +233,13 @@ public enum ExecuteCommandFlag
     RejectRevive = 205,
 
     /// <summary>
-    ///     未知大型副本事件命令
+    ///     选择副本区
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: Event Kind</para>
-    ///     <para><c>param2</c>: 未知</para>
+    ///     <para><c>param1</c>: 目标区域的 Territory Type</para>
+    ///     <para><c>param2</c>: 分线索引（随意为 0xFFFFFFFF）</para>
     /// </remarks>
-    PublicContentCommand206 = 206,
+    SelectInstancedArea = 206,
 
     /// <summary>
     ///     未知传送命令
