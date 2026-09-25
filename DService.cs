@@ -1,11 +1,12 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using Dalamud.Hooking;
 using Dalamud.IoC;
 using OmenTools.Dalamud;
-using OmenTools.Dalamud.Services.Game.UI;
 using OmenTools.Dalamud.Services.Game.Object;
+using OmenTools.Dalamud.Services.Game.UI;
 using OmenTools.Interop.Game;
 using OmenTools.OmenService.Abstractions;
 using OmenTools.Threading;
@@ -17,7 +18,11 @@ public sealed class DService
 {
     #region 公开接口
 
-    public static void Init(IDalamudPluginInterface pluginInterface, Func<DServiceInitOptions>? optionsFunc = null)
+    public static void Init
+    (
+        IDalamudPluginInterface    pluginInterface,
+        Func<DServiceInitOptions>? optionsFunc = null
+    )
     {
         if (IsInitialized || IsDisposed) return;
 
@@ -26,13 +31,15 @@ public sealed class DService
 
         instance.ResetServiceState();
 
-        instance.InitOptions = optionsFunc != null ? optionsFunc() : new();
+        instance.InitOptions = optionsFunc != null ?
+                                   optionsFunc() :
+                                   new();
 
         instance.PI            = pluginInterface;
         instance.UIBuilder     = pluginInterface.UiBuilder;
         instance.ObjectTable   = new ObjectTable();
         instance.AetheryteList = new AetheryteList();
-        
+
         instance.OmenDalamudServices[typeof(IObjectTable)]   = instance.ObjectTable;
         instance.OmenDalamudServices[typeof(IAetheryteList)] = instance.AetheryteList;
 
@@ -80,7 +87,7 @@ public sealed class DService
             InternalInstance.DisposeTrackedHooks();
 
             InternalInstance.ResetServiceState();
-            
+
             Throttler.Shared.Clear();
 
             InternalInstance.ObjectTable   = null;
@@ -107,7 +114,7 @@ public sealed class DService
 
     public T? GetOmenService<T>() where T : OmenServiceBase =>
         (T?)OmenServices.GetValueOrDefault(typeof(T));
-    
+
     public T? GetOmenDalamudService<T>() where T : IOmenDalamudService =>
         (T?)OmenDalamudServices.GetValueOrDefault(typeof(T));
 
@@ -127,23 +134,28 @@ public sealed class DService
 
     private DServiceInitOptions InitOptions { get; set; } = new();
 
-    private Dictionary<Type, OmenServiceBase>        OmenServices        { get; set; } = [];
+    private Dictionary<Type, OmenServiceBase>     OmenServices        { get; set; } = [];
     private Dictionary<Type, IOmenDalamudService> OmenDalamudServices { get; set; } = [];
 
-    private ConcurrentDictionary<TaskHelper, byte>   TaskHelpers   { get; set; } = [];
-    private ConcurrentDictionary<MemoryPatch, byte>  MemoryPatches { get; set; } = [];
-    private ConcurrentDictionary<IDalamudHook, byte> Hooks         { get; set; } = [];
+    private ConcurrentDictionary<TaskHelper, byte>  TaskHelpers   { get; set; } = [];
+    private ConcurrentDictionary<MemoryPatch, byte> MemoryPatches { get; set; } = [];
+
+    private ConditionalWeakTable<AssemblyLoadContext, ConcurrentDictionary<IDalamudHook, byte>> Hooks { get; set; } = new();
 
     private List<Type> initializedServiceOrder = [];
 
     private List<Type> DiscoverEnabledServiceTypes() =>
-        Assembly.GetExecutingAssembly()
-                .GetTypes()
-                .Where(t => typeof(OmenServiceBase).IsAssignableFrom(t) && !t.IsAbstract)
-                .Where(t => !InitOptions.IsDisabled(t))
-                .ToList();
+    [
+        .. Assembly.GetExecutingAssembly()
+                   .GetTypes()
+                   .Where(t => typeof(OmenServiceBase).IsAssignableFrom(t) && !t.IsAbstract)
+                   .Where(t => !InitOptions.IsDisabled(t))
+    ];
 
-    private void InstantiateServices(IEnumerable<Type> serviceTypes)
+    private void InstantiateServices
+    (
+        IEnumerable<Type> serviceTypes
+    )
     {
         foreach (var serviceType in serviceTypes)
         {
@@ -168,40 +180,74 @@ public sealed class DService
         OmenServices  = [];
         TaskHelpers   = [];
         MemoryPatches = [];
-        Hooks         = [];
+        Hooks         = new();
 
         initializedServiceOrder = [];
         InitOptions             = new();
     }
 
-    internal void RegTaskHelper(TaskHelper taskHelper)
+    internal void RegTaskHelper
+    (
+        TaskHelper taskHelper
+    )
     {
         ArgumentNullException.ThrowIfNull(taskHelper);
         TaskHelpers.TryAdd(taskHelper, 0);
     }
 
-    internal void UnregTaskHelper(TaskHelper taskHelper)
+    internal void UnregTaskHelper
+    (
+        TaskHelper taskHelper
+    )
     {
         ArgumentNullException.ThrowIfNull(taskHelper);
         TaskHelpers.TryRemove(taskHelper, out _);
     }
 
-    internal void RegMemoryPatch(MemoryPatch memoryPatch)
+    internal void RegMemoryPatch
+    (
+        MemoryPatch memoryPatch
+    )
     {
         ArgumentNullException.ThrowIfNull(memoryPatch);
         MemoryPatches.TryAdd(memoryPatch, 0);
     }
 
-    internal void UnregMemoryPatch(MemoryPatch memoryPatch)
+    internal void UnregMemoryPatch
+    (
+        MemoryPatch memoryPatch
+    )
     {
         ArgumentNullException.ThrowIfNull(memoryPatch);
         MemoryPatches.TryRemove(memoryPatch, out _);
     }
 
-    internal void RegHook(IDalamudHook hook)
+    internal void RegHook
+    (
+        IDalamudHook        hook,
+        AssemblyLoadContext context
+    )
     {
         ArgumentNullException.ThrowIfNull(hook);
-        Hooks.TryAdd(hook, 0);
+        ArgumentNullException.ThrowIfNull(context);
+
+        var contextHooks = Hooks.GetValue(context, static _ => []);
+
+        if (context.IsCollectible && contextHooks.IsEmpty)
+            context.Unloading += _ => UnregHooks(context);
+
+        contextHooks.TryAdd(hook, 0);
+    }
+
+    internal void UnregHooks
+    (
+        AssemblyLoadContext context
+    )
+    {
+        if (!Hooks.TryGetValue(context, out var contextHooks)) return;
+
+        DisposeHooks(contextHooks.Keys);
+        Hooks.Remove(context);
     }
 
     private void DisposeTrackedTaskHelpers()
@@ -225,13 +271,22 @@ public sealed class DService
 
     private void DisposeTrackedHooks()
     {
-        foreach (var hook in Hooks.Keys)
+        foreach (var (_, contextHooks) in Hooks)
+            DisposeHooks(contextHooks.Keys);
+
+        Hooks.Clear();
+    }
+
+    private static void DisposeHooks
+    (
+        IEnumerable<IDalamudHook> hooks
+    )
+    {
+        foreach (var hook in hooks)
         {
             if (hook is not { IsDisposed: false }) continue;
             hook.Dispose();
         }
-
-        Hooks.Clear();
     }
 
     #endregion

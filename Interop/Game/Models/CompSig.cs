@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using Dalamud.Hooking;
 using OmenTools.Dalamud;
 
@@ -11,7 +12,10 @@ public record CompSig
 {
     public string Signature { get; init; }
 
-    public CompSig(string signature) =>
+    public CompSig
+    (
+        string signature
+    ) =>
         Signature = signature.Trim() ?? throw new ArgumentNullException(nameof(signature));
 
     public string Get() => Signature;
@@ -33,7 +37,10 @@ public record CompSig
     public unsafe T* ScanText<T>() where T : unmanaged =>
         (T*)ScanText();
 
-    public nint GetStatic(int offset = 0)
+    public nint GetStatic
+    (
+        int offset = 0
+    )
     {
         try
         {
@@ -47,16 +54,22 @@ public record CompSig
         return nint.Zero;
     }
 
-    public unsafe T* GetStatic<T>(int offset = 0) where T : unmanaged =>
+    public unsafe T* GetStatic<T>
+    (
+        int offset = 0
+    ) where T : unmanaged =>
         (T*)GetStatic(offset);
 
     public T GetDelegate<T>() where T : Delegate =>
         Marshal.GetDelegateForFunctionPointer<T>(ScanText());
 
-    public Hook<T> GetHook<T>(T detour) where T : Delegate
+    public Hook<T> GetHook<T>
+    (
+        T detour
+    ) where T : Delegate
     {
         var hook = IGameInteropProvider.Instance().HookFromSignature(Signature, detour);
-        DService.Instance().RegHook(hook);
+        DService.Instance().RegHook(hook, AssemblyLoadContext.GetLoadContext(typeof(T).Assembly));
         return hook;
     }
 }
