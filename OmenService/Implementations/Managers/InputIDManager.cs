@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
@@ -40,6 +41,10 @@ public unsafe class InputIDManager : OmenServiceBase<InputIDManager>
     private Hook<IsInputIDDelegate>? IsInputIDDownHook;
     private Hook<IsInputIDDelegate>? IsInputIDReleasedHook;
 
+    private static readonly CompSig CrossHotbarSlotPressedSig = 
+        new("E8 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? 48 8B 03 48 8B CB FF 50 ?? B9");
+    private Hook<IsInputIDDelegate>? CrossHotbarSlotPressedHook;
+
     #endregion
 
     private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
@@ -74,10 +79,13 @@ public unsafe class InputIDManager : OmenServiceBase<InputIDManager>
             (IsInputIDDelegate)IsInputIDReleasedDetour
         );
 
+        CrossHotbarSlotPressedHook ??= CrossHotbarSlotPressedSig.GetHook<IsInputIDDelegate>(IsInputIDCrossHotbarSlotDetour);
+
         IsInputIDDownHook?.Enable();
         IsInputIDHeldHook?.Enable();
         IsInputIDPressedHook?.Enable();
         IsInputIDReleasedHook?.Enable();
+        CrossHotbarSlotPressedHook?.Enable();
     }
 
     protected override void Uninit()
@@ -93,6 +101,9 @@ public unsafe class InputIDManager : OmenServiceBase<InputIDManager>
 
         IsInputIDReleasedHook?.Dispose();
         IsInputIDReleasedHook = null;
+
+        CrossHotbarSlotPressedHook?.Dispose();
+        CrossHotbarSlotPressedHook = null;
 
         methodsCollection.Clear();
     }
@@ -220,6 +231,13 @@ public unsafe class InputIDManager : OmenServiceBase<InputIDManager>
     {
         var inputID = id;
         return RunDetour(data, ref inputID, typeof(PreReleasedDelegate), typeof(PostReleasedDelegate), IsInputIDReleasedHook);
+    }
+
+    [return: MarshalAs(UnmanagedType.U1)]
+    private bool IsInputIDCrossHotbarSlotDetour(InputData* data, InputId id)
+    {
+        var inputID = id;
+        return RunDetour(data, ref inputID, typeof(PrePressedDelegate), typeof(PostPressedDelegate), CrossHotbarSlotPressedHook);
     }
 
     [return: MarshalAs(UnmanagedType.U1)]
