@@ -43,6 +43,12 @@ public class MyPlugin : IDalamudPlugin
 
 ---
 
+## 扩展项目
+
+### [OmenTools.KamiToolKit](https://github.com/AtmoOmen/OmenTools.KamiToolKit)
+
+提供 KamiToolKit 绘制的原生界面、节点扩展。
+
 ## 许可证
 
 MIT
