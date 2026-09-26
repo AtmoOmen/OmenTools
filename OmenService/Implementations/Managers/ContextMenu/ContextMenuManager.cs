@@ -14,7 +14,7 @@ using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
 
-public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
+public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 {
     public ReadOnlySeString? DefaultPrefix { get; set; }
 
@@ -395,7 +395,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
             var title = LuminaWrapper.GetAddonText(1763);
 
-            var entries = submenuItems.Select(ContextMenuEntry (item) => new LocalMenuItemEntry(item)).ToArray();
+            var entries = submenuItems.Select(item => new LocalMenuItemEntry(item)).ToArray();
             return
             [
                 .. newItems,
@@ -813,87 +813,6 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         raw.CopyTo(buffer, 0);
         fixed (byte* ptr = buffer)
             value->SetManagedString(new CStringPointer(ptr));
-    }
-
-    #endregion
-
-    #region 主动打开
-
-    public void Open
-    (
-        ContextMenuOpenedArgs            args,
-        IReadOnlyList<ContextMenuEntry>? entries = null
-    )
-    {
-        ArgumentNullException.ThrowIfNull(args);
-
-        if (args.Agent is null)
-            throw new InvalidOperationException("主动打开 ContextMenu 需要指定 Agent");
-
-        CloseMenu();
-
-        var values = stackalloc AtkValue[8];
-        new Span<AtkValue>(values, 8).Clear();
-
-        ContextMenuFrame frame;
-
-        try
-        {
-            currentArgs = args;
-
-            var position  = args.Position ?? ImGui.GetMousePos();
-            var positionX = (short)position.X;
-            var positionY = (short)position.Y;
-
-            var agentContext = args.DefaultAgentContext;
-            var depthLayer = agentContext is null ?
-                                 0 :
-                                 agentContext->ContextMenuDepthLayer;
-            var items = FixupMenuList(CreateItems(args, entries ?? OrderedSnapshot()), 0);
-
-            frame = CreateMenuFrame
-            (
-                GetAddonNameID("ContextMenu"),
-                new(values, 8),
-                args.Agent,
-                0, // 与客户端自身打开 ContextMenu 时的 eventKind 一致
-                (ushort)args.OwnerAddonID,
-                depthLayer,
-                items,
-                false
-            );
-
-            frame.X = positionX;
-            frame.Y = positionY;
-        }
-        catch
-        {
-            ClearMenus();
-            throw;
-        }
-        finally
-        {
-            for (var i = 0; i < 8; i++)
-                values[i].Dtor();
-        }
-
-        try
-        {
-            if (!ShowMenu(frame, null))
-            {
-                frame.Dispose();
-                ClearMenus();
-                return;
-            }
-        }
-        catch
-        {
-            frame.Dispose();
-            ClearMenus();
-            throw;
-        }
-
-        currentMenu = frame;
     }
 
     #endregion
