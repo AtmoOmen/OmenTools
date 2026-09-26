@@ -1,3 +1,4 @@
+using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
@@ -34,12 +35,21 @@ public sealed unsafe class ContextMenuOpenedArgs
     ) =>
         Agent = agent;
 
+    public ContextMenuOpenedArgs()
+    {
+        IsSelfInitiated     = true;
+        DefaultAgentContext = AgentContext.Instance();
+        Agent               = (AgentInterface*)DefaultAgentContext;
+    }
+
     internal ContextMenuOpenedArgs Clone() =>
         new(Agent)
         {
+            IsSelfInitiated       = IsSelfInitiated,
             Addon                 = Addon,
             AddonName             = AddonName,
             OwnerAddonID          = OwnerAddonID,
+            Position              = Position,
             TargetObjectID        = TargetObjectID,
             TargetContentID       = TargetContentID,
             TargetHomeWorldID     = TargetHomeWorldID,
@@ -54,51 +64,62 @@ public sealed unsafe class ContextMenuOpenedArgs
             InventoryAgentContext = InventoryAgentContext
         };
 
-    public AgentInterface* Agent { get; }
+    internal bool IsSelfInitiated { get; init; }
 
-    public AgentContext* DefaultAgentContext { get; internal set; }
+    public AgentInterface* Agent { get; set; }
 
-    public AgentInventoryContext* InventoryAgentContext { get; internal set; }
+    public AgentContext* DefaultAgentContext { get; set; }
 
-    public AtkUnitBase* Addon { get; internal set; }
+    public AgentInventoryContext* InventoryAgentContext { get; set; }
 
-    public string? AddonName { get; internal set; }
+    public AtkUnitBase* Addon { get; set; }
 
-    public uint OwnerAddonID { get; internal set; }
+    public string? AddonName { get; set; }
 
-    public string? TargetName { get; internal set; }
+    public uint OwnerAddonID { get; set; }
 
-    public ulong TargetObjectID { get; internal set; }
+    /// <remarks>
+    ///     菜单的屏幕坐标，未指定时取当前鼠标位置。
+    /// </remarks>
+    public Vector2? Position { get; set; }
 
-    public ulong TargetContentID { get; internal set; }
+    public string? TargetName { get; set; }
 
-    public short TargetHomeWorldID { get; internal set; }
+    public ulong TargetObjectID { get; set; }
 
-    public InfoProxyCommonList.CharacterData* TargetCharacter { get; internal set; }
+    public ulong TargetContentID { get; set; }
 
-    public InventoryItem? TargetInventoryItem { get; internal set; }
-    
-    public InventoryType? TargetInventoryType { get; internal set; }
+    public short TargetHomeWorldID { get; set; }
 
-    public int? TargetSlot { get; internal set; }
+    public InfoProxyCommonList.CharacterData* TargetCharacter { get; set; }
+
+    public InventoryItem? TargetInventoryItem { get; set; }
+
+    public InventoryType? TargetInventoryType { get; set; }
+
+    public int? TargetSlot { get; set; }
 
     /// <remarks>
     ///     当前菜单目标的基础物品 ID，事件物品保留其原始 ID。
     /// </remarks>
-    public uint TargetItemID { get; internal set; }
+    public uint TargetItemID { get; set; }
 
     public RowRef<Item> TargetItemRow =>
-        TargetItemID == 0 ? default : TargetItemID.ToLuminaRowRef<Item>();
+        TargetItemID == 0 ?
+            default :
+            TargetItemID.ToLuminaRowRef<Item>();
 
     /// <remarks>
     ///     当前菜单目标的幻化物品 ID，未应用幻化时为 0。
     /// </remarks>
-    public uint TargetGlamourID { get; internal set; }
+    public uint TargetGlamourID { get; set; }
 
     public RowRef<Item> TargetGlamourRow =>
-        TargetGlamourID == 0 ? default : TargetGlamourID.ToLuminaRowRef<Item>();
+        TargetGlamourID == 0 ?
+            default :
+            TargetGlamourID.ToLuminaRowRef<Item>();
 
-    public bool IsTargetPlayer => 
+    public bool IsTargetPlayer =>
         TargetContentID != 0 && TargetCharacter is not null;
 
     public AgentContext* AsDefaultContext() =>

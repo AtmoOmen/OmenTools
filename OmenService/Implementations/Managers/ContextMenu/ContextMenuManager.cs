@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Game.Text;
 using Dalamud.Hooking;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -31,7 +30,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     #region 字段
 
-    private uint? addonContextSubNameID;
+    private readonly ConcurrentDictionary<string, uint> addonNameIDs = [];
 
     private          ContextMenuFrame?       currentMenu;
     private readonly Stack<ContextMenuFrame> parentMenus = [];
@@ -108,25 +107,28 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     #region 菜单注入
 
-    private uint GetAddonContextSubNameID()
+    private uint GetAddonNameID
+    (
+        string name
+    )
     {
-        if (addonContextSubNameID is { } id)
-            return id;
+        if (addonNameIDs.TryGetValue(name, out var cachedID))
+            return cachedID;
 
         var index = 0;
 
-        foreach (var name in RaptureAtkModule.Instance()->AddonNames)
+        foreach (var addonName in RaptureAtkModule.Instance()->AddonNames)
         {
-            if (name.EqualToString("AddonContextSub"))
+            if (addonName.EqualToString(name))
             {
-                addonContextSubNameID = (uint)index;
-                return addonContextSubNameID.Value;
+                addonNameIDs[name] = (uint)index;
+                return (uint)index;
             }
 
             index++;
         }
 
-        throw new InvalidOperationException("找不到 AddonContextSub 的名称 ID");
+        throw new InvalidOperationException($"找不到 {name} 的名称 ID");
     }
 
     private ContextMenuFrame CreateMenuFrame
@@ -316,8 +318,9 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
         try
         {
-            currentArgs = BuildArgs(agent);
-            itemResolver.Resolve(currentArgs, (int)values[0].UInt);
+            var args = BuildArgs(agent);
+            currentArgs = args;
+            itemResolver.Resolve(args, (int)values[0].UInt);
 
             if (Config.ShowOpenMenuLog)
             {
@@ -340,30 +343,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
                 );
             }
 
-            var createdItems = new List<ContextMenuItem>();
-
-            foreach (var entry in OrderedSnapshot())
-            {
-                var multipleItems = entry.CreateMultiple(currentArgs);
-
-                if (multipleItems is not null)
-                {
-                    foreach (var multipleItem in multipleItems)
-                    {
-                        multipleItem.Entry = entry;
-                        createdItems.Add(multipleItem);
-                    }
-                }
-
-                var item = entry.Create(currentArgs);
-                if (item is null)
-                    continue;
-
-                item.Entry = entry;
-                createdItems.Add(item);
-            }
-
-            var items = FixupMenuList(createdItems, (int)values[0].UInt);
+            var items = FixupMenuList(CreateItems(args, OrderedSnapshot()), (int)values[0].UInt);
             frame = CreateMenuFrame(addonNameID, new(values, (int)valueCount), agent, eventKind, parentAddonID, depthLayer, items, false);
         }
         catch (Exception ex)
@@ -519,7 +499,7 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
             values[7].SetUInt(1);
             frame = CreateMenuFrame
             (
-                GetAddonContextSubNameID(),
+                GetAddonNameID("AddonContextSub"),
                 new(values, 8),
                 parent.Agent,
                 parent.EventKind,
@@ -837,6 +817,87 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
 
     #endregion
 
+    #region 主动打开
+
+    public void Open
+    (
+        ContextMenuOpenedArgs            args,
+        IReadOnlyList<ContextMenuEntry>? entries = null
+    )
+    {
+        ArgumentNullException.ThrowIfNull(args);
+
+        if (args.Agent is null)
+            throw new InvalidOperationException("主动打开 ContextMenu 需要指定 Agent");
+
+        CloseMenu();
+
+        var values = stackalloc AtkValue[8];
+        new Span<AtkValue>(values, 8).Clear();
+
+        ContextMenuFrame frame;
+
+        try
+        {
+            currentArgs = args;
+
+            var position  = args.Position ?? ImGui.GetMousePos();
+            var positionX = (short)position.X;
+            var positionY = (short)position.Y;
+
+            var agentContext = args.DefaultAgentContext;
+            var depthLayer = agentContext is null ?
+                                 0 :
+                                 agentContext->ContextMenuDepthLayer;
+            var items = FixupMenuList(CreateItems(args, entries ?? OrderedSnapshot()), 0);
+
+            frame = CreateMenuFrame
+            (
+                GetAddonNameID("ContextMenu"),
+                new(values, 8),
+                args.Agent,
+                0, // 与客户端自身打开 ContextMenu 时的 eventKind 一致
+                (ushort)args.OwnerAddonID,
+                depthLayer,
+                items,
+                false
+            );
+
+            frame.X = positionX;
+            frame.Y = positionY;
+        }
+        catch
+        {
+            ClearMenus();
+            throw;
+        }
+        finally
+        {
+            for (var i = 0; i < 8; i++)
+                values[i].Dtor();
+        }
+
+        try
+        {
+            if (!ShowMenu(frame, null))
+            {
+                frame.Dispose();
+                ClearMenus();
+                return;
+            }
+        }
+        catch
+        {
+            frame.Dispose();
+            ClearMenus();
+            throw;
+        }
+
+        currentMenu = frame;
+    }
+
+    #endregion
+
     #region 工具
 
     private List<ContextMenuEntry> OrderedSnapshot() =>
@@ -844,6 +905,38 @@ public unsafe class ContextMenuManager : OmenServiceBase<ContextMenuManager>
         .. entries.Keys.OrderBy(e => e.Identifier, StringComparer.Ordinal)
                   .ThenBy(e => e.Priority ?? 0)
     ];
+
+    private static List<ContextMenuItem> CreateItems
+    (
+        ContextMenuOpenedArgs         args,
+        IEnumerable<ContextMenuEntry> entries
+    )
+    {
+        var items = new List<ContextMenuItem>();
+
+        foreach (var entry in entries)
+        {
+            var multipleItems = entry.CreateMultiple(args);
+
+            if (multipleItems is not null)
+            {
+                foreach (var multipleItem in multipleItems)
+                {
+                    multipleItem.Entry = entry;
+                    items.Add(multipleItem);
+                }
+            }
+
+            var item = entry.Create(args);
+            if (item is null)
+                continue;
+
+            item.Entry = entry;
+            items.Add(item);
+        }
+
+        return items;
+    }
 
     private static ContextMenuOpenedArgs BuildArgs
     (
