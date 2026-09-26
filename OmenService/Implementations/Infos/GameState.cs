@@ -338,6 +338,12 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
         LuminaGetter.GetRow<Lumina.Excel.Sheets.TerritoryIntendedUse>((uint)TerritoryIntendedUse).GetValueOrDefault();
 
     /// <summary>
+    ///     当前位于特殊场景探索中
+    /// </summary>
+    public static bool IsInFieldOperations =>
+        TerritoryIntendedUse is TerritoryIntendedUse.Bozja or TerritoryIntendedUse.Eureka or TerritoryIntendedUse.OccultCrescent;
+
+    /// <summary>
     ///     当前 ContentFinderCondition ID
     /// </summary>
     public static uint ContentFinderCondition =>
