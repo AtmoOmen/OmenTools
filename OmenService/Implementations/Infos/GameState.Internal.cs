@@ -1,4 +1,5 @@
-﻿using Dalamud.Hooking;
+﻿using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
@@ -91,16 +92,17 @@ public unsafe partial class GameState
     )
     {
         ProcessRequestResultHook.Original(info, resultCount, errorCode);
-        
+
         if (resultCount            == 0                                        &&
             errorCode              > 0                                         &&
             ContentFinderCondition == 0                                        &&
-            info->SearchItemId     != 0                                        &&
+            !ICondition.Instance()[ConditionFlag.OnFreeTrial]                  &&
+            info->SearchItemId != 0                                            &&
             LuminaGetter.TryGetRow<Item>(info->SearchItemId, out var itemData) &&
             itemData.ItemSearchCategory.RowId > 0)
         {
             DLog.Warning($"[GameState] 市场交易板数据请求被服务器拒绝，错误码：0x{errorCode:X}。");
-            
+
             MarketListingsStuck?.Invoke(errorCode);
             IsMarketListingsStuck = true;
             return;
@@ -108,7 +110,7 @@ public unsafe partial class GameState
 
         IsMarketListingsStuck = false;
     }
-    
+
     private void OnUpdate
     (
         IFramework framework
