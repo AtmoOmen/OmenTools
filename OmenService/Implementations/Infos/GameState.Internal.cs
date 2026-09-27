@@ -99,7 +99,7 @@ public unsafe partial class GameState
             LuminaGetter.TryGetRow<Item>(info->SearchItemId, out var itemData) &&
             itemData.ItemSearchCategory.RowId > 0)
         {
-            DLog.Warning($"[GameState] 市场交易板数据请求被服务器拒绝，错误码：{errorCode}。");
+            DLog.Warning($"[GameState] 市场交易板数据请求被服务器拒绝，错误码：0x{errorCode:X}。");
             
             MarketListingsStuck?.Invoke(errorCode);
             IsMarketListingsStuck = true;
