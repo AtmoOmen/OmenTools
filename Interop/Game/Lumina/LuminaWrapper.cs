@@ -8,6 +8,9 @@ namespace OmenTools.Interop.Game.Lumina;
 
 public static class LuminaWrapper
 {
+    public static string GetQuestName(uint rowID) =>
+        LuminaGetter.TryGetRow<Quest>(rowID, out var item) ? item.Name.ToString() : string.Empty;
+    
     public static string GetAddonText(uint rowID) =>
         LuminaGetter.TryGetRow<Addon>(rowID, out var item) ? item.Text.ToString() : string.Empty;
 
