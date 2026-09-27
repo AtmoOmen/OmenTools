@@ -2,26 +2,12 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
-using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Lumina;
-using OmenTools.Interop.Game.Models;
 
 namespace OmenTools.OmenService;
 
 public unsafe partial class ContextMenuManager
 {
-    // TODO: FFCS
-    private static readonly CompSig FindItemSig =
-        new("40 55 56 41 54 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 48 8B F1");
-
-    private delegate bool FindItemDelegate
-    (
-        ItemFinderModule* module,
-        uint              itemID
-    );
-
-    private FindItemDelegate? FindItem;
-
     public void Open
     (
         ContextMenuOpenedArgs            args,
@@ -106,7 +92,7 @@ public unsafe partial class ContextMenuManager
 
     public void OpenItem
     (
-        uint itemID,
+        uint  itemID,
         uint? parentID = null
     )
     {
@@ -114,8 +100,6 @@ public unsafe partial class ContextMenuManager
             return;
 
         var parentAddonID = parentID ?? 0;
-
-        FindItem ??= FindItemSig.GetDelegate<FindItemDelegate>();
 
         var args = new ContextMenuOpenedArgs
         {
@@ -126,6 +110,7 @@ public unsafe partial class ContextMenuManager
         List<ContextMenuItem> menus = [];
 
         if (row.EquipSlotCategory.RowId > 0)
+        {
             menus.AddRange
             (
                 [
@@ -143,6 +128,7 @@ public unsafe partial class ContextMenuManager
                     }
                 ]
             );
+        }
 
         menus.AddRange
         (
@@ -151,7 +137,7 @@ public unsafe partial class ContextMenuManager
                 new()
                 {
                     Name      = LuminaWrapper.GetAddonText(4379),
-                    OnClicked = _ => FindItem(ItemFinderModule.Instance(), itemID)
+                    OnClicked = _ => ItemFinderModule.Instance()->SearchForItem(itemID)
                 },
                 // 展示道具属性
                 new()
@@ -163,11 +149,11 @@ public unsafe partial class ContextMenuManager
                 new()
                 {
                     Name      = LuminaWrapper.GetAddonText(13439),
-                    OnClicked = _ => AgentRecipeProductList.Instance()->SearchForRecipesUsingItem(itemID),
+                    OnClicked = _ => AgentRecipeProductList.Instance()->SearchForRecipesUsingItem(itemID)
                 }
             ]
         );
-        
+
         Open
         (
             args,
