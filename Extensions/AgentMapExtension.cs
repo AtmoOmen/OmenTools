@@ -28,7 +28,8 @@ public static class AgentMapExtension
                 agent.Hide();
 
             agent.OpenMapByMapId(zoneRow.Map.RowId, territoryTypeID);
-            agent.MapTitleString.SetString(mapTitle);
+            if (mapTitle != null)
+                agent.MapTitleString.SetString(mapTitle);
         }
 
         /// <summary>
@@ -47,7 +48,8 @@ public static class AgentMapExtension
                 agent.Hide();
 
             agent.OpenMapByMapId(mapID, mapRow.TerritoryType.RowId);
-            agent.MapTitleString.SetString(mapTitle);
+            if (mapTitle != null)
+                agent.MapTitleString.SetString(mapTitle);
         }
 
         /// <summary>
@@ -68,7 +70,8 @@ public static class AgentMapExtension
 
             agent.SetFlagMapMarker(territoryTypeID, zoneRow.Map.RowId, worldPosition);
             agent.OpenMap(zoneRow.Map.RowId, territoryTypeID, mapTitle);
-            agent.MapTitleString.SetString(mapTitle);
+            if (mapTitle != null)
+                agent.MapTitleString.SetString(mapTitle);
         }
 
         /// <summary>
@@ -89,7 +92,8 @@ public static class AgentMapExtension
 
             agent.SetFlagMapMarker(mapRow.TerritoryType.RowId, mapID, worldPosition);
             agent.OpenMap(mapID, mapRow.TerritoryType.RowId, mapTitle);
-            agent.MapTitleString.SetString(mapTitle);
+            if (mapTitle != null)
+                agent.MapTitleString.SetString(mapTitle);
         }
 
         /// <summary>
