@@ -292,14 +292,12 @@ public sealed class ItemSourceInfo
                     AddItemGeneral
                     (
                         scriptArg2,
-                        LuminaWrapper.GetItemName(scriptArg2),
                         npcID,
                         npcName,
                         customTalk.MainOption.ToString(),
                         [new(scriptArg4, 28)],
                         npcLocation,
-                        ItemShopType.SpecialShop,
-                        ref itemToItemShopInfos
+                        ItemShopType.SpecialShop
                     );
                     continue;
                 }
@@ -638,14 +636,12 @@ public sealed class ItemSourceInfo
                 AddItemGeneral
                 (
                     item.RowId,
-                    item.Name.ToString(),
                     npcID,
                     npcName,
                     shop,
                     costs,
                     npcLocation,
                     shopType,
-                    ref itemToItemShopInfos,
                     achievementDescription
                 );
             }
@@ -675,14 +671,12 @@ public sealed class ItemSourceInfo
             AddItemGeneral
             (
                 item.Item.Value.RowId,
-                item.Item.Value.Name.ToString(),
                 npcID,
                 npcName,
                 shopName,
                 [new(item.Item.Value.PriceMid, 1)],
                 npcLocation,
-                ItemShopType.GilShop,
-                ref itemToItemShopInfos
+                ItemShopType.GilShop
             );
         }
     }
@@ -720,14 +714,12 @@ public sealed class ItemSourceInfo
                 AddItemGeneral
                 (
                     item.Item.Value.RowId,
-                    item.Item.Value.Name.ToString(),
                     npcID,
                     npcName,
                     null,
                     [new(item.CostGCSeals, seal.RowId)],
                     npcLocation,
-                    ItemShopType.GcShop,
-                    ref itemToItemShopInfos
+                    ItemShopType.GcShop
                 );
             }
         }
@@ -782,14 +774,12 @@ public sealed class ItemSourceInfo
             AddItemGeneral
             (
                 item.RowId,
-                item.Name.ToString(),
                 npcBase.RowId,
                 resident.Singular.ToString(),
                 null,
                 [new(cost, 102233)],
                 npcIDToLocations.GetValueOrDefault(npcBase.RowId),
-                ItemShopType.FcShop,
-                ref itemToItemShopInfos
+                ItemShopType.FcShop
             );
         }
     }
@@ -921,7 +911,6 @@ public sealed class ItemSourceInfo
                 AddItemGeneral
                 (
                     rewardItem.Item.Value.RowId,
-                    rewardItem.Item.Value.Name.ToString(),
                     npcID,
                     npcName,
                     $"{shopName}\n{exchangeItem.CollectablesShopItemGroup.Value.Name.ToString()}",
@@ -931,8 +920,7 @@ public sealed class ItemSourceInfo
                         new(rewardItem.RewardHigh, exchangeItem.Item.RowId, refine.HighCollectability)
                     ],
                     npcLocation,
-                    ItemShopType.CollectableExchange,
-                    ref itemToItemShopInfos
+                    ItemShopType.CollectableExchange
                 );
             }
         }
@@ -977,14 +965,12 @@ public sealed class ItemSourceInfo
             AddItemGeneral
             (
                 rewardItem.RowId,
-                rewardItem.Value.Name.ToString(),
                 npcID,
                 npcName,
                 string.Empty,
                 cost,
                 npcLocation,
-                ItemShopType.QuestReward,
-                ref itemToItemShopInfos
+                ItemShopType.QuestReward
             );
         }
     }
@@ -1042,16 +1028,14 @@ public sealed class ItemSourceInfo
 
     private static void AddItemGeneral
     (
-        uint                                 itemID,
-        string                               itemName,
-        uint                                 npcID,
-        string                               npcName,
-        string?                              shopName,
-        List<ShopItemCostInfo>               cost,
-        ShopNPCLocation                      npcLocation,
-        ItemShopType                         shopType,
-        ref Dictionary<uint, ItemSourceInfo> itemToItemShopInfos,
-        string                               achievementDesc = ""
+        uint                   itemID,
+        uint                   npcID,
+        string                 npcName,
+        string?                shopName,
+        List<ShopItemCostInfo> cost,
+        ShopNPCLocation?       npcLocation,
+        ItemShopType           shopType,
+        string                 achievementDesc = ""
     )
     {
         if (itemID == 0)
@@ -1060,7 +1044,7 @@ public sealed class ItemSourceInfo
         if (CurrentBuildContext.ShouldHideDefaultShopName && shopName == DEFAULT_SHOP_NAME)
             shopName = string.Empty;
 
-        CurrentItemAccumulator.AddItem(itemID, itemName, npcID, npcName, shopName, cost, npcLocation, shopType, achievementDesc);
+        CurrentItemAccumulator.AddItem(itemID, npcID, npcName, shopName, cost, npcLocation, shopType, achievementDesc);
     }
 
     #endregion
@@ -1259,16 +1243,18 @@ public sealed class ItemSourceInfo
         public void AddItem
         (
             uint                   itemID,
-            string                 itemName,
             uint                   npcID,
             string                 npcName,
             string?                shopName,
             List<ShopItemCostInfo> cost,
-            ShopNPCLocation        npcLocation,
+            ShopNPCLocation?       npcLocation,
             ItemShopType           shopType,
             string                 achievementDesc
         )
         {
+            if (npcLocation == null)
+                return;
+            
             ref var itemInfo = ref CollectionsMarshal.GetValueRefOrAddDefault(itemInfos, itemID, out var exists);
 
             if (!exists || itemInfo == null)
