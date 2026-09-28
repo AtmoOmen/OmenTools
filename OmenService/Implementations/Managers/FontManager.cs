@@ -44,7 +44,7 @@ public class FontManager : OmenServiceBase<FontManager>
             builder.AddText("ŒœĂăÂâÎîȘșȚț");
             builder.AddChar('⓪');
 
-            Span<ushort> specificRange = [0x2460, 0x24B5, 0];
+            Span<ushort> specificRange = [0x2022, 0x2022, 0x2460, 0x24B5, 0];
             fixed (ushort* p = specificRange)
                 builder.AddRanges(p);
 
