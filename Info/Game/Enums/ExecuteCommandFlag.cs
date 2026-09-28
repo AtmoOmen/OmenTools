@@ -1355,7 +1355,7 @@ public enum ExecuteCommandFlag
     ///     请求过场剧情数据
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 过场剧情在 Cutscene.csv 中的对应索引</para>
+    ///     <para><c>param1</c>: Cutscene ID</para>
     /// </remarks>
     RequestCutscene831 = 831,
 
