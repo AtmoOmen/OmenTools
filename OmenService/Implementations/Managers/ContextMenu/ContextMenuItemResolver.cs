@@ -1,9 +1,11 @@
 using Dalamud.Hooking;
 using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Models;
+using AgentRetainer = OmenTools.Interop.Game.Models.Native.AgentRetainer;
 
 namespace OmenTools.OmenService;
 
@@ -103,6 +105,22 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
 
         switch (args.AddonName)
         {
+            case "RetainerSellList":
+            {
+                var agent = AgentRetainer.Instance();
+                if (agent != null)
+                {
+                    var entry = agent->SellListEntries[agent->ContextMenuIndex];
+                    var slot  = InventoryManager.Instance()->GetInventorySlot(InventoryType.RetainerMarket, entry.InventorySlot);
+                    if (slot != null)
+                    {
+                        itemID                   = slot->GetBaseItemId();
+                        args.TargetInventoryType = InventoryType.RetainerMarket;
+                        args.TargetInventoryItem = *slot;
+                    }
+                }
+                break;
+            }
             case "ChatLog":
             {
                 var agent = AgentChatLog.Instance();
