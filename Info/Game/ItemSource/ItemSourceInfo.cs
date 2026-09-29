@@ -1222,7 +1222,7 @@ public sealed class ItemSourceInfo
                 mapRowIDs,
                 tomestoneItemIDs,
                 gcCategories,
-                GameState.ClientLanguge != Language.Japanese
+                GameState.ClientLanguage != Language.Japanese
             );
         }
 

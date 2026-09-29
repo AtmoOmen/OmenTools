@@ -91,7 +91,7 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     /// <summary>
     ///     当前游戏客户端语言
     /// </summary>
-    public static Language ClientLanguge =>
+    public static Language ClientLanguage =>
         (Language)(Framework.Instance()->ClientLanguage + 1);
 
     /// <summary>

@@ -34,7 +34,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
     public bool TryGetGameLangIcon(uint icon, [NotNullWhen(true)] out IDalamudTextureWrap? texture, bool isHQ = false)
     {
-        var key = (icon, isHQ, GameState.ClientLanguge);
+        var key = (icon, isHQ, ClientLanguge: GameState.ClientLanguage);
 
         if (cachedIcons.TryGetValue(key, out var result))
         {
@@ -45,7 +45,7 @@ public class ImageHelper : OmenServiceBase<ImageHelper>
 
         result = new ImageLoadingResult
         {
-            ImmediateTexture = ITextureProvider.Instance().GetFromGame(GetIconTexturePath(icon, GameState.ClientLanguge))
+            ImmediateTexture = ITextureProvider.Instance().GetFromGame(GetIconTexturePath(icon, GameState.ClientLanguage))
         };
 
         result.TryCompleteByTexture(StandardTimeManager.Instance().UTCNow, FailedCacheTTL);

@@ -243,8 +243,8 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
             if (!string.Equals(header.ClientVersion, GameState.ClientVersion, StringComparison.Ordinal))
                 throw new InvalidDataException($"客户端版本不匹配, 当前: {GameState.ClientVersion}, 快照: {header.ClientVersion}");
 
-            if (header.ClientLanguage != GameState.ClientLanguge)
-                throw new InvalidDataException($"客户端语言不匹配, 当前: {GameState.ClientLanguge}, 快照: {header.ClientLanguage}");
+            if (header.ClientLanguage != GameState.ClientLanguage)
+                throw new InvalidDataException($"客户端语言不匹配, 当前: {GameState.ClientLanguage}, 快照: {header.ClientLanguage}");
 
             ValidateChecksum(bytes, header.StringSection);
             ValidateChecksum(bytes, header.LocationSection);
@@ -528,7 +528,7 @@ public sealed class ItemSourceManager : OmenServiceBase<ItemSourceManager>
                 SNAPSHOT_MAGIC,
                 SNAPSHOT_FORMAT_VERSION,
                 GameState.ClientVersion,
-                GameState.ClientLanguge,
+                GameState.ClientLanguage,
                 stringSection,
                 locationSection,
                 indexSection,

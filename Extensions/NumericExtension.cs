@@ -33,13 +33,13 @@ public static class NumericExtension
             ushort? unitColor  = null
         )
         {
-            if (!IsValidFormatLanguage(GameState.ClientLanguge) || T.IsZero(number))
+            if (!IsValidFormatLanguage(GameState.ClientLanguage) || T.IsZero(number))
                 return [with(number.ToString())];
 
             string strZhao = "兆";
             string strYi   = "亿", strWan = "万", strZero = "零";
 
-            switch (GameState.ClientLanguge)
+            switch (GameState.ClientLanguage)
             {
                 case Language.Japanese:
                     strYi   = "億";
@@ -162,12 +162,12 @@ public static class NumericExtension
 
         public string ToChineseString()
         {
-            if (!IsValidFormatLanguage(GameState.ClientLanguge) || T.IsZero(number))
+            if (!IsValidFormatLanguage(GameState.ClientLanguage) || T.IsZero(number))
                 return number.ToString("N0", null);
 
             char cZhao = '兆', cYi = '亿', cWan = '万', cZero = '零';
 
-            switch (GameState.ClientLanguge)
+            switch (GameState.ClientLanguage)
             {
                 case Language.Japanese:
                     cYi   = '億';
@@ -265,7 +265,7 @@ public static class NumericExtension
         {
             Span<char> sourceBuffer = stackalloc char[128];
 
-            if (!IsValidFormatLanguage(GameState.ClientLanguge) ||
+            if (!IsValidFormatLanguage(GameState.ClientLanguage) ||
                 !number.TryFormat(sourceBuffer, out var charsWritten, null, CultureInfo.InvariantCulture))
                 return number.ToString("N0", null) ?? string.Empty;
 
