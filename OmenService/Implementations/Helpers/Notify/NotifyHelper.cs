@@ -232,6 +232,17 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         ushort? tagColor   = null
     ) =>
         IChatGui.Instance().Print(message, messageTag, tagColor);
+
+    /// <summary>
+    ///     输出富文本聊天文本，可选前缀与颜色。
+    /// </summary>
+    public static void Chat
+    (
+        ReadOnlySeString message,
+        string?          messageTag = null,
+        ushort?          tagColor   = null
+    ) =>
+        IChatGui.Instance().Print(message, messageTag, tagColor);
     
     /// <summary>
     ///     输出完全自定义的聊天文本，可选前缀与颜色。
@@ -241,6 +252,28 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         XivChatEntry entry
     ) =>
         IChatGui.Instance().Print(entry);
+    
+    /// <summary>
+    ///     输出聊天文本，可选前缀与颜色。
+    /// </summary>
+    public static void ChatError
+    (
+        string  message,
+        string? messageTag = null,
+        ushort? tagColor   = null
+    ) =>
+        IChatGui.Instance().PrintError(message, messageTag, tagColor);
+
+    /// <summary>
+    ///     输出富文本聊天文本，可选前缀与颜色。
+    /// </summary>
+    public static void ChatError
+    (
+        ReadOnlySeString message,
+        string?          messageTag = null,
+        ushort?          tagColor   = null
+    ) =>
+        IChatGui.Instance().PrintError(message, messageTag, tagColor);
 
     /// <summary>
     ///     输出富文本聊天文本，可选前缀与颜色。
