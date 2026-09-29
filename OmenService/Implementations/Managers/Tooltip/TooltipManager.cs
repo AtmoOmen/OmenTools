@@ -169,13 +169,15 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         agentItemDetailRefreshFlagOffset = Marshal.ReadInt32(AgentItemDetailRefreshFlagOffsetSig.ScanText() + 2);
         DLog.Debug($"[{nameof(TooltipManager)}] AgnetItemDetail 工具信息界面刷新标志偏移量: {agentItemDetailRefreshFlagOffset}");
 
-        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreRequestedUpdate, "ItemDetail",   OnItemDetailUpdate);
-        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreRequestedUpdate, "ActionDetail", OnActionDetailUpdate);
+        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreRequestedUpdate,  "ItemDetail",   OnItemDetailUpdate);
+        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PostRequestedUpdate, "ItemDetail",   OnItemDetailPostUpdate);
+        IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreRequestedUpdate,  "ActionDetail", OnActionDetailUpdate);
     }
 
     protected override void Uninit()
     {
         IAddonLifecycle.Instance().UnregisterListener(OnItemDetailUpdate);
+        IAddonLifecycle.Instance().UnregisterListener(OnItemDetailPostUpdate);
         IAddonLifecycle.Instance().UnregisterListener(OnActionDetailUpdate);
     }
 
@@ -400,6 +402,38 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             ClearItemTooltipGroupFlags(numberArrayData, emptiedTargets);
             RecalculateItemDetailLayout(numberArrayData, stringArrayData);
         }
+    }
+
+    // 让物品全部支持换行
+    private static void OnItemDetailPostUpdate
+    (
+        AddonEvent type,
+        AddonArgs  args
+    )
+    {
+        if (!ItemDetail->IsAddonAndNodesReady()) return;
+
+        var addon = (AddonItemDetail*)ItemDetail;
+        var node  = addon->MaterializeText;
+
+        if (!node->TextFlags.IsSet(TextFlags.MultiLine))
+        {
+            node->TextFlags |= TextFlags.MultiLine;
+            node->ApplyTextFlow();
+        }
+
+        ushort width;
+        ushort height;
+        node->GetTextDrawSize(&width, &height);
+
+        node->SetHeight(height);
+        addon->CraftingAndRepairsGroup->SetHeight((ushort)(node->Y + node->Height));
+
+        addon->UpdateGroupPositions
+        (
+            AtkStage.Instance()->GetNumberArrayData(NumberArrayType.ItemDetail),
+            AtkStage.Instance()->GetStringArrayData(StringArrayType.ItemDetail)
+        );
     }
 
     // 技能
