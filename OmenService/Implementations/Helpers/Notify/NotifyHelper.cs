@@ -262,7 +262,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         string? messageTag = null,
         ushort? tagColor   = null
     ) =>
-        IChatGui.Instance().PrintError(message, messageTag, tagColor);
+        PrintChat(message, messageTag, tagColor);
 
     /// <summary>
     ///     输出富文本聊天文本，可选前缀与颜色。
@@ -273,7 +273,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         string?          messageTag = null,
         ushort?          tagColor   = null
     ) =>
-        IChatGui.Instance().PrintError(message, messageTag, tagColor);
+        PrintChat(message, messageTag, tagColor);
 
     /// <summary>
     ///     输出富文本聊天文本，可选前缀与颜色。
@@ -362,7 +362,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
         var chat = IChatGui.Instance();
         if (isError)
-            chat.PrintError(builder.ToReadOnlySeString());
+            chat.Print(new XivChatEntry { Message = builder.ToReadOnlySeString().ToDalamudString(), Type = XivChatType.ErrorMessage });
         else
             chat.Print(builder.ToReadOnlySeString());
     }
@@ -377,9 +377,31 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
         var chat = IChatGui.Instance();
         if (isError)
-            chat.PrintError(builder.ToReadOnlySeString());
+            chat.Print(new XivChatEntry { Message = builder.ToReadOnlySeString().ToDalamudString(), Type = XivChatType.ErrorMessage });
         else
             chat.Print(builder.ToReadOnlySeString());
+    }
+
+    private static void PrintChat(string message, string? messageTag, ushort? tagColor)
+    {
+        using var rented  = new RentedSeStringBuilder();
+        var       builder = rented.Builder;
+
+        AppendTag(builder, messageTag, tagColor);
+        builder.Append(message);
+
+        IChatGui.Instance().Print(new XivChatEntry { Message = builder.ToReadOnlySeString().ToDalamudString(), Type = XivChatType.ErrorMessage });
+    }
+
+    private static void PrintChat(ReadOnlySeString message, string? messageTag, ushort? tagColor)
+    {
+        using var rented  = new RentedSeStringBuilder();
+        var       builder = rented.Builder;
+
+        AppendTag(builder, messageTag, tagColor);
+        builder.Append(message);
+
+        IChatGui.Instance().Print(new XivChatEntry { Message = builder.ToReadOnlySeString().ToDalamudString(), Type = XivChatType.ErrorMessage });
     }
 
     private static void AppendPrefix(SeStringBuilder builder, ReadOnlySeString? prefix)
@@ -388,6 +410,19 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             return;
 
         builder.Append(prefix.Value).Append(" ");
+    }
+
+    private static void AppendTag(SeStringBuilder builder, string? messageTag, ushort? tagColor)
+    {
+        if (messageTag.IsNullOrEmpty())
+            return;
+
+        if (tagColor is null)
+            builder.Append($"[{messageTag}] ");
+        else
+            builder.PushColorType(tagColor.Value)
+                   .Append($"[{messageTag}] ")
+                   .PopColorType();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -483,4 +518,3 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     #endregion
 }
-
