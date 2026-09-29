@@ -109,6 +109,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
     #region 私有逆向
 
+    // TODO: FFCS 的 AgentItemDetail IsDirty 字段
     private static readonly CompSig AgentItemDetailRefreshFlagOffsetSig = new("88 83 ?? ?? ?? ?? 48 8B 5C 24 ?? 48 8B 6C 24");
     private                 nint    agentItemDetailRefreshFlagOffset;
 
