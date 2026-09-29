@@ -9,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using InteropGenerator.Runtime;
+using Lumina.Data;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
 using OmenTools.Interop.Game.Models;
@@ -23,9 +24,19 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     /// <remarks>
     ///     除了 <see cref="ItemKind.EventItem" /> 外, 其余均为处理好的 BaseID, 方便直接查表
     /// </remarks>
-    public delegate void ItemTooltipUpdateDelegate(ItemKind itemKind, uint itemID, ref List<TooltipItemModification> modifications);
+    public delegate void ItemTooltipUpdateDelegate
+    (
+        ItemKind                          itemKind,
+        uint                              itemID,
+        ref List<TooltipItemModification> modifications
+    );
 
-    public delegate void ActionTooltipUpdateDelegate(DetailKind actionKind, uint actionID, ref List<TooltipActionModification> modifications);
+    public delegate void ActionTooltipUpdateDelegate
+    (
+        DetailKind                          actionKind,
+        uint                                actionID,
+        ref List<TooltipActionModification> modifications
+    );
 
     #endregion
 
@@ -77,7 +88,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     /// <remarks>
     ///     请确保在 <see cref="ItemTooltipUpdateDelegate" /> 期间调用
     /// </remarks>
-    public ReadOnlySeString GetOriginalItemTooltipText(TooltipItemType target) =>
+    public ReadOnlySeString GetOriginalItemTooltipText
+    (
+        TooltipItemType target
+    ) =>
         itemOriginalTexts[(int)target];
 
     /// <summary>
@@ -86,21 +100,38 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     /// <remarks>
     ///     请确保在 <see cref="ActionTooltipUpdateDelegate" /> 期间调用
     /// </remarks>
-    public ReadOnlySeString GetOriginalActionTooltipText(TooltipActionType target) =>
+    public ReadOnlySeString GetOriginalActionTooltipText
+    (
+        TooltipActionType target
+    ) =>
         actionOriginalTexts[(int)target];
 
     #region 订阅
 
-    public void RegItem(ItemTooltipUpdateDelegate method, params ItemTooltipUpdateDelegate[] methods) =>
+    public void RegItem
+    (
+        ItemTooltipUpdateDelegate          method,
+        params ItemTooltipUpdateDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public void RegAction(ActionTooltipUpdateDelegate method, params ActionTooltipUpdateDelegate[] methods) =>
+    public void RegAction
+    (
+        ActionTooltipUpdateDelegate          method,
+        params ActionTooltipUpdateDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public void Unreg(params ItemTooltipUpdateDelegate[] methods) =>
+    public void Unreg
+    (
+        params ItemTooltipUpdateDelegate[] methods
+    ) =>
         UnregisterGeneric(methods);
 
-    public void Unreg(params ActionTooltipUpdateDelegate[] methods) =>
+    public void Unreg
+    (
+        params ActionTooltipUpdateDelegate[] methods
+    ) =>
         UnregisterGeneric(methods);
 
     #endregion
@@ -149,7 +180,11 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     }
 
     // 物品
-    private void OnItemDetailUpdate(AddonEvent type, AddonArgs args)
+    private void OnItemDetailUpdate
+    (
+        AddonEvent type,
+        AddonArgs  args
+    )
     {
         var stringArrayData = AtkStage.Instance()->GetStringArrayData(StringArrayType.ItemDetail);
         var textArray       = stringArrayData->StringArray;
@@ -231,7 +266,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                         targetModifications.Append.Add(modification);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(modification.Type));
+                        throw new ArgumentOutOfRangeException(nameof(type));
                 }
             }
         }
@@ -251,6 +286,21 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
             foreach (var modification in targetModifications.Prepend)
             {
+                if (modification.IsParagraph) continue;
+
+                if (hasText)
+                    builder.Append(Separator);
+
+                builder.Append(modification.Text);
+
+                if (!modification.Text.IsEmpty)
+                    hasText = true;
+            }
+
+            foreach (var modification in targetModifications.Prepend)
+            {
+                if (!modification.IsParagraph) continue;
+
                 if (hasText)
                 {
                     builder.AppendNewLine()
@@ -258,6 +308,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 }
 
                 builder.Append(modification.Text);
+
                 if (!modification.Text.IsEmpty)
                     hasText = true;
             }
@@ -267,10 +318,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (!itemOriginalTexts[index].IsEmpty)
                 {
                     if (hasText)
-                    {
-                        builder.AppendNewLine()
-                               .AppendNewLine();
-                    }
+                        builder.Append(Separator);
 
                     builder.Append(itemOriginalTexts[index]);
                     hasText = true;
@@ -280,6 +328,21 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             {
                 foreach (var modification in targetModifications.Body)
                 {
+                    if (modification.IsParagraph) continue;
+
+                    if (hasText)
+                        builder.Append(Separator);
+
+                    builder.Append(modification.Text);
+
+                    if (!modification.Text.IsEmpty)
+                        hasText = true;
+                }
+
+                foreach (var modification in targetModifications.Body)
+                {
+                    if (!modification.IsParagraph) continue;
+
                     if (hasText)
                     {
                         builder.AppendNewLine()
@@ -287,6 +350,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                     }
 
                     builder.Append(modification.Text);
+
                     if (!modification.Text.IsEmpty)
                         hasText = true;
                 }
@@ -294,6 +358,21 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
             foreach (var modification in targetModifications.Append)
             {
+                if (modification.IsParagraph) continue;
+
+                if (hasText)
+                    builder.Append(Separator);
+
+                builder.Append(modification.Text);
+
+                if (!modification.Text.IsEmpty)
+                    hasText = true;
+            }
+
+            foreach (var modification in targetModifications.Append)
+            {
+                if (!modification.IsParagraph) continue;
+
                 if (hasText)
                 {
                     builder.AppendNewLine()
@@ -301,6 +380,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 }
 
                 builder.Append(modification.Text);
+
                 if (!modification.Text.IsEmpty)
                     hasText = true;
             }
@@ -323,7 +403,11 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     }
 
     // 技能
-    private void OnActionDetailUpdate(AddonEvent type, AddonArgs args)
+    private void OnActionDetailUpdate
+    (
+        AddonEvent type,
+        AddonArgs  args
+    )
     {
         var stringArrayData = AtkStage.Instance()->GetStringArrayData(StringArrayType.ActionDetail);
         var textArray       = stringArrayData->StringArray;
@@ -397,7 +481,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                         targetModifications.Append.Add(modification);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(modification.Type));
+                        throw new ArgumentOutOfRangeException(nameof(type));
                 }
             }
         }
@@ -414,6 +498,21 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
             foreach (var modification in targetModifications.Prepend)
             {
+                if (modification.IsParagraph) continue;
+
+                if (hasText)
+                    builder.Append(Separator);
+
+                builder.Append(modification.Text);
+
+                if (!modification.Text.IsEmpty)
+                    hasText = true;
+            }
+
+            foreach (var modification in targetModifications.Prepend)
+            {
+                if (!modification.IsParagraph) continue;
+
                 if (hasText)
                 {
                     builder.AppendNewLine()
@@ -421,6 +520,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 }
 
                 builder.Append(modification.Text);
+
                 if (!modification.Text.IsEmpty)
                     hasText = true;
             }
@@ -430,10 +530,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (!actionOriginalTexts[index].IsEmpty)
                 {
                     if (hasText)
-                    {
-                        builder.AppendNewLine()
-                               .AppendNewLine();
-                    }
+                        builder.Append(Separator);
 
                     builder.Append(actionOriginalTexts[index]);
                     hasText = true;
@@ -443,6 +540,21 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             {
                 foreach (var modification in targetModifications.Body)
                 {
+                    if (modification.IsParagraph) continue;
+
+                    if (hasText)
+                        builder.Append(Separator);
+
+                    builder.Append(modification.Text);
+
+                    if (!modification.Text.IsEmpty)
+                        hasText = true;
+                }
+
+                foreach (var modification in targetModifications.Body)
+                {
+                    if (!modification.IsParagraph) continue;
+
                     if (hasText)
                     {
                         builder.AppendNewLine()
@@ -450,6 +562,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                     }
 
                     builder.Append(modification.Text);
+
                     if (!modification.Text.IsEmpty)
                         hasText = true;
                 }
@@ -457,6 +570,21 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
             foreach (var modification in targetModifications.Append)
             {
+                if (modification.IsParagraph) continue;
+
+                if (hasText)
+                    builder.Append(Separator);
+
+                builder.Append(modification.Text);
+
+                if (!modification.Text.IsEmpty)
+                    hasText = true;
+            }
+
+            foreach (var modification in targetModifications.Append)
+            {
+                if (!modification.IsParagraph) continue;
+
                 if (hasText)
                 {
                     builder.AppendNewLine()
@@ -464,6 +592,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 }
 
                 builder.Append(modification.Text);
+
                 if (!modification.Text.IsEmpty)
                     hasText = true;
             }
@@ -473,7 +602,11 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     }
 
     // 注册
-    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
+    private void RegisterGeneric<T>
+    (
+        T          method,
+        params T[] methods
+    ) where T : Delegate
     {
         var type = typeof(T);
 
@@ -483,22 +616,27 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             _ =>
             {
                 var list = ImmutableList.Create<Delegate>(method);
-                return methods.Length > 0 ? list.AddRange(methods) : list;
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
             },
             (_, currentList) =>
             {
                 var newList = currentList.Add(method);
-                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
             }
         );
-
-        return true;
     }
 
     // 取消注册
-    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private void UnregisterGeneric<T>
+    (
+        params T[] methods
+    ) where T : Delegate
     {
-        if (methods is not { Length: > 0 }) return false;
+        if (methods is not { Length: > 0 }) return;
 
         var type = typeof(T);
 
@@ -507,27 +645,38 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             var newList = currentList.RemoveRange(methods);
 
             if (newList == currentList)
-                return false;
+                return;
 
             if (newList.IsEmpty)
             {
                 var kvp = new KeyValuePair<Type, ImmutableList<Delegate>>(type, currentList);
                 if (((ICollection<KeyValuePair<Type, ImmutableList<Delegate>>>)methodsCollection).Remove(kvp))
-                    return true;
+                    return;
             }
             else
             {
                 if (methodsCollection.TryUpdate(type, newList, currentList))
-                    return true;
+                    return;
             }
         }
-
-        return false;
     }
 
     #region 工具
 
-    private static (uint ID, ItemKind Kind) GetItemInfo(uint itemID)
+    private static char Separator =>
+        GameState.ClientLanguage is
+            Language.ChineseSimplified
+            or Language.ChineseTraditional
+            or Language.TraditionalChinese
+            or Language.Japanese
+            or Language.Korean ?
+            '　' :
+            ' ';
+
+    private static (uint ID, ItemKind Kind) GetItemInfo
+    (
+        uint itemID
+    )
     {
         switch (itemID)
         {
@@ -549,10 +698,17 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         return (itemID, ItemKind.Normal);
     }
 
-    private static TooltipItemGroupFlags GetItemTooltipGroupFlags(NumberArrayData* numberArrayData) =>
+    private static TooltipItemGroupFlags GetItemTooltipGroupFlags
+    (
+        NumberArrayData* numberArrayData
+    ) =>
         (TooltipItemGroupFlags)numberArrayData->IntArray[5];
 
-    private static bool IsItemTooltipTextSet(TooltipItemGroupFlags flags, TooltipItemType target)
+    private static bool IsItemTooltipTextSet
+    (
+        TooltipItemGroupFlags flags,
+        TooltipItemType       target
+    )
     {
         var isHeaderStatsMode = (flags & TooltipItemGroupFlags.HeaderStatsGroup) != 0;
 
@@ -581,9 +737,9 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
             TooltipItemType.ClassJobCategory
                 or TooltipItemType.ClassJobLevel => (flags &
-                                                     (isHeaderStatsMode
-                                                          ? TooltipItemGroupFlags.EquipRestrictionHeader
-                                                          : TooltipItemGroupFlags.EquipRestriction)) !=
+                                                     (isHeaderStatsMode ?
+                                                          TooltipItemGroupFlags.EquipRestrictionHeader :
+                                                          TooltipItemGroupFlags.EquipRestriction)) !=
                                                     0,
 
             TooltipItemType.EffectTitle
@@ -626,7 +782,11 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         };
     }
 
-    private static void SetItemTooltipGroupFlags(NumberArrayData* numberArrayData, IEnumerable<TooltipItemType> modifiedTargets)
+    private static void SetItemTooltipGroupFlags
+    (
+        NumberArrayData*             numberArrayData,
+        IEnumerable<TooltipItemType> modifiedTargets
+    )
     {
         var flagsToSet = ResolveItemTooltipGroupFlags(numberArrayData, modifiedTargets);
 
@@ -634,7 +794,11 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             numberArrayData->IntArray[5] |= (int)flagsToSet;
     }
 
-    private static void ClearItemTooltipGroupFlags(NumberArrayData* numberArrayData, IEnumerable<TooltipItemType> emptiedTargets)
+    private static void ClearItemTooltipGroupFlags
+    (
+        NumberArrayData*             numberArrayData,
+        IEnumerable<TooltipItemType> emptiedTargets
+    )
     {
         var flagsToClear = ResolveItemTooltipGroupFlags(numberArrayData, emptiedTargets);
 
@@ -666,9 +830,9 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                     break;
                 case TooltipItemType.ClassJobCategory:
                 case TooltipItemType.ClassJobLevel:
-                    flagsToSet |= isHeaderStatsMode
-                                      ? TooltipItemGroupFlags.EquipRestrictionHeader
-                                      : TooltipItemGroupFlags.EquipRestriction;
+                    flagsToSet |= isHeaderStatsMode ?
+                                      TooltipItemGroupFlags.EquipRestrictionHeader :
+                                      TooltipItemGroupFlags.EquipRestriction;
                     break;
                 case TooltipItemType.EffectTitle:
                 case TooltipItemType.Effect:
@@ -718,7 +882,11 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         return flagsToSet;
     }
 
-    private static void RecalculateItemDetailLayout(NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
+    private static void RecalculateItemDetailLayout
+    (
+        NumberArrayData* numberArrayData,
+        StringArrayData* stringArrayData
+    )
     {
         var addon = (AddonItemDetail*)ItemDetail;
         if (addon == null || !ItemDetail->IsAddonAndNodesReady()) return;
