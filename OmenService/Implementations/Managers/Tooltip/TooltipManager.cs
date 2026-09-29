@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using Dalamud.Game.Addon.Lifecycle;
@@ -237,6 +237,8 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         }
 
         // 形成
+        var emptiedTargets = new List<TooltipItemType>();
+
         foreach (var (target, targetModifications) in modificationsByTarget)
         {
             var index = (int)target;
@@ -303,10 +305,21 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                     hasText = true;
             }
 
-            stringArrayData->SetValue(index, builder.GetViewAsSpan(), suppressUpdates: true);
+            var value = builder.GetViewAsSpan();
+
+            stringArrayData->SetValue(index, value, suppressUpdates: true);
+
+            if (value.Length == 0 && !itemOriginalTexts[index].IsEmpty)
+                emptiedTargets.Add(target);
         }
 
         SetItemTooltipGroupFlags(numberArrayData, modificationsByTarget.Keys);
+
+        if (emptiedTargets.Count > 0)
+        {
+            ClearItemTooltipGroupFlags(numberArrayData, emptiedTargets);
+            RecalculateItemDetailLayout(numberArrayData, stringArrayData);
+        }
     }
 
     // 技能
@@ -615,10 +628,30 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
     private static void SetItemTooltipGroupFlags(NumberArrayData* numberArrayData, IEnumerable<TooltipItemType> modifiedTargets)
     {
+        var flagsToSet = ResolveItemTooltipGroupFlags(numberArrayData, modifiedTargets);
+
+        if (flagsToSet != 0)
+            numberArrayData->IntArray[5] |= (int)flagsToSet;
+    }
+
+    private static void ClearItemTooltipGroupFlags(NumberArrayData* numberArrayData, IEnumerable<TooltipItemType> emptiedTargets)
+    {
+        var flagsToClear = ResolveItemTooltipGroupFlags(numberArrayData, emptiedTargets);
+
+        if (flagsToClear != 0)
+            numberArrayData->IntArray[5] &= ~(int)flagsToClear;
+    }
+
+    private static TooltipItemGroupFlags ResolveItemTooltipGroupFlags
+    (
+        NumberArrayData*             numberArrayData,
+        IEnumerable<TooltipItemType> targets
+    )
+    {
         var                   isHeaderStatsMode = (GetItemTooltipGroupFlags(numberArrayData) & TooltipItemGroupFlags.HeaderStatsGroup) != 0;
         TooltipItemGroupFlags flagsToSet        = 0;
 
-        foreach (var target in modifiedTargets)
+        foreach (var target in targets)
         {
             switch (target)
             {
@@ -682,8 +715,16 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             }
         }
 
-        if (flagsToSet != 0)
-            numberArrayData->IntArray[5] |= (int)flagsToSet;
+        return flagsToSet;
+    }
+
+    private static void RecalculateItemDetailLayout(NumberArrayData* numberArrayData, StringArrayData* stringArrayData)
+    {
+        var addon = (AddonItemDetail*)ItemDetail;
+        if (addon == null || !ItemDetail->IsAddonAndNodesReady()) return;
+
+        addon->GenerateItemTooltip(numberArrayData, stringArrayData);
+        addon->UpdateGroupPositions(numberArrayData, stringArrayData);
     }
 
     #endregion
