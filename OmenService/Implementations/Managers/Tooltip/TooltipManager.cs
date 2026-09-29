@@ -37,8 +37,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     /// <remarks>
     ///     在你需要更新内容时调用
     /// </remarks>
-    public void TriggerItemDetailUpdate()
-    {
+    public void TriggerItemDetailUpdate() =>
         IFramework.Instance().RunOnFrameworkThread
         (() =>
             {
@@ -50,7 +49,6 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 DLog.Verbose($"{nameof(TooltipManager)}: 触发更新物品工具信息界面");
             }
         );
-    }
 
     /// <summary>
     ///     触发一次技能工具信息界面更新
@@ -58,8 +56,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     /// <remarks>
     ///     在你需要更新内容时调用
     /// </remarks>
-    public void TriggerActionDetailUpdate()
-    {
+    public void TriggerActionDetailUpdate() =>
         IFramework.Instance().RunOnFrameworkThread
         (() =>
             {
@@ -73,7 +70,6 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 DLog.Verbose($"{nameof(TooltipManager)}: 触发更新技能工具信息界面");
             }
         );
-    }
 
     /// <summary>
     ///     获取原始物品工具信息文本
@@ -253,7 +249,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             foreach (var modification in targetModifications.Prepend)
             {
                 if (hasText)
-                    builder.AppendNewLine();
+                {
+                    builder.AppendNewLine()
+                           .AppendNewLine();
+                }
 
                 builder.Append(modification.Text);
                 if (!modification.Text.IsEmpty)
@@ -265,7 +264,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (!itemOriginalTexts[index].IsEmpty)
                 {
                     if (hasText)
-                        builder.AppendNewLine();
+                    {
+                        builder.AppendNewLine()
+                               .AppendNewLine();
+                    }
 
                     builder.Append(itemOriginalTexts[index]);
                     hasText = true;
@@ -276,7 +278,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 foreach (var modification in targetModifications.Body)
                 {
                     if (hasText)
-                        builder.AppendNewLine();
+                    {
+                        builder.AppendNewLine()
+                               .AppendNewLine();
+                    }
 
                     builder.Append(modification.Text);
                     if (!modification.Text.IsEmpty)
@@ -287,7 +292,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             foreach (var modification in targetModifications.Append)
             {
                 if (hasText)
-                    builder.AppendNewLine();
+                {
+                    builder.AppendNewLine()
+                           .AppendNewLine();
+                }
 
                 builder.Append(modification.Text);
                 if (!modification.Text.IsEmpty)
@@ -393,7 +401,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             foreach (var modification in targetModifications.Prepend)
             {
                 if (hasText)
-                    builder.AppendNewLine();
+                {
+                    builder.AppendNewLine()
+                           .AppendNewLine();
+                }
 
                 builder.Append(modification.Text);
                 if (!modification.Text.IsEmpty)
@@ -405,7 +416,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (!actionOriginalTexts[index].IsEmpty)
                 {
                     if (hasText)
-                        builder.AppendNewLine();
+                    {
+                        builder.AppendNewLine()
+                               .AppendNewLine();
+                    }
 
                     builder.Append(actionOriginalTexts[index]);
                     hasText = true;
@@ -416,7 +430,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 foreach (var modification in targetModifications.Body)
                 {
                     if (hasText)
-                        builder.AppendNewLine();
+                    {
+                        builder.AppendNewLine()
+                               .AppendNewLine();
+                    }
 
                     builder.Append(modification.Text);
                     if (!modification.Text.IsEmpty)
@@ -427,7 +444,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             foreach (var modification in targetModifications.Append)
             {
                 if (hasText)
-                    builder.AppendNewLine();
+                {
+                    builder.AppendNewLine()
+                           .AppendNewLine();
+                }
 
                 builder.Append(modification.Text);
                 if (!modification.Text.IsEmpty)
