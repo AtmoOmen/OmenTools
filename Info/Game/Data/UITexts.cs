@@ -7,6 +7,14 @@ namespace OmenTools.Info.Game.Data;
 /// </summary>
 public static class UITexts
 {
+    private static bool IsFullWidthLanguage { get; } =
+        GameState.ClientLanguage is
+            Language.ChineseSimplified
+            or Language.ChineseTraditional
+            or Language.TraditionalChinese
+            or Language.Japanese
+            or Language.Korean;
+    
     /// <summary>
     /// 冒号<br/>
     /// 若为半角冒号的语言，则会后导一个半角空格，与全角冒号视觉保持统一。
@@ -44,12 +52,4 @@ public static class UITexts
         IsFullWidthLanguage ?
             '］' :
             ']';
-
-    public static bool IsFullWidthLanguage { get; } =
-        GameState.ClientLanguage is
-            Language.ChineseSimplified
-            or Language.ChineseTraditional
-            or Language.TraditionalChinese
-            or Language.Japanese
-            or Language.Korean;
 }
