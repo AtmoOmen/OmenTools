@@ -8,6 +8,18 @@ namespace OmenTools.Info.Game.Data;
 public static class UITexts
 {
     /// <summary>
+    /// 冒号<br/>
+    /// 若为半角冒号的语言，则会后导一个半角空格，与全角冒号视觉保持统一。
+    /// </summary>
+    public static string Colon { get; } =
+        GameState.ClientLanguage is
+            Language.ChineseSimplified or
+            Language.ChineseTraditional or
+            Language.TraditionalChinese ?
+            "：" :
+            ": ";
+    
+    /// <summary>
     /// 空格
     /// </summary>
     public static char Space { get; } =
