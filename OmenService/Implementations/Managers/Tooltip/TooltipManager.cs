@@ -418,7 +418,8 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
         if (!node->TextFlags.IsSet(TextFlags.MultiLine))
         {
-            node->TextFlags |= TextFlags.MultiLine;
+            node->TextFlags   |= TextFlags.MultiLine;
+            node->LineSpacing =  Math.Max(node->FontSize, (byte)14);
             node->ApplyTextFlow();
         }
 
