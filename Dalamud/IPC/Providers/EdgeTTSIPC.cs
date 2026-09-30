@@ -5,6 +5,11 @@ namespace OmenTools.Dalamud;
 
 public static class EdgeTTSIPC
 {
+    public const string INTERNAL_NAME = "EdgeTTS.Dalamud";
+
+    public static bool IsPluginEnabled() =>
+        IDalamudPluginInterface.Instance().IsPluginEnabled(INTERNAL_NAME);
+    
     [IPCSubscriber("EdgeTTS.Speak")]
     private static IPCSubscriber<string, object>? SpeakSubscriber;
 

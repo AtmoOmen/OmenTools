@@ -47,6 +47,8 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     public bool RelayToTrayWhenBackground { get; set; } = true;
     
     public bool SendTrayOnlyBackground { get; set; } = true;
+    
+    public bool SpeakTrayMessage { get; set; } = true;
 
     protected override void Uninit()
     {
@@ -151,6 +153,9 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             return;
 
         TrayNotifier.ShowBalloonTip(title ?? message, message, icon);
+
+        if (SpeakTrayMessage && EdgeTTSIPC.IsPluginEnabled())
+            Speak(message);
     }
 
     #endregion
