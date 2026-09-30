@@ -12,6 +12,7 @@ using InteropGenerator.Runtime;
 using Lumina.Data;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
+using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
 
@@ -291,7 +292,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (modification.IsParagraph) continue;
 
                 if (hasText)
-                    builder.Append(Separator);
+                    builder.Append(UITexts.Space);
 
                 builder.Append(modification.Text);
 
@@ -320,7 +321,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (!itemOriginalTexts[index].IsEmpty)
                 {
                     if (hasText)
-                        builder.Append(Separator);
+                        builder.Append(UITexts.Space);
 
                     builder.Append(itemOriginalTexts[index]);
                     hasText = true;
@@ -333,7 +334,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                     if (modification.IsParagraph) continue;
 
                     if (hasText)
-                        builder.Append(Separator);
+                        builder.Append(UITexts.Space);
 
                     builder.Append(modification.Text);
 
@@ -363,7 +364,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (modification.IsParagraph) continue;
 
                 if (hasText)
-                    builder.Append(Separator);
+                    builder.Append(UITexts.Space);
 
                 builder.Append(modification.Text);
 
@@ -537,7 +538,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (modification.IsParagraph) continue;
 
                 if (hasText)
-                    builder.Append(Separator);
+                    builder.Append(UITexts.Space);
 
                 builder.Append(modification.Text);
 
@@ -566,7 +567,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (!actionOriginalTexts[index].IsEmpty)
                 {
                     if (hasText)
-                        builder.Append(Separator);
+                        builder.Append(UITexts.Space);
 
                     builder.Append(actionOriginalTexts[index]);
                     hasText = true;
@@ -579,7 +580,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                     if (modification.IsParagraph) continue;
 
                     if (hasText)
-                        builder.Append(Separator);
+                        builder.Append(UITexts.Space);
 
                     builder.Append(modification.Text);
 
@@ -609,7 +610,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
                 if (modification.IsParagraph) continue;
 
                 if (hasText)
-                    builder.Append(Separator);
+                    builder.Append(UITexts.Space);
 
                 builder.Append(modification.Text);
 
@@ -698,16 +699,6 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
     }
 
     #region 工具
-
-    private static char Separator =>
-        GameState.ClientLanguage is
-            Language.ChineseSimplified
-            or Language.ChineseTraditional
-            or Language.TraditionalChinese
-            or Language.Japanese
-            or Language.Korean ?
-            '　' :
-            ' ';
 
     private static (uint ID, ItemKind Kind) GetItemInfo
     (
