@@ -415,22 +415,24 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         if (!ItemDetail->IsAddonAndNodesReady()) return;
 
         var addon = (AddonItemDetail*)ItemDetail;
-        var node  = addon->MaterializeText;
 
-        if (!node->TextFlags.IsSetAll(TextFlags.MultiLine, TextFlags.WordWrap))
+        if (addon->DescriptionText->Width != 350)
+            addon->DescriptionText->Width = 350;
+        
+        if (addon->MaterializeText->Width != 350)
         {
-            node->Width       =  350;
-            node->TextFlags   |= TextFlags.MultiLine | TextFlags.WordWrap;
-            node->LineSpacing =  Math.Max(node->FontSize, (byte)14);
-            node->ApplyTextFlow();
+            addon->MaterializeText->Width       =  350;
+            addon->MaterializeText->TextFlags   |= TextFlags.MultiLine | TextFlags.WordWrap;
+            addon->MaterializeText->LineSpacing =  Math.Max(addon->MaterializeText->FontSize, (byte)14);
+            addon->MaterializeText->ApplyTextFlow();
         }
 
         ushort width;
         ushort height;
-        node->GetTextDrawSize(&width, &height);
+        addon->MaterializeText->GetTextDrawSize(&width, &height);
 
-        node->SetHeight(height);
-        addon->CraftingAndRepairsGroup->SetHeight((ushort)(node->Y + node->Height));
+        addon->MaterializeText->SetHeight(height);
+        addon->CraftingAndRepairsGroup->SetHeight((ushort)(addon->MaterializeText->Y + addon->MaterializeText->Height));
 
         addon->UpdateGroupPositions
         (
