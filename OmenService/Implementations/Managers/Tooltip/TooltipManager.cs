@@ -416,9 +416,10 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         var addon = (AddonItemDetail*)ItemDetail;
         var node  = addon->MaterializeText;
 
-        if (!node->TextFlags.IsSet(TextFlags.MultiLine))
+        if (!node->TextFlags.IsSetAll(TextFlags.MultiLine, TextFlags.WordWrap))
         {
-            node->TextFlags   |= TextFlags.MultiLine;
+            node->Width       =  350;
+            node->TextFlags   |= TextFlags.MultiLine | TextFlags.WordWrap;
             node->LineSpacing =  Math.Max(node->FontSize, (byte)14);
             node->ApplyTextFlow();
         }
