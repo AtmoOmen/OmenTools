@@ -9,6 +9,8 @@ using Lumina.Data;
 using Lumina.Excel.Sheets;
 using Lumina.Text.Payloads;
 using Lumina.Text.ReadOnly;
+using OmenTools.Info.Game.Data;
+using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
 using DSeString = Dalamud.Game.Text.SeStringHandling.SeString;
 using DSeStringBuilder = Dalamud.Game.Text.SeStringHandling.SeStringBuilder;
@@ -20,7 +22,7 @@ public static class SeStringExtension
 {
     private const char SE_SQUARE_COUNT_BASE_CHAR = '\uE08F';
     private const char SE_SMALL_COUNT_BASE_CHAR  = '\uE060';
-    private const char SE_HEX_COUNT_BASE_CHAR    = '\uE0B1';
+    private const char SE_HEX_COUNT_BASE_CHAR    = '\uE0B0';
 
     private static readonly Lazy<(int Start, int End, ulong[] Bitmap)> SEIconBitmap =
         new
@@ -207,11 +209,67 @@ public static class SeStringExtension
         ReadOnlySeString
     )
     {
+        public static ReadOnlySeString CreateMapLink
+        (
+            Vector3           worldPosition,
+            uint              territoryType     = 0,
+            uint              map               = 0,
+            ReadOnlySeString? displayNameOverride = null
+        )
+        {
+            territoryType = territoryType == 0 ?
+                                  GameState.TerritoryType :
+                                  territoryType;
+            if (!LuminaGetter.TryGetRow<TerritoryType>(territoryType, out var territoryTypeRow))
+                throw new InvalidDataException("无效的 TerritoryType。");
+            
+            map = map == 0 ?
+                        GameState.Map :
+                        map;
+            if (!LuminaGetter.TryGetRow<Map>(map, out var mapRow))
+                throw new InvalidDataException("无效的 Map。");
+            if (mapRow.TerritoryType.RowId != territoryType)
+                throw new InvalidDataException("Map 对应的 TerritoryType 与传入的 TerritoryType 不一致。");
+            
+            using var rssb    = new RentedSeStringBuilder();
+            var       builder = rssb.Builder;
+
+            var mapPosition = PositionHelper.WorldToMap(worldPosition, mapRow);
+
+            if (displayNameOverride is { } displayName)
+            {
+                // ignored
+            }
+            else
+            {
+                displayName = territoryTypeRow.ExtractPlaceName();
+
+                if (territoryType == GameState.TerritoryType &&
+                    InstancesManager.IsInstancedArea)
+                {
+                    builder.Append(displayName)
+                           .Append(InstancesManager.CurrentInstance.ToSEHexCount())
+                           .Append($" ( {mapPosition.X:F1}  , {mapPosition.Y:F1} )");
+                    
+                    displayName = builder.ToReadOnlySeString();
+                    builder.Clear();
+                }
+            }
+            
+            displayName = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [displayName]);
+
+            builder.PushLinkMapPosition(territoryType, map, (int)(worldPosition.X * 1000), (int)(worldPosition.Z * 1000))
+                   .Append(displayName)
+                   .PopLink();
+            
+            return builder.ToReadOnlySeString();
+        }
+        
         public static ReadOnlySeString CreateItemLink
         (
-            uint    itemID,
-            bool    isHQ                = false,
-            string? displayNameOverride = null
+            uint              itemID,
+            bool              isHQ                = false,
+            ReadOnlySeString? displayNameOverride = null
         ) =>
             ReadOnlySeString.CreateItemLink
             (
@@ -224,9 +282,9 @@ public static class SeStringExtension
         
         public static ReadOnlySeString CreateItemLink
         (
-            uint     itemID,
-            ItemKind kind                = ItemKind.Normal,
-            string?  displayNameOverride = null
+            uint              itemID,
+            ItemKind          kind                = ItemKind.Normal,
+            ReadOnlySeString? displayNameOverride = null
         )
         {
             var rawID = ItemUtil.GetRawId(itemID, kind);
@@ -262,9 +320,9 @@ public static class SeStringExtension
         
         public static ReadOnlySeString CreateItemName
         (
-            uint    itemID,
-            bool    isHQ                = false,
-            string? displayNameOverride = null
+            uint              itemID,
+            bool              isHQ                = false,
+            ReadOnlySeString? displayNameOverride = null
         ) =>
             ReadOnlySeString.CreateItemName
             (
@@ -280,9 +338,9 @@ public static class SeStringExtension
         /// </summary>
         public static ReadOnlySeString CreateItemName
         (
-            uint     itemID,
-            ItemKind kind                = ItemKind.Normal,
-            string?  displayNameOverride = null
+            uint              itemID,
+            ItemKind          kind                = ItemKind.Normal,
+            ReadOnlySeString? displayNameOverride = null
         )
         {
             var rawID = ItemUtil.GetRawId(itemID, kind);
