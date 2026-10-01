@@ -1,5 +1,7 @@
-﻿using Dalamud.Game.ClientState.Conditions;
+using System.Runtime.InteropServices;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
@@ -23,12 +25,27 @@ public unsafe partial class GameState
     private static readonly nint ContentReplyManagerPtr = ContentReplyManagerSig.GetStatic();
     private static readonly nint ZoneServerIDOffset     = ZoneServerIDOffsetSig.GetStatic();
 
-    private static readonly CompSig                          FateDirectorSetupSig = new("E8 ?? ?? ?? ?? 48 39 37");
-    private delegate        nint                             FateDirectorSetupDelegate(uint rowID, nint a2, nint a3);
-    private                 Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
-    
+    private static readonly CompSig InstanceContentDirectorDutyStartedFlagSig =
+        new("80 A7 ?? ?? ?? ?? ?? 48 8B CF E8 ?? ?? ?? ?? 0F B7 47");
+    private static readonly CompSig InstanceContentDirectorDutyCompletedFlagSig =
+        new("80 89 ?? ?? ?? ?? ?? 33 D2 48 8B D9");
+
+    private static nint InstanceContentDirectorDutyStartedOffset;
+    private static byte InstanceContentDirectorDutyStartedFlag;
+    private static nint InstanceContentDirectorDutyCompletedOffset;
+    private static byte InstanceContentDirectorDutyCompletedFlag;
+
+    private static readonly CompSig FateDirectorSetupSig = new("E8 ?? ?? ?? ?? 48 39 37");
+    private delegate nint FateDirectorSetupDelegate
+    (
+        uint rowID,
+        nint a2,
+        nint a3
+    );
+    private Hook<FateDirectorSetupDelegate>? FateDirectorSetupHook;
+
     private Hook<InfoProxyItemSearch.Delegates.ProcessRequestResult>? ProcessRequestResultHook;
-    
+
     private Hook<WarpInfo.Delegates.CompleteWarp>? CompleteWarpHook;
 
     private TaskHelper taskHelper = null!;
@@ -37,8 +54,16 @@ public unsafe partial class GameState
 
     protected override void Init()
     {
+        var startedFlagAddress   = InstanceContentDirectorDutyStartedFlagSig.ScanText();
+        var completedFlagAddress = InstanceContentDirectorDutyCompletedFlagSig.ScanText();
+
+        InstanceContentDirectorDutyStartedOffset   = Marshal.ReadInt32(startedFlagAddress   + 2);
+        InstanceContentDirectorDutyStartedFlag     = (byte)~Marshal.ReadByte(startedFlagAddress + 6);
+        InstanceContentDirectorDutyCompletedOffset = Marshal.ReadInt32(completedFlagAddress + 2);
+        InstanceContentDirectorDutyCompletedFlag   = Marshal.ReadByte(completedFlagAddress  + 6);
+
         taskHelper = new() { TimeoutMS = int.MaxValue };
-        
+
         IClientState.Instance().Logout += OnDalamudLogout;
 
         if (IsLoggedIn)
@@ -47,7 +72,7 @@ public unsafe partial class GameState
 
         FateDirectorSetupHook = FateDirectorSetupSig.GetHook<FateDirectorSetupDelegate>(FateDirectorSetupDetour);
         FateDirectorSetupHook.Enable();
-        
+
         ProcessRequestResultHook = IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(InfoProxyItemSearch.MemberFunctionPointers),
@@ -55,7 +80,7 @@ public unsafe partial class GameState
             (InfoProxyItemSearch.Delegates.ProcessRequestResult)ProcessRequestResultDetour
         );
         ProcessRequestResultHook.Enable();
-        
+
         CompleteWarpHook = IGameInteropProvider.Instance().HookFromMemberFunction
         (
             typeof(WarpInfo.MemberFunctionPointers),
@@ -68,7 +93,7 @@ public unsafe partial class GameState
     protected override void Uninit()
     {
         FrameworkManager.Instance().Unreg(OnUpdate);
-        
+
         IClientState.Instance().Logout -= OnDalamudLogout;
 
         taskHelper.Dispose();
@@ -76,10 +101,10 @@ public unsafe partial class GameState
 
         FateDirectorSetupHook?.Dispose();
         FateDirectorSetupHook = null;
-        
+
         ProcessRequestResultHook?.Dispose();
         ProcessRequestResultHook = null;
-        
+
         CompleteWarpHook?.Dispose();
         CompleteWarpHook = null;
     }
@@ -133,9 +158,9 @@ public unsafe partial class GameState
     )
     {
         var warpType = instance->WarpType;
-        
+
         CompleteWarpHook.Original(instance, eventParam, eventID);
-        
+
         if (warpType != WarpType.None)
             WarpComplete?.Invoke(instance->WarpType);
         if (warpType == WarpType.Login)
@@ -162,5 +187,19 @@ public unsafe partial class GameState
             EnterFate?.Invoke(FateManager.Instance()->CurrentFate->FateId);
 
         return original;
+    }
+
+    private static bool IsInstanceContentDirectorFlagSet
+    (
+        nint flagByteOffset,
+        byte flag
+    )
+    {
+        var framework = EventFramework.Instance();
+        if (framework == null) return false;
+
+        var director = framework->GetInstanceContentDirector();
+
+        return director != null && (*((byte*)director + flagByteOffset) & flag) != 0;
     }
 }

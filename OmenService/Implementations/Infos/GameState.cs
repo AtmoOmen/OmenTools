@@ -22,7 +22,7 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     ///     当接收市场出售数据时被服务器拒绝了。
     /// </summary>
     public event Action<int>? MarketListingsStuck;
-    
+
     /// <summary>
     ///     进入临危受命范围时
     /// </summary>
@@ -58,7 +58,7 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
         get
         {
             var orig = IGameConfig.Instance().System.GetUInt("UiHighScale");
-            
+
             return orig switch
             {
                 0 => 1,
@@ -68,7 +68,7 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
             };
         }
     }
-    
+
     /// <summary>
     ///     当前在接收市场出售数据时是否被服务器拒绝了。
     /// </summary>
@@ -103,25 +103,25 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     /// <summary>
     ///     是否为国际服客户端
     /// </summary>
-    public static bool IsGL => 
+    public static bool IsGL =>
         Framework.Instance()->ClientLanguage < 4;
 
     /// <summary>
     ///     是否为国服客户端
     /// </summary>
-    public static bool IsCN => 
+    public static bool IsCN =>
         Framework.Instance()->ClientLanguage is 4 or 5;
 
     /// <summary>
     ///     是否为繁中客户端
     /// </summary>
-    public static bool IsTC => 
+    public static bool IsTC =>
         Framework.Instance()->ClientLanguage == 7;
 
     /// <summary>
     ///     是否为韩服客户端
     /// </summary>
-    public static bool IsKR => 
+    public static bool IsKR =>
         Framework.Instance()->ClientLanguage == 6;
 
     /// <summary>
@@ -150,13 +150,17 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     ///     地图标点位置, 若未设置则返回 default(Vector2)
     /// </summary>
     public static Vector2 FlagMarkerPosition =>
-        IsFlagMarkerSet ? new(AgentMap.Instance()->FlagMapMarkers[0].XFloat, AgentMap.Instance()->FlagMapMarkers[0].YFloat) : default;
+        IsFlagMarkerSet ?
+            new(AgentMap.Instance()->FlagMapMarkers[0].XFloat, AgentMap.Instance()->FlagMapMarkers[0].YFloat) :
+            default;
 
     /// <summary>
     ///     地图标点, 若未设置则返回 default(FlagMapMarker)
     /// </summary>
     public static FlagMapMarker FlagMarker =>
-        IsFlagMarkerSet ? AgentMap.Instance()->FlagMapMarkers[0] : default;
+        IsFlagMarkerSet ?
+            AgentMap.Instance()->FlagMapMarkers[0] :
+            default;
 
     /// <summary>
     ///     当前游戏 Delta Time
@@ -192,7 +196,9 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     ///     原始 World
     /// </summary>
     public static uint HomeWorld =>
-        IClientState.Instance().IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.HomeWorldId : 0;
+        IClientState.Instance().IsLoggedIn ?
+            (uint)AgentLobby.Instance()->LobbyData.HomeWorldId :
+            0;
 
     /// <summary>
     ///     原始 World 表数据
@@ -204,7 +210,9 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     ///     当前 World
     /// </summary>
     public static uint CurrentWorld =>
-        IClientState.Instance().IsLoggedIn ? (uint)AgentLobby.Instance()->LobbyData.CurrentWorldId : 0;
+        IClientState.Instance().IsLoggedIn ?
+            (uint)AgentLobby.Instance()->LobbyData.CurrentWorldId :
+            0;
 
     /// <summary>
     ///     当前 World 表数据
@@ -253,6 +261,18 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     /// </summary>
     public static bool IsInInstanceArea =>
         GameMain.Instance()->IsInInstanceArea();
+
+    /// <summary>
+    ///     当前副本是否已经开始
+    /// </summary>
+    public static bool IsDutyStarted =>
+        IsInstanceContentDirectorFlagSet(InstanceContentDirectorDutyStartedOffset, InstanceContentDirectorDutyStartedFlag);
+
+    /// <summary>
+    ///     当前副本是否已经完成
+    /// </summary>
+    public static bool IsDutyCompleted =>
+        IsInstanceContentDirectorFlagSet(InstanceContentDirectorDutyCompletedOffset, InstanceContentDirectorDutyCompletedFlag);
 
     /// <summary>
     ///     是否处于观景视角中
