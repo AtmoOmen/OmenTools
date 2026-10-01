@@ -3,19 +3,9 @@ using Lumina.Excel.Sheets;
 
 namespace OmenTools.Interop.Game.Helpers;
 
-// FF14 坐标体系
-//
 // 纹理坐标 (Texture): 二维, 地图贴图上的像素位置, 范围约 0~2048, 中心 1024
 // 地图坐标 (Map):     二维, 游戏内地图界面显示的坐标, 范围约 1~42
 // 世界坐标 (World):   三维, XZ 为水平面, Y 为纵轴高度
-//
-// 三套坐标的水平换算统一以 "World <-> Texture" 为精确基准, 其余全部由它线性派生, 保证任意链路自洽:
-//
-//   s       = SizeFactor / 100
-//   Texture = (World_xz + Offset) * s + 1024
-//   Map     = Texture / 2048 * (PIXELS_PER_MAP_UNIT / s) + 1
-//
-// 高度轴 (World.Y) 与水平面无关, 单独换算
 public static class PositionHelper
 {
     // 单位地图坐标对应的纹理像素数, 即 2048 / 50
