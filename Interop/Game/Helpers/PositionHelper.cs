@@ -29,6 +29,9 @@ public static class PositionHelper
 
     #region World <-> Map
 
+    public static Vector2 WorldToMap(Vector3 pos, Map map) =>
+        TextureToMapXZ(WorldXZToTexture(pos.ToVector2(), map.SizeFactor, map.OffsetX, map.OffsetY), map.SizeFactor);
+    
     public static Vector2 WorldToMap(Vector2 pos, Map map) =>
         TextureToMapXZ(WorldXZToTexture(pos, map.SizeFactor, map.OffsetX, map.OffsetY), map.SizeFactor);
 
