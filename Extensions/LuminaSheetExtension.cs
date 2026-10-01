@@ -8,7 +8,6 @@ using Lumina.Data.Files;
 using Lumina.Data.Parsing.Layer;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
-using Lumina.Text.ReadOnly;
 using OmenTools.Info.Game.Enums;
 using OmenTools.Info.Lumina;
 using OmenTools.Info.Lumina.Enums;
@@ -233,8 +232,8 @@ public static unsafe class LuminaSheetExtension
 
     extension(scoped in TerritoryType row)
     {
-        public ReadOnlySeString ExtractPlaceName() =>
-            row.PlaceName.ValueNullable?.Name ?? string.Empty;
+        public string ExtractPlaceName() =>
+            row.PlaceName.ValueNullable?.Name.ToString() ?? string.Empty;
     }
 
     extension(scoped in Level level)
