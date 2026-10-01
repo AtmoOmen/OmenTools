@@ -209,6 +209,33 @@ public static class SeStringExtension
         ReadOnlySeString
     )
     {
+        public static ReadOnlySeString CreateAchievementLink
+        (
+            uint achievementID,
+            ReadOnlySeString? displayNameOverride = null
+        )
+        {
+            if (!LuminaGetter.TryGetRow<Achievement>(achievementID, out var achievementRow))
+                throw new InvalidDataException("无效的 Achievement。");
+
+            using var builder = new RentedSeStringBuilder();
+            
+            if (displayNameOverride is { } displayName)
+            {
+                // ignored
+            }
+            else
+                displayName = achievementRow.Name;
+            
+            displayName = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [displayName]);
+
+            builder.PushLinkAchievement(achievementID)
+                   .Append(displayName)
+                   .PopLink();
+            
+            return builder.ToReadOnlySeString();
+        }
+        
         public static ReadOnlySeString CreateMapLink
         (
             Vector3           worldPosition,
