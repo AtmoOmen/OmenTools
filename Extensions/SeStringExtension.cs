@@ -217,22 +217,25 @@ public static class SeStringExtension
             ReadOnlySeString? displayNameOverride = null
         )
         {
-            territoryType = territoryType == 0 ?
-                                  GameState.TerritoryType :
-                                  territoryType;
+            if (territoryType == 0)
+                territoryType = GameState.TerritoryType;
+            
             if (!LuminaGetter.TryGetRow<TerritoryType>(territoryType, out var territoryTypeRow))
                 throw new InvalidDataException("无效的 TerritoryType。");
+
+            if (map == 0)
+            {
+                map = territoryType == GameState.TerritoryType ?
+                          GameState.Map :
+                          territoryTypeRow.Map.RowId;
+            }
             
-            map = map == 0 ?
-                        GameState.Map :
-                        map;
             if (!LuminaGetter.TryGetRow<Map>(map, out var mapRow))
                 throw new InvalidDataException("无效的 Map。");
             if (mapRow.TerritoryType.RowId != territoryType)
                 throw new InvalidDataException("Map 对应的 TerritoryType 与传入的 TerritoryType 不一致。");
-            
-            using var rssb    = new RentedSeStringBuilder();
-            var       builder = rssb.Builder;
+
+            using var builder = new RentedSeStringBuilder();
 
             var mapPosition = PositionHelper.WorldToMap(worldPosition, mapRow);
 
@@ -248,8 +251,8 @@ public static class SeStringExtension
                     InstancesManager.IsInstancedArea)
                 {
                     builder.Append(displayName)
-                           .Append(InstancesManager.CurrentInstance.ToSEHexCount())
-                           .Append($" ( {mapPosition.X:F1}  , {mapPosition.Y:F1} )");
+                          .Append(InstancesManager.CurrentInstance.ToSEHexCount())
+                          .Append($" ( {mapPosition.X:F1}  , {mapPosition.Y:F1} )");
                     
                     displayName = builder.ToReadOnlySeString();
                     builder.Clear();
@@ -259,8 +262,8 @@ public static class SeStringExtension
             displayName = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [displayName]);
 
             builder.PushLinkMapPosition(territoryType, map, (int)(worldPosition.X * 1000), (int)(worldPosition.Z * 1000))
-                   .Append(displayName)
-                   .PopLink();
+                  .Append(displayName)
+                  .PopLink();
             
             return builder.ToReadOnlySeString();
         }
