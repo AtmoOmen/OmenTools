@@ -7,7 +7,7 @@ namespace OmenTools.Info.Game.Data;
 /// </summary>
 public static class UITexts
 {
-    private static bool IsFullWidthLanguage { get; } =
+    public static bool IsFullWidthLanguage { get; } =
         GameState.ClientLanguage is
             Language.ChineseSimplified
             or Language.ChineseTraditional
