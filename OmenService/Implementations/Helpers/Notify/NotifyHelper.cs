@@ -155,7 +155,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         TrayNotifier.ShowBalloonTip(title ?? message, message, icon);
 
         if (SpeakTrayMessage && EdgeTTSIPC.IsPluginEnabled())
-            Speak(message);
+            Speak(title ?? message);
     }
 
     #endregion
