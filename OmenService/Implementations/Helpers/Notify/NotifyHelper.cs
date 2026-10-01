@@ -10,6 +10,7 @@ using Lumina.Text;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
 using OmenTools.Interop.Windows;
+using OmenTools.Interop.Windows.Models;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
@@ -149,7 +150,9 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         ArgumentNullException.ThrowIfNull(TrayNotifier);
         ArgumentNullException.ThrowIfNull(message);
 
-        if (SendTrayOnlyBackground && GameState.IsForeground)
+        if (SendTrayOnlyBackground &&
+            GameState.IsForeground &&
+            LastInputInfo.GetIdleTimeTick() < 15_000)
             return;
 
         TrayNotifier.ShowBalloonTip(title ?? message, message, icon);
