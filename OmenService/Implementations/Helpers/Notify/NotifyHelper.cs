@@ -238,7 +238,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         ReadOnlySeString message,
         bool             useDefaultPrefix = true
     ) =>
-        Chat(message, useDefaultPrefix ? ChatPrefix : null);
+        PrintChat(message, useDefaultPrefix ? ChatPrefix : null);
 
     /// <summary>
     ///     输出 <see cref="XivChatType.ErrorMessage" /> 消息。
@@ -248,7 +248,27 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         ReadOnlySeString message,
         bool             useDefaultPrefix = true
     ) =>
-        Chat(message, useDefaultPrefix ? ChatPrefix : null, XivChatType.ErrorMessage);
+        PrintChat(message, useDefaultPrefix ? ChatPrefix : null, XivChatType.ErrorMessage);
+    
+    /// <summary>
+    ///     输出 <see cref="XivChatType.LootNotice" /> 消息。
+    /// </summary>
+    public void ChatGain
+    (
+        ReadOnlySeString message,
+        bool             useDefaultPrefix = true
+    ) =>
+        PrintChat(message, useDefaultPrefix ? ChatPrefix : null, XivChatType.LootNotice);
+    
+    /// <summary>
+    ///     输出 <see cref="XivChatType.NPCDialogue" /> 消息。
+    /// </summary>
+    public void ChatDialogue
+    (
+        ReadOnlySeString message,
+        bool             useDefaultPrefix = true
+    ) =>
+        PrintChat(message, useDefaultPrefix ? ChatPrefix : null, XivChatType.NPCDialogue);
     
     /// <summary>
     ///     输出完全自定义的聊天消息。
@@ -262,7 +282,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     /// <summary>
     ///     输出可自定义前缀与频道的聊天消息。
     /// </summary>
-    private static void Chat
+    private static void PrintChat
     (
         ReadOnlySeString  message,
         ReadOnlySeString? prefix   = null,
@@ -327,19 +347,6 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             return;
 
         builder.Append(prefix.Value).Append(" ");
-    }
-
-    private static void AppendTag(SeStringBuilder builder, string? messageTag, ushort? tagColor)
-    {
-        if (messageTag.IsNullOrEmpty())
-            return;
-
-        if (tagColor is null)
-            builder.Append($"[{messageTag}] ");
-        else
-            builder.PushColorType(tagColor.Value)
-                   .Append($"[{messageTag}] ")
-                   .PopColorType();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
