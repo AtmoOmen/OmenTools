@@ -231,29 +231,27 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     #region Chat
 
     /// <summary>
-    ///     输出聊天文本，可选前缀与颜色。
+    ///     输出 <see cref="XivChatType.SystemMessage" /> 消息。
     /// </summary>
-    public static void Chat
-    (
-        string  message,
-        string? messageTag = null,
-        ushort? tagColor   = null
-    ) =>
-        IChatGui.Instance().Print(message, messageTag, tagColor);
-
-    /// <summary>
-    ///     输出富文本聊天文本，可选前缀与颜色。
-    /// </summary>
-    public static void Chat
+    public void Chat
     (
         ReadOnlySeString message,
-        string?          messageTag = null,
-        ushort?          tagColor   = null
+        bool             useDefaultPrefix = true
     ) =>
-        IChatGui.Instance().Print(message, messageTag, tagColor);
+        Chat(message, useDefaultPrefix ? ChatPrefix : null);
+
+    /// <summary>
+    ///     输出 <see cref="XivChatType.ErrorMessage" /> 消息。
+    /// </summary>
+    public void ChatError
+    (
+        ReadOnlySeString message,
+        bool             useDefaultPrefix = true
+    ) =>
+        Chat(message, useDefaultPrefix ? ChatPrefix : null, XivChatType.ErrorMessage);
     
     /// <summary>
-    ///     输出完全自定义的聊天文本，可选前缀与颜色。
+    ///     输出完全自定义的聊天消息。
     /// </summary>
     public static void Chat
     (
@@ -262,69 +260,32 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         IChatGui.Instance().Print(entry);
     
     /// <summary>
-    ///     输出聊天文本，可选前缀与颜色。
+    ///     输出可自定义前缀与频道的聊天消息。
     /// </summary>
-    public static void ChatError
+    private static void Chat
     (
-        string  message,
-        string? messageTag = null,
-        ushort? tagColor   = null
-    ) =>
-        PrintChat(message, messageTag, tagColor);
-
-    /// <summary>
-    ///     输出富文本聊天文本，可选前缀与颜色。
-    /// </summary>
-    public static void ChatError
-    (
-        ReadOnlySeString message,
-        string?          messageTag = null,
-        ushort?          tagColor   = null
-    ) =>
-        PrintChat(message, messageTag, tagColor);
-
-    /// <summary>
-    ///     输出富文本聊天文本，可选前缀与颜色。
-    /// </summary>
-    public static void Chat
-    (
-        ReadOnlySpan<byte> message,
-        string?            messageTag = null,
-        ushort?            tagColor   = null
-    ) =>
-        IChatGui.Instance().Print(message, messageTag, tagColor);
-    
-    /// <summary>
-    ///     输出错误聊天文本，可选前缀与颜色。
-    /// </summary>
-    public void ChatError(string message, ReadOnlySeString? prefix = null)
+        ReadOnlySeString  message,
+        ReadOnlySeString? prefix   = null,
+        XivChatType       chatType = XivChatType.SystemMessage
+    )
     {
-        ArgumentNullException.ThrowIfNull(message);
+        using var rented  = new RentedSeStringBuilder();
+        var       builder = rented.Builder;
 
-        PrintChat(message, prefix, true);
+        AppendPrefix(builder, prefix);
+        builder.Append(message);
+
+        var chat = IChatGui.Instance();
+
+        chat.Print
+        (
+            new XivChatEntry
+            {
+                Message = builder.ToReadOnlySeString().ToDalamudString(),
+                Type    = chatType
+            }
+        );
     }
-
-    /// <summary>
-    ///     输出带富文本的错误聊天消息，仅对纯文本片段着色。
-    /// </summary>
-    public void ChatError(ReadOnlySeString message, ReadOnlySeString? prefix = null) =>
-        PrintChat(message, prefix, true);
-
-    /// <summary>
-    ///     输出普通聊天文本，可选前缀与颜色。
-    /// </summary>
-    public void Chat(string message, ReadOnlySeString? prefix = null)
-    {
-        ArgumentNullException.ThrowIfNull(message);
-
-        PrintChat(message, prefix, false);
-    }
-
-    /// <summary>
-    ///     输出带富文本的普通聊天消息。
-    /// </summary>
-    public void Chat(ReadOnlySeString message, ReadOnlySeString? prefix = null) =>
-        PrintChat(message, prefix, false);
 
     #endregion
 
@@ -358,58 +319,6 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             options?.UserDismissable             ?? helper.UserDismissable,
             options?.Progress                    ?? helper.NotificationProgress
         );
-    }
-
-    private void PrintChat(string message, ReadOnlySeString? prefix, bool isError)
-    {
-        using var rented  = new RentedSeStringBuilder();
-        var       builder = rented.Builder;
-
-        AppendPrefix(builder, prefix ?? ChatPrefix);
-        builder.Append(message);
-
-        var chat = IChatGui.Instance();
-        if (isError)
-            chat.Print(new XivChatEntry { Message = builder.ToReadOnlySeString().ToDalamudString(), Type = XivChatType.ErrorMessage });
-        else
-            chat.Print(builder.ToReadOnlySeString());
-    }
-
-    private void PrintChat(ReadOnlySeString message, ReadOnlySeString? prefix, bool isError)
-    {
-        using var rented  = new RentedSeStringBuilder();
-        var       builder = rented.Builder;
-
-        AppendPrefix(builder, prefix ?? ChatPrefix);
-        builder.Append(message);
-
-        var chat = IChatGui.Instance();
-        if (isError)
-            chat.Print(new XivChatEntry { Message = builder.ToReadOnlySeString().ToDalamudString(), Type = XivChatType.ErrorMessage });
-        else
-            chat.Print(builder.ToReadOnlySeString());
-    }
-
-    private static void PrintChat(string message, string? messageTag, ushort? tagColor)
-    {
-        using var rented  = new RentedSeStringBuilder();
-        var       builder = rented.Builder;
-
-        AppendTag(builder, messageTag, tagColor);
-        builder.Append(message);
-
-        IChatGui.Instance().Print(new XivChatEntry { Message = builder.ToReadOnlySeString().ToDalamudString(), Type = XivChatType.ErrorMessage });
-    }
-
-    private static void PrintChat(ReadOnlySeString message, string? messageTag, ushort? tagColor)
-    {
-        using var rented  = new RentedSeStringBuilder();
-        var       builder = rented.Builder;
-
-        AppendTag(builder, messageTag, tagColor);
-        builder.Append(message);
-
-        IChatGui.Instance().Print(new XivChatEntry { Message = builder.ToReadOnlySeString().ToDalamudString(), Type = XivChatType.ErrorMessage });
     }
 
     private static void AppendPrefix(SeStringBuilder builder, ReadOnlySeString? prefix)
