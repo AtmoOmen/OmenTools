@@ -9,7 +9,6 @@ using Lumina.Data;
 using Lumina.Excel.Sheets;
 using Lumina.Text.Payloads;
 using Lumina.Text.ReadOnly;
-using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
 using DSeString = Dalamud.Game.Text.SeStringHandling.SeString;
@@ -209,9 +208,61 @@ public static class SeStringExtension
         ReadOnlySeString
     )
     {
+        public static ReadOnlySeString CreatePlayerLink
+        (
+            string            playerName,
+            uint              worldID             = 0,
+            ReadOnlySeString? displayNameOverride = null
+        )
+        {
+            ArgumentNullException.ThrowIfNull(playerName);
+
+            using var builder = new RentedSeStringBuilder();
+
+            if (displayNameOverride is { } displayName)
+            {
+                // ignored
+            }
+            else
+                displayName = ReadOnlySeString.CreatePlayer(playerName, worldID);
+
+            builder.PushLinkCharacter(playerName, worldID)
+                   .Append(displayName)
+                   .PopLink();
+
+            return builder.ToReadOnlySeString();
+        }
+
+        /// <summary>
+        ///     非链接，仅为游戏原生风格的富文本
+        /// </summary>
+        public static ReadOnlySeString CreatePlayer
+        (
+            string playerName,
+            uint   worldID = 0
+        )
+        {
+            ArgumentNullException.ThrowIfNull(playerName);
+
+            using var builder = new RentedSeStringBuilder();
+
+            builder.Append(playerName);
+
+            if (worldID != 0 && GameState.HomeWorld != worldID)
+            {
+                if (!LuminaGetter.TryGetRow<World>(worldID, out var worldRow))
+                    throw new InvalidDataException("无效的 World。");
+
+                builder.AppendIcon((uint)BitmapFontIcon.CrossWorld)
+                       .Append(worldRow.Name);
+            }
+
+            return builder.ToReadOnlySeString();
+        }
+
         public static ReadOnlySeString CreateAchievementLink
         (
-            uint achievementID,
+            uint              achievementID,
             ReadOnlySeString? displayNameOverride = null
         )
         {
@@ -219,34 +270,34 @@ public static class SeStringExtension
                 throw new InvalidDataException("无效的 Achievement。");
 
             using var builder = new RentedSeStringBuilder();
-            
+
             if (displayNameOverride is { } displayName)
             {
                 // ignored
             }
             else
                 displayName = achievementRow.Name;
-            
+
             displayName = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [displayName]);
 
             builder.PushLinkAchievement(achievementID)
                    .Append(displayName)
                    .PopLink();
-            
+
             return builder.ToReadOnlySeString();
         }
-        
+
         public static ReadOnlySeString CreateMapLink
         (
             Vector3           worldPosition,
-            uint              territoryType     = 0,
-            uint              map               = 0,
+            uint              territoryType       = 0,
+            uint              map                 = 0,
             ReadOnlySeString? displayNameOverride = null
         )
         {
             if (territoryType == 0)
                 territoryType = GameState.TerritoryType;
-            
+
             if (!LuminaGetter.TryGetRow<TerritoryType>(territoryType, out var territoryTypeRow))
                 throw new InvalidDataException("无效的 TerritoryType。");
 
@@ -256,7 +307,7 @@ public static class SeStringExtension
                           GameState.Map :
                           territoryTypeRow.Map.RowId;
             }
-            
+
             if (!LuminaGetter.TryGetRow<Map>(map, out var mapRow))
                 throw new InvalidDataException("无效的 Map。");
             if (mapRow.TerritoryType.RowId != territoryType)
@@ -278,23 +329,23 @@ public static class SeStringExtension
                     InstancesManager.IsInstancedArea)
                 {
                     builder.Append(displayName)
-                          .Append(InstancesManager.CurrentInstance.ToSEHexCount())
-                          .Append($" ( {mapPosition.X:F1}  , {mapPosition.Y:F1} )");
-                    
+                           .Append(InstancesManager.CurrentInstance.ToSEHexCount())
+                           .Append($" ( {mapPosition.X:F1}  , {mapPosition.Y:F1} )");
+
                     displayName = builder.ToReadOnlySeString();
                     builder.Clear();
                 }
             }
-            
+
             displayName = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [displayName]);
 
             builder.PushLinkMapPosition(territoryType, map, (int)(worldPosition.X * 1000), (int)(worldPosition.Z * 1000))
-                  .Append(displayName)
-                  .PopLink();
-            
+                   .Append(displayName)
+                   .PopLink();
+
             return builder.ToReadOnlySeString();
         }
-        
+
         public static ReadOnlySeString CreateItemLink
         (
             uint              itemID,
@@ -309,7 +360,7 @@ public static class SeStringExtension
                     ItemKind.Normal,
                 displayNameOverride
             );
-        
+
         public static ReadOnlySeString CreateItemLink
         (
             uint              itemID,
@@ -338,23 +389,26 @@ public static class SeStringExtension
                                .ToReadOnlySeString();
 
             itemName = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [itemName]);
-            
+
             builder.Clear();
 
             builder.PushLinkItem(itemID)
                    .Append(itemName)
                    .PopLink();
-            
+
             return builder.ToReadOnlySeString();
         }
-        
-        public static ReadOnlySeString CreateItemName
+
+        /// <summary>
+        ///     非链接，仅为游戏原生风格的富文本
+        /// </summary>
+        public static ReadOnlySeString CreateItem
         (
             uint              itemID,
             bool              isHQ                = false,
             ReadOnlySeString? displayNameOverride = null
         ) =>
-            ReadOnlySeString.CreateItemName
+            ReadOnlySeString.CreateItem
             (
                 itemID,
                 isHQ ?
@@ -364,9 +418,9 @@ public static class SeStringExtension
             );
 
         /// <summary>
-        ///     非链接，仅为游戏原生风格的物品富文本
+        ///     非链接，仅为游戏原生风格的富文本
         /// </summary>
-        public static ReadOnlySeString CreateItemName
+        public static ReadOnlySeString CreateItem
         (
             uint              itemID,
             ItemKind          kind                = ItemKind.Normal,
