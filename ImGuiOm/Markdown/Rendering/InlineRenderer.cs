@@ -28,7 +28,7 @@ internal static class InlineRenderer
         (
             runs,
             wrapWidth,
-            (text, role, isImage) => Measure(text, role, config, isImage, headingScale),
+            (text, role, isImage) => Measure(text, role, config, isImage, headingScale, wrapWidth),
             role => Overhang(role, headingScale, config)
         );
 
@@ -55,7 +55,8 @@ internal static class InlineRenderer
                         textU32 :
                         linkU32,
                     ref linkIndex,
-                    headingScale
+                    headingScale,
+                    wrapWidth
                 );
             }
 
@@ -88,15 +89,17 @@ internal static class InlineRenderer
         MarkdownFontRole role,
         MarkdownConfig   config,
         bool             isImage,
-        float            headingScale
+        float            headingScale,
+        float            availableWidth
     )
     {
         if (isImage)
         {
-            var image  = config.ResolveImage(text);
-            var width  = image?.Size.X ?? IMAGE_PLACEHOLDER_WIDTH;
-            var height = image?.Size.Y ?? ImGui.GetFontSize();
-            return new Vector2(width, height);
+            var image = config.ResolveImage(text);
+
+            return image.HasValue ?
+                       ResolveImageSize(image.Value.Size, availableWidth) :
+                       new Vector2(Math.Min(IMAGE_PLACEHOLDER_WIDTH, availableWidth), ImGui.GetFontSize());
         }
 
         // Measure with the role's font pushed so the measured width matches what DrawToken draws. The
@@ -109,6 +112,18 @@ internal static class InlineRenderer
         return new Vector2(baseWidth, font.PixelSize);
     }
 
+    private static Vector2 ResolveImageSize
+    (
+        Vector2 intrinsicSize,
+        float   availableWidth
+    )
+    {
+        if (intrinsicSize.X <= availableWidth)
+            return intrinsicSize;
+
+        return intrinsicSize * (availableWidth / intrinsicSize.X);
+    }
+
     private static void DrawToken
     (
         LaidOutToken   token,
@@ -117,7 +132,8 @@ internal static class InlineRenderer
         ImDrawListPtr  drawList,
         uint           color,
         ref int        linkIndex,
-        float          headingScale
+        float          headingScale,
+        float          availableWidth
     )
     {
         var role = token.Role;
@@ -129,7 +145,7 @@ internal static class InlineRenderer
             if (image.HasValue)
             {
                 ImGui.SetCursorScreenPos(pos);
-                ImGui.Image(image.Value.TextureID, image.Value.Size);
+                ImGui.Image(image.Value.TextureID, ResolveImageSize(image.Value.Size, availableWidth));
             }
             else
             {
