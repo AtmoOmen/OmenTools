@@ -325,12 +325,19 @@ public static class SeStringExtension
             {
                 displayName = territoryTypeRow.ExtractPlaceName();
 
-                if (territoryType == GameState.TerritoryType &&
-                    InstancesManager.IsInstancedArea)
+                if (territoryType == GameState.TerritoryType)
                 {
-                    builder.Append(displayName)
-                           .Append(InstancesManager.CurrentInstance.ToSEHexCount())
-                           .Append($" ( {mapPosition.X:F1}  , {mapPosition.Y:F1} )");
+                    if (InstancesManager.IsInstancedArea)
+                    {
+                        builder.Append(displayName)
+                               .Append(InstancesManager.CurrentInstance.ToSEHexCount())
+                               .Append($" ( {mapPosition.X:F1}  , {mapPosition.Y:F1} )");
+                    }
+                    else
+                    {
+                        builder.Append(displayName)
+                               .Append($" ( {mapPosition.X:F1}  , {mapPosition.Y:F1} )");
+                    }
 
                     displayName = builder.ToReadOnlySeString();
                     builder.Clear();
