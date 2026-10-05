@@ -38,7 +38,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     public bool UserDismissable { get; set; } = true;
 
     public float NotificationProgress { get; set; } = 1f;
-    
+
     public TimeSpan ContentHintDuration { get; set; } = TimeSpan.FromSeconds(3);
 
     public TrayNotifier? TrayNotifier { get; set; }
@@ -46,9 +46,11 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     public ReadOnlySeString? ChatPrefix { get; set; }
 
     public bool RelayToTrayWhenBackground { get; set; } = true;
-    
+
     public bool SendTrayOnlyBackground { get; set; } = true;
-    
+
+    public TimeSpan TrayIdleThreshold { get; set; } = TimeSpan.FromSeconds(15);
+
     public bool SpeakTrayMessage { get; set; } = true;
 
     protected override void Uninit()
@@ -64,22 +66,44 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
     #region Toast
 
-    public static void Toast(string message, ToastOptions? options = null) =>
+    public static void Toast
+    (
+        string        message,
+        ToastOptions? options = null
+    ) =>
         IToastGui.Instance().ShowNormal(message, options);
 
-    public static void Toast(ReadOnlySeString message, ToastOptions? options = null) =>
+    public static void Toast
+    (
+        ReadOnlySeString message,
+        ToastOptions?    options = null
+    ) =>
         IToastGui.Instance().ShowNormal(message.ToDalamudString(), options);
 
-    public static void ToastError(string message) =>
+    public static void ToastError
+    (
+        string message
+    ) =>
         IToastGui.Instance().ShowError(message);
 
-    public static void ToastError(ReadOnlySeString message) =>
+    public static void ToastError
+    (
+        ReadOnlySeString message
+    ) =>
         IToastGui.Instance().ShowError(message.ToDalamudString());
 
-    public static void ToastQuest(string message, QuestToastOptions? options = null) =>
+    public static void ToastQuest
+    (
+        string             message,
+        QuestToastOptions? options = null
+    ) =>
         IToastGui.Instance().ShowQuest(message, options);
 
-    public static void ToastQuest(ReadOnlySeString message, QuestToastOptions? options = null) =>
+    public static void ToastQuest
+    (
+        ReadOnlySeString   message,
+        QuestToastOptions? options = null
+    ) =>
         IToastGui.Instance().ShowQuest(message.ToDalamudString(), options);
 
     #endregion
@@ -102,10 +126,18 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         RaptureAtkModule.Instance()->ShowTextGimmickHint(message, style, hundredMilliseconds);
     }
 
-    public void ContentHintBlue(string message, TimeSpan? duration = null) =>
+    public void ContentHintBlue
+    (
+        string    message,
+        TimeSpan? duration = null
+    ) =>
         ContentHint(message, RaptureAtkModule.TextGimmickHintStyle.Info, duration);
 
-    public void ContentHintRed(string message, TimeSpan? duration = null) =>
+    public void ContentHintRed
+    (
+        string    message,
+        TimeSpan? duration = null
+    ) =>
         ContentHint(message, RaptureAtkModule.TextGimmickHintStyle.Warning, duration);
 
     #endregion
@@ -118,28 +150,28 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         string? title = null
     ) =>
         Tray(message, ToolTipIcon.Info, title);
-    
+
     public void TrayNone
     (
         string  message,
         string? title = null
     ) =>
         Tray(message, ToolTipIcon.None, title);
-    
+
     public void TrayWarning
     (
         string  message,
         string? title = null
     ) =>
         Tray(message, ToolTipIcon.Warning, title);
-    
+
     public void TrayError
     (
         string  message,
         string? title = null
     ) =>
         Tray(message, ToolTipIcon.Error, title);
-    
+
     public void Tray
     (
         string      message,
@@ -152,7 +184,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
 
         if (SendTrayOnlyBackground &&
             GameState.IsForeground &&
-            LastInputInfo.GetIdleTimeTick() < 15_000)
+            LastInputInfo.GetIdleTimeTick() < TrayIdleThreshold.TotalMilliseconds)
             return;
 
         TrayNotifier.ShowBalloonTip(title ?? message, message, icon);
@@ -188,7 +220,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
                 NotificationType.Error   => ToolTipIcon.Error,
                 _                        => ToolTipIcon.Info
             };
-            
+
             TrayNotifier.ShowBalloonTip(plan.Title, plan.Message, icon);
         }
 
@@ -214,16 +246,36 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         );
     }
 
-    public void NotificationSuccess(string message, string? title = null, NotificationOptions? options = null) =>
+    public void NotificationSuccess
+    (
+        string               message,
+        string?              title   = null,
+        NotificationOptions? options = null
+    ) =>
         Notify(message, NotificationType.Success, title, options);
 
-    public void NotificationWarning(string message, string? title = null, NotificationOptions? options = null) =>
+    public void NotificationWarning
+    (
+        string               message,
+        string?              title   = null,
+        NotificationOptions? options = null
+    ) =>
         Notify(message, NotificationType.Warning, title, options);
 
-    public void NotificationError(string message, string? title = null, NotificationOptions? options = null) =>
+    public void NotificationError
+    (
+        string               message,
+        string?              title   = null,
+        NotificationOptions? options = null
+    ) =>
         Notify(message, NotificationType.Error, title, options);
 
-    public void NotificationInfo(string message, string? title = null, NotificationOptions? options = null) =>
+    public void NotificationInfo
+    (
+        string               message,
+        string?              title   = null,
+        NotificationOptions? options = null
+    ) =>
         Notify(message, NotificationType.Info, title, options);
 
     #endregion
@@ -238,7 +290,13 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         ReadOnlySeString message,
         bool             useDefaultPrefix = true
     ) =>
-        PrintChat(message, useDefaultPrefix ? ChatPrefix : null);
+        PrintChat
+        (
+            message,
+            useDefaultPrefix ?
+                ChatPrefix :
+                null
+        );
 
     /// <summary>
     ///     输出 <see cref="XivChatType.ErrorMessage" /> 消息。
@@ -248,8 +306,15 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         ReadOnlySeString message,
         bool             useDefaultPrefix = true
     ) =>
-        PrintChat(message, useDefaultPrefix ? ChatPrefix : null, XivChatType.ErrorMessage);
-    
+        PrintChat
+        (
+            message,
+            useDefaultPrefix ?
+                ChatPrefix :
+                null,
+            XivChatType.ErrorMessage
+        );
+
     /// <summary>
     ///     输出 <see cref="XivChatType.LootNotice" /> 消息。
     /// </summary>
@@ -258,8 +323,15 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         ReadOnlySeString message,
         bool             useDefaultPrefix = true
     ) =>
-        PrintChat(message, useDefaultPrefix ? ChatPrefix : null, XivChatType.LootNotice);
-    
+        PrintChat
+        (
+            message,
+            useDefaultPrefix ?
+                ChatPrefix :
+                null,
+            XivChatType.LootNotice
+        );
+
     /// <summary>
     ///     输出 <see cref="XivChatType.NPCDialogue" /> 消息。
     /// </summary>
@@ -268,8 +340,15 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         ReadOnlySeString message,
         bool             useDefaultPrefix = true
     ) =>
-        PrintChat(message, useDefaultPrefix ? ChatPrefix : null, XivChatType.NPCDialogue);
-    
+        PrintChat
+        (
+            message,
+            useDefaultPrefix ?
+                ChatPrefix :
+                null,
+            XivChatType.NPCDialogue
+        );
+
     /// <summary>
     ///     输出完全自定义的聊天消息。
     /// </summary>
@@ -278,7 +357,7 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         XivChatEntry entry
     ) =>
         IChatGui.Instance().Print(entry);
-    
+
     /// <summary>
     ///     输出可自定义前缀与频道的聊天消息。
     /// </summary>
@@ -320,7 +399,9 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         NotificationOptions? options
     )
     {
-        var resolvedTitle = string.IsNullOrWhiteSpace(title) ? message : title;
+        var resolvedTitle = string.IsNullOrWhiteSpace(title) ?
+                                message :
+                                title;
 
         return new
         (
@@ -341,7 +422,11 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         );
     }
 
-    private static void AppendPrefix(SeStringBuilder builder, ReadOnlySeString? prefix)
+    private static void AppendPrefix
+    (
+        SeStringBuilder   builder,
+        ReadOnlySeString? prefix
+    )
     {
         if (prefix is null)
             return;
@@ -350,7 +435,10 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int ToHundredMilliseconds(TimeSpan ts)
+    public static int ToHundredMilliseconds
+    (
+        TimeSpan ts
+    )
     {
         const long TICKS_PER_HUNDRED_MILLISECONDS = TimeSpan.TicksPerMillisecond * 100;
 
@@ -358,7 +446,9 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
             return 0;
 
         var result = (int)(ts.Ticks / TICKS_PER_HUNDRED_MILLISECONDS);
-        return result == 0 ? 1 : result;
+        return result == 0 ?
+                   1 :
+                   result;
     }
 
     private readonly record struct NotificationPlan
@@ -389,56 +479,76 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
     public static void SystemWarning() =>
         SystemSounds.Hand.Play();
 
-    public static void SystemBeep(int frequency = 1000, int duration = 500) =>
+    public static void SystemBeep
+    (
+        int frequency = 1000,
+        int duration  = 500
+    ) =>
         Task.Run(() => Console.Beep(frequency, duration));
 
     #endregion
 
     #region TTS
 
-    public static void Speak(string message) =>
-        EdgeTTSIPC.Speak(message);
-
-    public static void Speak(string message, int? speed = null, int? pitch = null, int? volume = null) =>
+    public static void Speak
+    (
+        string message,
+        int?   speed  = null,
+        int?   pitch  = null,
+        int?   volume = null
+    ) =>
         EdgeTTSIPC.Speak(message, speed, pitch, volume);
 
-    public static Task SpeakAsync(string message, CancellationToken? token = null)
-    {
-        if (token?.IsCancellationRequested == true)
-            return Task.CompletedTask;
+    public static Task SpeakAsync
+    (
+        string             message,
+        CancellationToken? token = null
+    ) =>
+        token?.IsCancellationRequested == true ?
+            Task.CompletedTask :
+            EdgeTTSIPC.SpeakAsync(message, token ?? CancellationToken.None);
 
-        return EdgeTTSIPC.SpeakAsync(message, token ?? CancellationToken.None);
-    }
+    public static Task SpeakAsync
+    (
+        string             message,
+        int?               speed  = null,
+        int?               pitch  = null,
+        int?               volume = null,
+        CancellationToken? token  = null
+    ) =>
+        token?.IsCancellationRequested == true ?
+            Task.CompletedTask :
+            EdgeTTSIPC.SpeakAsync(message, speed, pitch, volume, token ?? CancellationToken.None);
 
-    public static Task SpeakAsync(string message, int? speed = null, int? pitch = null, int? volume = null, CancellationToken? token = null)
-    {
-        if (token?.IsCancellationRequested == true)
-            return Task.CompletedTask;
-
-        return EdgeTTSIPC.SpeakAsync(message, speed, pitch, volume, token ?? CancellationToken.None);
-    }
-
-    public static void Synthesize(string message) =>
-        EdgeTTSIPC.Synthesize(message);
-
-    public static void Synthesize(string message, int? speed = null, int? pitch = null, int? volume = null) =>
+    public static void Synthesize
+    (
+        string message,
+        int?   speed  = null,
+        int?   pitch  = null,
+        int?   volume = null
+    ) =>
         EdgeTTSIPC.Synthesize(message, speed, pitch, volume);
 
-    public static Task SynthesizeAsync(string message, CancellationToken? token = null)
-    {
-        if (token?.IsCancellationRequested == true)
-            return Task.CompletedTask;
+    public static Task SynthesizeAsync
+    (
+        string             message,
+        CancellationToken? token = null
+    ) =>
+        token?.IsCancellationRequested == true ?
+            Task.CompletedTask :
+            EdgeTTSIPC.SynthesizeAsync(message, token ?? CancellationToken.None);
 
-        return EdgeTTSIPC.SynthesizeAsync(message, token ?? CancellationToken.None);
-    }
-
-    public static Task SynthesizeAsync(string message, int? speed = null, int? pitch = null, int? volume = null, CancellationToken? token = null)
-    {
-        if (token?.IsCancellationRequested == true)
-            return Task.CompletedTask;
-
-        return EdgeTTSIPC.SynthesizeAsync(message, speed, pitch, volume, token ?? CancellationToken.None);
-    }
+    public static Task SynthesizeAsync
+    (
+        string             message,
+        int?               speed  = null,
+        int?               pitch  = null,
+        int?               volume = null,
+        CancellationToken? token  = null
+    ) =>
+        token?.IsCancellationRequested == true ?
+            Task.CompletedTask :
+            EdgeTTSIPC.SynthesizeAsync(message, speed, pitch, volume, token ?? CancellationToken.None);
 
     #endregion
 }
