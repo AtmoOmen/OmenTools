@@ -7,10 +7,13 @@ namespace OmenTools.Extensions;
 
 public static class EnumExtension
 {
-    private static readonly ConcurrentDictionary<Enum, string> DescriptionAttributeCache = [];
+    private static readonly ConditionalWeakTable<Type, ConcurrentDictionary<Enum, string>> DescriptionAttributeCache = new();
 
-    public static string GetDescription(this Enum value) =>
-        DescriptionAttributeCache.GetOrAdd
+    public static string GetDescription
+    (
+        this Enum value
+    ) =>
+        DescriptionAttributeCache.GetValue(value.GetType(), static _ => []).GetOrAdd
         (
             value,
             v =>
@@ -23,10 +26,16 @@ public static class EnumExtension
             }
         );
 
-    extension<T>(T value) where T : struct, Enum
+    extension<T>
+    (
+        T value
+    ) where T : struct, Enum
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsSet(T flag)
+        public bool IsSet
+        (
+            T flag
+        )
         {
             var v = ToUInt64(value);
             var f = ToUInt64(flag);
@@ -34,7 +43,10 @@ public static class EnumExtension
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsSetAny(params ReadOnlySpan<T> flags)
+        public bool IsSetAny
+        (
+            params ReadOnlySpan<T> flags
+        )
         {
             if (flags.IsEmpty) return false;
 
@@ -48,7 +60,10 @@ public static class EnumExtension
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool IsSetAll(params ReadOnlySpan<T> flags)
+        public bool IsSetAll
+        (
+            params ReadOnlySpan<T> flags
+        )
         {
             if (flags.IsEmpty) return true;
 
@@ -62,11 +77,17 @@ public static class EnumExtension
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Add(T flag) =>
+        public T Add
+        (
+            T flag
+        ) =>
             FromUInt64<T>(ToUInt64(value) | ToUInt64(flag));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Add(params ReadOnlySpan<T> flags)
+        public T Add
+        (
+            params ReadOnlySpan<T> flags
+        )
         {
             if (flags.IsEmpty) return value;
 
@@ -79,11 +100,17 @@ public static class EnumExtension
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Remove(T flag) =>
+        public T Remove
+        (
+            T flag
+        ) =>
             FromUInt64<T>(ToUInt64(value) & ~ToUInt64(flag));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T Remove(params ReadOnlySpan<T> flags)
+        public T Remove
+        (
+            params ReadOnlySpan<T> flags
+        )
         {
             if (flags.IsEmpty) return value;
 
@@ -97,7 +124,10 @@ public static class EnumExtension
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ulong ToUInt64(T origValue)
+        private static ulong ToUInt64
+        (
+            T origValue
+        )
         {
             if (Unsafe.SizeOf<T>() == 1)
                 return Unsafe.As<T, byte>(ref origValue);
@@ -108,14 +138,16 @@ public static class EnumExtension
             if (Unsafe.SizeOf<T>() == 4)
                 return Unsafe.As<T, uint>(ref origValue);
 
-            if (Unsafe.SizeOf<T>() == 8)
-                return Unsafe.As<T, ulong>(ref origValue);
-
-            throw new UnreachableException();
+            return Unsafe.SizeOf<T>() == 8 ?
+                       Unsafe.As<T, ulong>(ref origValue) :
+                       throw new UnreachableException();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static T FromUInt64(ulong rawValue)
+        private static T FromUInt64
+        (
+            ulong rawValue
+        )
         {
             if (Unsafe.SizeOf<T>() == 1)
             {
