@@ -105,6 +105,17 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
 
         switch (args.AddonName)
         {
+            case "ItemSearch":
+            {
+                var agent = AgentItemSearch.Instance();
+                if (agent != null)
+                {
+                    // TODO: FFCS
+                    var contextItemIndex = *(byte*)((nint)agent + 0x19D8);
+                    itemID = agent->ListingPageItemIds[contextItemIndex];
+                }
+                break;
+            }
             case "RetainerSellList":
             {
                 var agent = AgentRetainer.Instance();
