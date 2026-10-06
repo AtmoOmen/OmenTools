@@ -1,4 +1,5 @@
 using System.Numerics;
+using Dalamud.Game.Config;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
@@ -49,6 +50,12 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     public event Action<WarpType>? WarpComplete;
 
     #endregion
+
+    /// <summary>
+    ///     当前游戏是否为手柄模式。
+    /// </summary>
+    public static bool IsControllerMode =>
+        IGameConfig.Instance().UiConfig.GetUInt(nameof(UiConfigOption.PadMode)) == 1;
 
     /// <summary>
     ///     当前游戏界面缩放比例。
