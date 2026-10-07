@@ -40,7 +40,7 @@ public static partial class ImGuiOm
     public static void TextDisabledWrapped(string text, float warpPos)
     {
         using var disabled = ImRaii.Disabled();
-        using var warp     = ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos);
+        using var warp     = ImRaii.TextWrapPos(ImGui.GetFontSize() * GlobalUIScale * warpPos);
 
         Text(text);
     }

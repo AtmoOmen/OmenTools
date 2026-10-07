@@ -10,7 +10,7 @@ public static partial class ImGuiOm
         using var id = ImRaii.PushId($"TooltipHover_{text}_{warpPos}");
 
         using (ImRaii.Tooltip())
-        using (ImRaii.TextWrapPos(ImGui.GetFontSize() * warpPos))
+        using (ImRaii.TextWrapPos(ImGui.GetFontSize() * GlobalUIScale * warpPos))
             ImGui.TextUnformatted(text);
     }
 }
