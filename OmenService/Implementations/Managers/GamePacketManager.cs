@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Application.Network;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Network;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using OmenTools.Dalamud;
@@ -62,14 +61,12 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 
 
     private delegate void* SendPacketDelegate(NetworkModuleProxy* module, byte* packet, uint a3, uint a4);
-
     private static readonly SendPacketDelegate? SendPacket =
         new CompSig("E8 ?? ?? ?? ?? 48 8B D6 48 8B CF E8 ?? ?? ?? ?? 48 8B 8C 24").GetDelegate<SendPacketDelegate>();
 
     private Hook<ZoneClient.Delegates.SendPacket>? SendPacketInternalHook;
 
     private delegate void ReceivePacketInternalDelegate(PacketDispatcher* dispatcher, uint targetID, nint packet);
-
     private Hook<ReceivePacketInternalDelegate>? ReceivePacketInternalHook;
 
     private delegate void PacketLogger(byte* packet);
@@ -141,13 +138,12 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
             }
         }
 
+        // 手动发送的
         if (a4 == 0x9876543)
         {
             if (!isPrioritize)
                 isPrioritize = true;
         }
-        else
-            HandlePacketPriority(ref isPrioritize);
 
         var original = SendPacketInternalHook.Original(zoneClient, packet, a3, a4, isPrioritize);
 
@@ -215,25 +211,6 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 
     private static void LogPacket<T>(byte* packet) where T : unmanaged, IUpstreamPacket =>
         DLog.Debug($"[Game Packet Manager] {((T*)packet)->Log()}");
-
-    private static void HandlePacketPriority
-    (
-        ref bool isPrioritize
-    )
-    {
-        if (isPrioritize) return;
-        // 采集状态
-        if (Conditions.Instance()->Gathering)
-            return;
-        // 部队储物柜
-        if (FreeCompanyChest != null)
-            return;
-        // 副本内
-        if (GameState.ContentFinderCondition != 0)
-            return;
-
-        isPrioritize = true;
-    }
 
     #region 注册 (私有)
 
