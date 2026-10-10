@@ -216,13 +216,21 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     private static void LogPacket<T>(byte* packet) where T : unmanaged, IUpstreamPacket =>
         DLog.Debug($"[Game Packet Manager] {((T*)packet)->Log()}");
 
-    private static void HandlePacketPriority(ref bool isPrioritize)
+    private static void HandlePacketPriority
+    (
+        ref bool isPrioritize
+    )
     {
         if (isPrioritize) return;
         // 采集状态
-        if (Conditions.Instance()->Gathering) return;
+        if (Conditions.Instance()->Gathering)
+            return;
         // 部队储物柜
-        if (FreeCompanyChest != null) return;
+        if (FreeCompanyChest != null)
+            return;
+        // 副本内
+        if (GameState.ContentFinderCondition == 0)
+            return;
 
         isPrioritize = true;
     }
