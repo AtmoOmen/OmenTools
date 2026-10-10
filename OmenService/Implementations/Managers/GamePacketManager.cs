@@ -229,7 +229,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
         if (FreeCompanyChest != null)
             return;
         // 副本内
-        if (GameState.ContentFinderCondition == 0)
+        if (GameState.ContentFinderCondition != 0)
             return;
 
         isPrioritize = true;
