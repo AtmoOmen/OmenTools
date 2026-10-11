@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using Dalamud.Hooking;
+using FFXIVClientStructs.Expansion;
 using Dalamud.IoC;
 using OmenTools.Dalamud;
 using OmenTools.Dalamud.Services.Game.Object;
@@ -45,6 +46,8 @@ public sealed class DService
 
         try
         {
+            ExpansionInterop.Initialize(instance.SigScanner.SearchBase);
+
             var serviceTypes = instance.DiscoverEnabledServiceTypes();
             instance.InstantiateServices(serviceTypes);
 
@@ -101,6 +104,7 @@ public sealed class DService
         }
         finally
         {
+            ExpansionInterop.Uninitialize();
             IsDisposed = true;
         }
 

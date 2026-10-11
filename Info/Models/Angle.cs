@@ -1,6 +1,6 @@
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using OmenTools.Interop.Game.Models.Native;
+using FFXIVClientStructs.Expansion.Native;
 
 namespace OmenTools.Info.Models;
 

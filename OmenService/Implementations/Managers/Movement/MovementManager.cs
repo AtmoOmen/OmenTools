@@ -9,7 +9,7 @@ using OmenTools.Info.Game.Data;
 using OmenTools.Info.Game.Packets.Upstream;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
-using OmenTools.Interop.Game.Models.Native;
+using FFXIVClientStructs.Expansion.Native;
 using OmenTools.OmenService.Abstractions;
 using OmenTools.TerritoryTransport.Abstractions;
 using OmenTools.Threading.TaskHelper;

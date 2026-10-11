@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Models;
-using AgentRetainer = OmenTools.Interop.Game.Models.Native.AgentRetainer;
+using AgentRetainer = FFXIVClientStructs.Expansion.Native.AgentRetainer;
 
 namespace OmenTools.OmenService;
 

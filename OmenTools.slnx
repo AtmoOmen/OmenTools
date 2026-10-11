@@ -1,3 +1,8 @@
 <Solution>
-  <Project Path="OmenTools.csproj" />
+    <Project Path="OmenTools.csproj"/>
+    <Project Path="../FFXIVClientStructs.Expansion/FFXIVClientStructs.Expansion/FFXIVClientStructs.Expansion.csproj"/>
+    <Project
+        Path="../FFXIVClientStructs.Expansion/FFXIVClientStructs.Expansion.Generators/FFXIVClientStructs.Expansion.Generators.csproj"/>
+    <Project
+        Path="../FFXIVClientStructs.Expansion/FFXIVClientStructs.Expansion.Runtime/FFXIVClientStructs.Expansion.Runtime.csproj"/>
 </Solution>
