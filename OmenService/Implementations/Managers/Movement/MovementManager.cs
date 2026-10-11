@@ -3,13 +3,13 @@ using System.Runtime.InteropServices;
 using Dalamud.Game.ClientState.Conditions;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.LayoutEngine;
+using FFXIVClientStructs.FFXIV.Client.LayoutEngine.Layer;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Data;
 using OmenTools.Info.Game.Packets.Upstream;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
-using ExitRangeLayoutInstance = FFXIVClientStructs.Expansion.FFXIV.Client.LayoutEngine.Layer.ExitRangeLayoutInstance;
 using PlayerController = FFXIVClientStructs.Expansion.FFXIV.Client.Game.Control.PlayerController;
 using OmenTools.OmenService.Abstractions;
 using OmenTools.TerritoryTransport.Abstractions;
@@ -346,7 +346,7 @@ public partial class MovementManager : OmenServiceBase<MovementManager>
                 continue;
 
             var pExitRange = (ExitRangeLayoutInstance*)exitRange.Value;
-            if (pExitRange->ReturnInstance == null ||
+            if (pExitRange->GetReturnInstance() == null ||
                 !LuminaGetter.TryGetRow<TerritoryType>(pExitRange->TerritoryType, out _))
                 continue;
 
