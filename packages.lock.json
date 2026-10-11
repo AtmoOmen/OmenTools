@@ -43,6 +43,15 @@
         "requested": "[1.1.0, )",
         "resolved": "1.1.0",
         "contentHash": "pwe99NXsWkSeJdOwzcweorlyoB2frOlTU37QwzmnnxfRT5vRENXm4UOl5g4Nxq5V9lYOBWK1mZIozFfIlDVjYA=="
+      },
+      "ffxivclientstructs.expansion": {
+        "type": "Project",
+        "dependencies": {
+          "FFXIVClientStructs.Expansion.Runtime": "[1.0.0, )"
+        }
+      },
+      "ffxivclientstructs.expansion.runtime": {
+        "type": "Project"
       }
     }
   }
