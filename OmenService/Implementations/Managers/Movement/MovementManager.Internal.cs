@@ -10,7 +10,7 @@ using OmenTools.Info.Lumina;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.Interop.Game.Models;
-using FFXIVClientStructs.Expansion.Native;
+using PlayerController = FFXIVClientStructs.Expansion.FFXIV.Client.Game.Control.PlayerController;
 using OmenTools.OmenService.Abstractions;
 using OmenTools.TerritoryTransport.Abstractions;
 using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
@@ -231,7 +231,7 @@ public partial class MovementManager
                     continue;
 
                 bestKnown[nextState] = new PathCost(newEffective, newHops);
-                cameFrom[nextState]  = new PathEdge(hop, state, hopIncrement);
+                cameFrom[nextState]  = new PathEdge(hop, state);
                 pq.Enqueue(nextState, new PathCost(newEffective, newHops));
             }
         }
@@ -261,7 +261,7 @@ public partial class MovementManager
 
                 while (checkKey.Zone != source || checkKey.Pos != Vector3.Zero)
                 {
-                    var (ckHop, ckPrev, _) = cameFrom[checkKey];
+                    var (ckHop, ckPrev) = cameFrom[checkKey];
 
                     if (ckHop is AetheryteHop)
                     {
@@ -282,7 +282,7 @@ public partial class MovementManager
 
         while (cur.Zone != source || cur.Pos != Vector3.Zero)
         {
-            var (hop, prev, _) = cameFrom[cur];
+            var (hop, prev) = cameFrom[cur];
             path.Push(hop);
             cur = prev;
         }
@@ -389,8 +389,7 @@ public partial class MovementManager
     private readonly record struct PathEdge
     (
         ZoneHop   Hop,
-        PathState PrevState,
-        uint      HopTotalCost
+        PathState PrevState
     );
 
     #region 常量

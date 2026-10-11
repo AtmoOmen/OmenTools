@@ -9,7 +9,8 @@ using OmenTools.Info.Game.Data;
 using OmenTools.Info.Game.Packets.Upstream;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
-using FFXIVClientStructs.Expansion.Native;
+using ExitRangeLayoutInstance = FFXIVClientStructs.Expansion.FFXIV.Client.LayoutEngine.Layer.ExitRangeLayoutInstance;
+using PlayerController = FFXIVClientStructs.Expansion.FFXIV.Client.Game.Control.PlayerController;
 using OmenTools.OmenService.Abstractions;
 using OmenTools.TerritoryTransport.Abstractions;
 using OmenTools.Threading.TaskHelper;
@@ -25,6 +26,7 @@ public partial class MovementManager : OmenServiceBase<MovementManager>
         Vector3         pos,
         ITPSmartParams? param = null
     );
+
     public TPSmartInZoneDelegate? TPSmartInZoneHandler { get; set; }
 
     public delegate bool TPSmartBetweenZoneDelegate
@@ -33,6 +35,7 @@ public partial class MovementManager : OmenServiceBase<MovementManager>
         Vector3?        pos,
         ITPSmartParams? param = null
     );
+
     public TPSmartBetweenZoneDelegate? TPSmartBetweenZoneHandler { get; set; }
 
     public Func<bool>? IsBusyHandler     { get; set; }

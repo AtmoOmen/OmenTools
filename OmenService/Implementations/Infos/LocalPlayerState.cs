@@ -10,8 +10,8 @@ using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
-using AccountInfo = FFXIVClientStructs.Expansion.Native.AccountInfo;
-using AgentUpdateDelegate = FFXIVClientStructs.Expansion.Native.AgentUpdateDelegate;
+using AccountInfo = FFXIVClientStructs.Expansion.FFXIV.Client.Game.AccountInfo;
+using AgentUpdateDelegate = FFXIVClientStructs.Expansion.FFXIV.Client.UI.Agent.AgentUpdateDelegate;
 using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
 using CurrencyManager = FFXIVClientStructs.FFXIV.Client.Game.CurrencyManager;
 using GrandCompany = FFXIVClientStructs.FFXIV.Client.UI.Agent.GrandCompany;
@@ -23,16 +23,19 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 {
     private static readonly CompSig AccountInfoUpdateSig =
         new("40 56 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B 01");
+
     private unsafe delegate bool AccountInfoUpdateDelegate
     (
         AccountInfo* accountInfo,
         ulong        accountID,
         byte         forceReload
     );
+
     private Hook<AccountInfoUpdateDelegate>? AccountInfoUpdateHook;
 
     private static readonly CompSig AccountInfoCacheLoadSig =
         new("4C 8B DC 55 41 56 49 8D 6B ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 48 8B 05");
+
     private unsafe delegate nint AccountInfoCacheLoadDelegate
     (
         ulong accountID,
@@ -42,12 +45,12 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         byte  arg5,
         byte  arg6
     );
+
     private Hook<AccountInfoCacheLoadDelegate>? AccountInfoCacheLoadHook;
 
     private delegate bool IsLocalPlayerInPartyDelegate();
     private static readonly IsLocalPlayerInPartyDelegate IsLocalPlayerInParty =
         new CompSig("E8 ?? ?? ?? ?? 84 C0 74 25 48 8B 8D ?? ?? ?? ??").GetDelegate<IsLocalPlayerInPartyDelegate>();
-
     private delegate bool IsLocalPlayerPartyLeaderDelegate();
     private static readonly IsLocalPlayerPartyLeaderDelegate IsLocalPlayerPartyLeader =
         new CompSig("48 83 EC ?? E8 ?? ?? ?? ?? 84 C0 74 ?? 48 83 C4").GetDelegate<IsLocalPlayerPartyLeaderDelegate>();
@@ -439,46 +442,30 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     public static float DistanceTo3D
     (
         Vector3 target
-    )
-    {
-        if (Object == null)
-            return float.MaxValue;
-
-        return Vector3.Distance(Object.Position, target);
-    }
+    ) => Object == null ?
+             float.MaxValue :
+             Vector3.Distance(Object.Position, target);
 
     public static float DistanceTo3DSquared
     (
         Vector3 target
-    )
-    {
-        if (Object == null)
-            return float.MaxValue;
-
-        return Vector3.DistanceSquared(Object.Position, target);
-    }
+    ) => Object == null ?
+             float.MaxValue :
+             Vector3.DistanceSquared(Object.Position, target);
 
     public static float DistanceTo2D
     (
         Vector2 target
-    )
-    {
-        if (Object == null)
-            return float.MaxValue;
-
-        return Vector2.Distance(Object.Position.ToVector2(), target);
-    }
+    ) => Object == null ?
+             float.MaxValue :
+             Vector2.Distance(Object.Position.ToVector2(), target);
 
     public static float DistanceTo2DSquared
     (
         Vector2 target
-    )
-    {
-        if (Object == null)
-            return float.MaxValue;
-
-        return Vector2.DistanceSquared(Object.Position.ToVector2(), target);
-    }
+    ) => Object == null ?
+             float.MaxValue :
+             Vector2.DistanceSquared(Object.Position.ToVector2(), target);
 
     public static float DistanceToObject2D
     (

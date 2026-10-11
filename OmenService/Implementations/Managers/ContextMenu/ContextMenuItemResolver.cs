@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Models;
-using AgentRetainer = FFXIVClientStructs.Expansion.Native.AgentRetainer;
+using AgentRetainer = FFXIVClientStructs.Expansion.FFXIV.Client.UI.Agent.AgentRetainer;
 
 namespace OmenTools.OmenService;
 
@@ -13,7 +13,6 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
 {
     private static readonly CompSig BuildItemMenuSig = new
         ("40 53 56 41 55 41 56 41 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 45 0F B6 E9");
-
     private delegate byte BuildItemMenuDelegate
     (
         nint          handler,
@@ -26,9 +25,8 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
         byte          clearMenu,
         ushort        extraFlags
     );
-
     private Hook<BuildItemMenuDelegate>? buildItemMenuHook;
-    
+
     private (nint Handler, nint Context, uint OwnerAddonID, uint ItemID) pendingItem;
 
     public void Init()
@@ -108,21 +106,25 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
             case "ItemSearch":
             {
                 var agent = AgentItemSearch.Instance();
+
                 if (agent != null)
                 {
                     // TODO: FFCS
                     var contextItemIndex = *(byte*)((nint)agent + 0x19D8);
                     itemID = agent->ListingPageItemIds[contextItemIndex];
                 }
+
                 break;
             }
             case "RetainerSellList":
             {
                 var agent = AgentRetainer.Instance();
+
                 if (agent != null)
                 {
                     var entry = agent->SellListEntries[agent->ContextMenuIndex];
                     var slot  = InventoryManager.Instance()->GetInventorySlot(InventoryType.RetainerMarket, entry.InventorySlot);
+
                     if (slot != null)
                     {
                         itemID                   = slot->GetBaseItemId();
@@ -130,6 +132,7 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
                         args.TargetInventoryItem = *slot;
                     }
                 }
+
                 break;
             }
             case "ChatLog":

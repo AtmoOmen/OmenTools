@@ -1,6 +1,6 @@
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game.Control;
-using FFXIVClientStructs.Expansion.Native;
+using CameraExtra = FFXIVClientStructs.Expansion.FFXIV.Client.Game.CameraExtra;
 
 namespace OmenTools.Info.Models;
 
@@ -15,9 +15,15 @@ public readonly struct Angle
     public float Rad { get; init; } = radians;
     public float Deg => Rad * RAD_TO_DEG;
 
-    public static Angle FromDirection(Vector2 dir) => new(MathF.Atan2(dir.X, dir.Y));
+    public static Angle FromDirection
+    (
+        Vector2 dir
+    ) => new(MathF.Atan2(dir.X, dir.Y));
 
-    public static Angle FromDirectionXZ(Vector3 dir) => new(MathF.Atan2(dir.X, dir.Z));
+    public static Angle FromDirectionXZ
+    (
+        Vector3 dir
+    ) => new(MathF.Atan2(dir.X, dir.Z));
 
     public static unsafe bool TryGetDirectionToDestination
     (
@@ -37,13 +43,13 @@ public readonly struct Angle
             return false;
 
         var dirH = FromDirectionXZ(dist);
-        var dirV = allowVertical
-                       ? FromDirection(new(dist.Y, new Vector2(dist.X, dist.Z).Length()))
-                       : default;
+        var dirV = allowVertical ?
+                       FromDirection(new(dist.Y, new Vector2(dist.X, dist.Z).Length())) :
+                       default;
 
-        var refDir = IGameConfig.Instance().UiControl.TryGetUInt("MoveMode", out var mode) && mode == 1
-                         ? new Angle(((CameraExtra*)CameraManager.Instance()->GetActiveCamera())->DirH) + new Angle(180 * DEG_TO_RAD)
-                         : new Angle(localPlayer.Rotation);
+        var refDir = IGameConfig.Instance().UiControl.TryGetUInt("MoveMode", out var mode) && mode == 1 ?
+                         new Angle(((CameraExtra*)CameraManager.Instance()->GetActiveCamera())->DirH) + new Angle(180 * DEG_TO_RAD) :
+                         new Angle(localPlayer.Rotation);
 
         direction = (dirH - refDir, dirV);
         return true;
@@ -51,17 +57,36 @@ public readonly struct Angle
 
     public Vector2 ToDirection() => new(MathF.Sin(Rad), MathF.Cos(Rad));
 
-    public static Angle operator +(Angle a, Angle b) => new(a.Rad + b.Rad);
+    public static Angle operator +
+    (
+        Angle a,
+        Angle b
+    ) => new(a.Rad + b.Rad);
 
-    public static Angle operator -(Angle a, Angle b) => new(a.Rad - b.Rad);
+    public static Angle operator -
+    (
+        Angle a,
+        Angle b
+    ) => new(a.Rad - b.Rad);
 
     public override string ToString() => Deg.ToString("f0");
 
-    public override bool Equals(object? obj) => obj is Angle angle && Rad == angle.Rad;
+    public override bool Equals
+    (
+        object? obj
+    ) => obj is Angle angle && Rad.Equals(angle.Rad);
 
     public override int GetHashCode() => Rad.GetHashCode();
 
-    public static bool operator ==(Angle l, Angle r) => l.Rad == r.Rad;
+    public static bool operator ==
+    (
+        Angle l,
+        Angle r
+    ) => l.Rad.Equals(r.Rad);
 
-    public static bool operator !=(Angle l, Angle r) => l.Rad != r.Rad;
+    public static bool operator !=
+    (
+        Angle l,
+        Angle r
+    ) => !l.Rad.Equals(r.Rad);
 }
