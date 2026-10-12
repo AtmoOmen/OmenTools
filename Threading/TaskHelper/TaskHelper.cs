@@ -26,6 +26,8 @@ public partial class TaskHelper : IDisposable
         if (IsDisposed) return;
         IsDisposed = true;
 
+        GC.SuppressFinalize(this);
+
         DService.Instance().UnregTaskHelper(this);
 
         try
@@ -82,7 +84,11 @@ public partial class TaskHelper : IDisposable
     /// <summary>
     ///     当前所有正在处理任务数量 (队列中 + 正在执行)
     /// </summary>
-    public int CurrentTasksCount => queueTaskCount + (CurrentTask == null ? 0 : 1) + pendingTaskCount;
+    public int CurrentTasksCount => queueTaskCount +
+                                    (CurrentTask == null ?
+                                         0 :
+                                         1) +
+                                    pendingTaskCount;
 
     /// <summary>
     ///     当前是否正在处理任一任务
@@ -90,14 +96,14 @@ public partial class TaskHelper : IDisposable
     public bool IsBusy => CurrentTasksCount > 0;
 
     /// <summary>
-    ///     当 TaskHelper 进入繁忙状态时执行
+    ///     当 TaskHelper 进入繁忙状态时触发
     /// </summary>
-    public Action? EnterBusyAction { get; set; }
+    public event Action? EnterBusyState;
 
     /// <summary>
-    ///     当 TaskHelper 离开繁忙状态时执行
+    ///     当 TaskHelper 离开繁忙状态时触发
     /// </summary>
-    public Action? LeaveBusyAction { get; set; }
+    public event Action? LeaveBusyState;
 
     /// <summary>
     ///     当单一任务超时时的全局控制逻辑
@@ -113,16 +119,14 @@ public partial class TaskHelper : IDisposable
     public TaskAbortBehaviour ExceptionBehaviour { get; set; } = TaskAbortBehaviour.AbortAll;
 
     /// <summary>
-    ///     当单一任务超时时额外执行的全局逻辑
-    ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.TimeoutAction" />) 则以任务的为判断标准
+    ///     当单一任务超时时触发, 附带超时的任务
     /// </summary>
-    public Action? TimeoutAction { get; set; }
+    public event Action<TaskHelperTask>? TaskTimeout;
 
     /// <summary>
-    ///     当单一任务执行出现异常时额外执行的全局逻辑
-    ///     若任务本身设置了控制逻辑 (<see cref="TaskHelperTask.ExceptionAction" />) 则以任务的为判断标准
+    ///     当单一任务执行出现异常时触发, 附带出现异常的任务
     /// </summary>
-    public Action? ExceptionAction { get; set; }
+    public event Action<TaskHelperTask>? TaskGetException;
 
     /// <summary>
     ///     是否允许移动到下一任务的检查
@@ -148,7 +152,7 @@ public partial class TaskHelper : IDisposable
     ///     默认为 0 毫秒; 设置为 ≤ 0 以每帧重试 <br />
     /// </summary>
     public int RetryIntervalMS { get; set; }
-    
+
     /// <summary>
     ///     当前任务完成, 进入下一任务前的等待时间 <br />
     ///     默认为 0 毫秒; 设置为 ≤ 0 以每帧重试 <br />
@@ -170,7 +174,10 @@ public partial class TaskHelper : IDisposable
     private volatile int  queueTaskCount;
     private volatile bool isBusyState;
 
-    private async Task ProcessChannelAsync(CancellationToken ct)
+    private async Task ProcessChannelAsync
+    (
+        CancellationToken ct
+    )
     {
         try
         {
@@ -194,11 +201,11 @@ public partial class TaskHelper : IDisposable
                                 await ExecuteCurrentTaskAsync();
                             else
                                 ExecuteCurrentTask();
-                            
+
                             // 任务还没有完成
                             if (CurrentTask != null && RetryIntervalMS > 0)
                                 await Task.Delay(RetryIntervalMS, ct).ConfigureAwait(false);
-                            
+
                             // 任务已经完成了
                             if (CurrentTask == null && TaskIntervalMS > 0)
                                 await Task.Delay(TaskIntervalMS, ct).ConfigureAwait(false);
@@ -230,9 +237,9 @@ public partial class TaskHelper : IDisposable
         try
         {
             if (isBusy)
-                EnterBusyAction?.Invoke();
+                EnterBusyState?.Invoke();
             else
-                LeaveBusyAction?.Invoke();
+                LeaveBusyState?.Invoke();
         }
         catch (Exception ex)
         {
@@ -298,7 +305,7 @@ public partial class TaskHelper : IDisposable
             if (!checkFunc())
                 return;
         }
-        
+
         foreach (var queue in Queues)
         {
             if (!queue.Tasks.TryDequeue(out var task)) continue;
@@ -362,53 +369,67 @@ public partial class TaskHelper : IDisposable
     {
         if (CurrentTask == null) return false;
 
-        var timeoutMS = CurrentTask.TimeoutMS <= 0 ? TimeoutMS : CurrentTask.TimeoutMS;
+        var task = CurrentTask;
+        var timeoutMS = task.TimeoutMS <= 0 ?
+                            TimeoutMS :
+                            task.TimeoutMS;
         if (timeoutMS <= 0) return false;
 
-        if (Stopwatch.GetElapsedTime(CurrentTask.StartTime).TotalMilliseconds <= timeoutMS) return false;
+        if (Stopwatch.GetElapsedTime(task.StartTime).TotalMilliseconds <= timeoutMS) return false;
 
-        var timeoutBehaviour = CurrentTask.TimeoutBehaviour ?? TimeoutBehaviour;
-        var reason           = $"任务 {CurrentTask.GetName()} 执行时间过长";
-        var extraAction      = CurrentTask.TimeoutAction ?? TimeoutAction;
+        var timeoutBehaviour = task.TimeoutBehaviour ?? TimeoutBehaviour;
+        var reason           = $"任务 {task.GetName()} 执行时间过长";
 
-        ExecuteTaskAbortBehaviour(timeoutBehaviour, reason, CurrentTask, extraAction);
+        ExecuteTaskAbortBehaviour(timeoutBehaviour, reason, task, task.TimeoutAction, TaskTimeout);
         return true;
     }
 
-    private void HandleTaskError(Exception? ex = null)
+    private void HandleTaskError
+    (
+        Exception? ex = null
+    )
     {
         if (CurrentTask == null) return;
 
-        var exceptionBehaviour = CurrentTask.ExceptionBehaviour ?? ExceptionBehaviour;
-        var reason             = $"执行任务 {CurrentTask.GetName()} 过程中出现错误";
-        var extraAction        = CurrentTask.ExceptionAction ?? ExceptionAction;
+        var task               = CurrentTask;
+        var exceptionBehaviour = task.ExceptionBehaviour ?? ExceptionBehaviour;
+        var reason             = $"执行任务 {task.GetName()} 过程中出现错误";
 
         if (ex != null)
             DLog.Error(reason, ex);
         else
             DLog.Error(reason);
 
-        ExecuteTaskAbortBehaviour(exceptionBehaviour, reason, CurrentTask, extraAction);
+        ExecuteTaskAbortBehaviour(exceptionBehaviour, reason, task, task.ExceptionAction, TaskGetException);
     }
 
-    private void ExecuteTaskAbortBehaviour(TaskAbortBehaviour behaviour, string reason, TaskHelperTask task, Action? extraAction = null)
+    private void ExecuteTaskAbortBehaviour
+    (
+        TaskAbortBehaviour      behaviour,
+        string                  reason,
+        TaskHelperTask          task,
+        Action?                 extraAction,
+        Action<TaskHelperTask>? stateEvent
+    )
     {
-        if (task == null) return;
+        var messageSuffix = extraAction == null && stateEvent == null ?
+                                string.Empty :
+                                "\n开始执行该原因出现时的自定义逻辑";
 
         switch (behaviour)
         {
             case TaskAbortBehaviour.AbortAll:
-                LogWarning($"放弃了所有任务 (原因: {reason})" + (extraAction == null ? string.Empty : "\n开始执行该原因出现时的自定义逻辑"));
+                LogWarning($"放弃了所有任务 (原因: {reason}){messageSuffix}");
 
                 PerformAbort();
                 break;
             case TaskAbortBehaviour.AbortCurrent:
-                LogWarning($"放弃了当前任务 (原因: {reason})" + (extraAction == null ? string.Empty : "\n开始执行该原因出现时的自定义逻辑"));
+                LogWarning($"放弃了当前任务 (原因: {reason}){messageSuffix}");
 
                 try
                 {
-                    CurrentTask?.CancelToken?.Cancel();
-                    CurrentTask?.CancelToken?.Dispose();
+                    task.CancelToken?.Cancel();
+                    task.CancelToken?.Dispose();
                 }
                 catch
                 {
@@ -429,11 +450,23 @@ public partial class TaskHelper : IDisposable
         {
             DLog.Error($"在执行 {reason} 原因出现时应执行的自定义逻辑时发生错误", ex);
         }
+
+        try
+        {
+            stateEvent?.Invoke(task);
+        }
+        catch (Exception ex)
+        {
+            DLog.Error($"在执行 {reason} 原因出现时的自定义事件时发生错误", ex);
+        }
     }
 
     #region 内部日志
 
-    private void Log(string message)
+    private void Log
+    (
+        string message
+    )
     {
         if (ShowDebug)
             DLog.Debug(message);
@@ -441,7 +474,10 @@ public partial class TaskHelper : IDisposable
             DLog.Verbose(message);
     }
 
-    private void LogWarning(string message)
+    private void LogWarning
+    (
+        string message
+    )
     {
         if (ShowDebug)
             DLog.Warning(message);
@@ -485,9 +521,15 @@ public partial class TaskHelper : IDisposable
 
     public void Abort() => TaskChannel.Writer.TryWrite(new AbortMessage());
 
-    public void AddQueue(int weight) => TaskChannel.Writer.TryWrite(new AddQueueMessage(weight));
+    public void AddQueue
+    (
+        int weight
+    ) => TaskChannel.Writer.TryWrite(new AddQueueMessage(weight));
 
-    private void PerformRemoveQueue(int weight)
+    private void PerformRemoveQueue
+    (
+        int weight
+    )
     {
         LogWarning($"移除了权重 {weight} 队列");
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
@@ -498,9 +540,15 @@ public partial class TaskHelper : IDisposable
         Queues.Remove(queue);
     }
 
-    public void RemoveQueue(int weight) => TaskChannel.Writer.TryWrite(new RemoveQueueMessage(weight));
+    public void RemoveQueue
+    (
+        int weight
+    ) => TaskChannel.Writer.TryWrite(new RemoveQueueMessage(weight));
 
-    private void PerformRemoveQueueTasks(int weight)
+    private void PerformRemoveQueueTasks
+    (
+        int weight
+    )
     {
         LogWarning($"清除了权重 {weight} 队列中的所有任务");
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
@@ -513,9 +561,15 @@ public partial class TaskHelper : IDisposable
         }
     }
 
-    public void RemoveQueueTasks(int weight) => TaskChannel.Writer.TryWrite(new RemoveQueueTasksMessage(weight));
+    public void RemoveQueueTasks
+    (
+        int weight
+    ) => TaskChannel.Writer.TryWrite(new RemoveQueueTasksMessage(weight));
 
-    private void PerformRemoveQueueFirstTask(int weight)
+    private void PerformRemoveQueueFirstTask
+    (
+        int weight
+    )
     {
         LogWarning($"移除了权重 {weight} 队列中的第一个任务");
 
@@ -526,9 +580,15 @@ public partial class TaskHelper : IDisposable
         }
     }
 
-    public void RemoveQueueFirstTask(int weight) => TaskChannel.Writer.TryWrite(new RemoveQueueFirstTaskMessage(weight));
+    public void RemoveQueueFirstTask
+    (
+        int weight
+    ) => TaskChannel.Writer.TryWrite(new RemoveQueueFirstTaskMessage(weight));
 
-    private void PerformRemoveQueueLastTask(int weight)
+    private void PerformRemoveQueueLastTask
+    (
+        int weight
+    )
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
         if (!((queue?.Tasks ?? []).Count > 0)) return;
@@ -539,9 +599,16 @@ public partial class TaskHelper : IDisposable
         QueueCounts.AddOrUpdate(weight, 0, (_, c) => Math.Max(0, c - 1));
     }
 
-    public void RemoveQueueLastTask(int weight) => TaskChannel.Writer.TryWrite(new RemoveQueueLastTaskMessage(weight));
+    public void RemoveQueueLastTask
+    (
+        int weight
+    ) => TaskChannel.Writer.TryWrite(new RemoveQueueLastTaskMessage(weight));
 
-    private void PerformRemoveQueueFirstNTasks(int weight, int count)
+    private void PerformRemoveQueueFirstNTasks
+    (
+        int weight,
+        int count
+    )
     {
         var queue = Queues.FirstOrDefault(q => q.Weight == weight);
 
@@ -556,9 +623,16 @@ public partial class TaskHelper : IDisposable
         }
     }
 
-    public void RemoveQueueFirstNTasks(int weight, int count) => TaskChannel.Writer.TryWrite(new RemoveQueueFirstNTasksMessage(weight, count));
+    public void RemoveQueueFirstNTasks
+    (
+        int weight,
+        int count
+    ) => TaskChannel.Writer.TryWrite(new RemoveQueueFirstNTasksMessage(weight, count));
 
-    public int GetQueueTaskCount(int weight) => QueueCounts.GetValueOrDefault(weight, 0);
+    public int GetQueueTaskCount
+    (
+        int weight
+    ) => QueueCounts.GetValueOrDefault(weight, 0);
 
     #endregion
 

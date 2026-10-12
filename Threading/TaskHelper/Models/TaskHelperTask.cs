@@ -42,13 +42,11 @@ public record TaskHelperTask
 
     /// <summary>
     ///     当单一任务超时时额外执行的逻辑
-    ///     若为 null 则使用全局配置 <see cref="TaskHelper.TimeoutAction" />
     /// </summary>
     public Action? TimeoutAction { get; set; }
 
     /// <summary>
     ///     当单一任务执行出现异常时额外执行的逻辑
-    ///     若为 null 则使用全局配置 <see cref="TaskHelper.ExceptionAction" />
     /// </summary>
     public Action? ExceptionAction { get; set; }
 
