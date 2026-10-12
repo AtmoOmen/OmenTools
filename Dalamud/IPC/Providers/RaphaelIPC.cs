@@ -19,7 +19,7 @@ public static class RaphaelIPC
     private static IPCSubscriber<uint, string, uint> StartCalculationWithConfigSubscriber;
 
     [IPCSubscriber("Raphael.Dalamud.GetCalculationStatus")]
-    private static IPCSubscriber<uint, Tuple<uint, string, string, List<uint>>> GetCalculationStatusSubscriber;
+    private static IPCSubscriber<uint, Tuple<uint, string, string, List<uint>, int, int>> GetCalculationStatusSubscriber;
 
     [IPCSubscriber("Raphael.Dalamud.GetCurrentRecipeID")]
     private static IPCSubscriber<uint> GetCurrentRecipeIDSubscriber;
@@ -34,21 +34,35 @@ public static class RaphaelIPC
     public static uint StartCalculation() =>
         StartCalculationSubscriber.InvokeFunc();
 
-    public static uint StartCalculation(uint recipeID) =>
+    public static uint StartCalculation
+    (
+        uint recipeID
+    ) =>
         StartCalculationWithRecipeSubscriber.InvokeFunc(recipeID);
 
-    public static uint StartCalculation(uint recipeID, RaphaelCalculationConfig config) =>
+    public static uint StartCalculation
+    (
+        uint                     recipeID,
+        RaphaelCalculationConfig config
+    ) =>
         StartCalculationWithConfigSubscriber.InvokeFunc(recipeID, config.ToJSON());
 
-    public static RaphaelCaculationResponse GetCalculationStatus(uint requestID)
+    public static RaphaelCaculationResponse GetCalculationStatus
+    (
+        uint requestID
+    )
     {
         var result = GetCalculationStatusSubscriber.InvokeFunc(requestID);
         return new
         (
             result.Item1,
-            Enum.TryParse<RaphaelCalculationStatus>(result.Item2, out var statusResult) ? statusResult : RaphaelCalculationStatus.Failed,
+            Enum.TryParse<RaphaelCalculationStatus>(result.Item2, out var statusResult) ?
+                statusResult :
+                RaphaelCalculationStatus.Failed,
             result.Item3,
-            result.Item4
+            result.Item4,
+            result.Item5,
+            result.Item6
         );
     }
 }
@@ -84,15 +98,22 @@ public class RaphaelCaculationResponse
     uint                     requestID,
     RaphaelCalculationStatus status,
     string                   error,
-    List<uint>               actions
+    List<uint>               actions,
+    int                      finalProgress,
+    int                      finalQuality
 ) : IEquatable<RaphaelCaculationResponse>
 {
-    public uint                     RequestID    { get; init; } = requestID;
-    public RaphaelCalculationStatus Status       { get; init; } = status;
-    public string                   ErrorMessage { get; init; } = error;
-    public List<uint>               Actions      { get; init; } = actions;
+    public uint                     RequestID     { get; init; } = requestID;
+    public RaphaelCalculationStatus Status        { get; init; } = status;
+    public string                   ErrorMessage  { get; init; } = error;
+    public List<uint>               Actions       { get; init; } = actions;
+    public int                      FinalProgress { get; init; } = finalProgress;
+    public int                      FinalQuality  { get; init; } = finalQuality;
 
-    public bool Equals(RaphaelCaculationResponse? other)
+    public bool Equals
+    (
+        RaphaelCaculationResponse? other
+    )
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
@@ -100,16 +121,27 @@ public class RaphaelCaculationResponse
         return RequestID == other.RequestID;
     }
 
-    public override bool Equals(object? obj) =>
+    public override bool Equals
+    (
+        object? obj
+    ) =>
         Equals(obj as RaphaelCaculationResponse);
 
     public override int GetHashCode() =>
         (int)RequestID;
 
-    public static bool operator ==(RaphaelCaculationResponse? left, RaphaelCaculationResponse? right) =>
+    public static bool operator ==
+    (
+        RaphaelCaculationResponse? left,
+        RaphaelCaculationResponse? right
+    ) =>
         Equals(left, right);
 
-    public static bool operator !=(RaphaelCaculationResponse? left, RaphaelCaculationResponse? right) =>
+    public static bool operator !=
+    (
+        RaphaelCaculationResponse? left,
+        RaphaelCaculationResponse? right
+    ) =>
         !Equals(left, right);
 }
 
