@@ -5,7 +5,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Models;
-using AgentRetainer = FFXIVClientStructs.Expansion.FFXIV.Client.UI.Agent.AgentRetainer;
 
 namespace OmenTools.OmenService;
 
@@ -109,8 +108,7 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
 
                 if (agent != null)
                 {
-                    // TODO: FFCS
-                    var contextItemIndex = *(byte*)((nint)agent + 0x19D8);
+                    var contextItemIndex = agent->ContextItemIndex;
                     itemID = agent->ListingPageItemIds[contextItemIndex];
                 }
 
