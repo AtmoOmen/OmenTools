@@ -7,6 +7,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Data;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Data;
+using OmenTools.Info.Lumina.ExtraSheets;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
 using Action = System.Action;
@@ -210,8 +211,8 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     /// <summary>
     ///     原始 World 表数据
     /// </summary>
-    public static World HomeWorldData =>
-        LuminaGetter.GetRow<World>(HomeWorld).GetValueOrDefault();
+    public static WorldTemp HomeWorldData =>
+        LuminaGetter.GetRow<WorldTemp>(HomeWorld).GetValueOrDefault();
 
     /// <summary>
     ///     当前 World
@@ -224,8 +225,8 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
     /// <summary>
     ///     当前 World 表数据
     /// </summary>
-    public static World CurrentWorldData =>
-        LuminaGetter.GetRow<World>(CurrentWorld).GetValueOrDefault();
+    public static WorldTemp CurrentWorldData =>
+        LuminaGetter.GetRow<WorldTemp>(CurrentWorld).GetValueOrDefault();
 
     /// <summary>
     ///     诛灭战限时奖励提升中 (必须在副本外)
