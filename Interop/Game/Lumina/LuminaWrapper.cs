@@ -1,6 +1,7 @@
 using Lumina.Excel.Sheets;
 using Lumina.Text.ReadOnly;
 using OmenTools.Info.Game.Enums;
+using OmenTools.Info.Lumina.ExtraSheets;
 using Action = Lumina.Excel.Sheets.Action;
 using Status = Lumina.Excel.Sheets.Status;
 
@@ -52,13 +53,13 @@ public static class LuminaWrapper
         LuminaGetter.TryGetRow<ChocoboRaceAbility>(rowID, out var item) ? item.Name.ToString() : string.Empty;
 
     public static string GetWorldName(uint rowID) =>
-        LuminaGetter.TryGetRow<World>(rowID, out var item) ? item.Name.ToString() : string.Empty;
+        LuminaGetter.TryGetRow<WorldTemp>(rowID, out var item) ? item.Name.ToString() : string.Empty;
 
     public static string GetWorldDCName(uint rowID) =>
-        LuminaGetter.TryGetRow<World>(rowID, out var item) ? item.DataCenter.Value.Name.ToString() : string.Empty;
+        LuminaGetter.TryGetRow<WorldTemp>(rowID, out var item) ? item.DataCenter.Value.Name.ToString() : string.Empty;
     
     public static uint GetWorldDC(uint rowID) =>
-        LuminaGetter.TryGetRow<World>(rowID, out var item) ? item.DataCenter.RowId : 0;
+        LuminaGetter.TryGetRow<WorldTemp>(rowID, out var item) ? item.DataCenter.RowId : 0;
 
     public static string GetDataCenterName(uint rowID) =>
         LuminaGetter.TryGetRow<WorldDCGroupType>(rowID, out var item) ? item.Name.ToString() : string.Empty;
