@@ -1,5 +1,6 @@
 using Lumina.Excel.Sheets;
 using OmenTools.Dalamud.DataShare.Attributes;
+using OmenTools.Info.Lumina.ExtraSheets;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService;
 using Action = Lumina.Excel.Sheets.Action;
@@ -104,11 +105,11 @@ public static class Sheets
     [DataShareTag]
     private const string WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.Worlds";
 
-    public static Dictionary<uint, World> Worlds { get; } =
+    public static Dictionary<uint, WorldTemp> Worlds { get; } =
         IDalamudPluginInterface.Instance().GetOrCreateData
         (
             WORLDS_TAG,
-            () => LuminaGetter.Get<World>()
+            () => LuminaGetter.Get<WorldTemp>()
                               .Where
                               (x => x.DataCenter.RowId != 0                          &&
                                     x.DataCenter.RowId != 13                         && // 北美云服务器
@@ -129,7 +130,7 @@ public static class Sheets
     [DataShareTag]
     private const string CN_WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.CNWorlds";
 
-    public static Dictionary<uint, World> CNWorlds { get; } =
+    public static Dictionary<uint, WorldTemp> CNWorlds { get; } =
         IDalamudPluginInterface.Instance().GetOrCreateData
         (
             CN_WORLDS_TAG,

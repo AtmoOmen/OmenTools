@@ -1,19 +1,20 @@
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Lumina;
+using OmenTools.Info.Lumina.ExtraSheets;
 using OmenTools.Interop.Game.Lumina;
 
 namespace OmenTools.ImGuiOm.Widgets.Combos;
 
-public class WorldSelectCombo : LuminaComboBase<World>
+public class WorldSelectCombo : LuminaComboBase<WorldTemp>
 {
     public WorldSelectCombo
     (
         string             id,
-        IEnumerable<World> worlds = null
+        IEnumerable<WorldTemp> worlds = null
     ) : base(id, null)
     {
         var data = worlds ?? Sheets.Worlds.Values;
-        Searcher = new LuminaSearcher<World>
+        Searcher = new LuminaSearcher<WorldTemp>
         (
             data,
             [
@@ -79,7 +80,7 @@ public class WorldSelectCombo : LuminaComboBase<World>
 
     protected override bool DrawDataColumns
     (
-        World              world,
+        WorldTemp          world,
         ComboSelectionMode mode,
         bool               isSelected
     )
