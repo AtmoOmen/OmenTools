@@ -26,6 +26,7 @@ namespace OmenTools.Dalamud.Services.Game.Object.Abstractions.ObjectKinds;
 
 public interface ICharacter : IGameObject
 {
+    bool                                        IsFriend                             { get; }
     IBattleChara?                               ContainerOwner                       { get; }
     short                                       TransformationID                     { get; }
     ushort                                      StatusLoopVfxID                      { get; }
@@ -122,12 +123,12 @@ public interface ICharacter : IGameObject
     ulong                                       FreeCompanyCrestDataValue            { get; }
     byte                                        FreeCompanyCrestCharge               { get; }
     byte                                        FreeCompanyCrestOrdinaryTinctures    { get; }
-    byte                                        TransformationStanceChangeID                 { get; }
-    uint                                        TransformationStanceChangeState              { get; }
-    float                                       TransformationTimer                          { get; }
-    ICharacter?                                 TransformationCopyObject                     { get; }
-    TransformationContainer.TransformationFlags TransformationFlags                          { get; }
-    ushort                                      TransformationNPCEquipID                     { get; }
+    byte                                        TransformationStanceChangeID         { get; }
+    uint                                        TransformationStanceChangeState      { get; }
+    float                                       TransformationTimer                  { get; }
+    ICharacter?                                 TransformationCopyObject             { get; }
+    TransformationContainer.TransformationFlags TransformationFlags                  { get; }
+    ushort                                      TransformationNPCEquipID             { get; }
     float                                       CurrentFloatHeight                   { get; }
     float                                       TargetFloatHeight                    { get; }
     float                                       FloatHeightChangeSpeed               { get; }
