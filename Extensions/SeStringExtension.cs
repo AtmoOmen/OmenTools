@@ -779,50 +779,6 @@ public static class SeStringExtension
 
     extension
     (
-        ReadOnlySeStringSpan span
-    )
-    {
-        public ReadOnlySeString PraseAutoTranslate()
-        {
-            using var rentedOuter = new RentedSeStringBuilder();
-            var       builder     = rentedOuter.Builder;
-
-            var counter = -1;
-
-            foreach (var payload in span)
-            {
-                counter++;
-
-                using var rented = new RentedSeStringBuilder();
-
-                if (payload.Type            != ReadOnlySePayloadType.Macro  ||
-                    payload.MacroCode       != MacroCode.Fixed              ||
-                    payload.ExpressionCount != 2                            ||
-                    !payload.TryGetExpression(out var expr1, out var expr2) ||
-                    !expr1.TryGetUInt(out var group)                        ||
-                    !expr2.TryGetUInt(out var rowID)                        ||
-                    !LuminaGetter.TryGetRow(rowID, out Completion macroRow) ||
-                    macroRow.Group != group + 1)
-                {
-
-                    if (counter      == 0                          &&
-                        payload.Type == ReadOnlySePayloadType.Text &&
-                        string.IsNullOrEmpty(payload.ToString().Trim()))
-                        continue;
-
-                    builder.Append(rented.Builder.Append(payload).ToReadOnlySeString());
-                    continue;
-                }
-
-                builder.Append(payload);
-            }
-
-            return builder.ToReadOnlySeString();
-        }
-    }
-
-    extension
-    (
         char c
     )
     {
