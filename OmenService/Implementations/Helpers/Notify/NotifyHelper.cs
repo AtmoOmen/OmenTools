@@ -179,8 +179,10 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         string?     title = null
     )
     {
-        ArgumentNullException.ThrowIfNull(TrayNotifier);
         ArgumentNullException.ThrowIfNull(message);
+
+        if (TrayNotifier == null)
+            return;
 
         if (SendTrayOnlyBackground &&
             GameState.IsForeground &&
