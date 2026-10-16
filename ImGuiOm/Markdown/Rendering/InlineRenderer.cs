@@ -14,7 +14,7 @@ internal static class InlineRenderer
         float            headingScale = 1.0F
     )
     {
-        var runs = InlineBuilder.Build(inline);
+        var runs = InlineBuilder.Build(inline, config);
         if (runs.Count == 0)
             return;
 
@@ -28,7 +28,7 @@ internal static class InlineRenderer
         (
             runs,
             wrapWidth,
-            (text, role, isImage) => Measure(text, role, config, isImage, headingScale, wrapWidth),
+            (text, run) => Measure(text, run, config, headingScale, wrapWidth),
             role => Overhang(role, headingScale, config)
         );
 
@@ -45,15 +45,19 @@ internal static class InlineRenderer
             foreach (var token in line.Tokens)
             {
                 Vector2 pos = new(origin.X + token.X, origin.Y + y);
+                var color = token.LinkURL is null ?
+                                textU32 :
+                                linkU32;
+                if (token.Style.Color.HasValue)
+                    color = ImGui.GetColorU32(token.Style.Color.Value);
+
                 DrawToken
                 (
                     token,
                     pos,
                     config,
                     drawList,
-                    token.LinkURL is null ?
-                        textU32 :
-                        linkU32,
+                    color,
                     ref linkIndex,
                     headingScale,
                     wrapWidth
@@ -85,28 +89,27 @@ internal static class InlineRenderer
 
     private static Vector2 Measure
     (
-        string           text,
-        MarkdownFontRole role,
-        MarkdownConfig   config,
-        bool             isImage,
-        float            headingScale,
-        float            availableWidth
+        string         text,
+        InlineRun      run,
+        MarkdownConfig config,
+        float          headingScale,
+        float          availableWidth
     )
     {
-        if (isImage)
+        if (run.IsImage)
         {
-            var image = config.ResolveImage(text);
+            var image = config.ResolveImage(run);
 
             return image.HasValue ?
-                       ResolveImageSize(image.Value.Size, availableWidth) :
-                       new Vector2(Math.Min(IMAGE_PLACEHOLDER_WIDTH, availableWidth), ImGui.GetFontSize());
+                       ResolveImageSize(image.Value.Size,                                          run, availableWidth, config, headingScale) :
+                       ResolveImageSize(new Vector2(IMAGE_PLACEHOLDER_WIDTH, ImGui.GetFontSize()), run, availableWidth, config, headingScale);
         }
 
         // Measure with the role's font pushed so the measured width matches what DrawToken draws. The
         // italic overhang and bold stroke are not added per token: CJK is laid out one character per
         // token, so charging each of them the overhang would space the glyphs out. InlineLayout adds
         // it once at the end of the run instead.
-        using ScopedMarkdownFont font = new(role, headingScale, config);
+        using ScopedMarkdownFont font = new(run.Role, headingScale, config);
 
         var baseWidth = ImGui.CalcTextSizeA(font.Font, font.PixelSize, float.MaxValue, 0.0F, text, out _).X;
         return new Vector2(baseWidth, font.PixelSize);
@@ -114,10 +117,27 @@ internal static class InlineRenderer
 
     private static Vector2 ResolveImageSize
     (
-        Vector2 intrinsicSize,
-        float   availableWidth
+        Vector2        intrinsicSize,
+        InlineRun      run,
+        float          availableWidth,
+        MarkdownConfig config,
+        float          headingScale
     )
     {
+        if (run.ImageSize is { } requested)
+        {
+            using ScopedMarkdownFont font = new(MarkdownFontRole.Body, headingScale, config);
+            var scale = run.ImageInEms ?
+                            font.PixelSize :
+                            GlobalUIScale;
+            if (requested is { X: > 0.0F, Y: > 0.0F })
+                intrinsicSize = requested * scale;
+            else if (requested.X > 0.0F)
+                intrinsicSize *= requested.X * scale / intrinsicSize.X;
+            else if (requested.Y > 0.0F)
+                intrinsicSize *= requested.Y * scale / intrinsicSize.Y;
+        }
+
         if (intrinsicSize.X <= availableWidth)
             return intrinsicSize;
 
@@ -140,12 +160,21 @@ internal static class InlineRenderer
 
         if (token.IsImage)
         {
-            var image = config.ResolveImage(token.Text);
+            var image = config.ResolveImage(token.Style);
 
             if (image.HasValue)
             {
                 ImGui.SetCursorScreenPos(pos);
-                ImGui.Image(image.Value.TextureID, ResolveImageSize(image.Value.Size, availableWidth));
+                var size = ResolveImageSize(image.Value.Size, token.Style, availableWidth, config, headingScale);
+                ImGui.Image(image.Value.TextureID, size);
+
+                if (token.Style.Dispel)
+                {
+                    var barSize = size with { Y = MathF.Max(2.0F, size.Y * 0.08F) };
+                    drawList.AddRectFilled(pos, pos + barSize, ImGui.GetColorU32(new Vector4(0.65F, 0.85F, 1.0F, 1.0F)));
+                }
+
+                Interact(token, pos, size, config, ref linkIndex);
             }
             else
             {
@@ -162,6 +191,9 @@ internal static class InlineRenderer
 
         var lineHeight = font.PixelSize;
 
+        if (token.Style.Highlight)
+            drawList.AddRectFilled(pos, pos + new Vector2(token.Width, lineHeight), ImGui.GetColorU32(new Vector4(0.8F, 0.65F, 0.1F, 0.35F)), 2.0F);
+
         if (role == MarkdownFontRole.Code)
         {
             // Subtle background behind inline code.
@@ -171,23 +203,49 @@ internal static class InlineRenderer
 
         MarkdownTextDraw.Draw(drawList, font.Font, lineHeight, pos, color, token.Text, font.FauxBold, font.FauxItalic);
 
-        if (token.LinkURL is not null)
+        if (token.LinkURL is not null || token.Style.Underline)
         {
             // Underline and hit-test the link token.
             var underlineY = pos.Y + lineHeight;
             drawList.AddLine(pos with { Y = underlineY }, pos with { X = pos.X + token.Width, Y = underlineY }, color, 1.0F);
 
-            ImGui.SetCursorScreenPos(pos);
-            ImGui.PushID(linkIndex++);
-            ImGui.InvisibleButton("##mdlink", new Vector2(token.Width, lineHeight));
-            if (ImGui.IsItemHovered())
-                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
-
-            if (ImGui.IsItemClicked())
-                LinkPolicy.Activate(config.ResolveURL(token.LinkURL), config.OnLinkClicked);
-
-            ImGui.PopID();
         }
+
+        if (token.Style.Strikethrough)
+        {
+            var strikeY = pos.Y + (lineHeight * 0.5F);
+            drawList.AddLine(pos with { Y = strikeY }, new Vector2(pos.X + token.Width, strikeY), color);
+        }
+
+        Interact(token, pos, new Vector2(token.Width, lineHeight), config, ref linkIndex);
+    }
+
+    private static void Interact
+    (
+        LaidOutToken   token,
+        Vector2        position,
+        Vector2        size,
+        MarkdownConfig config,
+        ref int        index
+    )
+    {
+        if (token.LinkURL is null && string.IsNullOrEmpty(token.Style.Tooltip))
+            return;
+
+        ImGui.SetCursorScreenPos(position);
+        using var id = ImRaii.PushId(index++);
+        ImGui.InvisibleButton("##mdinline", size);
+
+        if (ImGui.IsItemHovered())
+        {
+            if (token.LinkURL is not null)
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Hand);
+            if (!string.IsNullOrEmpty(token.Style.Tooltip))
+                ImGui.SetTooltip(token.Style.Tooltip);
+        }
+
+        if (token.LinkURL is not null && ImGui.IsItemClicked())
+            LinkPolicy.Activate(config.ResolveURL(token.LinkURL), config.OnLinkClicked);
     }
 
     #region 常量

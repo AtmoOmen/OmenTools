@@ -1,47 +1,68 @@
 using Markdig;
+using Markdig.Extensions.EmphasisExtras;
 using MarkdigAst = Markdig.Syntax.MarkdownDocument;
 using MarkdigParser = Markdig.Markdown;
 
 namespace OmenTools.ImGuiOm.Markdown.Parsing;
 
-internal static class MarkdownParser
+internal sealed class MarkdownParser
 {
-    private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
-                                                        .UsePipeTables()
-                                                        .UseTaskLists()
-                                                        .UseAutoLinks()
-                                                        .Build();
+    private readonly MarkdownPipeline                       pipeline;
+    private readonly IReadOnlyList<IImGuiMarkdownExtension> extensions;
 
-    private static readonly Dictionary<string, MarkdigAst> Cache          = [];
-    private static readonly Queue<string>                  InsertionOrder = new();
-    private static readonly Lock                           Gate           = new();
+    private readonly Dictionary<string, MarkdigAst> cache          = [];
+    private readonly Queue<string>                  insertionOrder = new();
+    private readonly Lock                           gate           = new();
 
-    public static MarkdigAst Parse
+    public MarkdownParser
+    (
+        IReadOnlyList<IImGuiMarkdownExtension> extensions
+    )
+    {
+        this.extensions = extensions;
+        var builder = new MarkdownPipelineBuilder()
+                      .UsePipeTables()
+                      .UseTaskLists()
+                      .UseAutoLinks();
+
+        foreach (var extension in extensions)
+            extension.ConfigurePipeline(builder);
+
+        pipeline = builder.UseEmphasisExtras(EmphasisExtraOptions.Strikethrough).Build();
+    }
+
+    public MarkdigAst Parse
     (
         string markdown
-    ) =>
-        MarkdigParser.Parse(markdown ?? string.Empty, Pipeline);
+    )
+    {
+        var source = markdown ?? string.Empty;
+        foreach (var extension in extensions)
+            source = extension.Preprocess(source);
 
-    public static MarkdigAst GetOrParse
+        return MarkdigParser.Parse(source, pipeline);
+    }
+
+    public MarkdigAst GetOrParse
     (
         string markdown
     )
     {
         var key = markdown ?? string.Empty;
 
-        lock (Gate)
+        lock (gate)
         {
-            if (Cache.TryGetValue(key, out var cached))
+            if (cache.TryGetValue(key, out var cached))
                 return cached;
 
             var parsed = Parse(key);
-            Cache[key] = parsed;
-            InsertionOrder.Enqueue(key);
+            cache[key] = parsed;
+            insertionOrder.Enqueue(key);
 
-            while (InsertionOrder.Count > MAX_CACHE_ENTRIES)
+            while (insertionOrder.Count > MAX_CACHE_ENTRIES)
             {
-                var evict = InsertionOrder.Dequeue();
-                Cache.Remove(evict);
+                var evict = insertionOrder.Dequeue();
+                cache.Remove(evict);
             }
 
             return parsed;

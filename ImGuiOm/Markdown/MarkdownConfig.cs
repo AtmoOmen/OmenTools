@@ -1,12 +1,21 @@
 using System.Numerics;
 using Dalamud.Interface.ManagedFontAtlas;
 using OmenTools.ImGuiOm.Markdown.Parsing;
+using OmenTools.ImGuiOm.Markdown.Layout;
 using OmenTools.ImGuiOm.Markdown.Rendering;
 
 namespace OmenTools.ImGuiOm.Markdown;
 
 public sealed record MarkdownConfig
 {
+    internal IReadOnlyList<IImGuiMarkdownExtension> Extensions { get; init; } = [];
+
+    public Func<InlineRun, MarkdownImageResult?>? InlineImageResolver { get; init; }
+
+    public bool JoinCJKSoftLines { get; init; }
+
+    public bool BreakSoftLines { get; init; }
+
     // Sizes that FontManager builds into the atlas, so every heading resolves to a real font rather
     // than a scaled one. Discrete handles stay crisp; scaling a single handle blurs the glyphs.
     public static IReadOnlyList<float> DefaultHeadingScales { get; } = [1.6F, 1.4F, 1.2F, 1.0F, 1.0F, 0.9F];
@@ -59,6 +68,23 @@ public sealed record MarkdownConfig
         MarkdownBlockKind previous,
         MarkdownBlockKind next
     ) => ImGui.GetTextLineHeight() * BlockSpacing.Gap(previous, next);
+
+    public MarkdownImageResult? ResolveImage
+    (
+        InlineRun run
+    )
+    {
+        if (InlineImageResolver is not null)
+            return InlineImageResolver(run);
+
+        if (!run.IconID.HasValue)
+            return ResolveImage(run.Text);
+
+        var texture = ImageHelper.GetGameIcon(run.IconID.Value);
+        return texture is null ?
+                   null :
+                   new MarkdownImageResult(texture.Handle, texture.Size);
+    }
 
     public MarkdownImageResult? ResolveImage
     (

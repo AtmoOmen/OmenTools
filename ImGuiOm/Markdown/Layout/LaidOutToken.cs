@@ -7,5 +7,6 @@ internal readonly record struct LaidOutToken
     string?          LinkURL,
     bool             IsImage,
     float            X,
-    float            Width
+    float            Width,
+    InlineRun        Style
 );

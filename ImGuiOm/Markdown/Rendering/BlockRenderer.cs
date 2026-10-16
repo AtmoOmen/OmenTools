@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text;
 using Markdig.Extensions.TaskLists;
+using Markdig.Extensions.Yaml;
 using Markdig.Syntax;
 using MarkdownCodeBlock = Markdig.Syntax.CodeBlock;
 using MarkdownTable = Markdig.Extensions.Tables.Table;
@@ -22,12 +23,16 @@ internal static class BlockRenderer
 
         foreach (var block in blocks)
         {
+            if (block is YamlFrontMatterBlock)
+                continue;
+
             var kind = KindOf(block);
 
             if (previous.HasValue)
                 ImGui.Dummy(new Vector2(0.0F, MarkdownConfig.ResolveGap(previous.Value, kind)));
 
-            RenderBlock(block, config);
+            using (ImRaii.PushId(block.Span.Start))
+                RenderBlock(block, config);
 
             previous = kind;
         }
@@ -63,6 +68,12 @@ internal static class BlockRenderer
         MarkdownConfig config
     )
     {
+        foreach (var extension in config.Extensions)
+        {
+            if (extension.TryRenderBlock(block, config))
+                return;
+        }
+
         switch (block)
         {
             case HeadingBlock heading:

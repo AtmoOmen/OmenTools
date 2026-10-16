@@ -6,13 +6,13 @@ internal static class InlineLayout
 {
     public static IReadOnlyList<LaidOutLine> Wrap
     (
-        IReadOnlyList<InlineRun>                      runs,
-        float                                         maxWidth,
-        Func<string, MarkdownFontRole, bool, Vector2> measure,
-        Func<MarkdownFontRole, float>                 runOverhang
+        IReadOnlyList<InlineRun>         runs,
+        float                            maxWidth,
+        Func<string, InlineRun, Vector2> measure,
+        Func<MarkdownFontRole, float>    runOverhang
     )
     {
-        var spaceWidth = measure(" ", MarkdownFontRole.Body, false).X;
+        var spaceWidth = measure(" ", new InlineRun(" ", MarkdownFontRole.Body, null, false)).X;
 
         List<LaidOutLine>  lines      = [];
         List<LaidOutToken> current    = [];
@@ -25,6 +25,16 @@ internal static class InlineLayout
 
         foreach (var run in runs)
         {
+            if (run.IsLineBreak)
+            {
+                if (current.Count == 0)
+                    lineHeight = measure(" ", run).Y;
+
+                FlushLine(lines, current, ref cursorX, ref lineHeight);
+                pendingSpace = false;
+                continue;
+            }
+
             if (run.IsImage)
             {
                 Place(run.Text, run, measure, maxWidth, spaceWidth, lines, current, ref cursorX, ref lineHeight, pendingSpace);
@@ -59,19 +69,19 @@ internal static class InlineLayout
     // space would insert gaps between the per-character tokens that CJK text is split into.
     private static void Place
     (
-        string                                        text,
-        InlineRun                                     run,
-        Func<string, MarkdownFontRole, bool, Vector2> measure,
-        float                                         maxWidth,
-        float                                         spaceWidth,
-        List<LaidOutLine>                             lines,
-        List<LaidOutToken>                            current,
-        ref float                                     cursorX,
-        ref float                                     lineHeight,
-        bool                                          wantsLeadingSpace
+        string                           text,
+        InlineRun                        run,
+        Func<string, InlineRun, Vector2> measure,
+        float                            maxWidth,
+        float                            spaceWidth,
+        List<LaidOutLine>                lines,
+        List<LaidOutToken>               current,
+        ref float                        cursorX,
+        ref float                        lineHeight,
+        bool                             wantsLeadingSpace
     )
     {
-        var tokenSize  = measure(text, run.Role, run.IsImage);
+        var tokenSize  = measure(text, run);
         var tokenWidth = tokenSize.X;
         var advance = wantsLeadingSpace && current.Count > 0 ?
                           spaceWidth :
@@ -84,7 +94,7 @@ internal static class InlineLayout
         }
 
         var x = cursorX + advance;
-        current.Add(new LaidOutToken(text, run.Role, run.LinkURL, run.IsImage, x, tokenWidth));
+        current.Add(new LaidOutToken(text, run.Role, run.LinkURL, run.IsImage, x, tokenWidth, run));
         cursorX    = x + tokenWidth;
         lineHeight = Math.Max(lineHeight, tokenSize.Y);
     }
@@ -97,7 +107,7 @@ internal static class InlineLayout
         ref float          lineHeight
     )
     {
-        if (current.Count > 0)
+        if (current.Count > 0 || lineHeight > 0.0F)
         {
             LaidOutToken[] tokens = [.. current];
             lines.Add(new LaidOutLine { Tokens = tokens, Width = cursorX, Height = lineHeight });
