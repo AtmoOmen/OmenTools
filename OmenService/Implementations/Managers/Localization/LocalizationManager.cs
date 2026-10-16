@@ -153,7 +153,15 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         if (!TryResolveFormat(snapshot, key, out var format))
             return LogMissingKeyAndReturnKey(snapshot, key);
 
-        return string.Format(CultureInfo.CurrentCulture, format, args);
+        try
+        {
+            return string.Format(CultureInfo.CurrentCulture, format, args);
+        }
+        catch (FormatException ex)
+        {
+            LogFormatException(snapshot, key, ex);
+            return format;
+        }
     }
 
     public string Get
@@ -188,13 +196,21 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         if (args.Length == 0)
             return snapshot.PlainTextSeCache.GetOrAdd(key, _ => CreatePlainSeString(format));
 
-        return ReadOnlySeString.Format
-        (
-            format,
-            CultureInfo.CurrentCulture,
-            args,
-            token => LogFormatError(snapshot, key, token)
-        );
+        try
+        {
+            return ReadOnlySeString.Format
+            (
+                format,
+                CultureInfo.CurrentCulture,
+                args,
+                token => LogFormatError(snapshot, key, token)
+            );
+        }
+        catch (FormatException ex)
+        {
+            LogFormatException(snapshot, key, ex);
+            return CreatePlainSeString(format);
+        }
     }
 
     public ReadOnlySeString GetSe
@@ -511,6 +527,17 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         var logKey = $"{key}|{token}";
         if (snapshot.FormatErrors.TryAdd(logKey, 0))
             DLog.Warning($"[{snapshot.LoggerTag}] 本地化键 {key} 缺少占位符参数 {token}，已保留原始文本");
+    }
+
+    private static void LogFormatException
+    (
+        LanguageSnapshot snapshot,
+        string           key,
+        FormatException  exception
+    )
+    {
+        if (snapshot.FormatErrors.TryAdd(key, 0))
+            DLog.Warning($"[{snapshot.LoggerTag}] 本地化键 {key} 的格式化字符串无法解析: {exception.Message}，已保留原始文本");
     }
 
     private sealed record ConfiguredState
