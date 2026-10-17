@@ -8,6 +8,7 @@ public static unsafe class Addons
 {
     #region Sub Addons
 
+    public static AtkUnitBase* Streak                 => AddonHelper.GetByName("_Streak");
     public static AtkUnitBase* EnemyList              => AddonHelper.GetByName("_EnemyList");
     public static AtkUnitBase* CharaSelectListMenu    => AddonHelper.GetByName("_CharaSelectListMenu");
     public static AtkUnitBase* CharaSelectWorldServer => AddonHelper.GetByName("_CharaSelectWorldServer");
