@@ -55,9 +55,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             {
                 if (!ItemDetail->IsAddonAndNodesReady()) return;
 
-                var agent = AgentItemDetail.Instance();
-                *(byte*)((nint)agent + agentItemDetailRefreshFlagOffset) = 1;
-
+                AgentItemDetail.Instance()->IsDirty = true;
                 DLog.Verbose($"{nameof(TooltipManager)}: 触发更新物品工具信息界面");
             }
         );
@@ -139,14 +137,6 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
     #endregion
 
-    #region 私有逆向
-
-    // TODO: FFCS 的 AgentItemDetail IsDirty 字段
-    private static readonly CompSig AgentItemDetailRefreshFlagOffsetSig = new("88 83 ?? ?? ?? ?? 48 8B 5C 24 ?? 48 8B 6C 24");
-    private                 nint    agentItemDetailRefreshFlagOffset;
-
-    #endregion
-
     #region 私有状态
 
     // 上个物品
@@ -167,9 +157,6 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
     protected override void Init()
     {
-        agentItemDetailRefreshFlagOffset = Marshal.ReadInt32(AgentItemDetailRefreshFlagOffsetSig.ScanText() + 2);
-        DLog.Debug($"[{nameof(TooltipManager)}] AgnetItemDetail 工具信息界面刷新标志偏移量: {agentItemDetailRefreshFlagOffset}");
-
         IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreRequestedUpdate,  "ItemDetail",   OnItemDetailUpdate);
         IAddonLifecycle.Instance().RegisterListener(AddonEvent.PostRequestedUpdate, "ItemDetail",   OnItemDetailPostUpdate);
         IAddonLifecycle.Instance().RegisterListener(AddonEvent.PreRequestedUpdate,  "ActionDetail", OnActionDetailUpdate);
@@ -416,8 +403,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
 
         var addon = (AddonItemDetail*)ItemDetail;
 
-        if (addon->DescriptionText->Width != 350)
-            addon->DescriptionText->Width = 350;
+        addon->DescriptionText->Width = 350;
         
         if (addon->MaterializeText->Width != 350)
         {
