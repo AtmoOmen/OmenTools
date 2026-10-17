@@ -4,7 +4,6 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.Sheets;
-using OmenTools.Info.Game.Enums;
 using OmenTools.Info.Game.Packets.Upstream;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.Interop.Game.Models;
@@ -15,12 +14,31 @@ namespace OmenTools.OmenService;
 
 public class InstancesManager : OmenServiceBase<InstancesManager>
 {
+    private readonly ExecuteCommandManager executeCommandManager;
+    private readonly GameState             gameState;
+
+    public InstancesManager
+    (
+        GameState             inGameState,
+        ExecuteCommandManager inExecuteCommandManager
+    )
+    {
+        gameState             = inGameState;
+        executeCommandManager = inExecuteCommandManager;
+    }
+
     public static unsafe bool   IsInstancedArea => UIState.Instance()->PublicInstance.IsInstancedArea();
     public static unsafe uint   CurrentInstance => UIState.Instance()->PublicInstance.InstanceId;
     public static unsafe string CurrentVersion  => Framework.Instance()->GameVersionString;
-    public static unsafe int    InstanceAmount  => IsInstancedArea && InstanceAmountPtr != null ? *InstanceAmountPtr : 0;
 
-    public int GetInstancesCount(uint zoneID = 0)
+    public static unsafe int InstanceAmount => IsInstancedArea && InstanceAmountPtr != null ?
+                                                   *InstanceAmountPtr :
+                                                   0;
+
+    public int GetInstancesCount
+    (
+        uint zoneID = 0
+    )
     {
         if (zoneID == 0)
             zoneID = GameState.TerritoryType;
@@ -43,8 +61,8 @@ public class InstancesManager : OmenServiceBase<InstancesManager>
         ServiceConfig =   Config.Load(this) ?? new();
         TaskHelper    ??= new() { TimeoutMS = 15_000 };
 
-        ExecuteCommandManager.Instance().RegPost(OnPostExecuteCommand);
-        GameState.Instance().Login += OnLogin;
+        executeCommandManager.RegPost(OnPostExecuteCommand);
+        gameState.Login += OnLogin;
 
         if (IClientState.Instance().IsLoggedIn)
             EnqueueInstancesCountRetrieve(GameState.TerritoryType);
@@ -52,15 +70,22 @@ public class InstancesManager : OmenServiceBase<InstancesManager>
 
     protected override void Uninit()
     {
-        ExecuteCommandManager.Instance().Unreg(OnPostExecuteCommand);
-        GameState.Instance().Login -= OnLogin;
+        executeCommandManager.Unreg(OnPostExecuteCommand);
+        gameState.Login -= OnLogin;
 
         TaskHelper?.Abort();
         TaskHelper?.Dispose();
         TaskHelper = null;
     }
 
-    private unsafe void OnPostExecuteCommand(ExecuteCommandFlag command, uint param1, uint param2, uint param3, uint param4)
+    private unsafe void OnPostExecuteCommand
+    (
+        ExecuteCommandFlag command,
+        uint               param1,
+        uint               param2,
+        uint               param3,
+        uint               param4
+    )
     {
         if (command != ExecuteCommandFlag.Teleport) return;
 
@@ -72,7 +97,10 @@ public class InstancesManager : OmenServiceBase<InstancesManager>
     private void OnLogin() =>
         EnqueueInstancesCountRetrieve(GameState.TerritoryType);
 
-    private unsafe void EnqueueInstancesCountRetrieve(uint zoneID)
+    private unsafe void EnqueueInstancesCountRetrieve
+    (
+        uint zoneID
+    )
     {
         if (zoneID == 0 || GameMain.Instance()->CurrentContentFinderConditionId != 0) return;
 

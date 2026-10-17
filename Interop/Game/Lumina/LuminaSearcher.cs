@@ -26,21 +26,18 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
         if (orderFunc != null)
         {
             var query = data.AsQueryable();
-            Data = orderFunc(query)
-                   .ThenBy(x => x.RowId)
-                   .ToList();
+            Data = [.. orderFunc(query).ThenBy(x => x.RowId)];
         }
         else
         {
-            Data = data.OrderBy(x => x.RowId)
-                       .ToList();
+            Data = [.. data.OrderBy(x => x.RowId)];
         }
 
-        SearchResult          = Data.Take(resultLimit).ToList();
-        this.resultLimit      = resultLimit;
-        this.throttleInterval = throttleInterval;
-        this.retryInterval    = retryInterval;
-        this.maxRetries       = maxRetries;
+        SearchResult           = [.. Data.Take(resultLimit)];
+        searchResultLimit      = resultLimit;
+        searchThrottleInterval = throttleInterval;
+        searchRetryInterval    = retryInterval;
+        searchMaxRetries       = maxRetries;
 
         var dataCount = Data.Count;
         preprocessedData = new string[dataCount][];
@@ -69,24 +66,29 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
     public IReadOnlyList<T> Data         { get; init; }
     public List<T>          SearchResult { get; private set; }
 
-    private readonly int                                     resultLimit;
-    private readonly uint                                    throttleInterval;
-    private readonly int                                     retryInterval;
-    private readonly int                                     maxRetries;
+    private readonly int                                     searchResultLimit;
+    private readonly uint                                    searchThrottleInterval;
+    private readonly int                                     searchRetryInterval;
+    private readonly int                                     searchMaxRetries;
     private readonly string[][]                              preprocessedData;
     private readonly ConcurrentDictionary<string, List<int>> cache = [];
 
-    public void Search(string keyword, bool isIgnoreCase = true, bool isRegex = true)
+    public void Search
+    (
+        string keyword,
+        bool   isIgnoreCase = true,
+        bool   isRegex      = true
+    )
     {
         var cacheKey = keyword + "_" + isIgnoreCase + "_" + isRegex;
 
         if (cache.TryGetValue(cacheKey, out var cachedIndexes))
         {
-            SearchResult = cachedIndexes.Take(resultLimit).Select(index => Data[index]).ToList();
+            SearchResult = [.. cachedIndexes.Take(searchResultLimit).Select(index => Data[index])];
             return;
         }
 
-        if (!searchThrottler.Throttle(GUID, throttleInterval))
+        if (!searchThrottler.Throttle(GUID, searchThrottleInterval))
         {
             RetrySearch(keyword, isIgnoreCase, isRegex, 0);
             return;
@@ -95,14 +97,20 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
         ExecuteSearch(keyword, isIgnoreCase, isRegex);
     }
 
-    private void RetrySearch(string keyword, bool isIgnoreCase, bool isRegex, int attempt)
+    private void RetrySearch
+    (
+        string keyword,
+        bool   isIgnoreCase,
+        bool   isRegex,
+        int    attempt
+    )
     {
-        if (attempt >= maxRetries) return;
+        if (attempt >= searchMaxRetries) return;
 
-        Task.Delay(retryInterval).ContinueWith
+        Task.Delay(searchRetryInterval).ContinueWith
         (_ =>
             {
-                if (!searchThrottler.Throttle(GUID, throttleInterval))
+                if (!searchThrottler.Throttle(GUID, searchThrottleInterval))
                     RetrySearch(keyword, isIgnoreCase, isRegex, attempt + 1);
                 else
                     ExecuteSearch(keyword, isIgnoreCase, isRegex);
@@ -110,14 +118,23 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
         );
     }
 
-    private void ExecuteSearch(string keyword, bool isIgnoreCase, bool isRegex)
+    private void ExecuteSearch
+    (
+        string keyword,
+        bool   isIgnoreCase,
+        bool   isRegex
+    )
     {
-        var comparison   = isIgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        var comparison = isIgnoreCase ?
+                             StringComparison.OrdinalIgnoreCase :
+                             StringComparison.Ordinal;
         var finalResults = new List<int>();
         var syncLock     = new Lock();
 
-        var    regexOptions = isIgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
-        Regex? regex        = null;
+        var regexOptions = isIgnoreCase ?
+                               RegexOptions.IgnoreCase :
+                               RegexOptions.None;
+        Regex? regex = null;
 
         if (isRegex)
         {
@@ -182,9 +199,9 @@ public class LuminaSearcher<T> where T : struct, IExcelRow<T>
         );
 
         finalResults.Sort();
-        var resultIndexes = finalResults.Take(resultLimit).ToList();
+        var resultIndexes = finalResults.Take(searchResultLimit).ToList();
 
-        SearchResult                                        = resultIndexes.Select(index => Data[index]).ToList();
+        SearchResult                                        = [.. resultIndexes.Select(index => Data[index])];
         cache[keyword + "_" + isIgnoreCase + "_" + isRegex] = resultIndexes;
     }
 }

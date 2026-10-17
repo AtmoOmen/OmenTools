@@ -19,13 +19,29 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
 {
     #region 公开事件
 
-    public delegate void PreLogMessageDelegate(ref bool isPrevented, ref uint logMessageID, ref LogMessageQueueItem item);
+    public delegate void PreLogMessageDelegate
+    (
+        ref bool                isPrevented,
+        ref uint                logMessageID,
+        ref LogMessageQueueItem item
+    );
 
-    public delegate void PostLogMessageDelegate(uint logMessageID, LogMessageQueueItem item);
+    public delegate void PostLogMessageDelegate
+    (
+        uint                logMessageID,
+        LogMessageQueueItem item
+    );
 
-    public delegate void PreInstanceContentTextDelegate(ref bool isPrevented, ref uint rowID);
+    public delegate void PreInstanceContentTextDelegate
+    (
+        ref bool isPrevented,
+        ref uint rowID
+    );
 
-    public delegate void PostInstanceContentTextDelegate(uint rowID);
+    public delegate void PostInstanceContentTextDelegate
+    (
+        uint rowID
+    );
 
     #endregion
 
@@ -35,13 +51,17 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
     private static StringBuilder? LogMessageDebugBuilder;
 
     private Utf8String* EmptyInstanceContentText;
-    
+
     private Hook<InstanceContentDirector.Delegates.GetInstanceContentText>? GetInstanceContentTextHook;
 
     private Hook<InstanceContentTextClip.Delegates.ResolveText>? ResolveTextHook;
 
-    private delegate void                  UpdateDelegate(RaptureLogModule* module);
-    private          Hook<UpdateDelegate>? UpdateHook;
+    private delegate void UpdateDelegate
+    (
+        RaptureLogModule* module
+    );
+
+    private Hook<UpdateDelegate>? UpdateHook;
 
     private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
 
@@ -59,16 +79,17 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         );
         UpdateHook?.Enable();
 
-        if (EmptyInstanceContentText == null)
-            EmptyInstanceContentText = Utf8String.CreateEmpty();
-        
+        EmptyInstanceContentText = EmptyInstanceContentText != null ?
+                                       EmptyInstanceContentText :
+                                       Utf8String.CreateEmpty();
+
         GetInstanceContentTextHook = InstanceContentDirector.StaticVirtualTablePointer->HookVFuncFromName
         (
             "GetInstanceContentText",
             (InstanceContentDirector.Delegates.GetInstanceContentText)GetInstanceContentTextDetour
         );
         GetInstanceContentTextHook.Enable();
-        
+
         ResolveTextHook = InstanceContentTextClip.StaticVirtualTablePointer->HookVFuncFromName
         (
             "ResolveText",
@@ -99,7 +120,10 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
 
     #region Hook
 
-    private void UpdateDetour(RaptureLogModule* module)
+    private void UpdateDetour
+    (
+        RaptureLogModule* module
+    )
     {
         foreach (ref var item in module->LogMessageQueue)
         {
@@ -116,7 +140,10 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
             seenLogMessageObjects.Add((nint)Unsafe.AsPointer(ref item));
     }
 
-    private void ProcessLogMessage(ref LogMessageQueueItem item)
+    private void ProcessLogMessage
+    (
+        ref LogMessageQueueItem item
+    )
     {
         if (item.LogMessageId == 0) return;
 
@@ -131,7 +158,11 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         OnPostReceiveLogMessage(item);
     }
 
-    private Utf8String* GetInstanceContentTextDetour(InstanceContentDirector* director, uint rowID)
+    private Utf8String* GetInstanceContentTextDetour
+    (
+        InstanceContentDirector* director,
+        uint                     rowID
+    )
     {
         if (!OnPreInstanceContentText(ref rowID))
             return EmptyInstanceContentText;
@@ -141,7 +172,10 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         return result;
     }
 
-    private bool ResolveInstanceContentTextClipDetour(InstanceContentTextClip* clip)
+    private bool ResolveInstanceContentTextClipDetour
+    (
+        InstanceContentTextClip* clip
+    )
     {
         if (clip == null || clip->Data == null)
             return ResolveTextHook.Original(clip);
@@ -159,7 +193,10 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         return result;
     }
 
-    private bool OnPreInstanceContentText(ref uint rowID)
+    private bool OnPreInstanceContentText
+    (
+        ref uint rowID
+    )
     {
         if (Config.ShowInstanceContentTextLog)
         {
@@ -185,7 +222,10 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         return true;
     }
 
-    private void OnPostInstanceContentText(uint rowID)
+    private void OnPostInstanceContentText
+    (
+        uint rowID
+    )
     {
         if (methodsCollection.TryGetValue(typeof(PostInstanceContentTextDelegate), out var postDelegates))
         {
@@ -197,7 +237,10 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         }
     }
 
-    private bool OnPreReceiveLogMessage(ref LogMessageQueueItem item)
+    private bool OnPreReceiveLogMessage
+    (
+        ref LogMessageQueueItem item
+    )
     {
         if (Config.ShowLogMessageLog)
         {
@@ -305,7 +348,10 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         return sb;
     }
 
-    private static void ReturnLogMessageDebugBuilder(StringBuilder sb)
+    private static void ReturnLogMessageDebugBuilder
+    (
+        StringBuilder sb
+    )
     {
         if (sb.Capacity > 32 * 1024)
             return;
@@ -314,7 +360,10 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
         LogMessageDebugBuilder = sb;
     }
 
-    private static void TrimEndingNewLine(StringBuilder sb)
+    private static void TrimEndingNewLine
+    (
+        StringBuilder sb
+    )
     {
         if (sb.Length == 0)
             return;
@@ -328,7 +377,10 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
             sb.Length--;
     }
 
-    private void OnPostReceiveLogMessage(LogMessageQueueItem item)
+    private void OnPostReceiveLogMessage
+    (
+        LogMessageQueueItem item
+    )
     {
         if (methodsCollection.TryGetValue(typeof(PostLogMessageDelegate), out var preDelegates))
         {
@@ -344,7 +396,11 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
 
     #region Event
 
-    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
+    private bool RegisterGeneric<T>
+    (
+        T          method,
+        params T[] methods
+    ) where T : Delegate
     {
         var type = typeof(T);
 
@@ -354,19 +410,26 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
             _ =>
             {
                 var list = ImmutableList.Create<Delegate>(method);
-                return methods.Length > 0 ? list.AddRange(methods) : list;
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
             },
             (_, currentList) =>
             {
                 var newList = currentList.Add(method);
-                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
             }
         );
 
         return true;
     }
 
-    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>
+    (
+        params T[] methods
+    ) where T : Delegate
     {
         if (methods is not { Length: > 0 }) return false;
 
@@ -396,23 +459,51 @@ public unsafe class LogMessageManager : OmenServiceBase<LogMessageManager>
     }
 
 
-    public bool RegPre(PreLogMessageDelegate method, params PreLogMessageDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPre
+    (
+        PreLogMessageDelegate          method,
+        params PreLogMessageDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPost(PostLogMessageDelegate method, params PostLogMessageDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPost
+    (
+        PostLogMessageDelegate          method,
+        params PostLogMessageDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPreInstanceContentText(PreInstanceContentTextDelegate method, params PreInstanceContentTextDelegate[] methods) =>
+    public bool RegPreInstanceContentText
+    (
+        PreInstanceContentTextDelegate          method,
+        params PreInstanceContentTextDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPostInstanceContentText(PostInstanceContentTextDelegate method, params PostInstanceContentTextDelegate[] methods) =>
+    public bool RegPostInstanceContentText
+    (
+        PostInstanceContentTextDelegate          method,
+        params PostInstanceContentTextDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool Unreg(params PreLogMessageDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreLogMessageDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostLogMessageDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostLogMessageDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreInstanceContentTextDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreInstanceContentTextDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostInstanceContentTextDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostInstanceContentTextDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
     #endregion
 

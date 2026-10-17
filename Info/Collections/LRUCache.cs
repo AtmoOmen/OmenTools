@@ -20,13 +20,20 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
     private long totalRequests;
     private long cacheHits;
 
-    public LRUCache(int capacity, TimeSpan? defaultExpiration = null, TimeSpan? cleanupInterval = null)
+    public LRUCache
+    (
+        int       inCapacity,
+        TimeSpan? inDefaultExpiration = null,
+        TimeSpan? inCleanupInterval   = null
+    )
     {
-        this.capacity          = capacity > 0 ? capacity : throw new ArgumentException("容量必须大于 0", nameof(capacity));
-        this.defaultExpiration = defaultExpiration ?? TimeSpan.FromMinutes(30);
-        this.cleanupInterval   = cleanupInterval   ?? TimeSpan.FromMinutes(5);
+        capacity = inCapacity > 0 ?
+                       inCapacity :
+                       throw new ArgumentException("容量必须大于 0", nameof(inCapacity));
+        defaultExpiration = inDefaultExpiration ?? TimeSpan.FromMinutes(30);
+        cleanupInterval   = inCleanupInterval   ?? TimeSpan.FromMinutes(5);
 
-        cleanupTimer = new Timer(CleanupExpiredItems, null, this.cleanupInterval, this.cleanupInterval);
+        cleanupTimer = new Timer(CleanupExpiredItems, null, cleanupInterval, cleanupInterval);
         RegisterMemoryPressureNotification();
     }
 
@@ -46,7 +53,9 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         get
         {
             var requests = Interlocked.Read(ref totalRequests);
-            return requests > 0 ? (double)Interlocked.Read(ref cacheHits) / requests : 0;
+            return requests > 0 ?
+                       (double)Interlocked.Read(ref cacheHits) / requests :
+                       0;
         }
     }
 
@@ -55,7 +64,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
     public long CacheHits => Interlocked.Read(ref cacheHits);
 
     public ImmutableList<KeyValuePair<TKey, TValue>> GetItems() =>
-        GetSnapshotItems().ToImmutableList();
+        [.. GetSnapshotItems()];
 
     public KeyValuePair<TKey, TValue>[] GetSnapshotItems()
     {
@@ -71,10 +80,19 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    public TValue GetOrAdd(TKey key, Func<TKey, TValue> valueFactory) =>
+    public TValue GetOrAdd
+    (
+        TKey               key,
+        Func<TKey, TValue> valueFactory
+    ) =>
         GetOrAdd(key, valueFactory, defaultExpiration);
 
-    public TValue GetOrAdd(TKey key, Func<TKey, TValue> valueFactory, TimeSpan expiration)
+    public TValue GetOrAdd
+    (
+        TKey               key,
+        Func<TKey, TValue> valueFactory,
+        TimeSpan           expiration
+    )
     {
         Interlocked.Increment(ref totalRequests);
 
@@ -95,7 +113,11 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    public TValue GetOrAddPermanent(TKey key, Func<TKey, TValue> valueFactory)
+    public TValue GetOrAddPermanent
+    (
+        TKey               key,
+        Func<TKey, TValue> valueFactory
+    )
     {
         Interlocked.Increment(ref totalRequests);
 
@@ -116,7 +138,11 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    public bool TryGet(TKey key, out TValue value)
+    public bool TryGet
+    (
+        TKey       key,
+        out TValue value
+    )
     {
         Interlocked.Increment(ref totalRequests);
 
@@ -131,7 +157,13 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    public bool TryUpdate(TKey key, TValue newValue, TimeSpan? expiration = null, bool? isPermanent = null)
+    public bool TryUpdate
+    (
+        TKey      key,
+        TValue    newValue,
+        TimeSpan? expiration  = null,
+        bool?     isPermanent = null
+    )
     {
         lock (gate)
         {
@@ -139,9 +171,9 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
                 return false;
 
             var permanent = isPermanent ?? node.Value.IsPermanent;
-            var expiresAt = permanent
-                                ? DateTime.MaxValue
-                                : StandardTimeManager.Instance().UTCNow.Add(expiration ?? defaultExpiration);
+            var expiresAt = permanent ?
+                                DateTime.MaxValue :
+                                StandardTimeManager.Instance().UTCNow.Add(expiration ?? defaultExpiration);
 
             node.Value = new CacheItem(key, newValue, expiresAt, permanent);
             MoveToFrontNoLock(node);
@@ -149,7 +181,11 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    public bool TryRemove(TKey key, out TValue value)
+    public bool TryRemove
+    (
+        TKey       key,
+        out TValue value
+    )
     {
         lock (gate)
         {
@@ -196,7 +232,10 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    public void ClearAll(bool includePermanentItems = false)
+    public void ClearAll
+    (
+        bool includePermanentItems = false
+    )
     {
         if (includePermanentItems)
         {
@@ -213,7 +252,10 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         Clear();
     }
 
-    public void RemoveAll(IEnumerable<TKey> keys)
+    public void RemoveAll
+    (
+        IEnumerable<TKey> keys
+    )
     {
         lock (gate)
         {
@@ -225,12 +267,19 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    public void AddOrUpdateAll(IEnumerable<KeyValuePair<TKey, TValue>> items, TimeSpan? expiration = null, bool isPermanent = false)
+    public void AddOrUpdateAll
+    (
+        IEnumerable<KeyValuePair<TKey, TValue>> items,
+        TimeSpan?                               expiration  = null,
+        bool                                    isPermanent = false
+    )
     {
         lock (gate)
         {
-            var now       = StandardTimeManager.Instance().UTCNow;
-            var expiresAt = isPermanent ? DateTime.MaxValue : now.Add(expiration ?? defaultExpiration);
+            var now = StandardTimeManager.Instance().UTCNow;
+            var expiresAt = isPermanent ?
+                                DateTime.MaxValue :
+                                now.Add(expiration ?? defaultExpiration);
 
             foreach (var item in items)
             {
@@ -246,7 +295,11 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    public void AddOrUpdatePermanent(TKey key, TValue value)
+    public void AddOrUpdatePermanent
+    (
+        TKey   key,
+        TValue value
+    )
     {
         lock (gate)
         {
@@ -276,9 +329,16 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
 
         ClearAll(true);
         cleanupTimer.Dispose();
+        GC.SuppressFinalize(this);
     }
 
-    private bool TryGetNodeValueNoLock(TKey key, DateTime utcNow, out LinkedListNode<CacheItem> node, out TValue value)
+    private bool TryGetNodeValueNoLock
+    (
+        TKey                          key,
+        DateTime                      utcNow,
+        out LinkedListNode<CacheItem> node,
+        out TValue                    value
+    )
     {
         if (!cache.TryGetValue(key, out node!))
         {
@@ -297,7 +357,13 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         return true;
     }
 
-    private void AddNewNoLock(TKey key, TValue value, DateTime expirationTime, bool isPermanent)
+    private void AddNewNoLock
+    (
+        TKey     key,
+        TValue   value,
+        DateTime expirationTime,
+        bool     isPermanent
+    )
     {
         if (cache.Count >= capacity)
             RemoveOldestNoLock();
@@ -306,13 +372,19 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         cache[key] = node;
     }
 
-    private void RemoveNodeNoLock(LinkedListNode<CacheItem> node)
+    private void RemoveNodeNoLock
+    (
+        LinkedListNode<CacheItem> node
+    )
     {
         lruList.Remove(node);
         cache.Remove(node.Value.Key);
     }
 
-    private void MoveToFrontNoLock(LinkedListNode<CacheItem> node)
+    private void MoveToFrontNoLock
+    (
+        LinkedListNode<CacheItem> node
+    )
     {
         if (ReferenceEquals(lruList.First, node))
             return;
@@ -338,7 +410,10 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
             RemoveNodeNoLock(lruList.Last);
     }
 
-    private void CleanupExpiredItems(object? state)
+    private void CleanupExpiredItems
+    (
+        object? state
+    )
     {
         if (isDisposed)
             return;
@@ -370,8 +445,7 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
         }
     }
 
-    private void RegisterMemoryPressureNotification()
-    {
+    private void RegisterMemoryPressureNotification() =>
         Task.Run
         (async () =>
             {
@@ -391,9 +465,11 @@ public class LRUCache<TKey, TValue> : IDisposable where TKey : notnull
                 }
             }
         );
-    }
 
-    private void TrimCache(double percentage)
+    private void TrimCache
+    (
+        double percentage
+    )
     {
         if (percentage is <= 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(percentage), "百分比必须在 0 到 1 之间");

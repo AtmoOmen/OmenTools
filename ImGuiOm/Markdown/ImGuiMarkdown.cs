@@ -21,13 +21,13 @@ public sealed class ImGuiMarkdown
 
     public ImGuiMarkdown
     (
-        IEnumerable<IImGuiMarkdownExtension>? extensions = null,
-        MarkdownConfig?                       config     = null
+        IEnumerable<IImGuiMarkdownExtension>? inExtensions = null,
+        MarkdownConfig?                       config       = null
     )
     {
-        this.extensions = extensions?.ToArray() ?? [];
-        Parser          = new(this.extensions);
-        Config          = config ?? new MarkdownConfig();
+        extensions = inExtensions?.ToArray() ?? [];
+        Parser     = new(extensions);
+        Config     = config ?? new MarkdownConfig();
     }
 
     public MarkdownDocument Parse

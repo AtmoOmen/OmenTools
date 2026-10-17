@@ -12,6 +12,22 @@ namespace OmenTools.OmenService.ZoneIndicator;
 
 public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicatorRenderer>
 {
+    private readonly FontManager      fontManager;
+    private readonly FrameworkManager frameworkManager;
+    private readonly WindowManager    windowManager;
+
+    public ZoneIndicatorRenderer
+    (
+        FontManager      inFontManager,
+        FrameworkManager inFrameworkManager,
+        WindowManager    inWindowManager
+    )
+    {
+        fontManager      = inFontManager;
+        frameworkManager = inFrameworkManager;
+        windowManager    = inWindowManager;
+    }
+
     #region 公开
 
     /// <summary>
@@ -75,15 +91,15 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     protected override void Init()
     {
         IClientState.Instance().TerritoryChanged += OnZoneChanged;
-        FrameworkManager.Instance().Reg(OnUpdate, 100);
-        WindowManager.Instance().PostDraw += OnDraw;
+        frameworkManager.Reg(OnUpdate, 100);
+        windowManager.PostDraw += OnDraw;
     }
 
     protected override void Uninit()
     {
         IClientState.Instance().TerritoryChanged -= OnZoneChanged;
-        FrameworkManager.Instance().Unreg(OnUpdate);
-        WindowManager.Instance().PostDraw -= OnDraw;
+        frameworkManager.Unreg(OnUpdate);
+        windowManager.PostDraw -= OnDraw;
 
         masterStore.Clear();
         textSizeCache.Clear();
@@ -95,7 +111,10 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
     #region 事件
 
-    private void OnZoneChanged(uint territoryType)
+    private void OnZoneChanged
+    (
+        uint territoryType
+    )
     {
         foreach (var (id, entry) in masterStore)
         {
@@ -107,7 +126,10 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         RebuildActiveEntries();
     }
 
-    private void OnUpdate(IFramework framework)
+    private void OnUpdate
+    (
+        IFramework framework
+    )
     {
         var entries = activeEntries;
 
@@ -140,7 +162,9 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
                 if (entry.HiddenWhenBlocked)
                 {
-                    cameraPos ??= TryGetCameraPosition(out var cp) ? cp : playerPosition;
+                    cameraPos ??= TryGetCameraPosition(out var cp) ?
+                                      cp :
+                                      playerPosition;
                     if (!RaycastHelper.HasLineOfSight(cameraPos.Value, target.Position))
                         continue;
                 }
@@ -155,10 +179,10 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
             }
 
             if (targetListBuffer.Count > 0)
-                stateListBuffer.Add(new CachedEntryState(entry.ID, targetListBuffer.ToArray(), entry.Surrounding, entry.HideTextLabel));
+                stateListBuffer.Add(new CachedEntryState(entry.ID, [.. targetListBuffer], entry.Surrounding, entry.HideTextLabel));
         }
 
-        cachedDrawStates = stateListBuffer.ToArray();
+        cachedDrawStates = [.. stateListBuffer];
     }
 
     private void OnDraw()
@@ -186,11 +210,13 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
                     if (target.Text is { } textInfo && isOnScreen && (textInfo.Text is not null || textInfo.Image is not null))
                     {
-                        var finalScreenPos = textInfo.TextOffset is { } offset
-                                                 ? screenPosition + new Vector2(offset.X, offset.Y)
-                                                 : screenPosition;
+                        var finalScreenPos = textInfo.TextOffset is { } offset ?
+                                                 screenPosition + new Vector2(offset.X, offset.Y) :
+                                                 screenPosition;
 
-                        var cachedSize = textSizeCache.TryGetValue(cacheKey, out var c) ? c.Size : FallbackTextSize;
+                        var cachedSize = textSizeCache.TryGetValue(cacheKey, out var c) ?
+                                             c.Size :
+                                             FallbackTextSize;
 
                         if (!state.HideTextLabel)
                             DrawTextBackground(bgDrawList, finalScreenPos, target.TextColor, cachedSize);
@@ -242,7 +268,10 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
     #endregion
 
-    private ZoneIndicatorHandle Register(ZoneIndicatorEntryBase entry)
+    private ZoneIndicatorHandle Register
+    (
+        ZoneIndicatorEntryBase entry
+    )
     {
         masterStore[entry.ID] = entry;
         RebuildActiveEntries();
@@ -252,7 +281,10 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     private ulong NewID() =>
         (ulong)Interlocked.Increment(ref nextID);
 
-    internal bool UnregisterByID(ulong id)
+    internal bool UnregisterByID
+    (
+        ulong id
+    )
     {
         if (!masterStore.TryRemove(id, out _))
             return false;
@@ -267,7 +299,11 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         return true;
     }
 
-    internal bool UpdateByID(ulong id, Action<IZoneIndicatorMutable> mutator)
+    internal bool UpdateByID
+    (
+        ulong                         id,
+        Action<IZoneIndicatorMutable> mutator
+    )
     {
         if (!masterStore.TryGetValue(id, out var entry))
             return false;
@@ -291,7 +327,13 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         activeEntries = builder.ToImmutable();
     }
 
-    private static void DrawTextBackground(ImDrawListPtr drawList, Vector2 screenPosition, Vector4 textColor, Vector2 cachedSize)
+    private static void DrawTextBackground
+    (
+        ImDrawListPtr drawList,
+        Vector2       screenPosition,
+        Vector4       textColor,
+        Vector2       cachedSize
+    )
     {
         const float ROUNDING = 5f;
 
@@ -337,12 +379,15 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         ImGui.PopStyleVar(2);
     }
 
-    private void RenderTextItem(TextDrawInfo d)
+    private void RenderTextItem
+    (
+        TextDrawInfo d
+    )
     {
         var pos = d.ScreenPos - (d.CachedSize * 0.5f);
         ImGui.SetCursorScreenPos(pos);
 
-        using (FontManager.Instance().GetUIFont(d.Scale).Push())
+        using (fontManager.GetUIFont(d.Scale).Push())
         using (ImRaii.PushColor(ImGuiCol.Text, d.Color.ToUInt()))
         {
             var textOnlyHeight = 0f;
@@ -353,11 +398,15 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                 {
                     case ({ } image, { } text):
                     {
-                        var (_, cachedTextOnlyH) = textSizeCache.TryGetValue(d.CacheKey, out var c) ? c : (FallbackTextSize, 0f);
+                        var (_, cachedTextOnlyH) = textSizeCache.TryGetValue(d.CacheKey, out var c) ?
+                                                       c :
+                                                       (FallbackTextSize, 0f);
                         var rowOriginY = ImGui.GetCursorPosY();
                         var imageSize  = image.SizeGetter();
-                        var textHeight = cachedTextOnlyH > 0f ? cachedTextOnlyH : ImGui.GetTextLineHeight();
-                        var rowHeight  = Math.Max(imageSize.Y, textHeight);
+                        var textHeight = cachedTextOnlyH > 0f ?
+                                             cachedTextOnlyH :
+                                             ImGui.GetTextLineHeight();
+                        var rowHeight = Math.Max(imageSize.Y, textHeight);
 
                         if (image.Texture.GetWrapOrDefault() is { } imageWrap && imageWrap.Handle != nint.Zero)
                         {
@@ -390,7 +439,12 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         }
     }
 
-    private static void DrawSurrounding(ImDrawListPtr drawList, Vector3 worldPos, ZoneIndicatorSurrounding s)
+    private static void DrawSurrounding
+    (
+        ImDrawListPtr            drawList,
+        Vector3                  worldPos,
+        ZoneIndicatorSurrounding s
+    )
     {
         var gui   = IGameGui.Instance();
         var color = s.Color.ToUInt();
@@ -457,15 +511,25 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                 return;
         }
 
-        var visibleWorld  = screenA is not null ? worldA : worldB;
-        var behindWorld   = screenA is null ? worldA : worldB;
+        var visibleWorld = screenA is not null ?
+                               worldA :
+                               worldB;
+        var behindWorld = screenA is null ?
+                              worldA :
+                              worldB;
         var visibleScreen = screenA ?? screenB!.Value;
 
         if (TryClipToNearPlane(gui, visibleWorld, behindWorld, out var clipScreen))
             drawList.AddLine(visibleScreen, clipScreen, color, thickness);
     }
 
-    private static bool TryClipToNearPlane(IGameGui gui, Vector3 visible, Vector3 behind, out Vector2 clipScreen)
+    private static bool TryClipToNearPlane
+    (
+        IGameGui    gui,
+        Vector3     visible,
+        Vector3     behind,
+        out Vector2 clipScreen
+    )
     {
         clipScreen = default;
 
@@ -484,13 +548,19 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         return gui.WorldToScreen(Vector3.Lerp(visible, behind, lo), out clipScreen);
     }
 
-    private static Vector4 GetStableColor(ReadOnlySeString text)
+    private static Vector4 GetStableColor
+    (
+        ReadOnlySeString text
+    )
     {
         var hue = (GetStableHash(text) & 0x7FFFFFFF) % 360 / 360f;
         return HslToRgb(hue, 0.8f, 0.6f);
     }
 
-    private static int GetStableHash(ReadOnlySeString text)
+    private static int GetStableHash
+    (
+        ReadOnlySeString text
+    )
     {
         var str = text.ToString();
 
@@ -510,18 +580,30 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         }
     }
 
-    private static Vector4 HslToRgb(float h, float s, float l)
+    private static Vector4 HslToRgb
+    (
+        float h,
+        float s,
+        float l
+    )
     {
         if (s == 0)
             return new(l, l, l, 1);
 
-        var q = l < 0.5f ? l * (1 + s) : l + s - (l * s);
+        var q = l < 0.5f ?
+                    l * (1 + s) :
+                    l + s - (l * s);
         var p = (2 * l) - q;
 
         return new(HueToRgb(p, q, h + (1f / 3f)), HueToRgb(p, q, h), HueToRgb(p, q, h - (1f / 3f)), 1);
     }
 
-    private static float HueToRgb(float p, float q, float t)
+    private static float HueToRgb
+    (
+        float p,
+        float q,
+        float t
+    )
     {
         if (t < 0f) t += 1f;
         if (t > 1f) t -= 1f;
@@ -535,7 +617,10 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         };
     }
 
-    private static bool TryGetCameraPosition(out Vector3 position)
+    private static bool TryGetCameraPosition
+    (
+        out Vector3 position
+    )
     {
         position = default;
 

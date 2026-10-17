@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using Dalamud.Hooking;
 using Dalamud.Interface.Textures.TextureWraps;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using OmenTools.Info.Game.Enums;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
 using OmenTools.Threading;
@@ -13,9 +12,26 @@ namespace OmenTools.OmenService;
 
 public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
 {
+    private readonly ExecuteCommandManager executeCommandManager;
+    private readonly GameState             gameState;
+
+    public AchievementManager
+    (
+        GameState             inGameState,
+        ExecuteCommandManager inExecuteCommandManager
+    )
+    {
+        gameState             = inGameState;
+        executeCommandManager = inExecuteCommandManager;
+    }
+
     public Dictionary<uint, AchievementInfo> Infos { get; private set; } = [];
 
-    public bool TryGetAchievement(uint id, [NotNullWhen(true)] out AchievementInfo? achievementInfo)
+    public bool TryGetAchievement
+    (
+        uint                                     id,
+        [NotNullWhen(true)] out AchievementInfo? achievementInfo
+    )
     {
         achievementInfo = null;
 
@@ -36,7 +52,7 @@ public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
                     Infos[id] = new(id, infoTemp.Max, infoTemp.Max);
             }
         }
-        
+
         // 反正不管咋样更新就对了
         SendRequest(id);
 
@@ -47,14 +63,18 @@ public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
         return true;
     }
 
-
-    private delegate void ReceiveAchievementProgressDelegate(Achievement* achievement, uint id, uint current, uint max);
-
+    private delegate void ReceiveAchievementProgressDelegate
+    (
+        Achievement* achievement,
+        uint         id,
+        uint         current,
+        uint         max
+    );
     private Hook<ReceiveAchievementProgressDelegate>? ReceiveAchievementProgressHook;
 
     protected override void Init()
     {
-        GameState.Instance().Logout += OnLogout;
+        gameState.Logout += OnLogout;
 
         ReceiveAchievementProgressHook ??=
             IGameInteropProvider.Instance().HookFromMemberFunction<ReceiveAchievementProgressDelegate>
@@ -68,7 +88,7 @@ public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
 
     protected override void Uninit()
     {
-        GameState.Instance().Logout -= OnLogout;
+        gameState.Logout -= OnLogout;
 
         ReceiveAchievementProgressHook?.Dispose();
         ReceiveAchievementProgressHook = null;
@@ -79,13 +99,22 @@ public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
     private void OnLogout() =>
         Infos.Clear();
 
-    private static void SendRequest(uint id)
+    private void SendRequest
+    (
+        uint id
+    )
     {
         if (!Throttler.Shared.Throttle($"AchievementManager-Request-{id}", 10_000)) return;
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestAchievement, id);
+        executeCommandManager.ExecuteCommand(ExecuteCommandFlag.RequestAchievement, id);
     }
 
-    private void ReceiveAchievementProgressDetour(Achievement* achievement, uint id, uint current, uint max)
+    private void ReceiveAchievementProgressDetour
+    (
+        Achievement* achievement,
+        uint         id,
+        uint         current,
+        uint         max
+    )
     {
         ReceiveAchievementProgressHook.Original(achievement, id, current, max);
         Infos[id] = new(id, current, max);

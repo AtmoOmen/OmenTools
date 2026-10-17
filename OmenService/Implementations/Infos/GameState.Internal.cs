@@ -16,7 +16,10 @@ namespace OmenTools.OmenService;
 public unsafe partial class GameState
 {
     private static readonly CompSig ContentReplyManagerSig =
-        new("48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? 48 83 C4");
+        new
+        (
+            "48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 8D 0D ?? ?? ?? ?? 48 83 C4"
+        );
     private static readonly CompSig ZoneServerIDOffsetSig =
         new
         (
@@ -57,7 +60,7 @@ public unsafe partial class GameState
         var startedFlagAddress   = InstanceContentDirectorDutyStartedFlagSig.ScanText();
         var completedFlagAddress = InstanceContentDirectorDutyCompletedFlagSig.ScanText();
 
-        InstanceContentDirectorDutyStartedOffset   = Marshal.ReadInt32(startedFlagAddress   + 2);
+        InstanceContentDirectorDutyStartedOffset   = Marshal.ReadInt32(startedFlagAddress + 2);
         InstanceContentDirectorDutyStartedFlag     = (byte)~Marshal.ReadByte(startedFlagAddress + 6);
         InstanceContentDirectorDutyCompletedOffset = Marshal.ReadInt32(completedFlagAddress + 2);
         InstanceContentDirectorDutyCompletedFlag   = Marshal.ReadByte(completedFlagAddress  + 6);
@@ -68,7 +71,7 @@ public unsafe partial class GameState
 
         if (IsLoggedIn)
             worldID = CurrentWorld;
-        FrameworkManager.Instance().Reg(OnUpdate);
+        frameworkManager.Reg(OnUpdate);
 
         FateDirectorSetupHook = FateDirectorSetupSig.GetHook<FateDirectorSetupDelegate>(FateDirectorSetupDetour);
         FateDirectorSetupHook.Enable();
@@ -92,7 +95,7 @@ public unsafe partial class GameState
 
     protected override void Uninit()
     {
-        FrameworkManager.Instance().Unreg(OnUpdate);
+        frameworkManager.Unreg(OnUpdate);
 
         IClientState.Instance().Logout -= OnDalamudLogout;
 

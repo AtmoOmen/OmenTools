@@ -5,6 +5,7 @@ using System.Runtime.Loader;
 using Dalamud.Hooking;
 using FFXIVClientStructs.Expansion;
 using Dalamud.IoC;
+using Microsoft.Extensions.DependencyInjection;
 using OmenTools.Dalamud;
 using OmenTools.Dalamud.Services.Game.Object;
 using OmenTools.Dalamud.Services.Game.UI;
@@ -23,7 +24,7 @@ public sealed class DService
     public static void Init
     (
         IDalamudPluginInterface    pluginInterface,
-        Func<DServiceInitOptions>? optionsFunc = null
+        IReadOnlyCollection<Type>? disabledServices = null
     )
     {
         if (IsInitialized || IsDisposed) return;
@@ -32,10 +33,6 @@ public sealed class DService
         pluginInterface.Inject(instance);
 
         instance.ResetServiceState();
-
-        instance.InitOptions = optionsFunc != null ?
-                                   optionsFunc() :
-                                   new();
 
         instance.PI            = pluginInterface;
         instance.UIBuilder     = pluginInterface.UiBuilder;
@@ -49,15 +46,10 @@ public sealed class DService
         {
             ExpansionInterop.Initialize(instance.SigScanner.SearchBase);
 
-            var serviceTypes = instance.DiscoverEnabledServiceTypes();
-            instance.InstantiateServices(serviceTypes);
+            instance.InitializeServices(disabledServices);
 
-            foreach (var serviceType in serviceTypes)
-            {
-                var service = instance.OmenServices[serviceType];
+            foreach (var service in instance.ServiceOrder)
                 service.PublicInit();
-                instance.initializedServiceOrder.Add(serviceType);
-            }
 
             IsInitialized = true;
         }
@@ -97,7 +89,7 @@ public sealed class DService
             InternalInstance.ObjectTable   = null;
             InternalInstance.AetheryteList = null;
             InternalInstance.OmenDalamudServices.Clear();
-            
+
             // TODO: 等待 Lumina 更新 World 定义
             Sheets.Worlds.Clear();
             Sheets.CNWorlds.Clear();
@@ -141,7 +133,7 @@ public sealed class DService
 
     #region 私有
 
-    private DServiceInitOptions InitOptions { get; set; } = new();
+    private ServiceProvider? Container { get; set; }
 
     private Dictionary<Type, OmenServiceBase>     OmenServices        { get; set; } = [];
     private Dictionary<Type, IOmenDalamudService> OmenDalamudServices { get; set; } = [];
@@ -151,48 +143,107 @@ public sealed class DService
 
     private ConditionalWeakTable<AssemblyLoadContext, ConcurrentDictionary<IDalamudHook, byte>> Hooks { get; set; } = new();
 
-    private List<Type> initializedServiceOrder = [];
+    private List<OmenServiceBase> ServiceOrder { get; set; } = [];
 
-    private List<Type> DiscoverEnabledServiceTypes() =>
+    private static Type[] DiscoverServiceTypes() =>
     [
         .. Assembly.GetExecutingAssembly()
                    .GetTypes()
                    .Where(t => typeof(OmenServiceBase).IsAssignableFrom(t) && !t.IsAbstract)
-                   .Where(t => !InitOptions.IsDisabled(t))
     ];
 
-    private void InstantiateServices
+    private void InitializeServices
     (
-        IEnumerable<Type> serviceTypes
+        IReadOnlyCollection<Type>? disabledServices
     )
     {
+        var serviceTypes = DiscoverServiceTypes();
+        var services     = new ServiceCollection();
+
         foreach (var serviceType in serviceTypes)
         {
-            if (Activator.CreateInstance(serviceType) is not OmenServiceBase serviceInstance)
-                throw new InvalidOperationException($"初始化 OmenService 错误: {serviceType.FullName}");
+            if (IsDisabled(serviceType, disabledServices))
+                continue;
 
-            OmenServices.TryAdd(serviceType, serviceInstance);
+            VerifyDependencies(serviceType, disabledServices);
+
+            services.AddSingleton(serviceType, provider => CreateService(provider, serviceType));
         }
+
+        Container = services.BuildServiceProvider();
+
+        foreach (var serviceType in serviceTypes)
+        {
+            if (IsDisabled(serviceType, disabledServices))
+                continue;
+
+            Container.GetRequiredService(serviceType);
+        }
+    }
+
+    private static bool IsDisabled
+    (
+        Type                       serviceType,
+        IReadOnlyCollection<Type>? disabledServices
+    ) =>
+        disabledServices?.Contains(serviceType) == true;
+
+    private static void VerifyDependencies
+    (
+        Type                       serviceType,
+        IReadOnlyCollection<Type>? disabledServices
+    )
+    {
+        if (disabledServices == null || disabledServices.Count == 0)
+            return;
+
+        var constructor = serviceType.GetConstructors()
+                                     .MaxBy(static constructor => constructor.GetParameters().Length);
+
+        if (constructor == null)
+            return;
+
+        foreach (var parameter in constructor.GetParameters())
+        {
+            if (IsDisabled(parameter.ParameterType, disabledServices))
+                throw new InvalidOperationException($"服务 {serviceType.Name} 依赖已禁用的服务 {parameter.ParameterType.Name}");
+        }
+    }
+
+    private OmenServiceBase CreateService
+    (
+        IServiceProvider provider,
+        Type             serviceType
+    )
+    {
+        if (ActivatorUtilities.CreateInstance(provider, serviceType) is not OmenServiceBase service)
+            throw new InvalidOperationException($"初始化 OmenService 错误: {serviceType.FullName}");
+
+        ServiceOrder.Add(service);
+        OmenServices.TryAdd(serviceType, service);
+
+        return service;
     }
 
     private void UninitOmenServices()
     {
-        foreach (var serviceType in initializedServiceOrder.AsEnumerable().Reverse())
+        for (var i = ServiceOrder.Count - 1; i >= 0; i--)
         {
-            if (OmenServices.TryGetValue(serviceType, out var service))
-                service.PublicUninit();
+            if (ServiceOrder[i].IsInitialized)
+                ServiceOrder[i].PublicUninit();
         }
     }
 
     private void ResetServiceState()
     {
+        Container?.Dispose();
+        Container = null;
+
         OmenServices  = [];
+        ServiceOrder  = [];
         TaskHelpers   = [];
         MemoryPatches = [];
         Hooks         = new();
-
-        initializedServiceOrder = [];
-        InitOptions             = new();
     }
 
     internal void RegTaskHelper

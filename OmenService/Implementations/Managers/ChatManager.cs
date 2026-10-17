@@ -30,7 +30,12 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
 
     private Hook<ProcessChatBoxEntryDelegate> ProcessChatBoxEntryHook;
 
-    private delegate void ExecuteCommandInnerDelegate(ShellCommandModule* module, Utf8String* message, UIModule* uiModule);
+    private delegate void ExecuteCommandInnerDelegate
+    (
+        ShellCommandModule* module,
+        Utf8String*         message,
+        UIModule*           uiModule
+    );
 
     private Hook<ExecuteCommandInnerDelegate> ExecuteCommandInnerHook;
 
@@ -38,13 +43,29 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
 
     #region 事件
 
-    public delegate void PreProcessChatBoxEntryDelagte(ref bool isPrevented, ref ReadOnlySeString message, ref bool saveToHistory);
+    public delegate void PreProcessChatBoxEntryDelagte
+    (
+        ref bool             isPrevented,
+        ref ReadOnlySeString message,
+        ref bool             saveToHistory
+    );
 
-    public delegate void PostProcessChatBoxEntryDelagte(ReadOnlySeString message, bool saveToHistory);
+    public delegate void PostProcessChatBoxEntryDelagte
+    (
+        ReadOnlySeString message,
+        bool             saveToHistory
+    );
 
-    public delegate void PreExecuteCommandInnerDelagte(ref bool isPrevented, ref ReadOnlySeString message);
+    public delegate void PreExecuteCommandInnerDelagte
+    (
+        ref bool             isPrevented,
+        ref ReadOnlySeString message
+    );
 
-    public delegate void PostExecuteCommandInnerDelagte(ReadOnlySeString message);
+    public delegate void PostExecuteCommandInnerDelagte
+    (
+        ReadOnlySeString message
+    );
 
     #endregion
 
@@ -69,10 +90,10 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
 
     protected override void Uninit()
     {
-        ProcessChatBoxEntryHook?.Dispose();
+        ProcessChatBoxEntryHook.Dispose();
         ProcessChatBoxEntryHook = null;
 
-        ExecuteCommandInnerHook?.Dispose();
+        ExecuteCommandInnerHook.Dispose();
         ExecuteCommandInnerHook = null;
 
         methodsCollection.Clear();
@@ -80,7 +101,11 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
 
     #region 注册
 
-    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
+    private bool RegisterGeneric<T>
+    (
+        T          method,
+        params T[] methods
+    ) where T : Delegate
     {
         var type = typeof(T);
 
@@ -90,19 +115,26 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
             _ =>
             {
                 var list = ImmutableList.Create<Delegate>(method);
-                return methods.Length > 0 ? list.AddRange(methods) : list;
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
             },
             (_, currentList) =>
             {
                 var newList = currentList.Add(method);
-                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
             }
         );
 
         return true;
     }
 
-    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>
+    (
+        params T[] methods
+    ) where T : Delegate
     {
         if (methods is not { Length: > 0 }) return false;
 
@@ -131,31 +163,65 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
         return false;
     }
 
-    public bool RegPreProcessChatBoxEntry(PreProcessChatBoxEntryDelagte method, params PreProcessChatBoxEntryDelagte[] methods) =>
+    public bool RegPreProcessChatBoxEntry
+    (
+        PreProcessChatBoxEntryDelagte          method,
+        params PreProcessChatBoxEntryDelagte[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPostProcessChatBoxEntry(PostProcessChatBoxEntryDelagte method, params PostProcessChatBoxEntryDelagte[] methods) =>
+    public bool RegPostProcessChatBoxEntry
+    (
+        PostProcessChatBoxEntryDelagte          method,
+        params PostProcessChatBoxEntryDelagte[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPreExecuteCommandInner(PreExecuteCommandInnerDelagte method, params PreExecuteCommandInnerDelagte[] methods) =>
+    public bool RegPreExecuteCommandInner
+    (
+        PreExecuteCommandInnerDelagte          method,
+        params PreExecuteCommandInnerDelagte[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPostExecuteCommandInner(PostExecuteCommandInnerDelagte method, params PostExecuteCommandInnerDelagte[] methods) =>
+    public bool RegPostExecuteCommandInner
+    (
+        PostExecuteCommandInnerDelagte          method,
+        params PostExecuteCommandInnerDelagte[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool Unreg(params PreProcessChatBoxEntryDelagte[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreProcessChatBoxEntryDelagte[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostProcessChatBoxEntryDelagte[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostProcessChatBoxEntryDelagte[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreExecuteCommandInnerDelagte[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreExecuteCommandInnerDelagte[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostExecuteCommandInnerDelagte[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostExecuteCommandInnerDelagte[] methods
+    ) => UnregisterGeneric(methods);
 
     #endregion
 
     #region Invokes
 
-    private void ProcessChatBoxEntryDetour(UIModule* module, Utf8String* message, nint a3, [MarshalAs(UnmanagedType.U1)] bool saveToHistory)
+    private void ProcessChatBoxEntryDetour
+    (
+        UIModule*                          module,
+        Utf8String*                        message,
+        nint                               a3,
+        [MarshalAs(UnmanagedType.U1)] bool saveToHistory
+    )
     {
         if (message == null || !message->StringPtr.HasValue)
         {
@@ -203,7 +269,12 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
         }
     }
 
-    private void ExecuteCommandInnerDetour(ShellCommandModule* module, Utf8String* message, UIModule* uiModule)
+    private void ExecuteCommandInnerDetour
+    (
+        ShellCommandModule* module,
+        Utf8String*         message,
+        UIModule*           uiModule
+    )
     {
         if (message == null || !message->StringPtr.HasValue)
         {
@@ -254,13 +325,21 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
 
     #region 调用
 
-    public void SendMessage(string message, bool saveToHistory = false)
+    public void SendMessage
+    (
+        string message,
+        bool   saveToHistory = false
+    )
     {
         var bytes = Encoding.UTF8.GetBytes(message);
         SendMessage(bytes, saveToHistory);
     }
 
-    public void SendMessage(ReadOnlySpan<byte> message, bool saveToHistory = false)
+    public void SendMessage
+    (
+        ReadOnlySpan<byte> message,
+        bool               saveToHistory = false
+    )
     {
         if (message.Length == 0) return;
 
@@ -268,13 +347,19 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
         ProcessChatBoxEntryDetour(UIModule.Instance(), &utf8String, (nint)(&utf8String), saveToHistory);
     }
 
-    public void SendCommand(string command)
+    public void SendCommand
+    (
+        string command
+    )
     {
         var bytes = Encoding.UTF8.GetBytes(command);
         SendCommand(bytes);
     }
 
-    public void SendCommand(ReadOnlySpan<byte> command)
+    public void SendCommand
+    (
+        ReadOnlySpan<byte> command
+    )
     {
         if (command.Length == 0) return;
 
@@ -282,28 +367,40 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
         ExecuteCommandInnerDetour((ShellCommandModule*)RaptureShellModule.Instance(), &utf8String, UIModule.Instance());
     }
 
-    public void ExecuteMacro(string commands)
+    public void ExecuteMacro
+    (
+        string commands
+    )
     {
         ArgumentNullException.ThrowIfNull(commands);
-        
+
         var commandLines = commands.Split(["\r\n", "\n", "\r"], StringSplitOptions.RemoveEmptyEntries);
         if (commandLines.Length > MAX_MACRO_LINES)
             throw new ArgumentOutOfRangeException(nameof(commands), $"宏命令不能超过 {MAX_MACRO_LINES} 行");
 
         ExecuteMacro(commandLines);
     }
-    
-    public void ExecuteMacro(string[] commands)
+
+    public void ExecuteMacro
+    (
+        string[] commands
+    )
     {
         ArgumentNullException.ThrowIfNull(commands);
-        if (commands.Length > MAX_MACRO_LINES)
-            throw new ArgumentOutOfRangeException(nameof(commands), $"宏命令不能超过 {MAX_MACRO_LINES} 行");
+
+        switch (commands.Length)
+        {
+            case > MAX_MACRO_LINES:
+                throw new ArgumentOutOfRangeException(nameof(commands), $"宏命令不能超过 {MAX_MACRO_LINES} 行");
+        }
+
         if (commands.Length == 0) return;
 
         var shellModule = RaptureShellModule.Instance();
         if (shellModule is null) return;
 
         var macro = new RaptureMacroModule.Macro();
+
         for (var i = 0; i < commands.Length; i++)
         {
             macro.Lines[i].SetString(commands[i]);
@@ -314,17 +411,23 @@ public unsafe class ChatManager : OmenServiceBase<ChatManager>
         ExecuteMacro(&macro);
     }
 
-    public void ExecuteMacro(RaptureMacroModule.Macro* macro)
+    public void ExecuteMacro
+    (
+        RaptureMacroModule.Macro* macro
+    )
     {
         ArgumentNullException.ThrowIfNull(macro);
 
         var shellModule = RaptureShellModule.Instance();
         if (shellModule is null) return;
-        
+
         shellModule->ExecuteMacro(macro);
     }
 
-    public static string SanitiseText(string text)
+    public static string SanitiseText
+    (
+        string text
+    )
     {
         using var utf8String = new Utf8String();
         utf8String.SetString(text);

@@ -16,10 +16,10 @@ internal sealed class MarkdownParser
 
     public MarkdownParser
     (
-        IReadOnlyList<IImGuiMarkdownExtension> extensions
+        IReadOnlyList<IImGuiMarkdownExtension> inExtensions
     )
     {
-        this.extensions = extensions;
+        extensions = inExtensions;
         var builder = new MarkdownPipelineBuilder()
                       .UsePipeTables()
                       .UseTaskLists()

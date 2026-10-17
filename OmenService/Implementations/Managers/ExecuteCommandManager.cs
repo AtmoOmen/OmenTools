@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using OmenTools.Dalamud;
-using OmenTools.Info.Game.Enums;
 using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
 
@@ -18,14 +17,29 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
     #region Hook 定义
 
     [return: MarshalAs(UnmanagedType.U1)]
-    private delegate bool ExecuteCommandDelegate(ExecuteCommandFlag command, uint param1, uint param2, uint param3, uint param4);
+    private delegate bool ExecuteCommandDelegate
+    (
+        ExecuteCommandFlag command,
+        uint               param1,
+        uint               param2,
+        uint               param3,
+        uint               param4
+    );
 
     private Hook<ExecuteCommandDelegate>? ExecuteCommandHook;
 
     private static readonly CompSig ExecuteCommandComplexSig = new("E8 ?? ?? ?? ?? 80 7D ?? ?? 74 ?? 41 0F B6 45");
 
     [return: MarshalAs(UnmanagedType.U1)]
-    private delegate bool ExecuteCommandComplexDelegate(ExecuteCommandComplexFlag command, long target, uint param1, uint param2, uint param3, uint param4);
+    private delegate bool ExecuteCommandComplexDelegate
+    (
+        ExecuteCommandComplexFlag command,
+        long                      target,
+        uint                      param1,
+        uint                      param2,
+        uint                      param3,
+        uint                      param4
+    );
 
     private Hook<ExecuteCommandComplexDelegate>? ExecuteCommandComplexHook;
 
@@ -56,7 +70,14 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         ref uint               param4
     );
 
-    public delegate void PostExecuteCommandDelegate(ExecuteCommandFlag command, uint param1, uint param2, uint param3, uint param4);
+    public delegate void PostExecuteCommandDelegate
+    (
+        ExecuteCommandFlag command,
+        uint               param1,
+        uint               param2,
+        uint               param3,
+        uint               param4
+    );
 
     public delegate void PreExecuteCommandComplexDelegate
     (
@@ -144,7 +165,11 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
 
     #region Register
 
-    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
+    private bool RegisterGeneric<T>
+    (
+        T          method,
+        params T[] methods
+    ) where T : Delegate
     {
         var type = typeof(T);
 
@@ -154,19 +179,26 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
             _ =>
             {
                 var list = ImmutableList.Create<Delegate>(method);
-                return methods.Length > 0 ? list.AddRange(methods) : list;
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
             },
             (_, currentList) =>
             {
                 var newList = currentList.Add(method);
-                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
             }
         );
 
         return true;
     }
 
-    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>
+    (
+        params T[] methods
+    ) where T : Delegate
     {
         if (methods is not { Length: > 0 }) return false;
 
@@ -195,43 +227,91 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
         return false;
     }
 
-    public bool RegPre(PreExecuteCommandDelegate method, params PreExecuteCommandDelegate[] methods) =>
+    public bool RegPre
+    (
+        PreExecuteCommandDelegate          method,
+        params PreExecuteCommandDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPost(PostExecuteCommandDelegate method, params PostExecuteCommandDelegate[] methods) =>
+    public bool RegPost
+    (
+        PostExecuteCommandDelegate          method,
+        params PostExecuteCommandDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPreComplex(PreExecuteCommandComplexDelegate method, params PreExecuteCommandComplexDelegate[] methods) =>
+    public bool RegPreComplex
+    (
+        PreExecuteCommandComplexDelegate          method,
+        params PreExecuteCommandComplexDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPostComplex(PostExecuteCommandComplexDelegate method, params PostExecuteCommandComplexDelegate[] methods) =>
+    public bool RegPostComplex
+    (
+        PostExecuteCommandComplexDelegate          method,
+        params PostExecuteCommandComplexDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPreComplexLocation(PreExecuteCommandComplexLocationDelegate method, params PreExecuteCommandComplexLocationDelegate[] methods) =>
+    public bool RegPreComplexLocation
+    (
+        PreExecuteCommandComplexLocationDelegate          method,
+        params PreExecuteCommandComplexLocationDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
     public bool RegPostComplexLocation
-        (PostExecuteCommandComplexLocationDelegate method, params PostExecuteCommandComplexLocationDelegate[] methods) =>
+    (
+        PostExecuteCommandComplexLocationDelegate          method,
+        params PostExecuteCommandComplexLocationDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool Unreg(params PreExecuteCommandDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreExecuteCommandDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostExecuteCommandDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostExecuteCommandDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreExecuteCommandComplexDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreExecuteCommandComplexDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostExecuteCommandComplexDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostExecuteCommandComplexDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreExecuteCommandComplexLocationDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreExecuteCommandComplexLocationDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostExecuteCommandComplexLocationDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostExecuteCommandComplexLocationDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
     #endregion
 
     #region Hooks
 
     [return: MarshalAs(UnmanagedType.U1)]
-    private bool ExecuteCommandDetour(ExecuteCommandFlag command, uint param1, uint param2, uint param3, uint param4)
+    private bool ExecuteCommandDetour
+    (
+        ExecuteCommandFlag command,
+        uint               param1,
+        uint               param2,
+        uint               param3,
+        uint               param4
+    )
     {
         if (Config.ShowExecuteCommandLog)
         {
@@ -270,7 +350,15 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
     }
 
     [return: MarshalAs(UnmanagedType.U1)]
-    private bool ExecuteCommandComplexDetour(ExecuteCommandComplexFlag command, long target, uint param1, uint param2, uint param3, uint param4)
+    private bool ExecuteCommandComplexDetour
+    (
+        ExecuteCommandComplexFlag command,
+        long                      target,
+        uint                      param1,
+        uint                      param2,
+        uint                      param3,
+        uint                      param4
+    )
     {
         if (Config.ShowExecuteCommandComplexLog)
         {
@@ -317,7 +405,15 @@ public unsafe class ExecuteCommandManager : OmenServiceBase<ExecuteCommandManage
     }
 
     [return: MarshalAs(UnmanagedType.U1)]
-    private bool ExecuteCommandComplexLocationDetour(ExecuteCommandComplexFlag command, Vector3* location, uint param1, uint param2, uint param3, uint param4)
+    private bool ExecuteCommandComplexLocationDetour
+    (
+        ExecuteCommandComplexFlag command,
+        Vector3*                  location,
+        uint                      param1,
+        uint                      param2,
+        uint                      param3,
+        uint                      param4
+    )
     {
         var locationModified = *location;
 

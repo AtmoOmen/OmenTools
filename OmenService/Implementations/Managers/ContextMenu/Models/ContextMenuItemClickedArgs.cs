@@ -5,11 +5,11 @@ public sealed class ContextMenuItemClickedArgs
     internal ContextMenuItemClickedArgs
     (
         ContextMenuOpenedArgs      source,
-        Action<ContextMenuSubmenu> openSubmenu
+        Action<ContextMenuSubmenu> inOpenSubmenu
     )
     {
-        Source           = source;
-        this.openSubmenu = openSubmenu;
+        Source      = source;
+        openSubmenu = inOpenSubmenu;
     }
 
     public ContextMenuOpenedArgs Source { get; }

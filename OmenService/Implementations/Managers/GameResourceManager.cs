@@ -14,9 +14,21 @@ namespace OmenTools.OmenService;
 
 public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
 {
+    private readonly GameState gameState;
+
+    public GameResourceManager
+    (
+        GameState inGameState
+    ) =>
+        gameState = inGameState;
+
     public GameResourceManagerConfig Config { get; private set; } = null!;
 
-    public void AddToBlacklist(Type source, params string[] paths)
+    public void AddToBlacklist
+    (
+        Type            source,
+        params string[] paths
+    )
     {
         registeredPaths.AddOrUpdate
         (
@@ -28,9 +40,13 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
         RegeneratePaths();
     }
 
-    public void AddToBlacklist(Type source, IEnumerable<string> paths)
+    public void AddToBlacklist
+    (
+        Type                source,
+        IEnumerable<string> paths
+    )
     {
-        var items = paths as string[] ?? paths.ToArray();
+        string[] items = [.. paths];
         if (items.Length == 0) return;
 
         registeredPaths.AddOrUpdate
@@ -43,7 +59,11 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
         RegeneratePaths();
     }
 
-    public void RemoveFromBlacklist(Type source, params string[] paths)
+    public void RemoveFromBlacklist
+    (
+        Type            source,
+        params string[] paths
+    )
     {
         if (paths is not { Length: > 0 }) return;
 
@@ -70,9 +90,13 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
         RegeneratePaths();
     }
 
-    public void RemoveFromBlacklist(Type source, IEnumerable<string> paths)
+    public void RemoveFromBlacklist
+    (
+        Type                source,
+        IEnumerable<string> paths
+    )
     {
-        var items = paths as string[] ?? paths.ToArray();
+        string[] items = [.. paths];
         if (items.Length == 0) return;
 
         while (registeredPaths.TryGetValue(source, out var currentList))
@@ -123,8 +147,8 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
             (ResourceManager.Delegates.GetResourceAsync)GetResourceAsyncDetour
         );
 
-        GameState.Instance().Login  += OnLogin;
-        GameState.Instance().Logout += OnLogout;
+        gameState.Login  += OnLogin;
+        gameState.Logout += OnLogout;
 
         if (GameState.IsLoggedIn)
             Toggle(true);
@@ -132,8 +156,8 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
 
     protected override void Uninit()
     {
-        GameState.Instance().Login  -= OnLogin;
-        GameState.Instance().Logout -= OnLogout;
+        gameState.Login  -= OnLogin;
+        gameState.Logout -= OnLogout;
 
         Toggle(false);
 
@@ -223,13 +247,16 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
 
         ResourceHandle* InvokeOriginal()
         {
-            return isSync
-                       ? GetResourceSyncHook.Original(manager, category, type, hash, path, unknown, unkDebugPtr, unkDebugInt)
-                       : GetResourceAsyncHook.Original(manager, category, type, hash, path, unknown, isUnknown, unkDebugPtr, unkDebugInt);
+            return isSync ?
+                       GetResourceSyncHook.Original(manager, category, type, hash, path, unknown, unkDebugPtr, unkDebugInt) :
+                       GetResourceAsyncHook.Original(manager, category, type, hash, path, unknown, isUnknown, unkDebugPtr, unkDebugInt);
         }
     }
 
-    private void Toggle(bool isEnabled)
+    private void Toggle
+    (
+        bool isEnabled
+    )
     {
         GetResourceSyncHook?.Toggle(isEnabled);
         GetResourceAsyncHook?.Toggle(isEnabled);
@@ -260,7 +287,10 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
             crc32 = 0xFFFFFFFFu;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-        public void Update(ReadOnlySpan<byte> data)
+        public void Update
+        (
+            ReadOnlySpan<byte> data
+        )
         {
             var crc = crc32;
 
@@ -344,7 +374,9 @@ public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
             {
                 var c = i;
                 for (var j = 0; j < 8; j++)
-                    c = (c & 1) != 0 ? (c >> 1) ^ POLY : c >> 1;
+                    c = (c & 1) != 0 ?
+                            (c >> 1) ^ POLY :
+                            c >> 1;
                 table[i] = c;
             }
 

@@ -11,6 +11,14 @@ namespace OmenTools.OmenService;
 
 public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 {
+    private readonly GameState gameState;
+
+    public AetheryteRecordManager
+    (
+        GameState inGameState
+    ) =>
+        gameState = inGameState;
+
     public string HouseApartmentTemplate { get; set; } = "{0} {1} (第 {2} 区 {3} 号房间)";
     public string HouseEstateTemplate    { get; set; } = "{0} {1} (第 {2} 区 {3} 号)";
     public string HouseSharedName        { get; set; } = "共享房屋";
@@ -45,9 +53,11 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                               .Where(x => !excludeAethernet || x.IsAetheryte)
                               .OrderBy(x => Vector3.DistanceSquared(x.Position, pos))
                               .ToList();
-        return validAetherytes.Count == 0 ? null : validAetherytes.FirstOrDefault();
+        return validAetherytes.Count == 0 ?
+                   null :
+                   validAetherytes.FirstOrDefault();
     }
-    
+
     protected override void Init()
     {
         if (GameState.IsLoggedIn)
@@ -55,19 +65,19 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
             BuildRecords();
             RefreshRecords();
         }
-        
+
         IClientState.Instance().TerritoryChanged += OnZoneChanged;
-        GameState.Instance().Login                       += OnLogin;
-        GameState.Instance().WorldChanged                += OnWorldChanged;
+        gameState.Login                          += OnLogin;
+        gameState.WorldChanged                   += OnWorldChanged;
     }
 
     protected override void Uninit()
     {
         IClientState.Instance().TerritoryChanged -= OnZoneChanged;
-        GameState.Instance().Login                       -= OnLogin;
-        GameState.Instance().WorldChanged                -= OnWorldChanged;
+        gameState.Login                          -= OnLogin;
+        gameState.WorldChanged                   -= OnWorldChanged;
     }
-    
+
     private void OnWorldChanged
     (
         uint obj
@@ -80,12 +90,15 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     private void OnLogin()
     {
         if (!GameState.IsLoggedIn) return;
-        
+
         BuildRecords();
         RefreshRecords();
     }
 
-    private void OnZoneChanged(uint zone)
+    private void OnZoneChanged
+    (
+        uint zone
+    )
     {
         if (GameState.ContentFinderCondition != 0 ||
             !GameState.IsLoggedIn)
@@ -97,7 +110,7 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     private void BuildRecords()
     {
         Records = [];
-        
+
         foreach (var data in LuminaGetter.Get<Aetheryte>()
                                          .OrderBy(x => x.AethernetGroup)
                                          .ThenBy(x => x.Territory.RowId))
@@ -117,9 +130,9 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                 var regionRow = record.GetZone().PlaceNameRegion.Value;
 
                 // 拉诺西亚 / 萨纳兰 / 黑衣森林
-                var regionName = regionRow.RowId is 22 or 23 or 24
-                                     ? record.GetZone().PlaceNameRegion.Value.Name.ToString()
-                                     : VERSION_OTHER; // 摩杜纳
+                var regionName = regionRow.RowId is 22 or 23 or 24 ?
+                                     record.GetZone().PlaceNameRegion.Value.Name.ToString() :
+                                     VERSION_OTHER; // 摩杜纳
 
                 Records.TryAdd(regionName, []);
                 Records[regionName].Add(record);
@@ -230,8 +243,8 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     {
         var aetheryteID = getAetheryteID(zoneID);
         var data        = LuminaGetter.GetRowOrDefault<Aetheryte>(aetheryteID);
-        var marker      = housingMarkers.Where(x => x.Map.Value.TerritoryType.RowId == zoneID)
-                                        .FirstOrDefault(x => x.SubrowId             == markerSubrowID);
+        var marker = housingMarkers.Where(x => x.Map.Value.TerritoryType.RowId == zoneID)
+                                   .FirstOrDefault(x => x.SubrowId             == markerSubrowID);
         if (data.RowId == 0 || marker.RowId == 0) return;
 
         var territoryName = data.Territory.Value.ExtractPlaceName();
@@ -262,7 +275,10 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     }
 
     // 逆向来的
-    private static uint GetApartmentAetheryteID(uint zoneID) =>
+    private static uint GetApartmentAetheryteID
+    (
+        uint zoneID
+    ) =>
         zoneID switch
         {
             339 => 59U,
@@ -273,7 +289,10 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
         };
 
     // 逆向来的
-    private static uint GetFreeCompanyAetheryteID(uint zoneID) =>
+    private static uint GetFreeCompanyAetheryteID
+    (
+        uint zoneID
+    ) =>
         zoneID switch
         {
             339 => 56U,

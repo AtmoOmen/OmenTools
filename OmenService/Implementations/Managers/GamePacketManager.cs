@@ -17,59 +17,126 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 {
     #region 事件定义
 
-    public delegate void PreSendPacketDelegate(ref bool isPrevented, int opcode, ref nint packet, ref bool isPrioritize);
+    public delegate void PreSendPacketDelegate
+    (
+        ref bool isPrevented,
+        int      opcode,
+        ref nint packet,
+        ref bool isPrioritize
+    );
 
-    public delegate void PostSendPacketDelegate(int opcode, nint packet, bool isPrioritize);
+    public delegate void PostSendPacketDelegate
+    (
+        int  opcode,
+        nint packet,
+        bool isPrioritize
+    );
 
-    public delegate void PreReceivePacketDelegate(ref bool isPrevented, int opcode, ref nint packet);
+    public delegate void PreReceivePacketDelegate
+    (
+        ref bool isPrevented,
+        int      opcode,
+        ref nint packet
+    );
 
-    public delegate void PostReceivePacketDelegate(int opcode, nint packet);
+    public delegate void PostReceivePacketDelegate
+    (
+        int  opcode,
+        nint packet
+    );
 
     #endregion
 
     public GamePacketManagerConfig Config { get; private set; } = null!;
 
-    public void SendPackt<T>(T data) where T : unmanaged, IUpstreamPacket
+    public void SendPackt<T>
+    (
+        T data
+    ) where T : unmanaged, IUpstreamPacket
     {
         var ptr = (byte*)&data;
         if (ptr == null || *(int*)ptr == 0)
             return;
-        
+
         // 打个标记
         SendPacket(Framework.Instance()->NetworkModuleProxy, ptr, 0, 0x9876543);
     }
 
     #region 注册
 
-    public bool RegPreSendPacket(PreSendPacketDelegate method, params PreSendPacketDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPreSendPacket
+    (
+        PreSendPacketDelegate          method,
+        params PreSendPacketDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPostSendPacket(PostSendPacketDelegate method, params PostSendPacketDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPostSendPacket
+    (
+        PostSendPacketDelegate          method,
+        params PostSendPacketDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPreReceivePacket(PreReceivePacketDelegate method, params PreReceivePacketDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPreReceivePacket
+    (
+        PreReceivePacketDelegate          method,
+        params PreReceivePacketDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPostReceivePacket(PostReceivePacketDelegate method, params PostReceivePacketDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPostReceivePacket
+    (
+        PostReceivePacketDelegate          method,
+        params PostReceivePacketDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool Unreg(params PreSendPacketDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreSendPacketDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostSendPacketDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostSendPacketDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreReceivePacketDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreReceivePacketDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostReceivePacketDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostReceivePacketDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
     #endregion
 
 
-    private delegate void* SendPacketDelegate(NetworkModuleProxy* module, byte* packet, uint a3, uint a4);
+    private delegate void* SendPacketDelegate
+    (
+        NetworkModuleProxy* module,
+        byte*               packet,
+        uint                a3,
+        uint                a4
+    );
+
     private static readonly SendPacketDelegate? SendPacket =
         new CompSig("E8 ?? ?? ?? ?? 48 8B D6 48 8B CF E8 ?? ?? ?? ?? 48 8B 8C 24").GetDelegate<SendPacketDelegate>();
 
     private Hook<ZoneClient.Delegates.SendPacket>? SendPacketInternalHook;
 
-    private delegate void ReceivePacketInternalDelegate(PacketDispatcher* dispatcher, uint targetID, nint packet);
+    private delegate void ReceivePacketInternalDelegate
+    (
+        PacketDispatcher* dispatcher,
+        uint              targetID,
+        nint              packet
+    );
+
     private Hook<ReceivePacketInternalDelegate>? ReceivePacketInternalHook;
 
-    private delegate void PacketLogger(byte* packet);
+    private delegate void PacketLogger
+    (
+        byte* packet
+    );
 
     private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
 
@@ -85,7 +152,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
                 (ZoneClient.Delegates.SendPacket)SendPacketInternalDetour
             );
         SendPacketInternalHook.Enable();
-        
+
         ReceivePacketInternalHook =
             PacketDispatcher.StaticVirtualTablePointer->HookVFuncFromName
             (
@@ -159,7 +226,12 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
         return original;
     }
 
-    private void ReceivePacketInternalDetour(PacketDispatcher* dispatcher, uint targetID, nint packet)
+    private void ReceivePacketInternalDetour
+    (
+        PacketDispatcher* dispatcher,
+        uint              targetID,
+        nint              packet
+    )
     {
         packet -= 16;
 
@@ -194,13 +266,22 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 
     #endregion
 
-    private void LogKnownReceivedPacket(int opcode, uint targetID)
+    private void LogKnownReceivedPacket
+    (
+        int  opcode,
+        uint targetID
+    )
     {
         if (Config.ShowReceivedPacketOpcodeLog)
             DLog.Debug($"[Game Packet Manager] [下行] 操作码: {opcode} / 目标: 0x{targetID:X8}");
     }
 
-    private void LogKnownGamePacket(int opcode, byte* packet, bool isPrioritize)
+    private void LogKnownGamePacket
+    (
+        int   opcode,
+        byte* packet,
+        bool  isPrioritize
+    )
     {
         if (Config.ShowGamePacketOpcodeLog)
             DLog.Debug($"[Game Packet Manager] [上行] 操作码: {opcode} / 长度: {*(uint*)(packet + 8)} / 优先级: {isPrioritize}");
@@ -209,12 +290,19 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
             handler.Log(packet);
     }
 
-    private static void LogPacket<T>(byte* packet) where T : unmanaged, IUpstreamPacket =>
+    private static void LogPacket<T>
+    (
+        byte* packet
+    ) where T : unmanaged, IUpstreamPacket =>
         DLog.Debug($"[Game Packet Manager] {((T*)packet)->Log()}");
 
     #region 注册 (私有)
 
-    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
+    private bool RegisterGeneric<T>
+    (
+        T          method,
+        params T[] methods
+    ) where T : Delegate
     {
         var type = typeof(T);
 
@@ -224,19 +312,26 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
             _ =>
             {
                 var list = ImmutableList.Create<Delegate>(method);
-                return methods.Length > 0 ? list.AddRange(methods) : list;
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
             },
             (_, currentList) =>
             {
                 var newList = currentList.Add(method);
-                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
             }
         );
 
         return true;
     }
 
-    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>
+    (
+        params T[] methods
+    ) where T : Delegate
     {
         if (methods is not { Length: > 0 }) return false;
 

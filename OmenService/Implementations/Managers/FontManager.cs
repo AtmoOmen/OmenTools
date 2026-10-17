@@ -13,6 +13,14 @@ namespace OmenTools.OmenService;
 
 public class FontManager : OmenServiceBase<FontManager>
 {
+    private readonly NotifyHelper notifyHelper;
+
+    public FontManager
+    (
+        NotifyHelper inNotifyHelper
+    ) =>
+        notifyHelper = inNotifyHelper;
+
     private static IFontAtlas FontAtlasGame => IUiBuilder.Instance().FontAtlas;
 
     private static readonly unsafe ushort[] DefaultFontRange =
@@ -24,7 +32,11 @@ public class FontManager : OmenServiceBase<FontManager>
             ImGui.GetIO().Fonts.GetGlyphRangesKorean()
         );
 
-    private static unsafe ushort[] BuildRange(ushort[]? extraRanges, params ushort*[] nativeRanges)
+    private static unsafe ushort[] BuildRange
+    (
+        ushort[]?        extraRanges,
+        params ushort*[] nativeRanges
+    )
     {
         var builder = new ImFontGlyphRangesBuilderPtr(ImGuiNative.ImFontGlyphRangesBuilder());
 
@@ -100,13 +112,22 @@ public class FontManager : OmenServiceBase<FontManager>
     public float GlobalFontScale => Config.FontSize / 12f * ImGuiHelpers.GlobalScale;
     public bool  IsFontBuilding  => activeFontBuilds > 0;
 
-    public IFontHandle GetUIFont(float scale) =>
+    public IFontHandle GetUIFont
+    (
+        float scale
+    ) =>
         GetFont(GetActualFontSize(scale));
 
-    public float GetActualFontSize(float scale) =>
+    public float GetActualFontSize
+    (
+        float scale
+    ) =>
         MathF.Round(Config.FontSize * scale * ImGuiHelpers.GlobalScale, 1);
 
-    public IFontHandle GetFont(float size)
+    public IFontHandle GetFont
+    (
+        float size
+    )
     {
         var task = fontTasks.GetOrAdd(size, CreateFontHandleAsync);
 
@@ -115,14 +136,17 @@ public class FontManager : OmenServiceBase<FontManager>
         if (task.IsFaulted)
         {
             fontTasks.TryRemove(size, out _);
-            NotifyHelper.Instance().NotificationError($"字体 (大小: {size}) 构建失败");
+            notifyHelper.NotificationError($"字体 (大小: {size}) 构建失败");
             DLog.Error($"字体 (大小: {size}) 构建失败", task.Exception);
         }
 
         return AxisFont180;
     }
 
-    public async Task RebuildUIFontsAsync(bool clearOld = true)
+    public async Task RebuildUIFontsAsync
+    (
+        bool clearOld = true
+    )
     {
         if (clearOld)
             ClearFontHandles();
@@ -147,7 +171,7 @@ public class FontManager : OmenServiceBase<FontManager>
                 }
                 catch (Exception ex)
                 {
-                    NotifyHelper.Instance().NotificationError($"字体 (大小: {size}) 预构建失败");
+                    notifyHelper.NotificationError($"字体 (大小: {size}) 预构建失败");
                     DLog.Error($"字体 (大小: {size}) 预构建失败", ex);
                 }
             }
@@ -197,7 +221,10 @@ public class FontManager : OmenServiceBase<FontManager>
         FontAtlas?.Dispose();
     }
 
-    private IFontHandle CreateFontHandleDefinition(float size)
+    private IFontHandle CreateFontHandleDefinition
+    (
+        float size
+    )
     {
         var fontPath = Config.FontFileName;
 
@@ -279,7 +306,10 @@ public class FontManager : OmenServiceBase<FontManager>
         );
     }
 
-    private async Task<IFontHandle> CreateFontHandleAsync(float size)
+    private async Task<IFontHandle> CreateFontHandleAsync
+    (
+        float size
+    )
     {
         await semaphore.WaitAsync();
         Interlocked.Increment(ref activeFontBuilds);
@@ -292,7 +322,7 @@ public class FontManager : OmenServiceBase<FontManager>
         }
         catch (Exception ex)
         {
-            NotifyHelper.Instance().NotificationError($"字体 (大小: {size}) 构建失败");
+            notifyHelper.NotificationError($"字体 (大小: {size}) 构建失败");
             DLog.Error($"构建字体 (大小: {size}) 失败", ex);
             throw;
         }

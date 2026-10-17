@@ -31,18 +31,27 @@ public class AhoCorasick
         public int[] OutputIDs { get; set; } = EmptyOutputIDs;
     }
 
-    public AhoCorasick(IEnumerable<string> patterns)
+    public AhoCorasick
+    (
+        IEnumerable<string> inPatterns
+    )
     {
-        ArgumentNullException.ThrowIfNull(patterns);
+        ArgumentNullException.ThrowIfNull(inPatterns);
 
-        this.patterns = NormalizePatterns(patterns);
-        states        = BuildStates(this.patterns);
+        patterns = NormalizePatterns(inPatterns);
+        states   = BuildStates(patterns);
     }
 
-    public bool ContainsAny(string text) =>
+    public bool ContainsAny
+    (
+        string text
+    ) =>
         ContainsAny(text.AsSpan());
 
-    public bool ContainsAny(ReadOnlySpan<char> text)
+    public bool ContainsAny
+    (
+        ReadOnlySpan<char> text
+    )
     {
         if (text.IsEmpty || patterns.Length == 0)
             return false;
@@ -60,18 +69,24 @@ public class AhoCorasick
         return false;
     }
 
-    public IEnumerable<string> FindAllMatches(string text) =>
+    public IEnumerable<string> FindAllMatches
+    (
+        string text
+    ) =>
         FindAllMatchesCore(text.AsSpan());
 
-    private string[] FindAllMatchesCore(ReadOnlySpan<char> text)
+    private string[] FindAllMatchesCore
+    (
+        ReadOnlySpan<char> text
+    )
     {
         if (text.IsEmpty || patterns.Length == 0)
             return [];
 
         byte[]? rentedBuffer = null;
-        var seen = patterns.Length <= 256
-                       ? stackalloc byte[patterns.Length]
-                       : (rentedBuffer = ArrayPool<byte>.Shared.Rent(patterns.Length)).AsSpan(0, patterns.Length);
+        var seen = patterns.Length <= 256 ?
+                       stackalloc byte[patterns.Length] :
+                       (rentedBuffer = ArrayPool<byte>.Shared.Rent(patterns.Length)).AsSpan(0, patterns.Length);
 
         seen.Clear();
 
@@ -98,7 +113,9 @@ public class AhoCorasick
                 }
             }
 
-            return matches.Count == 0 ? [] : [.. matches];
+            return matches.Count == 0 ?
+                       [] :
+                       [.. matches];
         }
         finally
         {
@@ -107,7 +124,10 @@ public class AhoCorasick
         }
     }
 
-    private static string[] NormalizePatterns(IEnumerable<string> source)
+    private static string[] NormalizePatterns
+    (
+        IEnumerable<string> source
+    )
     {
         List<string>    normalizedPatterns = [];
         HashSet<string> deduped            = [with(StringComparer.Ordinal)];
@@ -127,7 +147,10 @@ public class AhoCorasick
         return [.. normalizedPatterns];
     }
 
-    private static Node[] BuildStates(string[] patterns)
+    private static Node[] BuildStates
+    (
+        string[] patterns
+    )
     {
         List<BuilderNode> builderStates = [new()];
 
@@ -141,7 +164,9 @@ public class AhoCorasick
         for (var state = 0; state < builderStates.Count; state++)
         {
             var builderState = builderStates[state];
-            var transitions  = builderState.Transitions.Count == 0 ? EmptyTransitions : builderState.Transitions.ToFrozenDictionary();
+            var transitions = builderState.Transitions.Count == 0 ?
+                                  EmptyTransitions :
+                                  builderState.Transitions.ToFrozenDictionary();
 
             frozenStates[state] = new(transitions, builderState.FailureState, builderState.OutputIDs);
         }
@@ -149,7 +174,12 @@ public class AhoCorasick
         return frozenStates;
     }
 
-    private static void Insert(List<BuilderNode> states, string pattern, int patternID)
+    private static void Insert
+    (
+        List<BuilderNode> states,
+        string            pattern,
+        int               patternID
+    )
     {
         var state = 0;
 
@@ -169,7 +199,10 @@ public class AhoCorasick
         states[state].OutputIDs = [patternID];
     }
 
-    private static void BuildFailureLinks(List<BuilderNode> states)
+    private static void BuildFailureLinks
+    (
+        List<BuilderNode> states
+    )
     {
         if (states.Count == 1)
             return;
@@ -207,7 +240,11 @@ public class AhoCorasick
         }
     }
 
-    private static int[] MergeSortedUnique(int[] current, int[] fallback)
+    private static int[] MergeSortedUnique
+    (
+        int[] current,
+        int[] fallback
+    )
     {
         if (current.Length == 0)
             return fallback;
@@ -252,11 +289,17 @@ public class AhoCorasick
             count++;
         }
 
-        return count == merged.Length ? merged : merged[..count];
+        return count == merged.Length ?
+                   merged :
+                   merged[..count];
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int Advance(int state, char c)
+    private int Advance
+    (
+        int  state,
+        char c
+    )
     {
         while (true)
         {

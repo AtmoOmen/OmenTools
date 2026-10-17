@@ -13,12 +13,12 @@ public sealed class MarkdownDocument
     public MarkdownDocument
     (
         string         markdown,
-        ImGuiMarkdown? renderer = null
+        ImGuiMarkdown? inRenderer = null
     )
     {
-        this.renderer = renderer ?? ImGuiMarkdown.Default;
-        Source        = markdown ?? string.Empty;
-        Ast           = this.renderer.Parser.Parse(Source);
+        renderer = inRenderer ?? ImGuiMarkdown.Default;
+        Source   = markdown   ?? string.Empty;
+        Ast      = renderer.Parser.Parse(Source);
     }
 
     public void Render

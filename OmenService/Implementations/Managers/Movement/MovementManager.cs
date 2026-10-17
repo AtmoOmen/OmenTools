@@ -21,6 +21,14 @@ namespace OmenTools.OmenService;
 
 public partial class MovementManager : OmenServiceBase<MovementManager>
 {
+    private readonly ExecuteCommandManager executeCommandManager;
+
+    public MovementManager
+    (
+        ExecuteCommandManager inExecuteCommandManager
+    ) =>
+        executeCommandManager = inExecuteCommandManager;
+
     public delegate bool TPSmartInZoneDelegate
     (
         Vector3         pos,
@@ -145,7 +153,6 @@ public partial class MovementManager : OmenServiceBase<MovementManager>
         TaskHelper.Enqueue
         (
             () => GameState.TerritoryType == aetheryte.ZoneID &&
-                  LocalPlayerState.Object != null             &&
                   !UIModule.IsScreenReady(),
             "等待进入传送状态",
             weight: 1000,
@@ -197,7 +204,7 @@ public partial class MovementManager : OmenServiceBase<MovementManager>
                         PlayerController.Instance()->MoveControllerWalk.IsMovementInputLocked = true;
                     }
 
-                    while (localPlayer != null && cancellationToken?.IsCancellationRequested == false)
+                    while (cancellationToken?.IsCancellationRequested == false)
                     {
                         // 禁止自动前进
                         unsafe
@@ -287,11 +294,11 @@ public partial class MovementManager : OmenServiceBase<MovementManager>
             else
                 new PositionUpdateInstancePacket(rot, groundPosition, GetInstanceMoveType(PositionUpdateInstancePacket.MoveType.Fly0)).Send();
 
-            ExecuteCommandManager.Instance()
-                                 .ExecuteCommandComplexLocation(ExecuteCommandComplexFlag.Dismount, groundPosition, RotationHelper.CharaToPacket(rot), 1);
+            executeCommandManager
+                .ExecuteCommandComplexLocation(ExecuteCommandComplexFlag.Dismount, groundPosition, RotationHelper.CharaToPacket(rot), 1);
         }
         else
-            ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.Dismount);
+            executeCommandManager.ExecuteCommand(ExecuteCommandFlag.Dismount);
 
         if (restoreControlMode)
         {

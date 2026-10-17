@@ -15,9 +15,24 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
 
     #region 外部委托
 
-    public delegate void GainStatusDelegate(IBattleChara player, ushort id, ushort param, ushort stackCount, TimeSpan remainingTime, ulong sourceID);
+    public delegate void GainStatusDelegate
+    (
+        IBattleChara player,
+        ushort       id,
+        ushort       param,
+        ushort       stackCount,
+        TimeSpan     remainingTime,
+        ulong        sourceID
+    );
 
-    public delegate void LoseStatusDelegate(IBattleChara player, ushort id, ushort param, ushort stackCount, ulong sourceID);
+    public delegate void LoseStatusDelegate
+    (
+        IBattleChara player,
+        ushort       id,
+        ushort       param,
+        ushort       stackCount,
+        ulong        sourceID
+    );
 
     #endregion
 
@@ -76,7 +91,11 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
 
     #region 注册
 
-    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
+    private bool RegisterGeneric<T>
+    (
+        T          method,
+        params T[] methods
+    ) where T : Delegate
     {
         var type = typeof(T);
 
@@ -86,19 +105,26 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
             _ =>
             {
                 var list = ImmutableList.Create<Delegate>(method);
-                return methods.Length > 0 ? list.AddRange(methods) : list;
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
             },
             (_, currentList) =>
             {
                 var newList = currentList.Add(method);
-                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
             }
         );
 
         return true;
     }
 
-    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>
+    (
+        params T[] methods
+    ) where T : Delegate
     {
         if (methods is not { Length: > 0 }) return false;
 
@@ -128,19 +154,41 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
     }
 
 
-    public bool RegGain(GainStatusDelegate method, params GainStatusDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegGain
+    (
+        GainStatusDelegate          method,
+        params GainStatusDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegLose(LoseStatusDelegate method, params LoseStatusDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegLose
+    (
+        LoseStatusDelegate          method,
+        params LoseStatusDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool Unreg(params GainStatusDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params GainStatusDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params LoseStatusDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params LoseStatusDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
     #endregion
 
     #region Hooks
 
-    private void OnGainStatusDetour(BattleChara** player, ushort statusID, float remainingTime, ushort statusParam, ulong sourceID, ushort stackCount)
+    private void OnGainStatusDetour
+    (
+        BattleChara** player,
+        ushort        statusID,
+        float         remainingTime,
+        ushort        statusParam,
+        ulong         sourceID,
+        ushort        stackCount
+    )
     {
         OnGainStatusHook.Original(player, statusID, remainingTime, statusParam, sourceID, stackCount);
 
@@ -149,12 +197,14 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
 
         if (Config.ShowGainStatusLog)
         {
-            var sourceName = sourceID == 0xE000_0000 ? "本地对象" : IObjectTable.Instance().SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
+            var sourceName = sourceID == 0xE000_0000 ?
+                                 "本地对象" :
+                                 IObjectTable.Instance().SearchByEntityID((uint)sourceID)?.Name ?? "未知对象";
             DLog.Debug
             (
                 $"[Character Status Manager] Gain Status\n"                            +
                 $"玩家: {battleChara.Name} ({battleChara.EntityID})\n"                   +
-                $"状态: {LuminaWrapper.GetStatusName(statusID)} ({statusID})\n"        +
+                $"状态: {LuminaWrapper.GetStatusName(statusID)} ({statusID})\n"          +
                 $"剩余时间: {remainingTime:F1} 秒 | 参数: {statusParam} | 层数: {stackCount}\n" +
                 $"来源: {sourceName} ({sourceID})"
             );
@@ -170,7 +220,14 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
         }
     }
 
-    private void OnLoseStatusDetour(BattleChara** player, ushort statusID, ushort statusParam, ulong sourceID, ushort stackCount)
+    private void OnLoseStatusDetour
+    (
+        BattleChara** player,
+        ushort        statusID,
+        ushort        statusParam,
+        ulong         sourceID,
+        ushort        stackCount
+    )
     {
         OnLoseStatusHook.Original(player, statusID, statusParam, sourceID, stackCount);
 
@@ -179,13 +236,15 @@ public unsafe class CharacterStatusManager : OmenServiceBase<CharacterStatusMana
 
         if (Config.ShowLoseStatusLog)
         {
-            var sourceName = sourceID == 0xE000_0000 ? "本地对象" : IObjectTable.Instance().SearchByEntityID((uint)sourceID)?.Name.ToString() ?? "未知对象";
+            var sourceName = sourceID == 0xE000_0000 ?
+                                 "本地对象" :
+                                 IObjectTable.Instance().SearchByEntityID((uint)sourceID)?.Name ?? "未知对象";
             DLog.Debug
             (
-                $"[Character Status Manager] Lose Status\n"                     +
-                $"玩家: {battleChara.Name} ({battleChara.EntityID})\n"            +
+                $"[Character Status Manager] Lose Status\n"                   +
+                $"玩家: {battleChara.Name} ({battleChara.EntityID})\n"          +
                 $"状态: {LuminaWrapper.GetStatusName(statusID)} ({statusID})\n" +
-                $"参数: {statusParam} | 层数: {stackCount}\n"                       +
+                $"参数: {statusParam} | 层数: {stackCount}\n"                     +
                 $"来源: {sourceName} ({sourceID})"
             );
         }

@@ -18,7 +18,7 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
     public TargetManagerConfig Config { get; private set; } = null!;
 
     #region Delegates
-    
+
     public event Action<IGameObject?>? TargetChanged;
 
     public delegate void PreSetHardTargetDelegate
@@ -90,25 +90,58 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
     #endregion
 
     [return: MarshalAs(UnmanagedType.U1)]
-    private delegate bool SetHardTargetDelegate(TargetSystem* system, CSGameObject* target, bool ignoreTargetModes, bool a4, int a5);
+    private delegate bool SetHardTargetDelegate
+    (
+        TargetSystem* system,
+        CSGameObject* target,
+        bool          ignoreTargetModes,
+        bool          a4,
+        int           a5
+    );
+
     private Hook<SetHardTargetDelegate>? SetHardTargetHook;
 
     [return: MarshalAs(UnmanagedType.U1)]
-    private delegate bool SetSoftTargetDelegate(TargetSystem* system, CSGameObject* target);
+    private delegate bool SetSoftTargetDelegate
+    (
+        TargetSystem* system,
+        CSGameObject* target
+    );
+
     private Hook<SetSoftTargetDelegate>? SetSoftTargetHook;
 
-    private delegate void SetFocusTargetDelegate(TargetSystem* system, GameObjectId gameObjectID);
+    private delegate void SetFocusTargetDelegate
+    (
+        TargetSystem* system,
+        GameObjectId  gameObjectID
+    );
+
     private Hook<SetFocusTargetDelegate>? SetFocusTargetHook;
 
-    private delegate ulong InteractWithObjectDelegate(TargetSystem* system, CSGameObject* target, bool checkLoS);
+    private delegate ulong InteractWithObjectDelegate
+    (
+        TargetSystem* system,
+        CSGameObject* target,
+        bool          checkLoS
+    );
+
     private Hook<InteractWithObjectDelegate>? InteractWithObjectHook;
 
-    private delegate void OpenObjectInteractionDelegate(TargetSystem* system, CSGameObject* target);
+    private delegate void OpenObjectInteractionDelegate
+    (
+        TargetSystem* system,
+        CSGameObject* target
+    );
+
     private Hook<OpenObjectInteractionDelegate>? OpenObjectInteractionHook;
 
-    private delegate void AgentHUDUpdateTargetInfoDelegate(AgentHUD* agentHUD);
+    private delegate void AgentHUDUpdateTargetInfoDelegate
+    (
+        AgentHUD* agentHUD
+    );
+
     private Hook<AgentHUDUpdateTargetInfoDelegate>? AgentHUDUpdateTargetInfoHook;
-    
+
     private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
 
     protected override void Init()
@@ -183,11 +216,15 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
         AgentHUDUpdateTargetInfoHook?.Dispose();
         AgentHUDUpdateTargetInfoHook = null;
-        
+
         methodsCollection.Clear();
     }
 
-    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
+    private bool RegisterGeneric<T>
+    (
+        T          method,
+        params T[] methods
+    ) where T : Delegate
     {
         var type = typeof(T);
 
@@ -197,19 +234,26 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
             _ =>
             {
                 var list = ImmutableList.Create<Delegate>(method);
-                return methods.Length > 0 ? list.AddRange(methods) : list;
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
             },
             (_, currentList) =>
             {
                 var newList = currentList.Add(method);
-                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
             }
         );
 
         return true;
     }
 
-    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>
+    (
+        params T[] methods
+    ) where T : Delegate
     {
         if (methods is not { Length: > 0 }) return false;
 
@@ -240,55 +284,132 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
 
     #region Register
 
-    public bool RegPreSetHardTarget(PreSetHardTargetDelegate method, params PreSetHardTargetDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPreSetHardTarget
+    (
+        PreSetHardTargetDelegate          method,
+        params PreSetHardTargetDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPostSetHardTarget(PostSetHardTargetDelegate method, params PostSetHardTargetDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPostSetHardTarget
+    (
+        PostSetHardTargetDelegate          method,
+        params PostSetHardTargetDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPreSetSoftTarget(PreSetSoftTargetDelegate method, params PreSetSoftTargetDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPreSetSoftTarget
+    (
+        PreSetSoftTargetDelegate          method,
+        params PreSetSoftTargetDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPostSetSoftTarget(PostSetSoftTargetDelegate method, params PostSetSoftTargetDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPostSetSoftTarget
+    (
+        PostSetSoftTargetDelegate          method,
+        params PostSetSoftTargetDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPreSetFocusTarget(PreSetFocusTargetDelegate method, params PreSetFocusTargetDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPreSetFocusTarget
+    (
+        PreSetFocusTargetDelegate          method,
+        params PreSetFocusTargetDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPostSetFocusTarget(PostSetFocusTargetDelegate method, params PostSetFocusTargetDelegate[] methods) => RegisterGeneric(method, methods);
+    public bool RegPostSetFocusTarget
+    (
+        PostSetFocusTargetDelegate          method,
+        params PostSetFocusTargetDelegate[] methods
+    ) => RegisterGeneric(method, methods);
 
-    public bool RegPreInteractWithObject(PreInteractWithObjectDelegate method, params PreInteractWithObjectDelegate[] methods) =>
+    public bool RegPreInteractWithObject
+    (
+        PreInteractWithObjectDelegate          method,
+        params PreInteractWithObjectDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPostInteractWithObject(PostInteractWithObjectDelegate method, params PostInteractWithObjectDelegate[] methods) =>
+    public bool RegPostInteractWithObject
+    (
+        PostInteractWithObjectDelegate          method,
+        params PostInteractWithObjectDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPreOpenObjectInteraction(PreOpenObjectInteractionDelegate method, params PreOpenObjectInteractionDelegate[] methods) =>
+    public bool RegPreOpenObjectInteraction
+    (
+        PreOpenObjectInteractionDelegate          method,
+        params PreOpenObjectInteractionDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool RegPostOpenObjectInteraction(PostOpenObjectInteractionDelegate method, params PostOpenObjectInteractionDelegate[] methods) =>
+    public bool RegPostOpenObjectInteraction
+    (
+        PostOpenObjectInteractionDelegate          method,
+        params PostOpenObjectInteractionDelegate[] methods
+    ) =>
         RegisterGeneric(method, methods);
 
-    public bool Unreg(params PreSetHardTargetDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreSetHardTargetDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostSetHardTargetDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostSetHardTargetDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreSetSoftTargetDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreSetSoftTargetDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostSetSoftTargetDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostSetSoftTargetDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreSetFocusTargetDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreSetFocusTargetDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostSetFocusTargetDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostSetFocusTargetDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreInteractWithObjectDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreInteractWithObjectDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostInteractWithObjectDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostInteractWithObjectDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreOpenObjectInteractionDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreOpenObjectInteractionDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostOpenObjectInteractionDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostOpenObjectInteractionDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
     #endregion
 
     #region Hooks
 
-    private bool SetHardTargetDetour(TargetSystem* system, CSGameObject* target, bool ignoreTargetModes, bool a4, int a5)
+    private bool SetHardTargetDetour
+    (
+        TargetSystem* system,
+        CSGameObject* target,
+        bool          ignoreTargetModes,
+        bool          a4,
+        int           a5
+    )
     {
         var gameObj = IObjectTable.Instance().CreateObjectReference((nint)target);
 
@@ -317,8 +438,10 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
             }
         }
 
-        var targetPtr = targetRef == null ? null : (CSGameObject*)targetRef.Address;
-        var original  = SetHardTargetHook.Original(system, targetPtr, ignoreTargetModesRef, a4Ref, a5Ref);
+        var targetPtr = targetRef == null ?
+                            null :
+                            (CSGameObject*)targetRef.Address;
+        var original = SetHardTargetHook.Original(system, targetPtr, ignoreTargetModesRef, a4Ref, a5Ref);
 
         if (methodsCollection.TryGetValue(typeof(PostSetHardTargetDelegate), out var postDelegates))
         {
@@ -329,7 +452,11 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         return original;
     }
 
-    private bool SetSoftTargetDetour(TargetSystem* system, CSGameObject* target)
+    private bool SetSoftTargetDetour
+    (
+        TargetSystem* system,
+        CSGameObject* target
+    )
     {
         var gameObj = IObjectTable.Instance().CreateObjectReference((nint)target);
 
@@ -355,8 +482,10 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
             }
         }
 
-        var targetPtr = targetRef == null ? null : (CSGameObject*)targetRef.Address;
-        var original  = SetSoftTargetHook.Original(system, targetPtr);
+        var targetPtr = targetRef == null ?
+                            null :
+                            (CSGameObject*)targetRef.Address;
+        var original = SetSoftTargetHook.Original(system, targetPtr);
 
         if (methodsCollection.TryGetValue(typeof(PostSetSoftTargetDelegate), out var postDelegates))
         {
@@ -367,7 +496,11 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         return original;
     }
 
-    private void SetFocusTargetDetour(TargetSystem* system, GameObjectId gameObjectID)
+    private void SetFocusTargetDetour
+    (
+        TargetSystem* system,
+        GameObjectId  gameObjectID
+    )
     {
         if (Config.ShowSetFocusTargetLog)
         {
@@ -401,7 +534,12 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         }
     }
 
-    private ulong InteractWithObjectDetour(TargetSystem* system, CSGameObject* target, bool checkLoS)
+    private ulong InteractWithObjectDetour
+    (
+        TargetSystem* system,
+        CSGameObject* target,
+        bool          checkLoS
+    )
     {
         var gameObj = IObjectTable.Instance().CreateObjectReference((nint)target);
 
@@ -428,8 +566,10 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
             }
         }
 
-        var targetPtr = targetRef == null ? null : (CSGameObject*)targetRef.Address;
-        var original  = InteractWithObjectHook.Original(system, targetPtr, checkLoSRef);
+        var targetPtr = targetRef == null ?
+                            null :
+                            (CSGameObject*)targetRef.Address;
+        var original = InteractWithObjectHook.Original(system, targetPtr, checkLoSRef);
 
         if (methodsCollection.TryGetValue(typeof(PostInteractWithObjectDelegate), out var postDelegates))
         {
@@ -440,7 +580,11 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         return original;
     }
 
-    private void OpenObjectInteractionDetour(TargetSystem* system, CSGameObject* target)
+    private void OpenObjectInteractionDetour
+    (
+        TargetSystem* system,
+        CSGameObject* target
+    )
     {
         var gameObj = IObjectTable.Instance().CreateObjectReference((nint)target);
 
@@ -466,7 +610,9 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
             }
         }
 
-        var targetPtr = targetRef == null ? null : (CSGameObject*)targetRef.Address;
+        var targetPtr = targetRef == null ?
+                            null :
+                            (CSGameObject*)targetRef.Address;
         OpenObjectInteractionHook.Original(system, targetPtr);
 
         if (methodsCollection.TryGetValue(typeof(PostOpenObjectInteractionDelegate), out var postDelegates))
@@ -476,10 +622,13 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
         }
     }
 
-    private void AgentHUDUpdateTargetInfoDetour(AgentHUD* agentHUD)
+    private void AgentHUDUpdateTargetInfoDetour
+    (
+        AgentHUD* agentHUD
+    )
     {
         var counterBefore = agentHUD->TargetCounter;
-        
+
         AgentHUDUpdateTargetInfoHook.Original(agentHUD);
 
         if (counterBefore > agentHUD->TargetCounter)
@@ -487,23 +636,70 @@ public sealed unsafe class TargetManager : OmenServiceBase<TargetManager>
     }
 
     #endregion
-    
+
     #region Invokes
 
-    public bool SetHardTarget(IGameObject? target, bool ignoreTargetModes = false, bool a4 = false, int a5 = 0) =>
-        SetHardTargetHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address, ignoreTargetModes, a4, a5);
+    public bool SetHardTarget
+    (
+        IGameObject? target,
+        bool         ignoreTargetModes = false,
+        bool         a4                = false,
+        int          a5                = 0
+    ) =>
+        SetHardTargetHook.Original
+        (
+            TargetSystem.Instance(),
+            target == null ?
+                null :
+                (CSGameObject*)target.Address,
+            ignoreTargetModes,
+            a4,
+            a5
+        );
 
-    public bool SetSoftTarget(IGameObject? target) =>
-        SetSoftTargetHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address);
+    public bool SetSoftTarget
+    (
+        IGameObject? target
+    ) =>
+        SetSoftTargetHook.Original
+        (
+            TargetSystem.Instance(),
+            target == null ?
+                null :
+                (CSGameObject*)target.Address
+        );
 
-    public void SetFocusTarget(GameObjectId gameObjectID) =>
+    public void SetFocusTarget
+    (
+        GameObjectId gameObjectID
+    ) =>
         SetFocusTargetHook.Original(TargetSystem.Instance(), gameObjectID);
 
-    public ulong InteractWithObject(IGameObject? target, bool checkLoS = true) =>
-        InteractWithObjectHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address, checkLoS);
+    public ulong InteractWithObject
+    (
+        IGameObject? target,
+        bool         checkLoS = true
+    ) =>
+        InteractWithObjectHook.Original
+        (
+            TargetSystem.Instance(),
+            target == null ?
+                null :
+                (CSGameObject*)target.Address,
+            checkLoS
+        );
 
-    public void OpenObjectInteraction(IGameObject? target) =>
-        OpenObjectInteractionHook.Original(TargetSystem.Instance(), target == null ? null : (CSGameObject*)target.Address);
+    public void OpenObjectInteraction
+    (
+        IGameObject? target
+    ) =>
+        OpenObjectInteractionHook.Original
+        (
+            TargetSystem.Instance(),
+            target == null ?
+                null :
+                (CSGameObject*)target.Address
+        );
 
     #endregion
 

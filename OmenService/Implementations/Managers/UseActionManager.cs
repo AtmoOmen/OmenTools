@@ -152,7 +152,12 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
 
     private Hook<UseActionLocationDelegate>? UseActionLocationHook;
 
-    private delegate bool IsActionOffCooldownDelegate(ActionManager* manager, ActionType actionType, uint actionID);
+    private delegate bool IsActionOffCooldownDelegate
+    (
+        ActionManager* manager,
+        ActionType     actionType,
+        uint           actionID
+    );
 
     private Hook<IsActionOffCooldownDelegate>? IsActionOffCooldownHook;
 
@@ -176,13 +181,25 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
 
     private static readonly CompSig CharacterStartCastSig = new("E8 ?? ?? ?? ?? 80 7E 22 11");
 
-    private delegate void* CharacterStartCastDelegate(BattleChara* player, ActionType type, uint actionID, nint a4, float rotation, float a6);
+    private delegate void* CharacterStartCastDelegate
+    (
+        BattleChara* player,
+        ActionType   type,
+        uint         actionID,
+        nint         a4,
+        float        rotation,
+        float        a6
+    );
 
     private Hook<CharacterStartCastDelegate>? CharacterStartCastHook;
 
     private static readonly CompSig CanPlayerUseActionSig = new("48 89 5C 24 ?? 57 48 83 EC ?? 8B DA 48 8D 0D");
 
-    private delegate bool CanPlayerUseActionDelegate(ActionManager* manager, uint actionID);
+    private delegate bool CanPlayerUseActionDelegate
+    (
+        ActionManager* manager,
+        uint           actionID
+    );
 
     private readonly CanPlayerUseActionDelegate? CanPlayerUseAction = CanPlayerUseActionSig.GetDelegate<CanPlayerUseActionDelegate>();
 
@@ -225,7 +242,11 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
         CharacterStartCastHook?.Enable();
     }
 
-    private bool RegisterGeneric<T>(T method, params T[] methods) where T : Delegate
+    private bool RegisterGeneric<T>
+    (
+        T          method,
+        params T[] methods
+    ) where T : Delegate
     {
         var type = typeof(T);
 
@@ -235,19 +256,26 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
             _ =>
             {
                 var list = ImmutableList.Create<Delegate>(method);
-                return methods.Length > 0 ? list.AddRange(methods) : list;
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
             },
             (_, currentList) =>
             {
                 var newList = currentList.Add(method);
-                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
             }
         );
 
         return true;
     }
 
-    private bool UnregisterGeneric<T>(params T[] methods) where T : Delegate
+    private bool UnregisterGeneric<T>
+    (
+        params T[] methods
+    ) where T : Delegate
     {
         if (methods is not { Length: > 0 }) return false;
 
@@ -278,50 +306,113 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
 
     #region Register
 
-    public bool RegPreUseAction(PreUseActionDelegate method, params PreUseActionDelegate[] methods)
+    public bool RegPreUseAction
+    (
+        PreUseActionDelegate          method,
+        params PreUseActionDelegate[] methods
+    )
         => RegisterGeneric(method, methods);
 
-    public bool RegPostUseAction(PostUseActionDelegate method, params PostUseActionDelegate[] methods)
+    public bool RegPostUseAction
+    (
+        PostUseActionDelegate          method,
+        params PostUseActionDelegate[] methods
+    )
         => RegisterGeneric(method, methods);
 
-    public bool RegPreUseActionLocation(PreUseActionLocationDelegate method, params PreUseActionLocationDelegate[] methods)
+    public bool RegPreUseActionLocation
+    (
+        PreUseActionLocationDelegate          method,
+        params PreUseActionLocationDelegate[] methods
+    )
         => RegisterGeneric(method, methods);
 
-    public bool RegPostUseActionLocation(PostUseActionLocationDelegate method, params PostUseActionLocationDelegate[] methods)
+    public bool RegPostUseActionLocation
+    (
+        PostUseActionLocationDelegate          method,
+        params PostUseActionLocationDelegate[] methods
+    )
         => RegisterGeneric(method, methods);
 
-    public bool RegPreIsActionOffCooldown(PreIsActionOffCooldownDelegate method, params PreIsActionOffCooldownDelegate[] methods)
+    public bool RegPreIsActionOffCooldown
+    (
+        PreIsActionOffCooldownDelegate          method,
+        params PreIsActionOffCooldownDelegate[] methods
+    )
         => RegisterGeneric(method, methods);
 
-    public bool RegPreCharacterCompleteCast(PreCharacterCompleteCastDelegate method, params PreCharacterCompleteCastDelegate[] methods)
+    public bool RegPreCharacterCompleteCast
+    (
+        PreCharacterCompleteCastDelegate          method,
+        params PreCharacterCompleteCastDelegate[] methods
+    )
         => RegisterGeneric(method, methods);
 
-    public bool RegPostCharacterCompleteCast(PostCharacterCompleteCastDelegate method, params PostCharacterCompleteCastDelegate[] methods)
+    public bool RegPostCharacterCompleteCast
+    (
+        PostCharacterCompleteCastDelegate          method,
+        params PostCharacterCompleteCastDelegate[] methods
+    )
         => RegisterGeneric(method, methods);
 
-    public bool RegPreCharacterStartCast(PreCharacterStartCastDelegate method, params PreCharacterStartCastDelegate[] methods)
+    public bool RegPreCharacterStartCast
+    (
+        PreCharacterStartCastDelegate          method,
+        params PreCharacterStartCastDelegate[] methods
+    )
         => RegisterGeneric(method, methods);
 
-    public bool RegPostCharacterStartCast(PostCharacterStartCastDelegate method, params PostCharacterStartCastDelegate[] methods)
+    public bool RegPostCharacterStartCast
+    (
+        PostCharacterStartCastDelegate          method,
+        params PostCharacterStartCastDelegate[] methods
+    )
         => RegisterGeneric(method, methods);
 
-    public bool Unreg(params PreUseActionDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreUseActionDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostUseActionDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostUseActionDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreUseActionLocationDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreUseActionLocationDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostUseActionLocationDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostUseActionLocationDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreIsActionOffCooldownDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreIsActionOffCooldownDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreCharacterCompleteCastDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreCharacterCompleteCastDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostCharacterCompleteCastDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostCharacterCompleteCastDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PreCharacterStartCastDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PreCharacterStartCastDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
-    public bool Unreg(params PostCharacterStartCastDelegate[] methods) => UnregisterGeneric(methods);
+    public bool Unreg
+    (
+        params PostCharacterStartCastDelegate[] methods
+    ) => UnregisterGeneric(methods);
 
     #endregion
 
@@ -394,7 +485,9 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
         byte           a7
     )
     {
-        var location0 = location != null ? *location : Vector3.Zero;
+        var location0 = location != null ?
+                            *location :
+                            Vector3.Zero;
 
         if (Config.ShowUseActionLocationLog)
         {
@@ -430,7 +523,12 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
         return original;
     }
 
-    private bool IsActionOffCooldownDetour(ActionManager* manager, ActionType actionType, uint actionID)
+    private bool IsActionOffCooldownDetour
+    (
+        ActionManager* manager,
+        ActionType     actionType,
+        uint           actionID
+    )
     {
         if (manager == null) return false;
 
@@ -482,7 +580,9 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
     {
         var actionType   = (ActionType)type;
         var battlePlayer = IBattleChara.Create((nint)player);
-        var location     = locationPtr != null ? *locationPtr : Vector3.Zero;
+        var location = locationPtr != null ?
+                           *locationPtr :
+                           Vector3.Zero;
 
         if (Config.ShowCharacterCompleteCastLog)
         {
@@ -635,7 +735,11 @@ public unsafe class UseActionManager : OmenServiceBase<UseActionManager>
     ) =>
         UseActionLocationHook.Original(ActionManager.Instance(), type, actionID, targetID, &location, extraParam, a7);
 
-    public bool IsActionOffCooldown(ActionType actionType, uint actionID)
+    public bool IsActionOffCooldown
+    (
+        ActionType actionType,
+        uint       actionID
+    )
         => IsActionOffCooldownHook.Original(ActionManager.Instance(), actionType, actionID);
 
     #endregion

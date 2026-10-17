@@ -11,19 +11,25 @@ public class Polygon
     /// <summary>
     ///     创建一个多边形
     /// </summary>
-    /// <param name="vertices">多边形的顶点集合</param>
+    /// <param name="inVertices">多边形的顶点集合</param>
     /// <exception cref="ArgumentException">当无法构成有效多边形时抛出</exception>
-    public Polygon(IEnumerable<Vector2> vertices)
+    public Polygon
+    (
+        IEnumerable<Vector2> inVertices
+    )
     {
-        this.vertices = OptimizePolygon(vertices.ToArray());
-        if (this.vertices.Length < 3)
+        vertices = OptimizePolygon([.. inVertices]);
+        if (vertices.Length < 3)
             throw new ArgumentException("无法构成一个有效的多边形");
     }
 
     /// <summary>
     ///     判断点是否在多边形内部
     /// </summary>
-    public bool IsPointInPolygon(Vector2 point)
+    public bool IsPointInPolygon
+    (
+        Vector2 point
+    )
     {
         var result = false;
         for (int i = 0, j = vertices.Length - 1; i < vertices.Length; j = i++)
@@ -89,7 +95,10 @@ public class Polygon
     /// <summary>
     ///     判断点是否在多边形的边界上
     /// </summary>
-    private bool IsPointOnBoundary(Vector2 point)
+    private bool IsPointOnBoundary
+    (
+        Vector2 point
+    )
     {
         for (int i = 0, j = vertices.Length - 1; i < vertices.Length; j = i++)
             if (IsPointOnLineSegment(point, vertices[i], vertices[j]))
@@ -101,7 +110,12 @@ public class Polygon
     /// <summary>
     ///     判断点是否在线段上
     /// </summary>
-    private static bool IsPointOnLineSegment(Vector2 point, Vector2 start, Vector2 end)
+    private static bool IsPointOnLineSegment
+    (
+        Vector2 point,
+        Vector2 start,
+        Vector2 end
+    )
     {
         var crossProduct = ((point.Y - start.Y) * (end.X - start.X)) - ((point.X - start.X) * (end.Y - start.Y));
 
@@ -158,10 +172,13 @@ public class Polygon
     /// <summary>
     ///     优化多边形顶点
     /// </summary>
-    private static Vector2[] OptimizePolygon(Vector2[] vertices)
+    private static Vector2[] OptimizePolygon
+    (
+        Vector2[] vertices
+    )
     {
-        if (vertices == null || vertices.Length < 3)
-            return vertices ?? [];
+        if (vertices.Length < 3)
+            return vertices;
 
         // 去除重复顶点和距离过近的点
         var uniqueVertices = new List<Vector2>();
@@ -185,19 +202,22 @@ public class Polygon
 
         // 如果剩余点太少，无法构成多边形
         if (uniqueVertices.Count < 3)
-            return uniqueVertices.ToArray();
+            return [.. uniqueVertices];
 
         // 尝试修复自相交的多边形
         uniqueVertices = FixSelfIntersection(uniqueVertices);
 
         // 确保点的顺序是顺时针或逆时针
-        return EnsureSimplePolygon(uniqueVertices.ToArray());
+        return EnsureSimplePolygon([.. uniqueVertices]);
     }
 
     /// <summary>
     ///     尝试修复自相交的多边形
     /// </summary>
-    private static List<Vector2> FixSelfIntersection(List<Vector2> vertices)
+    private static List<Vector2> FixSelfIntersection
+    (
+        List<Vector2> vertices
+    )
     {
         // 如果点数太少，不可能有自相交
         if (vertices.Count <= 3)
@@ -239,7 +259,10 @@ public class Polygon
     /// <summary>
     ///     确保多边形是简单的（无自相交）
     /// </summary>
-    private static Vector2[] EnsureSimplePolygon(Vector2[] vertices)
+    private static Vector2[] EnsureSimplePolygon
+    (
+        Vector2[] vertices
+    )
     {
         if (vertices.Length <= 3)
             return vertices;
@@ -255,7 +278,9 @@ public class Polygon
             );
 
             // 按照与质心连线的角度排序点
-            return vertices
+            return
+            [
+                .. vertices
                    .Select
                    (v => (
                              Point: v,
@@ -264,7 +289,7 @@ public class Polygon
                    )
                    .OrderBy(item => item.Angle)
                    .Select(item => item.Point)
-                   .ToArray();
+            ];
         }
         catch
         {
@@ -276,7 +301,10 @@ public class Polygon
     /// <summary>
     ///     使用 Graham 扫描法计算凸包
     /// </summary>
-    private static Vector2[] ComputeConvexHull(Vector2[] points)
+    private static Vector2[] ComputeConvexHull
+    (
+        Vector2[] points
+    )
     {
         var n = points.Length;
         if (n <= 3)
@@ -308,7 +336,7 @@ public class Polygon
         }
 
         if (m + 1 < 3)
-            return points.Take(m + 1).ToArray();
+            return [.. points.Take(m + 1)];
 
         var stack = new List<Vector2>(m + 1)
         {
@@ -323,19 +351,28 @@ public class Polygon
             stack.Add(points[i]);
         }
 
-        return stack.ToArray();
+        return [.. stack];
     }
 
     /// <summary>
     ///     计算向量叉积
     /// </summary>
-    private static float CrossProduct(Vector2 p0, Vector2 p1, Vector2 p2) =>
+    private static float CrossProduct
+    (
+        Vector2 p0,
+        Vector2 p1,
+        Vector2 p2
+    ) =>
         ((p1.X - p0.X) * (p2.Y - p0.Y)) - ((p2.X - p0.X) * (p1.Y - p0.Y));
 
     /// <summary>
     ///     计算两点间的平方距离
     /// </summary>
-    private static float SquaredDistance(Vector2 p1, Vector2 p2)
+    private static float SquaredDistance
+    (
+        Vector2 p1,
+        Vector2 p2
+    )
     {
         var dx = p2.X - p1.X;
         var dy = p2.Y - p1.Y;
@@ -350,13 +387,19 @@ public class Polygon
         Vector2 pivot
     ) : IComparer<Vector2>
     {
-        public int Compare(Vector2 p1, Vector2 p2)
+        public int Compare
+        (
+            Vector2 p1,
+            Vector2 p2
+        )
         {
             var cross = CrossProduct(pivot, p1, p2);
 
             if (Math.Abs(cross) < EPSILON) return SquaredDistance(pivot, p1).CompareTo(SquaredDistance(pivot, p2));
 
-            return cross > 0 ? -1 : 1;
+            return cross > 0 ?
+                       -1 :
+                       1;
         }
     }
 }

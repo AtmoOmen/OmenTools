@@ -18,6 +18,14 @@ namespace OmenTools.OmenService;
 
 public unsafe partial class GameState : OmenServiceBase<GameState>
 {
+    private readonly FrameworkManager frameworkManager;
+
+    public GameState
+    (
+        FrameworkManager inFrameworkManager
+    ) =>
+        frameworkManager = inFrameworkManager;
+
     #region 事件
 
     /// <summary>
