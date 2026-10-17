@@ -102,36 +102,62 @@ public static class Sheets
                               .ToDictionary(x => x.RowId, x => x)
         );
 
-    [DataShareTag]
-    private const string WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.Worlds";
+    // [DataShareTag]
+    // private const string WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.Worlds";
 
     public static Dictionary<uint, WorldTemp> Worlds { get; } =
-        IDalamudPluginInterface.Instance().GetOrCreateData
-        (
-            WORLDS_TAG,
-            () => LuminaGetter.Get<WorldTemp>()
-                              .Where
-                              (x => x.DataCenter.RowId != 0                          &&
-                                    x.DataCenter.RowId != 13                         && // 北美云服务器
-                                    x.UserType         != 0                          &&
-                                    x.Region           != 0                          &&
-                                    !string.IsNullOrEmpty(x.Name.ToString())         &&
-                                    !string.IsNullOrEmpty(x.InternalName.ToString()) &&
-                                    !x.Name.ToString().Contains('-')                 &&
-                                    !x.Name.ToString().Contains("Test")              && // 繁中测试服务器
-                                    (x.Region - 1) * 1000 is var minWorldID          &&
-                                    x.Region       * 1000 is var maxWorldID          &&
-                                    x.RowId > minWorldID                             &&
-                                    x.RowId < maxWorldID
-                              )
-                              .ToDictionary(x => x.RowId, x => x)
-        );
+        LuminaGetter.Get<WorldTemp>()
+                    .Where
+                    (x => x.DataCenter.RowId != 0                          &&
+                          x.DataCenter.RowId != 13                         && // 北美云服务器
+                          x.UserType         != 0                          &&
+                          x.Region           != 0                          &&
+                          !string.IsNullOrEmpty(x.Name.ToString())         &&
+                          !string.IsNullOrEmpty(x.InternalName.ToString()) &&
+                          !x.Name.ToString().Contains('-')                 &&
+                          !x.Name.ToString().Contains("Test")              && // 繁中测试服务器
+                          (x.Region - 1) * 1000 is var minWorldID          &&
+                          x.Region       * 1000 is var maxWorldID          &&
+                          x.RowId > minWorldID                             &&
+                          x.RowId < maxWorldID
+                    )
+                    .ToDictionary(x => x.RowId, x => x);
 
-    [DataShareTag]
-    private const string CN_WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.CNWorlds";
+    /*IDalamudPluginInterface.Instance().GetOrCreateData
+    (
+        WORLDS_TAG,
+        () => LuminaGetter.Get<WorldTemp>()
+                          .Where
+                          (x => x.DataCenter.RowId != 0                          &&
+                                x.DataCenter.RowId != 13                         && // 北美云服务器
+                                x.UserType         != 0                          &&
+                                x.Region           != 0                          &&
+                                !string.IsNullOrEmpty(x.Name.ToString())         &&
+                                !string.IsNullOrEmpty(x.InternalName.ToString()) &&
+                                !x.Name.ToString().Contains('-')                 &&
+                                !x.Name.ToString().Contains("Test")              && // 繁中测试服务器
+                                (x.Region - 1) * 1000 is var minWorldID          &&
+                                x.Region       * 1000 is var maxWorldID          &&
+                                x.RowId > minWorldID                             &&
+                                x.RowId < maxWorldID
+                          )
+                          .ToDictionary(x => x.RowId, x => x)
+    );*/
+
+    // [DataShareTag]
+    // private const string CN_WORLDS_TAG = "OmenTools.Info.Game.Data.Sheets.CNWorlds";
 
     public static Dictionary<uint, WorldTemp> CNWorlds { get; } =
-        IDalamudPluginInterface.Instance().GetOrCreateData
+        Worlds.Where
+              (x => x.Key is > 1000 and < 2000                   &&
+                    x.Value.DataCenter.RowId              != 0   &&
+                    x.Value.Region                        == 2   &&
+                    x.Value.DataCenter.Value.Region.RowId == 5   &&
+                    x.Value.UserType                      == 101 &&
+                    x.Key                                 != 1200 // 排除“亚马乌罗提”
+              )
+              .ToDictionary(x => x.Key, x => x.Value);
+        /*IDalamudPluginInterface.Instance().GetOrCreateData
         (
             CN_WORLDS_TAG,
             () => Worlds
@@ -144,7 +170,7 @@ public static class Sheets
                         x.Key                                 != 1200 // 排除“亚马乌罗提”
                   )
                   .ToDictionary(x => x.Key, x => x.Value)
-        );
+        );*/
 
     [DataShareTag]
     private const string ZONES_TAG = "OmenTools.Info.Game.Data.Sheets.Zones";

@@ -8,6 +8,7 @@ using Dalamud.IoC;
 using OmenTools.Dalamud;
 using OmenTools.Dalamud.Services.Game.Object;
 using OmenTools.Dalamud.Services.Game.UI;
+using OmenTools.Info.Lumina;
 using OmenTools.Interop.Game;
 using OmenTools.OmenService.Abstractions;
 using OmenTools.Threading;
@@ -96,6 +97,10 @@ public sealed class DService
             InternalInstance.ObjectTable   = null;
             InternalInstance.AetheryteList = null;
             InternalInstance.OmenDalamudServices.Clear();
+            
+            // TODO: 等待 Lumina 更新 World 定义
+            Sheets.Worlds.Clear();
+            Sheets.CNWorlds.Clear();
         }
         catch (Exception ex)
         {
