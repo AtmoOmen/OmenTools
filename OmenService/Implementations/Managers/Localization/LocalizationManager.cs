@@ -174,10 +174,9 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         ArgumentNullException.ThrowIfNull(args);
 
         var snapshot = GetSnapshot();
-        if (!TryResolveFormat(snapshot, key, out var format))
-            return LogMissingKeyAndReturnKey(snapshot, key);
-
-        return ReadOnlySeString.FormatText(format, args, snapshot.Language, message => LogICUFormatError(snapshot, key, message));
+        return TryResolveFormat(snapshot, key, out var format) ?
+                   string.FormatICUText(format, args, snapshot.Language, ex => LogICUFormatError(snapshot, key, ex.Message)) :
+                   LogMissingKeyAndReturnKey(snapshot, key);
     }
 
     public ReadOnlySeString GetSe
@@ -198,7 +197,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
 
         try
         {
-            return ReadOnlySeString.Format
+            return ReadOnlySeString.FormatText
             (
                 format,
                 CultureInfo.CurrentCulture,
@@ -223,10 +222,9 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         ArgumentNullException.ThrowIfNull(args);
 
         var snapshot = GetSnapshot();
-        if (!TryResolveFormat(snapshot, key, out var format))
-            return CreatePlainSeString(LogMissingKeyAndReturnKey(snapshot, key));
-
-        return ReadOnlySeString.Format(format, args, snapshot.Language, message => LogICUFormatError(snapshot, key, message));
+        return TryResolveFormat(snapshot, key, out var format) ?
+                   ReadOnlySeString.FormatICUText(format, args, snapshot.Language, message => LogICUFormatError(snapshot, key, message)) :
+                   CreatePlainSeString(LogMissingKeyAndReturnKey(snapshot, key));
     }
 
     private static void LogICUFormatError
@@ -243,10 +241,9 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
     private ConfiguredState GetConfiguredState()
     {
         var state = Volatile.Read(ref configuredState);
-        if (state.IsConfigured)
-            return state;
-
-        throw new InvalidOperationException("本地化服务尚未配置，请先调用 Configure(...)");
+        return state.IsConfigured ?
+                   state :
+                   throw new InvalidOperationException("本地化服务尚未配置，请先调用 Configure(...)");
     }
 
     private LanguageSnapshot GetSnapshot()
