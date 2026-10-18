@@ -9,6 +9,7 @@ using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
 using Microsoft.Win32;
 using OmenTools.Dalamud;
+using OmenTools.Interop.Windows.Models;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
@@ -68,7 +69,16 @@ public class FontManager
 
     public FontManagerConfig Config { get; private set; } = null!;
 
-    public ConcurrentDictionary<string, string> InstalledFonts { get; private set; } = [];
+    public FrozenDictionary<string, FontFace[]> InstalledFontFamilies { get; private set; } =
+        FrozenDictionary<string, FontFace[]>.Empty;
+
+    public FontFace? GetSelectedFontFace() =>
+        InstalledFontFamilies.Values
+                             .SelectMany(faces => faces)
+                             .FirstOrDefault
+                             (face => face.FaceIndex == Config.FontFaceIndex &&
+                                      string.Equals(face.FilePath, Config.FontFileName, StringComparison.OrdinalIgnoreCase)
+                             );
 
     public IFontHandle AxisFont360 => axisFont360Lazy.Value;
     public IFontHandle AxisFont180 => axisFont180Lazy.Value;
@@ -185,6 +195,18 @@ public class FontManager
     public Task RegenerateInstalledFontsAsync() =>
         Task.Run(RegenerateInstalledFonts, cancelSource.Token);
 
+    public void ApplyFontSelection
+    (
+        FontFace face
+    )
+    {
+        Config.FontFileName  = face.FilePath;
+        Config.FontFaceIndex = face.FaceIndex;
+        Config.Save();
+
+        _ = RebuildUIFontsAsync();
+    }
+
     private IFontAtlas? FontAtlas { get; set; }
 
     private readonly SemaphoreSlim           semaphore    = new(Environment.ProcessorCount, Environment.ProcessorCount);
@@ -274,7 +296,7 @@ public class FontManager
                                 SizePx      = size,
                                 PixelSnapH  = true,
                                 GlyphRanges = DefaultFontRange,
-                                FontNo      = 0
+                                FontNo      = Config.FontFaceIndex
                             }
                         );
 
@@ -338,7 +360,7 @@ public class FontManager
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Windows\Fonts")
         ];
 
-        var localInstalledFonts = new ConcurrentDictionary<string, string>();
+        var localInstalledFaces = new ConcurrentBag<FontFace>();
 
         try
         {
@@ -373,10 +395,8 @@ public class FontManager
                 },
                 file =>
                 {
-                    var familyName = TryReadFontFamilyName(file);
-
-                    if (familyName is not null)
-                        localInstalledFonts.TryAdd(file, familyName);
+                    foreach (var face in ReadFontFaces(file))
+                        localInstalledFaces.Add(face);
                 }
             );
         }
@@ -390,7 +410,17 @@ public class FontManager
         }
         finally
         {
-            InstalledFonts = localInstalledFonts;
+            InstalledFontFamilies = localInstalledFaces
+                                    .OrderBy(face => face.FamilyName, StringComparer.OrdinalIgnoreCase)
+                                    .GroupBy(face => face.FamilyName, StringComparer.OrdinalIgnoreCase)
+                                    .ToFrozenDictionary
+                                    (
+                                        group => group.Key,
+                                        group => group.OrderBy(face => face.FilePath, StringComparer.OrdinalIgnoreCase)
+                                                      .ThenBy(face => face.FaceIndex)
+                                                      .ToArray(),
+                                        StringComparer.OrdinalIgnoreCase
+                                    );
         }
     }
 
@@ -431,11 +461,13 @@ public class FontManager
         return files;
     }
 
-    private static string? TryReadFontFamilyName
+    private static List<FontFace> ReadFontFaces
     (
         string file
     )
     {
+        var faces = new List<FontFace>();
+
         try
         {
             using var stream = new FileStream
@@ -446,122 +478,168 @@ public class FontManager
                 FileShare.ReadWrite | FileShare.Delete
             );
 
-            Span<byte> header = stackalloc byte[4];
-            stream.ReadExactly(header);
+            Span<byte> fileHeader = stackalloc byte[12];
+            stream.ReadExactly(fileHeader);
 
-            if (BinaryPrimitives.ReadUInt32BigEndian(header) == FONT_COLLECTION_TAG)
+            long[] tableDirectories;
+
+            if (BinaryPrimitives.ReadUInt32BigEndian(fileHeader) == FONT_COLLECTION_TAG)
             {
-                Span<byte> collectionHeader = stackalloc byte[12];
-                stream.ReadExactly(collectionHeader);
+                var faceCount = BinaryPrimitives.ReadUInt32BigEndian(fileHeader[8..]);
 
-                var firstFontTableDirectory = BinaryPrimitives.ReadUInt32BigEndian(collectionHeader[8..]);
+                if (faceCount is 0 or > MAX_FONT_COLLECTION_FACES)
+                    return faces;
 
-                if (firstFontTableDirectory <= 0 || firstFontTableDirectory >= stream.Length)
-                    return null;
+                tableDirectories = new long[faceCount];
 
-                stream.Position = firstFontTableDirectory;
-                stream.ReadExactly(header);
-            }
+                Span<byte> faceOffset = stackalloc byte[4];
 
-            if (BinaryPrimitives.ReadUInt32BigEndian(header) is not (SFNT_VERSION_TRUETYPE or SFNT_VERSION_OPENTYPE or SFNT_VERSION_APPLE_TRUETYPE))
-                return null;
-
-            Span<byte> sfntHeader = stackalloc byte[8];
-            stream.ReadExactly(sfntHeader);
-
-            var tableCount = BinaryPrimitives.ReadUInt16BigEndian(sfntHeader);
-
-            Span<byte> tableRecord = stackalloc byte[16];
-
-            long nameTableOffset = -1;
-            long nameTableLength = 0;
-
-            for (var i = 0; i < tableCount; i++)
-            {
-                stream.ReadExactly(tableRecord);
-
-                if (BinaryPrimitives.ReadUInt32BigEndian(tableRecord) != NAME_TABLE_TAG) continue;
-
-                nameTableOffset = BinaryPrimitives.ReadUInt32BigEndian(tableRecord[8..]);
-                nameTableLength = BinaryPrimitives.ReadUInt32BigEndian(tableRecord[12..]);
-                break;
-            }
-
-            if (nameTableOffset < 0 || nameTableLength < 6 || nameTableOffset + nameTableLength > stream.Length)
-                return null;
-
-            var nameTable = new byte[nameTableLength];
-
-            stream.Position = nameTableOffset;
-            stream.ReadExactly(nameTable);
-
-            var recordCount         = BinaryPrimitives.ReadUInt16BigEndian(nameTable.AsSpan(2));
-            var stringStorageOffset = BinaryPrimitives.ReadUInt16BigEndian(nameTable.AsSpan(4));
-
-            var currentLanguageID = unchecked((ushort)CultureInfo.CurrentUICulture.LCID);
-
-            string? localizedName = null;
-            string? englishName   = null;
-            string? windowsName   = null;
-            string? macintoshName = null;
-
-            for (var i = 0; i < recordCount; i++)
-            {
-                var recordStart = 6 + (i * 12);
-
-                if (recordStart + 12 > nameTable.Length) break;
-
-                var record = nameTable.AsSpan(recordStart, 12);
-
-                if (BinaryPrimitives.ReadUInt16BigEndian(record[6..]) != FAMILY_NAME_ID) continue;
-
-                var platformID = BinaryPrimitives.ReadUInt16BigEndian(record);
-                var encodingID = BinaryPrimitives.ReadUInt16BigEndian(record[2..]);
-                var languageID = BinaryPrimitives.ReadUInt16BigEndian(record[4..]);
-                var length     = BinaryPrimitives.ReadUInt16BigEndian(record[8..]);
-                var offset     = BinaryPrimitives.ReadUInt16BigEndian(record[10..]);
-
-                var stringStart = stringStorageOffset + offset;
-
-                if (length == 0 || stringStart + length > nameTable.Length) continue;
-
-                var rawName = nameTable.AsSpan(stringStart, length);
-
-                var familyName = (platformID, encodingID) switch
+                for (var i = 0; i < faceCount; i++)
                 {
-                    (WINDOWS_PLATFORM_ID, WINDOWS_UNICODE_ENCODING_ID) => Encoding.BigEndianUnicode.GetString(rawName).TrimEnd('\0'),
-                    (MACINTOSH_PLATFORM_ID, MAC_ROMAN_ENCODING_ID)     => Encoding.Latin1.GetString(rawName).TrimEnd('\0'),
-                    _                                                  => null
-                };
-
-                if (string.IsNullOrWhiteSpace(familyName)) continue;
-
-                if (platformID == MACINTOSH_PLATFORM_ID)
-                {
-                    macintoshName ??= familyName;
-                    continue;
+                    stream.ReadExactly(faceOffset);
+                    tableDirectories[i] = BinaryPrimitives.ReadUInt32BigEndian(faceOffset);
                 }
-
-                if (languageID == currentLanguageID)
-                    localizedName ??= familyName;
-                else if (languageID == ENGLISH_LANGUAGE_ID)
-                    englishName ??= familyName;
-
-                windowsName ??= familyName;
             }
+            else
+                tableDirectories = [0];
 
-            var result = localizedName ?? englishName ?? windowsName ?? macintoshName;
+            for (var i = 0; i < tableDirectories.Length; i++)
+            {
+                var face = ReadFontFace(stream, file, i, tableDirectories[i]);
 
-            return string.IsNullOrWhiteSpace(result) ?
-                       null :
-                       result.Trim();
+                if (face is not null)
+                    faces.Add(face);
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or SecurityException)
         {
             // ignored
         }
 
-        return null;
+        return faces;
+    }
+
+    private static FontFace? ReadFontFace
+    (
+        FileStream stream,
+        string     file,
+        int        faceIndex,
+        long       tableDirectory
+    )
+    {
+        if (tableDirectory + 12 > stream.Length)
+            return null;
+
+        stream.Position = tableDirectory;
+
+        Span<byte> header = stackalloc byte[4];
+        stream.ReadExactly(header);
+
+        if (BinaryPrimitives.ReadUInt32BigEndian(header) is not (SFNT_VERSION_TRUETYPE or SFNT_VERSION_OPENTYPE or SFNT_VERSION_APPLE_TRUETYPE))
+            return null;
+
+        Span<byte> sfntHeader = stackalloc byte[8];
+        stream.ReadExactly(sfntHeader);
+
+        var tableCount = BinaryPrimitives.ReadUInt16BigEndian(sfntHeader);
+
+        Span<byte> tableRecord = stackalloc byte[16];
+
+        long nameTableOffset = -1;
+        long nameTableLength = 0;
+
+        for (var i = 0; i < tableCount; i++)
+        {
+            if (stream.Position + 16 > stream.Length) break;
+
+            stream.ReadExactly(tableRecord);
+
+            if (BinaryPrimitives.ReadUInt32BigEndian(tableRecord) != NAME_TABLE_TAG) continue;
+
+            nameTableOffset = BinaryPrimitives.ReadUInt32BigEndian(tableRecord[8..]);
+            nameTableLength = BinaryPrimitives.ReadUInt32BigEndian(tableRecord[12..]);
+            break;
+        }
+
+        if (nameTableOffset < 0 || nameTableLength < 6 || nameTableOffset + nameTableLength > stream.Length)
+            return null;
+
+        var nameTable = new byte[nameTableLength];
+
+        stream.Position = nameTableOffset;
+        stream.ReadExactly(nameTable);
+
+        var (familyName, subfamilyName) = ReadFontNames(nameTable);
+
+        return string.IsNullOrWhiteSpace(familyName) ?
+                   null :
+                   new FontFace(file, faceIndex, familyName.Trim(), subfamilyName?.Trim() ?? string.Empty);
+    }
+
+    private static (string? FamilyName, string? SubfamilyName) ReadFontNames
+    (
+        byte[] nameTable
+    )
+    {
+        var recordCount         = BinaryPrimitives.ReadUInt16BigEndian(nameTable.AsSpan(2));
+        var stringStorageOffset = BinaryPrimitives.ReadUInt16BigEndian(nameTable.AsSpan(4));
+
+        var currentLanguageID = unchecked((ushort)CultureInfo.CurrentUICulture.LCID);
+
+        var familyNames    = new string?[NAME_PRIORITY_COUNT];
+        var subfamilyNames = new string?[NAME_PRIORITY_COUNT];
+
+        for (var i = 0; i < recordCount; i++)
+        {
+            var recordStart = 6 + (i * 12);
+
+            if (recordStart + 12 > nameTable.Length) break;
+
+            var record = nameTable.AsSpan(recordStart, 12);
+
+            var target = BinaryPrimitives.ReadUInt16BigEndian(record[6..]) switch
+            {
+                FAMILY_NAME_ID    => familyNames,
+                SUBFAMILY_NAME_ID => subfamilyNames,
+                _                 => null
+            };
+
+            if (target is null) continue;
+
+            var platformID = BinaryPrimitives.ReadUInt16BigEndian(record);
+            var encodingID = BinaryPrimitives.ReadUInt16BigEndian(record[2..]);
+            var languageID = BinaryPrimitives.ReadUInt16BigEndian(record[4..]);
+            var length     = BinaryPrimitives.ReadUInt16BigEndian(record[8..]);
+            var offset     = BinaryPrimitives.ReadUInt16BigEndian(record[10..]);
+
+            var stringStart = stringStorageOffset + offset;
+
+            if (length == 0 || stringStart + length > nameTable.Length) continue;
+
+            var rawName = nameTable.AsSpan(stringStart, length);
+
+            var name = (platformID, encodingID) switch
+            {
+                (WINDOWS_PLATFORM_ID, WINDOWS_UNICODE_ENCODING_ID) => Encoding.BigEndianUnicode.GetString(rawName).TrimEnd('\0'),
+                (MACINTOSH_PLATFORM_ID, MAC_ROMAN_ENCODING_ID)     => Encoding.Latin1.GetString(rawName).TrimEnd('\0'),
+                _                                                  => null
+            };
+
+            if (string.IsNullOrWhiteSpace(name)) continue;
+
+            var priority = platformID switch
+            {
+                MACINTOSH_PLATFORM_ID                    => MACINTOSH_NAME_PRIORITY,
+                _ when languageID == currentLanguageID   => LOCALIZED_NAME_PRIORITY,
+                _ when languageID == ENGLISH_LANGUAGE_ID => ENGLISH_NAME_PRIORITY,
+                _                                        => WINDOWS_NAME_PRIORITY
+            };
+
+            target[priority] ??= name;
+        }
+
+        return (familyNames.FirstOrDefault(name => !string.IsNullOrWhiteSpace(name)),
+                   subfamilyNames.FirstOrDefault(name => !string.IsNullOrWhiteSpace(name)));
     }
 
     private void ClearFontHandles()
@@ -576,10 +654,19 @@ public class FontManager
     {
         public float  FontSize     = 20f;
         public string FontFileName = string.Empty;
+        public int    FontFaceIndex;
 
         public void Save() =>
             this.Save(Instance());
     }
+    
+    public sealed record FontFace
+    (
+        string FilePath,
+        int    FaceIndex,
+        string FamilyName,
+        string SubfamilyName
+    );
 
     #region Lazy Game Fonts
 
@@ -626,12 +713,19 @@ public class FontManager
     private const uint   SFNT_VERSION_OPENTYPE       = 0x4F54544F;
     private const uint   SFNT_VERSION_APPLE_TRUETYPE = 0x74727565;
     private const uint   NAME_TABLE_TAG              = 0x6E616D65;
+    private const uint   MAX_FONT_COLLECTION_FACES   = 256;
     private const ushort FAMILY_NAME_ID              = 1;
+    private const ushort SUBFAMILY_NAME_ID           = 2;
     private const ushort WINDOWS_PLATFORM_ID         = 3;
     private const ushort WINDOWS_UNICODE_ENCODING_ID = 1;
     private const ushort MACINTOSH_PLATFORM_ID       = 1;
     private const ushort MAC_ROMAN_ENCODING_ID       = 0;
     private const ushort ENGLISH_LANGUAGE_ID         = 0x0409;
+    private const int    LOCALIZED_NAME_PRIORITY     = 0;
+    private const int    ENGLISH_NAME_PRIORITY       = 1;
+    private const int    WINDOWS_NAME_PRIORITY       = 2;
+    private const int    MACINTOSH_NAME_PRIORITY     = 3;
+    private const int    NAME_PRIORITY_COUNT         = 4;
     private const string FONT_REGISTRY_KEY           = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts";
 
     #endregion
