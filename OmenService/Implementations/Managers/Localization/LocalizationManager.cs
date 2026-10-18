@@ -177,7 +177,7 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         if (!TryResolveFormat(snapshot, key, out var format))
             return LogMissingKeyAndReturnKey(snapshot, key);
 
-        return ReadOnlySeString.FormatText(format, args, snapshot.Language, message => LogIcuFormatError(snapshot, key, message));
+        return ReadOnlySeString.FormatText(format, args, snapshot.Language, message => LogICUFormatError(snapshot, key, message));
     }
 
     public ReadOnlySeString GetSe
@@ -226,10 +226,10 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
         if (!TryResolveFormat(snapshot, key, out var format))
             return CreatePlainSeString(LogMissingKeyAndReturnKey(snapshot, key));
 
-        return ReadOnlySeString.Format(format, args, snapshot.Language, message => LogIcuFormatError(snapshot, key, message));
+        return ReadOnlySeString.Format(format, args, snapshot.Language, message => LogICUFormatError(snapshot, key, message));
     }
 
-    private static void LogIcuFormatError
+    private static void LogICUFormatError
     (
         LanguageSnapshot snapshot,
         string           key,
