@@ -3,65 +3,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace OmenTools.Extensions;
 
-public static partial class StringExtension
+public static class StringExtension
 {
-    private const int TIMEOUT_MS = 1000;
-
-    [GeneratedRegex(@"^---[\s\S]*?---\s*$", RegexOptions.Multiline, TIMEOUT_MS)]
-    private static partial Regex FrontMatterRegex();
-
-    [GeneratedRegex(@":::[^\n]*\n|:::|:::\s*$", RegexOptions.Multiline, TIMEOUT_MS)]
-    private static partial Regex CustomContainerRegex();
-
-    [GeneratedRegex(@"`{3,}\w*\s*([\s\S]*?)\s*`{3,}", RegexOptions.None, TIMEOUT_MS)]
-    private static partial Regex CodeFenceRegex();
-
-    [GeneratedRegex(@"^#{1,6}\s+(.*)$", RegexOptions.Multiline, TIMEOUT_MS)]
-    private static partial Regex HeaderRegex();
-
-    [GeneratedRegex(@"!\[([^\]]*)\]\([^)]+\)", RegexOptions.None, TIMEOUT_MS)]
-    private static partial Regex ImageRegex();
-
-    [GeneratedRegex(@"(?<!\!)\[([^\]]*)\]\([^)]+\)", RegexOptions.None, TIMEOUT_MS)]
-    private static partial Regex LinkRegex();
-
-    [GeneratedRegex("~~(.*?)~~", RegexOptions.Singleline, TIMEOUT_MS)]
-    private static partial Regex StrikeThroughRegex();
-
-    [GeneratedRegex("`([^`]+)`", RegexOptions.Singleline, TIMEOUT_MS)]
-    private static partial Regex InlineCodeRegex();
-
-    [GeneratedRegex("==([^=]+)==", RegexOptions.Singleline, TIMEOUT_MS)]
-    private static partial Regex HighlightRegex();
-
-    [GeneratedRegex(@"\+\+([^+]+)\+\+", RegexOptions.Singleline, TIMEOUT_MS)]
-    private static partial Regex InsertRegex();
-
-    [GeneratedRegex(@"^>\s?(.*)$", RegexOptions.Multiline, TIMEOUT_MS)]
-    private static partial Regex BlockquoteRegex();
-
-    [GeneratedRegex(@"^[\s]*([-*+]|\d+.)\s+(.*)$", RegexOptions.Multiline, TIMEOUT_MS)]
-    private static partial Regex ListRegex();
-
-    [GeneratedRegex(@"\[\^(.*?)\]:?", RegexOptions.None, TIMEOUT_MS)]
-    private static partial Regex FootnoteRegex();
-
-    [GeneratedRegex("<[^>]+>", RegexOptions.None, TIMEOUT_MS)]
-    private static partial Regex HtmlTagRegex();
-
-    [GeneratedRegex(@"^\|.*?\|\s*$", RegexOptions.Multiline, TIMEOUT_MS)]
-    private static partial Regex TableRegex();
-
-    [GeneratedRegex(@"\n{2,}", RegexOptions.None, TIMEOUT_MS)]
-    private static partial Regex MultipleBlankLineRegex();
-
-    [GeneratedRegex("[ ]{2,}", RegexOptions.None, TIMEOUT_MS)]
-    private static partial Regex MultipleSpaceRegex();
-
     extension(char c)
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -376,33 +322,6 @@ public static partial class StringExtension
                    value - 0x20000u <= 0x2FA1Fu - 0x20000u ||
                    value - 0x30000u <= 0x323AFu - 0x30000u ||
                    value - 0xF900u  <= 0xFAFFu  - 0xF900u;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public string SanitizeMarkdown()
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return string.Empty;
-
-            input = FrontMatterRegex().Replace(input, string.Empty);
-            input = CustomContainerRegex().Replace(input, string.Empty);
-            input = CodeFenceRegex().Replace(input, "$1");
-            input = ImageRegex().Replace(input, "$1");
-            input = LinkRegex().Replace(input, "$1");
-            input = FootnoteRegex().Replace(input, string.Empty);
-            input = HeaderRegex().Replace(input, "$1");
-            input = StrikeThroughRegex().Replace(input, "$1");
-            input = HighlightRegex().Replace(input, "$1");
-            input = InsertRegex().Replace(input, "$1");
-            input = InlineCodeRegex().Replace(input, "$1");
-            input = BlockquoteRegex().Replace(input, "$1");
-            input = ListRegex().Replace(input, "$2");
-            input = HtmlTagRegex().Replace(input, string.Empty);
-            input = TableRegex().Replace(input, " ");
-            input = MultipleBlankLineRegex().Replace(input, "\n");
-            input = MultipleSpaceRegex().Replace(input, " ");
-
-            return input.Trim();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
