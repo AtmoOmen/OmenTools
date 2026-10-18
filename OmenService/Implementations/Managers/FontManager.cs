@@ -466,10 +466,10 @@ public class FontManager
             if (BinaryPrimitives.ReadUInt32BigEndian(header) is not (SFNT_VERSION_TRUETYPE or SFNT_VERSION_OPENTYPE or SFNT_VERSION_APPLE_TRUETYPE))
                 return null;
 
-            Span<byte> tableCountBuffer = stackalloc byte[2];
-            stream.ReadExactly(tableCountBuffer);
+            Span<byte> sfntHeader = stackalloc byte[8];
+            stream.ReadExactly(sfntHeader);
 
-            var tableCount = BinaryPrimitives.ReadUInt16BigEndian(tableCountBuffer);
+            var tableCount = BinaryPrimitives.ReadUInt16BigEndian(sfntHeader);
 
             Span<byte> tableRecord = stackalloc byte[16];
 
@@ -495,7 +495,7 @@ public class FontManager
             stream.Position = nameTableOffset;
             stream.ReadExactly(nameTable);
 
-            var recordCount         = BinaryPrimitives.ReadUInt16BigEndian(nameTable);
+            var recordCount         = BinaryPrimitives.ReadUInt16BigEndian(nameTable.AsSpan(2));
             var stringStorageOffset = BinaryPrimitives.ReadUInt16BigEndian(nameTable.AsSpan(4));
 
             var currentLanguageID = unchecked((ushort)CultureInfo.CurrentUICulture.LCID);
@@ -613,7 +613,7 @@ public class FontManager
 
     private static readonly float[] PreBuildFontSizes = [0.6f, 0.8f, 0.9f, 1.0f, 1.2f, 1.4f, 1.6f];
 
-    private static readonly string[] FontExtensions = [".ttf", ".otf", ".ttc"];
+    private static readonly string[] FontExtensions = [".ttf", ".otf", ".ttc", ".otc"];
 
     private static readonly FrozenSet<string> FontExtensionSet = FontExtensions.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
