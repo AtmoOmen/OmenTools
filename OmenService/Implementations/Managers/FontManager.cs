@@ -1,26 +1,23 @@
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
-using System.Drawing.Text;
-using System.Runtime.InteropServices;
+using System.Globalization;
 using System.Security;
+using System.Text;
 using Dalamud.Interface.GameFonts;
 using Dalamud.Interface.ManagedFontAtlas;
 using Dalamud.Interface.Utility;
+using Microsoft.Win32;
 using OmenTools.Dalamud;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
 
-public class FontManager : OmenServiceBase<FontManager>
+public class FontManager
+(
+    NotifyHelper notifyHelper
+) : OmenServiceBase<FontManager>
 {
-    private readonly NotifyHelper notifyHelper;
-
-    public FontManager
-    (
-        NotifyHelper inNotifyHelper
-    ) =>
-        notifyHelper = inNotifyHelper;
-
     private static IFontAtlas FontAtlasGame => IUiBuilder.Instance().FontAtlas;
 
     private static readonly unsafe ushort[] DefaultFontRange =
@@ -337,35 +334,34 @@ public class FontManager : OmenServiceBase<FontManager>
     {
         string[] fontDirectories =
         [
-            @"C:\Windows\Fonts",
+            Environment.GetFolderPath(Environment.SpecialFolder.Fonts),
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Windows\Fonts")
         ];
 
-        var fontExtensions = FontExtensions.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
-
         var localInstalledFonts = new ConcurrentDictionary<string, string>();
-        var errors              = new ConcurrentBag<Exception>();
-
-        var       errorCounter = 0;
-        const int MAX_ERRORS   = 100;
 
         try
         {
-            var allFontFiles = fontDirectories
-                               .Where(Directory.Exists)
-                               .SelectMany
-                               (dir => Directory.EnumerateFiles
-                                (
-                                    dir,
-                                    "*.*",
-                                    new EnumerationOptions
-                                    {
-                                        RecurseSubdirectories = true,
-                                        IgnoreInaccessible    = true
-                                    }
-                                )
-                               )
-                               .Where(f => fontExtensions.Contains(Path.GetExtension(f)));
+            var directoryFontFiles = fontDirectories
+                                     .Where(Directory.Exists)
+                                     .SelectMany
+                                     (dir => Directory.EnumerateFiles
+                                      (
+                                          dir,
+                                          "*.*",
+                                          new EnumerationOptions
+                                          {
+                                              RecurseSubdirectories = true,
+                                              IgnoreInaccessible    = true,
+                                              AttributesToSkip      = FileAttributes.None
+                                          }
+                                      )
+                                     )
+                                     .Where(f => FontExtensionSet.Contains(Path.GetExtension(f)));
+
+            var allFontFiles = directoryFontFiles
+                               .Concat(GetRegisteredFontFiles().Where(File.Exists))
+                               .Distinct(StringComparer.OrdinalIgnoreCase);
 
             Parallel.ForEach
             (
@@ -375,35 +371,13 @@ public class FontManager : OmenServiceBase<FontManager>
                     MaxDegreeOfParallelism = Environment.ProcessorCount,
                     CancellationToken      = cancelSource.Token
                 },
-                () => new PrivateFontCollection(),
-                (file, loopState, _, threadLocalPfc) =>
+                file =>
                 {
-                    if (Volatile.Read(ref errorCounter) >= MAX_ERRORS)
-                    {
-                        loopState.Stop();
-                        return threadLocalPfc;
-                    }
+                    var familyName = TryReadFontFamilyName(file);
 
-                    try
-                    {
-                        threadLocalPfc.AddFontFile(file);
-
-                        if (threadLocalPfc.Families.Length > 0)
-                            localInstalledFonts.TryAdd(file, threadLocalPfc.Families[0].Name);
-
-                        threadLocalPfc.Dispose();
-                        return new PrivateFontCollection();
-                    }
-                    catch (Exception ex) when (ex is IOException or SecurityException or UnauthorizedAccessException or ExternalException)
-                    {
-                        if (Interlocked.Increment(ref errorCounter) <= MAX_ERRORS)
-                            errors.Add(ex);
-
-                        threadLocalPfc.Dispose();
-                        return new PrivateFontCollection();
-                    }
-                },
-                threadLocalPfc => threadLocalPfc.Dispose()
+                    if (familyName is not null)
+                        localInstalledFonts.TryAdd(file, familyName);
+                }
             );
         }
         catch (OperationCanceledException)
@@ -417,10 +391,177 @@ public class FontManager : OmenServiceBase<FontManager>
         finally
         {
             InstalledFonts = localInstalledFonts;
-
-            foreach (var error in errors)
-                DLog.Error("尝试获取本机安装字体时出错", error);
         }
+    }
+
+    private static List<string> GetRegisteredFontFiles()
+    {
+        var fontsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+        var files          = new List<string>();
+
+        try
+        {
+            RegistryKey[] registryRoots = [Registry.LocalMachine, Registry.CurrentUser];
+
+            foreach (var registryRoot in registryRoots)
+            {
+                using var fontsKey = registryRoot.OpenSubKey(FONT_REGISTRY_KEY);
+
+                if (fontsKey is null) continue;
+
+                foreach (var valueName in fontsKey.GetValueNames())
+                {
+                    if (fontsKey.GetValue(valueName) is not string value) continue;
+
+                    var path = Environment.ExpandEnvironmentVariables(value);
+
+                    if (!Path.IsPathRooted(path))
+                        path = Path.Combine(fontsDirectory, path);
+
+                    if (FontExtensionSet.Contains(Path.GetExtension(path)))
+                        files.Add(path);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException or IOException or PlatformNotSupportedException)
+        {
+            // ignored
+        }
+
+        return files;
+    }
+
+    private static string? TryReadFontFamilyName
+    (
+        string file
+    )
+    {
+        try
+        {
+            using var stream = new FileStream
+            (
+                file,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete
+            );
+
+            Span<byte> header = stackalloc byte[4];
+            stream.ReadExactly(header);
+
+            if (BinaryPrimitives.ReadUInt32BigEndian(header) == FONT_COLLECTION_TAG)
+            {
+                Span<byte> collectionHeader = stackalloc byte[12];
+                stream.ReadExactly(collectionHeader);
+
+                var firstFontTableDirectory = BinaryPrimitives.ReadUInt32BigEndian(collectionHeader[8..]);
+
+                if (firstFontTableDirectory <= 0 || firstFontTableDirectory >= stream.Length)
+                    return null;
+
+                stream.Position = firstFontTableDirectory;
+                stream.ReadExactly(header);
+            }
+
+            if (BinaryPrimitives.ReadUInt32BigEndian(header) is not (SFNT_VERSION_TRUETYPE or SFNT_VERSION_OPENTYPE or SFNT_VERSION_APPLE_TRUETYPE))
+                return null;
+
+            Span<byte> tableCountBuffer = stackalloc byte[2];
+            stream.ReadExactly(tableCountBuffer);
+
+            var tableCount = BinaryPrimitives.ReadUInt16BigEndian(tableCountBuffer);
+
+            Span<byte> tableRecord = stackalloc byte[16];
+
+            long nameTableOffset = -1;
+            long nameTableLength = 0;
+
+            for (var i = 0; i < tableCount; i++)
+            {
+                stream.ReadExactly(tableRecord);
+
+                if (BinaryPrimitives.ReadUInt32BigEndian(tableRecord) != NAME_TABLE_TAG) continue;
+
+                nameTableOffset = BinaryPrimitives.ReadUInt32BigEndian(tableRecord[8..]);
+                nameTableLength = BinaryPrimitives.ReadUInt32BigEndian(tableRecord[12..]);
+                break;
+            }
+
+            if (nameTableOffset < 0 || nameTableLength < 6 || nameTableOffset + nameTableLength > stream.Length)
+                return null;
+
+            var nameTable = new byte[nameTableLength];
+
+            stream.Position = nameTableOffset;
+            stream.ReadExactly(nameTable);
+
+            var recordCount         = BinaryPrimitives.ReadUInt16BigEndian(nameTable);
+            var stringStorageOffset = BinaryPrimitives.ReadUInt16BigEndian(nameTable.AsSpan(4));
+
+            var currentLanguageID = unchecked((ushort)CultureInfo.CurrentUICulture.LCID);
+
+            string? localizedName = null;
+            string? englishName   = null;
+            string? windowsName   = null;
+            string? macintoshName = null;
+
+            for (var i = 0; i < recordCount; i++)
+            {
+                var recordStart = 6 + (i * 12);
+
+                if (recordStart + 12 > nameTable.Length) break;
+
+                var record = nameTable.AsSpan(recordStart, 12);
+
+                if (BinaryPrimitives.ReadUInt16BigEndian(record[6..]) != FAMILY_NAME_ID) continue;
+
+                var platformID = BinaryPrimitives.ReadUInt16BigEndian(record);
+                var encodingID = BinaryPrimitives.ReadUInt16BigEndian(record[2..]);
+                var languageID = BinaryPrimitives.ReadUInt16BigEndian(record[4..]);
+                var length     = BinaryPrimitives.ReadUInt16BigEndian(record[8..]);
+                var offset     = BinaryPrimitives.ReadUInt16BigEndian(record[10..]);
+
+                var stringStart = stringStorageOffset + offset;
+
+                if (length == 0 || stringStart + length > nameTable.Length) continue;
+
+                var rawName = nameTable.AsSpan(stringStart, length);
+
+                var familyName = (platformID, encodingID) switch
+                {
+                    (WINDOWS_PLATFORM_ID, WINDOWS_UNICODE_ENCODING_ID) => Encoding.BigEndianUnicode.GetString(rawName).TrimEnd('\0'),
+                    (MACINTOSH_PLATFORM_ID, MAC_ROMAN_ENCODING_ID)     => Encoding.Latin1.GetString(rawName).TrimEnd('\0'),
+                    _                                                  => null
+                };
+
+                if (string.IsNullOrWhiteSpace(familyName)) continue;
+
+                if (platformID == MACINTOSH_PLATFORM_ID)
+                {
+                    macintoshName ??= familyName;
+                    continue;
+                }
+
+                if (languageID == currentLanguageID)
+                    localizedName ??= familyName;
+                else if (languageID == ENGLISH_LANGUAGE_ID)
+                    englishName ??= familyName;
+
+                windowsName ??= familyName;
+            }
+
+            var result = localizedName ?? englishName ?? windowsName ?? macintoshName;
+
+            return string.IsNullOrWhiteSpace(result) ?
+                       null :
+                       result.Trim();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or SecurityException)
+        {
+            // ignored
+        }
+
+        return null;
     }
 
     private void ClearFontHandles()
@@ -473,6 +614,25 @@ public class FontManager : OmenServiceBase<FontManager>
     private static readonly float[] PreBuildFontSizes = [0.6f, 0.8f, 0.9f, 1.0f, 1.2f, 1.4f, 1.6f];
 
     private static readonly string[] FontExtensions = [".ttf", ".otf", ".ttc"];
+
+    private static readonly FrozenSet<string> FontExtensionSet = FontExtensions.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+
+    #endregion
+
+    #region 常量
+
+    private const uint   FONT_COLLECTION_TAG         = 0x74746366;
+    private const uint   SFNT_VERSION_TRUETYPE       = 0x00010000;
+    private const uint   SFNT_VERSION_OPENTYPE       = 0x4F54544F;
+    private const uint   SFNT_VERSION_APPLE_TRUETYPE = 0x74727565;
+    private const uint   NAME_TABLE_TAG              = 0x6E616D65;
+    private const ushort FAMILY_NAME_ID              = 1;
+    private const ushort WINDOWS_PLATFORM_ID         = 3;
+    private const ushort WINDOWS_UNICODE_ENCODING_ID = 1;
+    private const ushort MACINTOSH_PLATFORM_ID       = 1;
+    private const ushort MAC_ROMAN_ENCODING_ID       = 0;
+    private const ushort ENGLISH_LANGUAGE_ID         = 0x0409;
+    private const string FONT_REGISTRY_KEY           = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts";
 
     #endregion
 }
