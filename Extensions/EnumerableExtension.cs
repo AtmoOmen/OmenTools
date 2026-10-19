@@ -7,13 +7,22 @@ public static class EnumerableExtension
 {
     #region Queue
 
-    public static T? DequeueOrDefault<T>(this Queue<T?> queue) => queue.Count > 0 ? queue.Dequeue() : default;
+    public static T? DequeueOrDefault<T>
+    (
+        this Queue<T?> queue
+    ) => queue.Count > 0 ?
+             queue.Dequeue() :
+             default;
 
     #endregion
 
     #region HashSet
 
-    public static bool Toggle<T>(this HashSet<T> hashSet, T value)
+    public static bool Toggle<T>
+    (
+        this HashSet<T> hashSet,
+        T               value
+    )
     {
         if (!hashSet.Add(value))
         {
@@ -28,33 +37,54 @@ public static class EnumerableExtension
 
     #region ICollection<T>
 
-    extension<T>(ICollection<T> collection)
+    extension<T>
+    (
+        ICollection<T> collection
+    )
     {
-        public void AddRange(params T[] values)
+        public void AddRange
+        (
+            params T[] values
+        )
         {
             foreach (var x in values)
                 collection.Add(x);
         }
 
-        public void RemoveRange(params T[] values)
+        public void RemoveRange
+        (
+            params T[] values
+        )
         {
             foreach (var x in values)
                 collection.Remove(x);
         }
 
-        public void RemoveRange(IEnumerable<T> values)
+        public void RemoveRange
+        (
+            IEnumerable<T> values
+        )
         {
             foreach (var x in values)
                 collection.Remove(x);
         }
 
-        public void Add(params T[] values) =>
+        public void Add
+        (
+            params T[] values
+        ) =>
             collection.AddRange(values);
 
-        public void Remove(params T[] values) =>
+        public void Remove
+        (
+            params T[] values
+        ) =>
             collection.RemoveRange(values);
 
-        public void AddRange(IEnumerable<T> items)
+        public void AddRange
+        (
+            IEnumerable<T> items
+        )
         {
             foreach (var item in items)
                 collection.Add(item);
@@ -65,9 +95,15 @@ public static class EnumerableExtension
 
     #region ConcurrentBag
 
-    extension<T>(ConcurrentBag<T> bag)
+    extension<T>
+    (
+        ConcurrentBag<T> bag
+    )
     {
-        public void AddRange(IEnumerable<T> items)
+        public void AddRange
+        (
+            IEnumerable<T> items
+        )
         {
             if (bag == null)
                 throw new ArgumentNullException(nameof(bag));
@@ -78,7 +114,10 @@ public static class EnumerableExtension
                 bag.Add(item);
         }
 
-        public void ForEach(Action<T> action)
+        public void ForEach
+        (
+            Action<T> action
+        )
         {
             if (bag == null)
                 throw new ArgumentNullException(nameof(bag));
@@ -94,7 +133,10 @@ public static class EnumerableExtension
 
     #region IEnumerable<T>
 
-    extension<T>(IEnumerable<T> source)
+    extension<T>
+    (
+        IEnumerable<T> source
+    )
     {
         public ConcurrentBag<T> ToConcurrentBag()
         {
@@ -119,10 +161,16 @@ public static class EnumerableExtension
             return new ConcurrentDictionary<TKey, TValue>(source.ToDictionary(keySelector, valueSelector));
         }
 
-        public ConcurrentDictionary<TKey, T> ToConcurrentDictionary<TKey>(Func<T, TKey> keySelector) where TKey : notnull =>
+        public ConcurrentDictionary<TKey, T> ToConcurrentDictionary<TKey>
+        (
+            Func<T, TKey> keySelector
+        ) where TKey : notnull =>
             source.ToConcurrentDictionary(keySelector, item => item);
 
-        public void ForEach(Action<T> action)
+        public void ForEach
+        (
+            Action<T> action
+        )
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -133,7 +181,10 @@ public static class EnumerableExtension
                 action(item);
         }
 
-        public T FirstOr0(Func<T, bool> predicate)
+        public T FirstOr0
+        (
+            Func<T, bool> predicate
+        )
         {
             var enumerable = source as T[] ?? source.ToArray();
 
@@ -146,28 +197,43 @@ public static class EnumerableExtension
             return enumerable.First();
         }
 
-        public IEnumerable<TR> SelectMulti<TR>(params Func<T, TR>[] funcs)
+        public IEnumerable<TR> SelectMulti<TR>
+        (
+            params Func<T, TR>[] funcs
+        )
             => from v in source from x in funcs select x(v);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool ContainsAll(IEnumerable<T> values)
+        public bool ContainsAll
+        (
+            IEnumerable<T> values
+        )
             => values.All(source.Contains);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool ContainsAny(params T[] values)
+        public bool ContainsAny
+        (
+            params T[] values
+        )
         {
             var enumerable = source as T[] ?? source.ToArray();
             return values.Any(x => enumerable.Contains(x));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool ContainsAny(IEnumerable<T> values)
+        public bool ContainsAny
+        (
+            IEnumerable<T> values
+        )
         {
             var enumerable = source as T[] ?? source.ToArray();
             return values.Any(x => enumerable.Contains(x));
         }
 
-        public int IndexOf(Predicate<T> predicate)
+        public int IndexOf
+        (
+            Predicate<T> predicate
+        )
         {
             var ret = -1;
 
@@ -182,7 +248,11 @@ public static class EnumerableExtension
         }
     }
 
-    public static bool TryGetFirst<TSource>(this IEnumerable<TSource>? source, out TSource? value)
+    public static bool TryGetFirst<TSource>
+    (
+        this IEnumerable<TSource>? source,
+        out  TSource?              value
+    )
     {
         switch (source)
         {
@@ -218,7 +288,12 @@ public static class EnumerableExtension
         return false;
     }
 
-    public static bool TryGetFirst<TSource>(this IEnumerable<TSource?>? source, Func<TSource, bool>? predicate, out TSource? value)
+    public static bool TryGetFirst<TSource>
+    (
+        this IEnumerable<TSource?>? source,
+        Func<TSource, bool>?        predicate,
+        out TSource?                value
+    )
     {
         if (source == null || predicate == null)
         {
@@ -239,7 +314,12 @@ public static class EnumerableExtension
         return false;
     }
 
-    public static bool TryGetLast<TK>(this IEnumerable<TK?> enumerable, Func<TK?, bool> predicate, out TK? value)
+    public static bool TryGetLast<TK>
+    (
+        this IEnumerable<TK?> enumerable,
+        Func<TK?, bool>       predicate,
+        out TK?               value
+    )
     {
         try
         {
@@ -257,9 +337,73 @@ public static class EnumerableExtension
 
     #region IList<T>
 
-    extension<T>(IList<T> list)
+    extension<T>
+    (
+        List<T> list
+    )
     {
-        public void Swap(int index1, int index2)
+        /// <summary>
+        ///     原地将列表中首次出现的旧值替换为新值。
+        /// </summary>
+        /// <returns>如果找到并完成了替换，返回 true；如果未找到，返回 false。</returns>
+        public bool Replace
+        (
+            T                     oldValue,
+            T                     newValue,
+            IEqualityComparer<T>? comparer = null
+        )
+        {
+            ArgumentNullException.ThrowIfNull(list);
+
+            comparer ??= EqualityComparer<T>.Default;
+            var index = list.FindIndex(item => comparer.Equals(item, oldValue));
+
+            if (index != -1)
+            {
+                list[index] = newValue;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     原地将列表中所有匹配的旧值全部替换为新值。
+        /// </summary>
+        /// <returns>被替换的元素总数。</returns>
+        public int ReplaceAll
+        (
+            T                     oldValue,
+            T                     newValue,
+            IEqualityComparer<T>? comparer = null
+        )
+        {
+            ArgumentNullException.ThrowIfNull(list);
+
+            comparer ??= EqualityComparer<T>.Default;
+            var count = 0;
+
+            for (var i = 0; i < list.Count; i++)
+                if (comparer.Equals(list[i], oldValue))
+                {
+                    list[i] = newValue;
+                    count++;
+                }
+
+            return count;
+        }
+    }
+
+    extension<T>
+    (
+        IList<T> list
+    )
+    {
+        public void Swap
+        (
+            int index1,
+            int index2
+        )
         {
             if (index1 < 0 || index1 >= list.Count || index2 < 0 || index2 >= list.Count)
                 throw new IndexOutOfRangeException("无法交换元素, 因为其中一个索引无效");
@@ -267,7 +411,10 @@ public static class EnumerableExtension
             (list[index1], list[index2]) = (list[index2], list[index1]);
         }
 
-        public bool TryDequeue(out T? result)
+        public bool TryDequeue
+        (
+            out T? result
+        )
         {
             if (list.Count > 0)
             {
@@ -287,7 +434,10 @@ public static class EnumerableExtension
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
-        public bool TryDequeueLast(out T? result)
+        public bool TryDequeueLast
+        (
+            out T? result
+        )
         {
             if (list.Count > 0)
             {
@@ -318,7 +468,11 @@ public static class EnumerableExtension
         }
     }
 
-    public static bool Toggle<T>(this List<T> list, T value)
+    public static bool Toggle<T>
+    (
+        this List<T> list,
+        T            value
+    )
     {
         if (list.Contains(value))
         {
@@ -334,9 +488,15 @@ public static class EnumerableExtension
 
     #region IDictionary / ConcurrentDictionary
 
-    extension<TKey, TValue>(ConcurrentDictionary<TKey, TValue> dictionary) where TKey : notnull
+    extension<TKey, TValue>
+    (
+        ConcurrentDictionary<TKey, TValue> dictionary
+    ) where TKey : notnull
     {
-        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        public void AddRange
+        (
+            IEnumerable<KeyValuePair<TKey, TValue>> items
+        )
         {
             if (dictionary == null)
                 throw new ArgumentNullException(nameof(dictionary));
@@ -347,7 +507,10 @@ public static class EnumerableExtension
                 dictionary.TryAdd(item.Key, item.Value);
         }
 
-        public void ForEach(Action<TKey, TValue> action)
+        public void ForEach
+        (
+            Action<TKey, TValue> action
+        )
         {
             if (dictionary == null)
                 throw new ArgumentNullException(nameof(dictionary));
@@ -359,12 +522,22 @@ public static class EnumerableExtension
         }
     }
 
-    extension<TK, TV>(IDictionary<TK, TV> dictionary)
+    extension<TK, TV>
+    (
+        IDictionary<TK, TV> dictionary
+    )
     {
-        public IEnumerable<TK> FindKeysByValue(TV value) =>
+        public IEnumerable<TK> FindKeysByValue
+        (
+            TV value
+        ) =>
             from x in dictionary where value != null && value.Equals(x.Value) select x.Key;
 
-        public bool TryGetFirst(Func<KeyValuePair<TK, TV>, bool> predicate, out KeyValuePair<TK, TV> keyValuePair)
+        public bool TryGetFirst
+        (
+            Func<KeyValuePair<TK, TV>, bool> predicate,
+            out KeyValuePair<TK, TV>         keyValuePair
+        )
         {
             try
             {
@@ -378,10 +551,19 @@ public static class EnumerableExtension
             }
         }
 
-        public TV? GetOrDefault(TK key) =>
-            dictionary.TryGetValue(key, out var value) ? value : default;
+        public TV? GetOrDefault
+        (
+            TK key
+        ) =>
+            dictionary.TryGetValue(key, out var value) ?
+                value :
+                default;
 
-        public TV GetOrAdd(TK key, Func<TK, TV> valueFactory)
+        public TV GetOrAdd
+        (
+            TK           key,
+            Func<TK, TV> valueFactory
+        )
         {
             if (dictionary.TryGetValue(key, out var value)) return value;
             value           = valueFactory(key);
@@ -392,7 +574,12 @@ public static class EnumerableExtension
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int IncrementOrSet<TK>(this IDictionary<TK, int> dic, TK key, int increment = 1)
+    public static int IncrementOrSet<TK>
+    (
+        this IDictionary<TK, int> dic,
+        TK                        key,
+        int                       increment = 1
+    )
     {
         if (!dic.TryAdd(key, increment))
             dic[key] += increment;
@@ -401,11 +588,22 @@ public static class EnumerableExtension
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TV? GetSafe<TK, TV>(this IDictionary<TK, TV>? dic, TK key, TV? defaultValue = default) =>
-        dic?.TryGetValue(key, out var value) == true ? value : defaultValue;
+    public static TV? GetSafe<TK, TV>
+    (
+        this IDictionary<TK, TV>? dic,
+        TK                        key,
+        TV?                       defaultValue = default
+    ) =>
+        dic?.TryGetValue(key, out var value) == true ?
+            value :
+            defaultValue;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TV GetOrCreate<TK, TV>(this IDictionary<TK, TV> dictionary, TK key) where TV : new()
+    public static TV GetOrCreate<TK, TV>
+    (
+        this IDictionary<TK, TV> dictionary,
+        TK                       key
+    ) where TV : new()
     {
         if (dictionary.TryGetValue(key, out var result)) return result;
 
@@ -419,13 +617,25 @@ public static class EnumerableExtension
     #region Object / Array
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool EqualsAny<T>(this T obj, IEnumerable<T> values) =>
+    public static bool EqualsAny<T>
+    (
+        this T         obj,
+        IEnumerable<T> values
+    ) =>
         values.Any(x => x != null && x.Equals(obj));
 
-    public static T[] Together<T>(this T[] array, params T[] additionalValues) => array.Union(additionalValues).ToArray();
+    public static T[] Together<T>
+    (
+        this   T[] array,
+        params T[] additionalValues
+    ) => array.Union(additionalValues).ToArray();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static T[] CreateArray<T>(this T o, uint repeatCount)
+    public static T[] CreateArray<T>
+    (
+        this T o,
+        uint   repeatCount
+    )
     {
         var arr = new T[repeatCount];
         for (var i = 0; i < arr.Length; i++)
