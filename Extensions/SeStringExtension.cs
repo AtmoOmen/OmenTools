@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Utility;
 using Lumina.Excel.Sheets;
 using Lumina.Text.ReadOnly;
@@ -205,6 +206,25 @@ public static class SeStringExtension
         ReadOnlySeString
     )
     {
+        public static ReadOnlySeString FormatLink
+        (
+            DalamudLinkPayload link,
+            ReadOnlySeString   text
+        )
+        {
+            using var rented  = new RentedSeStringBuilder();
+            var       builder = rented.Builder;
+
+            var message = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [text]);
+
+            builder
+                .AppendDalamudSeString(link)
+                .Append(message)
+                .PopLink();
+
+            return builder.ToReadOnlySeString();
+        }
+        
         public static ReadOnlySeString CreatePlayerLink
         (
             string            playerName,
