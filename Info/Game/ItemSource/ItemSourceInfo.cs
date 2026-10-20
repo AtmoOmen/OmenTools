@@ -1121,6 +1121,9 @@ public sealed class ItemSourceInfo
         if (costType == 2 && CurrentBuildContext.TomestoneItemIDs.TryGetValue(itemID, out var tomestoneItemID))
             return LuminaGetter.GetRowOrDefault<Item>(tomestoneItemID);
 
+        if (costType == 3 && Currencies.TryGetValue(itemID, out var currencyItemID))
+            return LuminaGetter.GetRowOrDefault<Item>(currencyItemID);
+
         return itemID is >= 8 or 0
             ? LuminaGetter.GetRowOrDefault<Item>(itemID)
             : specialShop.UseCurrencyType switch
