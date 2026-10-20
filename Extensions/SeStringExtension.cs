@@ -206,6 +206,38 @@ public static class SeStringExtension
         ReadOnlySeString
     )
     {
+        public static ReadOnlySeString FormatNotFoundCommandParamLogMessage
+        (
+            int              index,
+            ReadOnlySeString paramName,
+            ReadOnlySeString paramValue
+        ) =>
+            ISeStringEvaluator.Instance().EvaluateFromLogMessage
+            (
+                3802,
+                [
+                    index,
+                    paramName,
+                    paramValue
+                ]
+            );
+        
+        public static ReadOnlySeString FormatIncorrectCommandParamLogMessage
+        (
+            int              index,
+            ReadOnlySeString paramName,
+            ReadOnlySeString paramValue
+        ) =>
+            ISeStringEvaluator.Instance().EvaluateFromLogMessage
+            (
+                3803,
+                [
+                    index,
+                    paramName,
+                    paramValue
+                ]
+            );
+
         public static ReadOnlySeString FormatLink
         (
             DalamudLinkPayload link,
