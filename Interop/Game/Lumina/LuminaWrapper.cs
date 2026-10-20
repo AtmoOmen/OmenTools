@@ -109,6 +109,9 @@ public static class LuminaWrapper
     public static string GetBNPCName(uint rowID) =>
         LuminaGetter.TryGetRow<BNpcName>(rowID, out var item) ? item.Singular.ToString() : string.Empty;
 
+    public static string GetEmoteName(uint rowID) =>
+        LuminaGetter.TryGetRow<Emote>(rowID, out var item) ? item.Name.ToString() : string.Empty;
+    
     public static string GetENPCName(uint rowID) =>
         LuminaGetter.TryGetRow<ENpcResident>(rowID, out var item) ? item.Singular.ToString() : string.Empty;
 
