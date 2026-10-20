@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
@@ -61,20 +62,10 @@ public record AetheryteRecord
         }
     }
 
-    public bool IsHouse
-    {
-        get
-        {
-            if (isHouse != null)
-                return isHouse.Value;
-
-            isHouse = GetData().PlaceName.RowId is 1145 or 1160;
-            return isHouse.Value;
-        }
-    }
-
-    private bool? isHouse;
-
+    public bool       IsHouse         { get; init; }
+    public EstateType HouseType       { get; init; }
+    public int        ShareHouseIndex { get; init; } = -1;
+    
     public Aetheryte GetData() =>
         LuminaGetter.GetRow<Aetheryte>(RowID).GetValueOrDefault();
 
@@ -131,8 +122,9 @@ public record AetheryteRecord
 
     public static AetheryteRecord? Parse(Aetheryte data)
     {
-        if (data.RowId <= 1) return null;
-
+        if (data.RowId <= 1) 
+            return null;
+        // 房屋
         if (data.PlaceName.RowId is 1145 or 1160)
             return null;
 
@@ -141,7 +133,8 @@ public record AetheryteRecord
         var name = data.IsAetheryte
                        ? data.PlaceName.Value.Name.ToString()
                        : data.AethernetName.Value.Name.ToString();
-        if (string.IsNullOrWhiteSpace(name)) return null;
+        if (string.IsNullOrWhiteSpace(name)) 
+            return null;
 
         var subIndex = 0;
 

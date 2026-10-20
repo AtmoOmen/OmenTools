@@ -9,16 +9,11 @@ using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
 
-public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
+public class AetheryteRecordManager
+(
+    GameState gameState
+) : OmenServiceBase<AetheryteRecordManager>
 {
-    private readonly GameState gameState;
-
-    public AetheryteRecordManager
-    (
-        GameState inGameState
-    ) =>
-        gameState = inGameState;
-
     public string HouseApartmentTemplate { get; set; } = "{0} {1} (第 {2} 区 {3} 号房间)";
     public string HouseEstateTemplate    { get; set; } = "{0} {1} (第 {2} 区 {3} 号)";
     public string HouseSharedName        { get; set; } = "共享房屋";
@@ -27,6 +22,9 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
 
     public Dictionary<string, List<AetheryteRecord>> Records { get; private set; } = [];
 
+    /// <remarks>
+    ///     如果需要获取公寓，请使用 <see cref="EstateType.ApartmentBuilding" /> 来筛选。
+    /// </remarks>
     public IEnumerable<AetheryteRecord> AllRecords
     {
         get
@@ -111,12 +109,15 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     {
         Records = [];
 
-        foreach (var data in LuminaGetter.Get<Aetheryte>()
+        var pendingRecords = LuminaGetter.Get<Aetheryte>()
                                          .OrderBy(x => x.AethernetGroup)
-                                         .ThenBy(x => x.Territory.RowId))
+                                         .ThenBy(x => x.Territory.RowId);
+        
+        foreach (var data in pendingRecords)
         {
             var record = AetheryteRecord.Parse(data);
-            if (record == null || !record.IsUnlocked())
+            if (record == null || 
+                !record.IsUnlocked())
                 continue;
 
             // 金碟游乐场
@@ -168,9 +169,12 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
         var aptBuilding = HousingManager.GetOwnedHouseId(EstateType.ApartmentBuilding);
         var aptRoom     = HousingManager.GetOwnedHouseId(EstateType.ApartmentRoom);
         if (aptBuilding.Id != INVALID_HOUSE_ID && aptRoom.Id != INVALID_HOUSE_ID)
+        {
             TryAddHouseRecord
             (
                 housingMarkers,
+                EstateType.ApartmentBuilding,
+                -1,
                 aptBuilding.TerritoryTypeId,
                 GetApartmentAetheryteID,
                 60,
@@ -179,13 +183,17 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                 [aptBuilding.WardIndex + 1, aptRoom.RoomNumber],
                 LuminaWrapper.GetAddonText(6760)
             );
+        }
 
         // 个人房
         var personalInfo = HousingManager.GetOwnedHouseId(EstateType.PersonalEstate);
         if (personalInfo.Id != INVALID_HOUSE_ID)
+        {
             TryAddHouseRecord
             (
                 housingMarkers,
+                EstateType.PersonalEstate,
+                -1,
                 personalInfo.TerritoryTypeId,
                 GetApartmentAetheryteID,
                 personalInfo.PlotIndex,
@@ -194,13 +202,17 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                 [personalInfo.WardIndex + 1, personalInfo.PlotIndex + 1],
                 HousePersonalName
             );
+        }
 
         // 部队房
         var fcInfo = HousingManager.GetOwnedHouseId(EstateType.FreeCompanyEstate);
         if (fcInfo.Id != INVALID_HOUSE_ID)
+        {
             TryAddHouseRecord
             (
                 housingMarkers,
+                EstateType.FreeCompanyEstate,
+                -1,
                 fcInfo.TerritoryTypeId,
                 GetFreeCompanyAetheryteID,
                 fcInfo.PlotIndex,
@@ -209,15 +221,20 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
                 [fcInfo.WardIndex + 1, fcInfo.PlotIndex + 1],
                 HouseFreeCompanyName
             );
+        }
 
         // 共享房屋
         for (var i = 0; i < 2; i++)
         {
             var sharedInfo = HousingManager.GetOwnedHouseId(EstateType.SharedEstate, i);
-            if (sharedInfo.Id == INVALID_HOUSE_ID) continue;
+            if (sharedInfo.Id == INVALID_HOUSE_ID)
+                continue;
+            
             TryAddHouseRecord
             (
                 housingMarkers,
+                EstateType.SharedEstate,
+                i,
                 sharedInfo.TerritoryTypeId,
                 GetApartmentAetheryteID,
                 sharedInfo.PlotIndex,
@@ -232,6 +249,8 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
     private void TryAddHouseRecord
     (
         List<HousingMapMarkerInfo> housingMarkers,
+        EstateType                 houseType,
+        int                        shareHouseIndex,
         uint                       zoneID,
         Func<uint, uint>           getAetheryteID,
         uint                       markerSubrowID,
@@ -245,7 +264,9 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
         var data        = LuminaGetter.GetRowOrDefault<Aetheryte>(aetheryteID);
         var marker = housingMarkers.Where(x => x.Map.Value.TerritoryType.RowId == zoneID)
                                    .FirstOrDefault(x => x.SubrowId             == markerSubrowID);
-        if (data.RowId == 0 || marker.RowId == 0) return;
+        if (data.RowId   == 0 ||
+            marker.RowId == 0)
+            return;
 
         var territoryName = data.Territory.Value.ExtractPlaceName();
         var name = string.Format
@@ -268,7 +289,12 @@ public class AetheryteRecordManager : OmenServiceBase<AetheryteRecordManager>
             true,
             new(marker.X, marker.Y, marker.Z),
             name
-        );
+        )
+        {
+            IsHouse         = true,
+            HouseType       = houseType,
+            ShareHouseIndex = shareHouseIndex,
+        };
 
         Records.TryAdd(VERSION_OTHER, []);
         Records[VERSION_OTHER].Add(record);
