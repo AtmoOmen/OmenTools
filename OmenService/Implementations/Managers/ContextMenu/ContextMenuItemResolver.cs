@@ -5,6 +5,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Models;
+using AgentFreeCompanyChest = FFXIVClientStructs.Expansion.FFXIV.Client.UI.Agent.AgentFreeCompanyChest;
 
 namespace OmenTools.OmenService;
 
@@ -102,6 +103,26 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
 
         switch (args.AddonName)
         {
+            case "FreeCompanyChest":
+            {
+                var agent = AgentFreeCompanyChest.Instance();
+
+                if (agent != null)
+                {
+                    var inventoryItem = agent->GetContextInventoryItem();
+
+                    if (inventoryItem != null)
+                    {
+                        itemID = inventoryItem->GetBaseItemId();
+                        
+                        args.TargetInventoryItem = *inventoryItem;
+                        args.TargetInventoryType = inventoryItem->GetInventoryType();
+                        args.TargetInventorySlot = inventoryItem->GetSlot();
+                    }
+                }
+
+                break;
+            }
             case "ItemSearch":
             {
                 var agent = AgentItemSearch.Instance();
@@ -127,6 +148,7 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
                     {
                         itemID                   = slot->GetBaseItemId();
                         args.TargetInventoryType = InventoryType.RetainerMarket;
+                        args.TargetInventorySlot = slot->GetSlot();
                         args.TargetInventoryItem = *slot;
                     }
                 }

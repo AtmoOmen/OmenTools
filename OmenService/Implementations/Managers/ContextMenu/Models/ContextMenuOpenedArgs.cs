@@ -59,7 +59,7 @@ public sealed unsafe class ContextMenuOpenedArgs
             TargetItemID          = TargetItemID,
             TargetGlamourID       = TargetGlamourID,
             TargetInventoryType   = TargetInventoryType,
-            TargetSlot            = TargetSlot,
+            TargetInventorySlot   = TargetInventorySlot,
             DefaultAgentContext   = DefaultAgentContext,
             InventoryAgentContext = InventoryAgentContext
         };
@@ -97,7 +97,7 @@ public sealed unsafe class ContextMenuOpenedArgs
 
     public InventoryType? TargetInventoryType { get; set; }
 
-    public int? TargetSlot { get; set; }
+    public int? TargetInventorySlot { get; set; }
 
     /// <remarks>
     ///     当前菜单目标的基础物品 ID，事件物品保留其原始 ID。

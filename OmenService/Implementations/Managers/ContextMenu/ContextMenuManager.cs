@@ -337,7 +337,7 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
                     $"物品 ID：{currentArgs.TargetItemID}\n"                                               +
                     $"幻化物品 ID：{currentArgs.TargetGlamourID}\n"                                          +
                     $"Inventory Type：{currentArgs.TargetInventoryType?.ToString() ?? "[空]"}\n"          +
-                    $"Inventory Slot：{currentArgs.TargetSlot?.ToString()          ?? "[空]"}\n"          +
+                    $"Inventory Slot：{currentArgs.TargetInventorySlot?.ToString()          ?? "[空]"}\n"          +
                     $"Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"                      +
                     $"Inventory Agent Context：0x{(nint)currentArgs.InventoryAgentContext:X}"
                 );
@@ -871,7 +871,7 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
             args.OwnerAddonID          = inventoryAgent->OwnerAddonId;
             args.Addon                 = GetAddonByID(inventoryAgent->OwnerAddonId);
             args.TargetInventoryType   = inventoryAgent->TargetInventoryId;
-            args.TargetSlot            = inventoryAgent->TargetInventorySlotId;
+            args.TargetInventorySlot            = inventoryAgent->TargetInventorySlotId;
 
             if (inventoryAgent->TargetInventorySlot is not null)
             {
