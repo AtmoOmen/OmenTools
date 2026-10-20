@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
@@ -28,9 +29,37 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
 
     #endregion
 
+    #region 事件定义
+
+    /// <summary>
+    ///     菜单打开前的事件处理方法。
+    /// </summary>
+    /// <param name="isPrevented">是否阻止本次菜单打开。</param>
+    /// <param name="args">本次菜单打开的参数。</param>
+    public delegate void PreContextMenuOpenDelegate
+    (
+        ref bool              isPrevented,
+        ContextMenuOpenedArgs args
+    );
+
+    /// <summary>
+    ///     菜单打开后的事件处理方法。
+    /// </summary>
+    /// <param name="args">本次菜单打开的参数。</param>
+    /// <param name="addonID">已经打开的菜单 Addon ID。</param>
+    public delegate void PostContextMenuOpenDelegate
+    (
+        ContextMenuOpenedArgs args,
+        ushort                addonID
+    );
+
+    #endregion
+
     #region 字段
 
     private readonly ConcurrentDictionary<string, uint> addonNameIDs = [];
+
+    private readonly ConcurrentDictionary<Type, ImmutableList<Delegate>> methodsCollection = [];
 
     private          ContextMenuFrame?       currentMenu;
     private readonly Stack<ContextMenuFrame> parentMenus = [];
@@ -59,6 +88,116 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
         ContextMenuEntry entry
     ) =>
         entries.TryRemove(entry, out _);
+
+    /// <summary>
+    ///     注册菜单打开前的事件处理方法。
+    /// </summary>
+    /// <param name="method">要注册的事件处理方法。</param>
+    /// <param name="methods">要一同注册的额外事件处理方法。</param>
+    /// <returns>始终返回 <see langword="true"/>。</returns>
+    public bool RegPre
+    (
+        PreContextMenuOpenDelegate          method,
+        params PreContextMenuOpenDelegate[] methods
+    ) =>
+        RegisterGeneric(method, methods);
+
+    /// <summary>
+    ///     注册菜单打开后的事件处理方法。
+    /// </summary>
+    /// <param name="method">要注册的事件处理方法。</param>
+    /// <param name="methods">要一同注册的额外事件处理方法。</param>
+    /// <returns>始终返回 <see langword="true"/>。</returns>
+    public bool RegPost
+    (
+        PostContextMenuOpenDelegate          method,
+        params PostContextMenuOpenDelegate[] methods
+    ) =>
+        RegisterGeneric(method, methods);
+
+    /// <summary>
+    ///     注销已经注册的菜单打开前事件处理方法。
+    /// </summary>
+    /// <param name="methods">要注销的事件处理方法。</param>
+    /// <returns>只要至少有一个事件处理方法被移除就返回 <see langword="true"/>，否则返回 <see langword="false"/>。</returns>
+    public bool Unreg
+    (
+        params PreContextMenuOpenDelegate[] methods
+    ) =>
+        UnregisterGeneric(methods);
+
+    /// <summary>
+    ///     注销已经注册的菜单打开后事件处理方法。
+    /// </summary>
+    /// <param name="methods">要注销的事件处理方法。</param>
+    /// <returns>只要至少有一个事件处理方法被移除就返回 <see langword="true"/>，否则返回 <see langword="false"/>。</returns>
+    public bool Unreg
+    (
+        params PostContextMenuOpenDelegate[] methods
+    ) =>
+        UnregisterGeneric(methods);
+
+    private bool RegisterGeneric<T>
+    (
+        T          method,
+        params T[] methods
+    ) where T : Delegate
+    {
+        var type = typeof(T);
+
+        methodsCollection.AddOrUpdate
+        (
+            type,
+            _ =>
+            {
+                var list = ImmutableList.Create<Delegate>(method);
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
+            },
+            (_, currentList) =>
+            {
+                var newList = currentList.Add(method);
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
+            }
+        );
+
+        return true;
+    }
+
+    private bool UnregisterGeneric<T>
+    (
+        params T[] methods
+    ) where T : Delegate
+    {
+        if (methods is not { Length: > 0 }) return false;
+
+        var type = typeof(T);
+
+        while (methodsCollection.TryGetValue(type, out var currentList))
+        {
+            var newList = currentList.RemoveRange(methods);
+
+            if (newList == currentList)
+                return false;
+
+            if (newList.IsEmpty)
+            {
+                var kvp = new KeyValuePair<Type, ImmutableList<Delegate>>(type, currentList);
+                if (((ICollection<KeyValuePair<Type, ImmutableList<Delegate>>>)methodsCollection).Remove(kvp))
+                    return true;
+            }
+            else
+            {
+                if (methodsCollection.TryUpdate(type, newList, currentList))
+                    return true;
+            }
+        }
+
+        return false;
+    }
 
     #endregion
 
@@ -101,6 +240,8 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
         FireCallbackHook = null;
 
         DefaultPrefix = null;
+
+        methodsCollection.Clear();
 
         ClearMenus();
     }
@@ -314,12 +455,34 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
             valueCount     < 8 + values[0].UInt)
             return OpenAddonHook.Original(module, addonNameID, valueCount, values, eventInterface, eventKind, parentAddonID, depthLayer);
 
-        ContextMenuFrame frame;
+        ContextMenuFrame      frame;
+        ContextMenuOpenedArgs args;
 
         try
         {
-            var args = BuildArgs(agent);
+            args        = BuildArgs(agent);
             currentArgs = args;
+
+            var isPrevented = false;
+
+            if (methodsCollection.TryGetValue(typeof(PreContextMenuOpenDelegate), out var preDelegates))
+            {
+                foreach (var preDelegate in preDelegates)
+                {
+                    var preOpen = (PreContextMenuOpenDelegate)preDelegate;
+                    preOpen(ref isPrevented, args);
+
+                    if (isPrevented)
+                        break;
+                }
+            }
+
+            if (isPrevented)
+            {
+                ClearMenus();
+                return 0;
+            }
+
             itemResolver.Resolve(args, (int)values[0].UInt);
 
             if (Config.ShowOpenMenuLog)
@@ -337,7 +500,7 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
                     $"物品 ID：{currentArgs.TargetItemID}\n"                                               +
                     $"幻化物品 ID：{currentArgs.TargetGlamourID}\n"                                          +
                     $"Inventory Type：{currentArgs.TargetInventoryType?.ToString() ?? "[空]"}\n"          +
-                    $"Inventory Slot：{currentArgs.TargetInventorySlot?.ToString()          ?? "[空]"}\n"          +
+                    $"Inventory Slot：{currentArgs.TargetInventorySlot?.ToString() ?? "[空]"}\n"          +
                     $"Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"                      +
                     $"Inventory Agent Context：0x{(nint)currentArgs.InventoryAgentContext:X}"
                 );
@@ -359,8 +522,26 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
         try
         {
             frame.AddonID = OpenAddonHook.Original(module, addonNameID, (uint)frame.ValueCount, frame.Values, eventInterface, eventKind, parentAddonID, depthLayer);
+
             if (frame.AddonID == 0 && currentMenu == frame)
                 ClearMenus();
+            else if (frame.AddonID != 0 &&
+                     methodsCollection.TryGetValue(typeof(PostContextMenuOpenDelegate), out var postDelegates))
+            {
+                try
+                {
+                    foreach (var postDelegate in postDelegates)
+                    {
+                        var postOpen = (PostContextMenuOpenDelegate)postDelegate;
+                        postOpen(args, frame.AddonID);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    DLog.Error("[ContextMenuManager] 执行菜单打开后事件时发生错误", ex);
+                }
+            }
+
             return frame.AddonID;
         }
         catch
@@ -871,7 +1052,7 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
             args.OwnerAddonID          = inventoryAgent->OwnerAddonId;
             args.Addon                 = GetAddonByID(inventoryAgent->OwnerAddonId);
             args.TargetInventoryType   = inventoryAgent->TargetInventoryId;
-            args.TargetInventorySlot            = inventoryAgent->TargetInventorySlotId;
+            args.TargetInventorySlot   = inventoryAgent->TargetInventorySlotId;
 
             if (inventoryAgent->TargetInventorySlot is not null)
             {
