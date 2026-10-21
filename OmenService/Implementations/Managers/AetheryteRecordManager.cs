@@ -14,8 +14,8 @@ public class AetheryteRecordManager
     GameState gameState
 ) : OmenServiceBase<AetheryteRecordManager>
 {
-    public string HouseApartmentTemplate { get; set; } = "{0} {1} (第 {2} 区 {3} 号房间)";
-    public string HouseEstateTemplate    { get; set; } = "{0} {1} (第 {2} 区 {3} 号)";
+    public string HouseApartmentTemplate { get; set; } = "{houseType}（{zoneName}第{ward}区{plot}号房间）";
+    public string HouseEstateTemplate    { get; set; } = "{houseType}（{zoneName}第{ward}区{plot}号）";
     public string HouseSharedName        { get; set; } = "共享房屋";
     public string HouseFreeCompanyName   { get; set; } = "部队房屋";
     public string HousePersonalName      { get; set; } = "个人房屋";
@@ -269,13 +269,16 @@ public class AetheryteRecordManager
             return;
 
         var territoryName = data.Territory.Value.ExtractPlaceName();
-        var name = string.Format
+        var name = string.FormatICUText
         (
             nameTemplate,
-            territoryName,
-            houseTypeName,
-            nameArgs[0],
-            nameArgs[1]
+            new Dictionary<string, object>
+            {
+                ["zoneName"]  = territoryName,
+                ["houseType"] = houseTypeName,
+                ["ward"]      = nameArgs[0],
+                ["plot"]      = nameArgs[1],
+            }
         );
 
         var record = new AetheryteRecord
