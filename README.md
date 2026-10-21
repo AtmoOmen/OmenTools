@@ -2,6 +2,8 @@
 
 OmenTools 是一套面向 [Dalamud](https://github.com/goatcorp/Dalamud) 插件开发的综合性工具库，封装大量可复用的基础设施。
 
+※ 需要同时引用 [FFXIVClientStructs.Expansion](https://github.com/AtmoOmen/FFXIVClientStructs.Expansion) 项目并置于同一级才可以正确加载。
+
 ---
 
 ## 快速开始
