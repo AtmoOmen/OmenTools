@@ -14,7 +14,7 @@ public static class StringFormatExtension
         (
             string                              value,
             IReadOnlyDictionary<string, object> args,
-            Language                            language,
+            Language?                           language      = null,
             Action<Exception>?                  onFormatError = null
         )
         {
@@ -22,7 +22,7 @@ public static class StringFormatExtension
 
             try
             {
-                return MessageFormatter.Format(value, args, language.ToCultureInfo());
+                return MessageFormatter.Format(value, args, language?.ToCultureInfo());
             }
             catch (Exception ex)
             {
