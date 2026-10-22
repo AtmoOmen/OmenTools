@@ -44,7 +44,15 @@ public sealed class DService
 
         try
         {
-            ExpansionInterop.Initialize(instance.SigScanner.SearchBase);
+            try
+            {
+                ExpansionInterop.Initialize(instance.SigScanner.SearchBase);
+            }
+            catch (Exception ex)
+            {
+                DLog.Error("[OmenTools] 初始化 FFXIVClientStructs.Expansion 时发生错误。", ex);
+            }
+            
 
             instance.InitializeServices(disabledServices);
 
@@ -55,10 +63,8 @@ public sealed class DService
         }
         catch (Exception ex)
         {
-            DLog.Error("[OmenTools] 初始化各 OmenService 时发生错误", ex);
+            DLog.Error("[OmenTools] 初始化各 OmenService 时发生错误。", ex);
             Uninit();
-
-            throw;
         }
 
         var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
@@ -141,7 +147,7 @@ public sealed class DService
     private ConcurrentDictionary<TaskHelper, byte>  TaskHelpers   { get; set; } = [];
     private ConcurrentDictionary<MemoryPatch, byte> MemoryPatches { get; set; } = [];
 
-    private ConditionalWeakTable<AssemblyLoadContext, ConcurrentDictionary<IDalamudHook, byte>> Hooks { get; set; } = new();
+    private ConditionalWeakTable<AssemblyLoadContext, ConcurrentDictionary<IDalamudHook, byte>> Hooks { get; set; } = [];
 
     private List<OmenServiceBase> ServiceOrder { get; set; } = [];
 
