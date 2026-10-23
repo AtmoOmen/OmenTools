@@ -2,13 +2,14 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Kernel;
+using FFXIVClientStructs.FFXIV.Common.Component.BGCollision;
 using OmenTools.Interop.Game.Models;
 using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
 
 namespace OmenTools.Interop.Game.Helpers;
 
 /// <summary>
-///     使用当前活动相机的原生屏幕投影矩阵，将游戏世界坐标转换为主视口中的屏幕坐标。
+///     使用当前活动相机在游戏世界坐标与主视口屏幕坐标之间进行转换。
 /// </summary>
 /// <remarks>
 ///     应在游戏主线程或界面绘制回调中调用。矩阵或视口发生变化时立即刷新缓存，
@@ -95,5 +96,55 @@ public static class GameViewHelper
         screenPos = default;
         inView    = false;
         return false;
+    }
+
+    /// <summary>
+    ///     从主视口屏幕坐标沿当前活动相机的原生射线查询场景，返回最近的世界坐标命中点。
+    /// </summary>
+    /// <param name="screenPos">包含主视口位置偏移的桌面屏幕坐标，与 <see cref="WorldToScreen(Vector3, out Vector2)" /> 的输出一致。</param>
+    /// <param name="worldPos">成功时为场景碰撞命中点，失败时为默认值。</param>
+    /// <param name="rayDistance">从原生射线起点开始计算的最大检测距离，必须为有限正数，默认 100000。</param>
+    /// <returns>屏幕坐标位于主视口内、相机可用且射线命中场景时返回 <see langword="true" />。</returns>
+    /// <remarks>
+    ///     使用游戏原生屏幕射线与材质过滤规则，适合鼠标拾取地形和场景物体。
+    ///     不命中场景的屏幕坐标无法唯一确定世界位置，此时返回 <see langword="false" />。
+    ///     仅在调用时执行碰撞查询，不影响正向投影的缓存和计算开销。
+    /// </remarks>
+    public static unsafe bool ScreenToWorld
+    (
+        Vector2     screenPos,
+        out Vector3 worldPos,
+        float       rayDistance = 100000f
+    )
+    {
+        worldPos = default;
+
+        if (!float.IsFinite(screenPos.X) ||
+            !float.IsFinite(screenPos.Y) ||
+            !float.IsFinite(rayDistance) ||
+            rayDistance <= 0f)
+            return false;
+
+        var device = Device.Instance();
+        if (device == null)
+            return false;
+
+        var localPosition = screenPos - ImGuiHelpers.MainViewport.Pos;
+        if (localPosition.X < 0f            ||
+            localPosition.X > device->Width ||
+            localPosition.Y < 0f            ||
+            localPosition.Y > device->Height)
+            return false;
+
+        var camera = Control.Instance()->CameraManager.GetActiveCamera();
+        if (camera == null || camera->CameraBase.SceneCamera.RenderCamera == null)
+            return false;
+
+        var ray = camera->CameraBase.SceneCamera.ScreenPointToRay(localPosition);
+        if (!BGCollisionModule.RaycastMaterialFilter(ray.Origin, ray.Direction, out var hit, rayDistance))
+            return false;
+
+        worldPos = hit.Point;
+        return true;
     }
 }
