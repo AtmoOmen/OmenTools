@@ -6,16 +6,26 @@ using FFXIVClientStructs.FFXIV.Client.Game.Control;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
 using OmenTools.Interop.Game.Helpers;
+using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService.ZoneIndicator;
 
+/// <summary>
+///     管理区域标记的数据更新，并通过当前活动相机绘制文字、图像与周边轮廓。
+/// </summary>
 public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicatorRenderer>
 {
     private readonly FontManager      fontManager;
     private readonly FrameworkManager frameworkManager;
     private readonly WindowManager    windowManager;
 
+    /// <summary>
+    ///     使用指定的字体、框架更新和窗口绘制服务创建区域标记渲染器。
+    /// </summary>
+    /// <param name="inFontManager">提供标记文字字体的管理器。</param>
+    /// <param name="inFrameworkManager">调度标记数据更新的管理器。</param>
+    /// <param name="inWindowManager">提供界面绘制事件的管理器。</param>
     public ZoneIndicatorRenderer
     (
         FontManager      inFontManager,
@@ -188,7 +198,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     private void OnDraw()
     {
         var states = cachedDrawStates;
-        if (states.Length == 0)
+        if (states.Length == 0 || !GameViewHelper.TryGetProjection(out var projection))
             return;
 
         var bgDrawList = ImGui.GetBackgroundDrawList();
@@ -201,7 +211,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
             for (var i = 0; i < state.Targets.Length; i++)
             {
                 var target     = state.Targets[i];
-                var isOnScreen = IGameGui.Instance().WorldToScreen(target.WorldPosition, out var screenPosition);
+                var isOnScreen = projection.WorldToScreen(target.WorldPosition, out var screenPosition);
 
                 try
                 {
@@ -239,7 +249,7 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                     }
 
                     if (state.Surrounding is { } surrounding)
-                        DrawSurrounding(bgDrawList, target.WorldPosition, surrounding);
+                        DrawSurrounding(bgDrawList, in projection, target.WorldPosition, surrounding);
 
                     if (target.OnDraw is { } perTargetDraw)
                     {
@@ -442,11 +452,11 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
     private static void DrawSurrounding
     (
         ImDrawListPtr            drawList,
+        in GameViewProjection    projection,
         Vector3                  worldPos,
         ZoneIndicatorSurrounding s
     )
     {
-        var gui   = IGameGui.Instance();
         var color = s.Color.ToUInt();
 
         var unitOffsets = s.Type switch
@@ -458,13 +468,13 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         };
 
         if (unitOffsets is not null)
-            DrawPolyline(drawList, gui, worldPos, unitOffsets, s.Radius, color, s.Thickness);
+            DrawPolyline(drawList, in projection, worldPos, unitOffsets, s.Radius, color, s.Thickness);
     }
 
     private static void DrawPolyline
     (
         ImDrawListPtr         drawList,
-        IGameGui              gui,
+        in GameViewProjection projection,
         Vector3               center,
         ReadOnlySpan<Vector2> unitOffsets,
         float                 radius,
@@ -480,26 +490,26 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
 
         Span<Vector2?> screenVerts = stackalloc Vector2?[n];
         for (var i = 0; i < n; i++)
-            if (gui.WorldToScreen(worldVerts[i], out var sp))
+            if (projection.WorldToScreen(worldVerts[i], out var sp))
                 screenVerts[i] = sp;
 
         for (var i = 0; i < n; i++)
         {
             var j = (i + 1) % n;
-            DrawClippedEdge(drawList, gui, worldVerts[i], worldVerts[j], screenVerts[i], screenVerts[j], color, thickness);
+            DrawClippedEdge(drawList, in projection, worldVerts[i], worldVerts[j], screenVerts[i], screenVerts[j], color, thickness);
         }
     }
 
     private static void DrawClippedEdge
     (
-        ImDrawListPtr drawList,
-        IGameGui      gui,
-        Vector3       worldA,
-        Vector3       worldB,
-        Vector2?      screenA,
-        Vector2?      screenB,
-        uint          color,
-        float         thickness
+        ImDrawListPtr         drawList,
+        in GameViewProjection projection,
+        Vector3               worldA,
+        Vector3               worldB,
+        Vector2?              screenA,
+        Vector2?              screenB,
+        uint                  color,
+        float                 thickness
     )
     {
         switch (screenA)
@@ -519,16 +529,16 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
                               worldB;
         var visibleScreen = screenA ?? screenB!.Value;
 
-        if (TryClipToNearPlane(gui, visibleWorld, behindWorld, out var clipScreen))
+        if (TryClipToNearPlane(in projection, visibleWorld, behindWorld, out var clipScreen))
             drawList.AddLine(visibleScreen, clipScreen, color, thickness);
     }
 
     private static bool TryClipToNearPlane
     (
-        IGameGui    gui,
-        Vector3     visible,
-        Vector3     behind,
-        out Vector2 clipScreen
+        in GameViewProjection projection,
+        Vector3               visible,
+        Vector3               behind,
+        out Vector2           clipScreen
     )
     {
         clipScreen = default;
@@ -539,13 +549,13 @@ public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicator
         for (var i = 0; i < 8; i++)
         {
             var mid = (lo + hi) * 0.5f;
-            if (gui.WorldToScreen(Vector3.Lerp(visible, behind, mid), out _))
+            if (projection.WorldToScreen(Vector3.Lerp(visible, behind, mid), out _))
                 lo = mid;
             else
                 hi = mid;
         }
 
-        return gui.WorldToScreen(Vector3.Lerp(visible, behind, lo), out clipScreen);
+        return projection.WorldToScreen(Vector3.Lerp(visible, behind, lo), out clipScreen);
     }
 
     private static Vector4 GetStableColor
