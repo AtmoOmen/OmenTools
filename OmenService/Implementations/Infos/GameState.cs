@@ -56,6 +56,12 @@ public unsafe partial class GameState
     #endregion
 
     /// <summary>
+    ///     当前游戏的帧偏差。
+    /// </summary>
+    public static float FrameDeltaTime =>
+        Framework.Instance()->FrameDeltaTime;
+    
+    /// <summary>
     ///     当前游戏的帧计数。
     /// </summary>
     public static uint FrameCounter =>
