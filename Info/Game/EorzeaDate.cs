@@ -1,69 +1,73 @@
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 
 namespace OmenTools.Info.Game;
 
-public class EorzeaDate
+public readonly record struct EorzeaDate
 (
-    int  y,
-    int  m,
-    int  d,
-    int  h,
-    int  min,
-    int  sec,
-    long timestamp
+    long EorzeaTimeStamp
 )
 {
-    public int  Year            { get; set; } = y;
-    public int  Month           { get; set; } = m;
-    public int  Day             { get; set; } = d;
-    public int  Hour            { get; set; } = h;
-    public int  Minute          { get; set; } = min;
-    public int  Second          { get; set; } = sec;
-    public long EorzeaTimeStamp { get; set; } = timestamp;
+    public int Year => checked((int)FloorDivide(EorzeaTimeStamp, EORZEA_SECONDS_PER_YEAR));
+
+    public int Month => (int)(GetCycleSeconds(EORZEA_SECONDS_PER_YEAR) / EORZEA_SECONDS_PER_MONTH) + 1;
+
+    public int Day => (int)(GetCycleSeconds(EORZEA_SECONDS_PER_MONTH) / EORZEA_SECONDS_PER_DAY) + 1;
+
+    public int Hour => SecondsOfDay / 3600;
+
+    public int Minute => SecondsOfDay / 60 % 60;
+
+    public int Second => SecondsOfDay % 60;
+
+    public int SecondsOfDay => (int)GetCycleSeconds(EORZEA_SECONDS_PER_DAY);
+
+    public TimeSpan TimeOfDay => TimeSpan.FromSeconds(SecondsOfDay);
 
     public override string ToString()
-        => $"{Year}/{Month}/{Day} {(Hour < 10 ? "0" + Hour : Hour)}:{(Minute < 10 ? "0" + Minute : Minute)}:{(Second < 10 ? "0" + Second : Second)}";
+        => $"{Year}/{Month}/{Day} {Hour:D2}:{Minute:D2}:{Second:D2}";
 
     public string ToShortString() =>
-        $"{(Hour < 10 ? "0" + Hour : Hour)}:{(Minute < 10 ? "0" + Minute : Minute)}:{(Second < 10 ? "0" + Second : Second)}";
+        $"{Hour:D2}:{Minute:D2}:{Second:D2}";
 
-    public static EorzeaDate GetTime(long? timeStamp = null)
+    public static EorzeaDate GetTime
+    (
+        long? timeStamp = null
+    )
+        => new(FloorDivide(checked(((timeStamp ?? Framework.GetServerTime()) - UNIX_EPOCH_OFFSET) * EORZEA_TIME_NUMERATOR), EORZEA_TIME_DENOMINATOR));
+
+    public long ToUnixTimeSeconds()
+        => UNIX_EPOCH_OFFSET - FloorDivide(checked(-EorzeaTimeStamp * EORZEA_TIME_DENOMINATOR), EORZEA_TIME_NUMERATOR);
+
+    private long GetCycleSeconds
+    (
+        long cycle
+    )
+        => EorzeaTimeStamp - (FloorDivide(EorzeaTimeStamp, cycle) * cycle);
+
+    private static long FloorDivide
+    (
+        long dividend,
+        long divisor
+    )
     {
-        // 时间偏移量
-        const long TIME_ADJUST = 1278950400;
-        // 游戏时间
-        const long TIME_GAME = 144;
-        // 一周天数
-        const long TIME_EARTH = 7;
-
-        var timeEorzea =
-            Convert.ToInt64
-            (
-                Math.Round
-                (
-                    Convert.ToDecimal
-                    (
-                        ((timeStamp ?? Framework.GetServerTime()) - TIME_ADJUST) *
-                        TIME_GAME /
-                        TIME_EARTH
-                    ),
-                    0
-                )
-            );
-
-        timeEorzea = Convert.ToInt64(Math.Round((double)(timeEorzea / 10), 0)) * 10;
-        var etY = Convert.ToInt32(Math.Floor((decimal)(timeEorzea / 33177600)));
-        var etM = Convert.ToInt32(Math.Floor((decimal)(timeEorzea % 33177600 / 2764800))) + 1;
-        var etD = Convert.ToInt32(Math.Floor((decimal)(timeEorzea % 2764800) / 86400))    + 1;
-        var etH = Convert.ToInt32(Math.Floor((decimal)(timeEorzea % 86400) / 3600));
-        var etm = Convert.ToInt32(Math.Floor((decimal)(timeEorzea % 3600)  / 60));
-        var ets = Convert.ToInt32(timeEorzea % 60);
-        return new EorzeaDate(etY, etM, etD, etH, etm, ets, timeEorzea);
+        var quotient = Math.DivRem(dividend, divisor, out var remainder);
+        return remainder < 0 ?
+                   quotient - 1 :
+                   quotient;
     }
 
-    public static unsafe uint GetWeather(uint? zoneID = null) =>
-        zoneID == null
-            ? WeatherManager.Instance()->GetCurrentWeather()
-            : WeatherManager.Instance()->GetWeatherForDaytime((ushort)zoneID, 0);
+    #region 常量
+
+    public const long EORZEA_SECONDS_PER_DAY          = 86400;
+    public const long REAL_SECONDS_PER_EORZEA_HOUR    = 175;
+    public const long REAL_SECONDS_PER_EORZEA_DAY     = 24 * REAL_SECONDS_PER_EORZEA_HOUR;
+    public const long REAL_SECONDS_PER_WEATHER_PERIOD = 8  * REAL_SECONDS_PER_EORZEA_HOUR;
+
+    private const long UNIX_EPOCH_OFFSET        = 1278950400;
+    private const long EORZEA_TIME_NUMERATOR    = 144;
+    private const long EORZEA_TIME_DENOMINATOR  = 7;
+    private const long EORZEA_SECONDS_PER_MONTH = 32 * EORZEA_SECONDS_PER_DAY;
+    private const long EORZEA_SECONDS_PER_YEAR  = 12 * EORZEA_SECONDS_PER_MONTH;
+
+    #endregion
 }
