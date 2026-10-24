@@ -21,10 +21,17 @@ public sealed class DService
 {
     #region 公开接口
 
-    public static void Init
+    /// <summary>
+    ///     异步构建依赖容器，并按游戏帧的时间预算依次初始化基础服务。
+    /// </summary>
+    /// <param name="pluginInterface">持有基础服务的插件接口。</param>
+    /// <param name="disabledServices">不参与注册和初始化的服务类型。</param>
+    /// <param name="cancellationToken">用于取消尚未执行的初始化操作。</param>
+    public static async Task InitAsync
     (
         IDalamudPluginInterface    pluginInterface,
-        IReadOnlyCollection<Type>? disabledServices = null
+        IReadOnlyCollection<Type>? disabledServices  = null,
+        CancellationToken          cancellationToken = default
     )
     {
         if (IsInitialized || IsDisposed) return;
@@ -52,19 +59,19 @@ public sealed class DService
             {
                 DLog.Error("[OmenTools] 初始化 FFXIVClientStructs.Expansion 时发生错误。", ex);
             }
-            
+
 
             instance.InitializeServices(disabledServices);
 
-            foreach (var service in instance.ServiceOrder)
-                service.PublicInit();
+            await FrameworkWorkScheduler.RunAsync(instance.ServiceOrder, static service => service.PublicInit(), cancellationToken).ConfigureAwait(false);
 
             IsInitialized = true;
         }
         catch (Exception ex)
         {
             DLog.Error("[OmenTools] 初始化各 OmenService 时发生错误。", ex);
-            Uninit();
+            await UninitAsync().ConfigureAwait(false);
+            throw;
         }
 
         var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
@@ -72,7 +79,10 @@ public sealed class DService
         DLog.Debug($"[OmenTools] 初始化完成\tALC: {alc}; 持有方: {owner?.InternalName ?? "<shared>"}");
     }
 
-    public static void Uninit()
+    /// <summary>
+    ///     按依赖逆序分段卸载基础服务，并释放登记的任务、内存补丁及钩子。
+    /// </summary>
+    public static async Task UninitAsync()
     {
         if (IsDisposed)
             return;
@@ -82,13 +92,34 @@ public sealed class DService
 
         try
         {
-            InternalInstance.UninitOmenServices();
+            await FrameworkWorkScheduler.RunAsync
+            (
+                [.. InternalInstance.ServiceOrder.Where(static service => service.IsInitialized).Reverse()],
+                static service => service.PublicUninit()
+            ).ConfigureAwait(false);
 
-            InternalInstance.DisposeTrackedTaskHelpers();
-            InternalInstance.DisposeTrackedMemoryPatches();
-            InternalInstance.DisposeTrackedHooks();
+            await FrameworkWorkScheduler.RunAsync
+            (
+                [.. InternalInstance.TaskHelpers.Keys.Where(static helper => !helper.IsDisposed)],
+                static helper => DisposeResource(helper)
+            ).ConfigureAwait(false);
+            InternalInstance.TaskHelpers.Clear();
 
-            InternalInstance.ResetServiceState();
+            await FrameworkWorkScheduler.RunAsync
+            (
+                [.. InternalInstance.MemoryPatches.Keys],
+                static patch => DisposeResource(patch)
+            ).ConfigureAwait(false);
+            InternalInstance.MemoryPatches.Clear();
+
+            await FrameworkWorkScheduler.RunAsync
+            (
+                [.. InternalInstance.Hooks.SelectMany(static pair => pair.Value.Keys).Where(static hook => !hook.IsDisposed)],
+                static hook => DisposeResource(hook)
+            ).ConfigureAwait(false);
+            InternalInstance.Hooks.Clear();
+
+            await Task.Run(InternalInstance.ResetServiceState).ConfigureAwait(false);
 
             Throttler.Shared.Clear();
 
@@ -107,8 +138,9 @@ public sealed class DService
         }
         finally
         {
-            ExpansionInterop.Uninitialize();
-            IsDisposed = true;
+            await IFramework.Instance().Run(ExpansionInterop.Uninitialize).ConfigureAwait(false);
+            IsInitialized = false;
+            IsDisposed    = true;
         }
 
         var alc   = AssemblyLoadContext.GetLoadContext(typeof(DService).Assembly);
@@ -231,15 +263,6 @@ public sealed class DService
         return service;
     }
 
-    private void UninitOmenServices()
-    {
-        for (var i = ServiceOrder.Count - 1; i >= 0; i--)
-        {
-            if (ServiceOrder[i].IsInitialized)
-                ServiceOrder[i].PublicUninit();
-        }
-    }
-
     private void ResetServiceState()
     {
         Container?.Dispose();
@@ -316,33 +339,6 @@ public sealed class DService
         Hooks.Remove(context);
     }
 
-    private void DisposeTrackedTaskHelpers()
-    {
-        foreach (var taskHelper in TaskHelpers.Keys)
-        {
-            if (taskHelper is not { IsDisposed: false }) continue;
-            taskHelper.Dispose();
-        }
-
-        TaskHelpers.Clear();
-    }
-
-    private void DisposeTrackedMemoryPatches()
-    {
-        foreach (var memoryPatch in MemoryPatches.Keys)
-            memoryPatch.Dispose();
-
-        MemoryPatches.Clear();
-    }
-
-    private void DisposeTrackedHooks()
-    {
-        foreach (var (_, contextHooks) in Hooks)
-            DisposeHooks(contextHooks.Keys);
-
-        Hooks.Clear();
-    }
-
     private static void DisposeHooks
     (
         IEnumerable<IDalamudHook> hooks
@@ -351,7 +347,22 @@ public sealed class DService
         foreach (var hook in hooks)
         {
             if (hook is not { IsDisposed: false }) continue;
-            hook.Dispose();
+            DisposeResource(hook);
+        }
+    }
+
+    private static void DisposeResource
+    (
+        IDisposable resource
+    )
+    {
+        try
+        {
+            resource.Dispose();
+        }
+        catch (Exception ex)
+        {
+            DLog.Error($"[OmenTools] 释放资源 {resource.GetType().Name} 时发生错误", ex);
         }
     }
 
