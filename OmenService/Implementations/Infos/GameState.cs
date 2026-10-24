@@ -16,16 +16,11 @@ using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryInte
 
 namespace OmenTools.OmenService;
 
-public unsafe partial class GameState : OmenServiceBase<GameState>
+public unsafe partial class GameState
+(
+    FrameworkManager frameworkManager
+) : OmenServiceBase<GameState>
 {
-    private readonly FrameworkManager frameworkManager;
-
-    public GameState
-    (
-        FrameworkManager inFrameworkManager
-    ) =>
-        frameworkManager = inFrameworkManager;
-
     #region 事件
 
     /// <summary>
@@ -60,6 +55,12 @@ public unsafe partial class GameState : OmenServiceBase<GameState>
 
     #endregion
 
+    /// <summary>
+    ///     当前游戏的帧计数。
+    /// </summary>
+    public static uint FrameCounter =>
+        Framework.Instance()->FrameCounter;
+    
     /// <summary>
     ///     当前游戏是否为手柄模式。
     /// </summary>
