@@ -1,4 +1,5 @@
 using OmenTools.Interop.Game.ExecuteCommand.Implementations;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace OmenTools.Info.Game.Enums;
 
@@ -153,58 +154,15 @@ public enum ExecuteCommandFlag
     Revive = 200,
 
     /// <summary>
-    ///     区域变更
+    ///     Warp 完成
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 变更方式</para>
-    ///     <list type="table">
-    ///         <item>
-    ///             <term>1</term>
-    ///             <description>NPC 传送</description>
-    ///         </item>
-    ///         <item>
-    ///             <term>3</term>
-    ///             <description>边界过图</description>
-    ///         </item>
-    ///         <item>
-    ///             <term>4</term>
-    ///             <description>正常传送</description>
-    ///         </item>
-    ///         <item>
-    ///             <term>7</term>
-    ///             <description>返回</description>
-    ///         </item>
-    ///         <item>
-    ///             <term>15</term>
-    ///             <description>城内以太之晶</description>
-    ///         </item>
-    ///         <item>
-    ///             <term>20</term>
-    ///             <description>房区</description>
-    ///         </item>
-    ///     </list>
-    ///     <para><c>param2</c>: 区域内位置变更方式</para>
-    ///     <list type="table">
-    ///         <item>
-    ///             <term>1</term>
-    ///             <description>剧情转移</description>
-    ///         </item>
-    ///         <item>
-    ///             <term>2</term>
-    ///             <description>返回到安全区</description>
-    ///         </item>
-    ///         <item>
-    ///             <term>25</term>
-    ///             <description>副本内过图</description>
-    ///         </item>
-    ///         <item>
-    ///             <term>26</term>
-    ///             <description>潜水</description>
-    ///         </item>
-    ///     </list>
+    ///     <para><c>param1</c>: 状态标志位 (位掩码)</para>
+    ///     <para>正常完成时为 0; 超过 45 秒仍未完成而强制结束时, 按位记录各子系统尚未就绪的项目: <c>0x1</c> 强制完成, <c>0x10</c> 区域切换未完成, <c>0x800</c> 站立对象加载进度不足 80%, <c>0x1000</c> 房屋数据未就绪, <c>0x20000</c> 无人岛数据未就绪, <c>0x80000</c> 双人骑乘未就绪</para>
+    ///     <para><c>param2</c>: <see cref="WarpType"/></para>
     /// </remarks>
     /// <seealso cref="TerritoryCommand" />
-    StartTerritoryTransport = 201,
+    NotifyWarpComplete = 201,
 
     /// <summary>
     ///     传送至指定的以太之光
@@ -1238,7 +1196,10 @@ public enum ExecuteCommandFlag
     /// <summary>
     ///     区域变更完成
     /// </summary>
-    FinishTerritoryTransport = 816,
+    /// <remarks>
+    ///     <para>客户端由 Warp 流程末端发送; 登录进入区域且非内容回放时, 会在新手指南与回归者对话等初始界面处理完成后一并发出</para>
+    /// </remarks>
+    NotifyTerritoryReady = 816,
 
     /// <summary>
     ///     保存魂武任务性别 (这是什么东西?)
@@ -2262,7 +2223,7 @@ public enum ExecuteCommandFlag
     /// </remarks>
     /// <seealso cref="PrsimBoxCommand" />
     StoreToPrsimBox = 2351,
-    
+
     /// <summary>
     ///     取出投影台物品
     /// </summary>
