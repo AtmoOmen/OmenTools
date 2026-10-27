@@ -6,16 +6,14 @@ namespace OmenTools.OmenService;
 
 public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
 {
-    private const int LIFECYCLE_ACTIVE         = 0;
-    private const int LIFECYCLE_UNINITIALIZING = 1;
-
     private readonly ConcurrentDictionary<string, HttpClient>            clients                  = [];
     private readonly ConcurrentDictionary<long, CancellationTokenSource> sharedCancellationLeases = [];
 
     private CancellationTokenSource sharedCancellationSource = new();
-    private long                    sharedCancellationLeaseIdentity;
-    private int                     lifecycleState = LIFECYCLE_ACTIVE;
-    private int                     pendingAcquireCount;
+    
+    private long sharedCancellationLeaseIdentity;
+    private int  lifecycleState = LIFECYCLE_ACTIVE;
+    private int  pendingAcquireCount;
 
     protected override void Uninit()
     {
@@ -51,7 +49,10 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     /// </summary>
     /// <param name="cancellationToken">可选的外部取消令牌，会与共享令牌自动联动。</param>
     /// <returns>请使用 <c>using var</c> 保存返回值，并通过 <see cref="SharedCancellationLease.Token" /> 取出令牌。</returns>
-    public SharedCancellationLease AcquireSharedCancellation(CancellationToken cancellationToken = default)
+    public SharedCancellationLease AcquireSharedCancellation
+    (
+        CancellationToken cancellationToken = default
+    )
     {
         if (Volatile.Read(ref lifecycleState) != LIFECYCLE_ACTIVE)
             return SharedCancellationLease.Canceled;
@@ -64,9 +65,9 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
                 return SharedCancellationLease.Canceled;
 
             var rootSource = Volatile.Read(ref sharedCancellationSource);
-            var leaseSource = cancellationToken.CanBeCanceled
-                                  ? CancellationTokenSource.CreateLinkedTokenSource(rootSource.Token, cancellationToken)
-                                  : CancellationTokenSource.CreateLinkedTokenSource(rootSource.Token);
+            var leaseSource = cancellationToken.CanBeCanceled ?
+                                  CancellationTokenSource.CreateLinkedTokenSource(rootSource.Token, cancellationToken) :
+                                  CancellationTokenSource.CreateLinkedTokenSource(rootSource.Token);
 
             var leaseID = Interlocked.Increment(ref sharedCancellationLeaseIdentity);
             sharedCancellationLeases[leaseID] = leaseSource;
@@ -106,7 +107,10 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     ///     获取一个 <see cref="HttpClient" /> 实例；如无特殊需求，尽量使用默认实例。
     /// </summary>
     /// <param name="name">建议带上前缀与用途，例如 <c>AutoAntiCensorShip.Default</c>。</param>
-    public HttpClient Get(string name = "default") =>
+    public HttpClient Get
+    (
+        string name = "default"
+    ) =>
         clients.GetOrAdd(name, static _ => CreateClient());
 
     /// <summary>
@@ -114,7 +118,11 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     /// </summary>
     /// <param name="handler">自定义的 <see cref="HttpClientHandler" />。</param>
     /// <param name="name">建议带上前缀与用途，建议使用短横线分隔，例如 <c>AutoAntiCensorShip-Default</c>。</param>
-    public HttpClient Get(HttpMessageHandler handler, string name = "default") =>
+    public HttpClient Get
+    (
+        HttpMessageHandler handler,
+        string             name = "default"
+    ) =>
         clients.GetOrAdd(name, static (_, state) => CreateClient(state), handler);
 
     /// <summary>
@@ -122,7 +130,11 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     /// </summary>
     /// <param name="name">实例名称。</param>
     /// <param name="configure">首次创建实例时的配置逻辑。</param>
-    public HttpClient Get(string name, Action<HttpClient> configure) =>
+    public HttpClient Get
+    (
+        string             name,
+        Action<HttpClient> configure
+    ) =>
         clients.GetOrAdd(name, static (_, state) => CreateClient(configure: state), configure);
 
     /// <summary>
@@ -131,18 +143,57 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
     /// <param name="handler">自定义的 <see cref="HttpClientHandler" />。</param>
     /// <param name="name">实例名称。</param>
     /// <param name="configure">首次创建实例时的配置逻辑。</param>
-    public HttpClient Get(HttpMessageHandler handler, string name, Action<HttpClient> configure) =>
+    public HttpClient Get
+    (
+        HttpMessageHandler handler,
+        string             name,
+        Action<HttpClient> configure
+    ) =>
         clients.GetOrAdd(name, static (_, state) => CreateClient(state.Handler, state.Configure), (Handler: handler, Configure: configure));
 
     #region 辅助方法
 
-    private static HttpClient CreateClient(HttpMessageHandler? handler = null, Action<HttpClient>? configure = null)
+    private static HttpClient CreateClient
+    (
+        HttpMessageHandler? handler   = null,
+        Action<HttpClient>? configure = null
+    )
     {
-        var client = handler is null ? new HttpClient() : new(handler);
-        client.DefaultRequestVersion = HttpVersion.Version30;
-        client.DefaultVersionPolicy  = HttpVersionPolicy.RequestVersionOrLower;
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0");
+        handler ??= new SocketsHttpHandler
+        {
+            AutomaticDecompression =
+                DecompressionMethods.GZip    |
+                DecompressionMethods.Deflate |
+                DecompressionMethods.Brotli,
+            UseCookies               = true,
+            CookieContainer          = new(),
+            AllowAutoRedirect        = true,
+            MaxAutomaticRedirections = 20,
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10), // 定期更新连接，避免 DNS 变化导致连接失效
+            ConnectTimeout           = TimeSpan.FromSeconds(20)  // TCP
+        };
+
+        var client = new HttpClient(handler)
+        {
+            DefaultRequestVersion = HttpVersion.Version11,
+            DefaultVersionPolicy  = HttpVersionPolicy.RequestVersionOrHigher,
+            Timeout               = TimeSpan.FromSeconds(60)
+        };
+
+        client.DefaultRequestHeaders.UserAgent.ParseAdd
+        (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) " +
+            "Gecko/20100101 Firefox/118.0"
+        );
+
+        client.DefaultRequestHeaders.Accept.ParseAdd
+        (
+            "text/html,application/xhtml+xml,application/xml;q=0.9," +
+            "image/avif,image/webp,*/*;q=0.8"
+        );
+
         configure?.Invoke(client);
+
         return client;
     }
 
@@ -161,7 +212,10 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
             spinner.SpinOnce();
     }
 
-    private static void TryCancel(CancellationTokenSource source)
+    private static void TryCancel
+    (
+        CancellationTokenSource source
+    )
     {
         try
         {
@@ -172,7 +226,10 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
         }
     }
 
-    private static void TryDispose(CancellationTokenSource source)
+    private static void TryDispose
+    (
+        CancellationTokenSource source
+    )
     {
         try
         {
@@ -183,6 +240,13 @@ public class HTTPClientHelper : OmenServiceBase<HTTPClientHelper>
             // ignored
         }
     }
+
+    #endregion
+    
+    #region 常量
+
+    private const int LIFECYCLE_ACTIVE         = 0;
+    private const int LIFECYCLE_UNINITIALIZING = 1;
 
     #endregion
 }
