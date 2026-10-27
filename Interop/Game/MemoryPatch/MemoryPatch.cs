@@ -13,7 +13,11 @@ public class MemoryPatch : IDisposable
 
     public bool IsValid => Address != nint.Zero;
 
-    public MemoryPatch(nint address, IReadOnlyCollection<byte?> bytes, bool startEnabled = false)
+    public MemoryPatch
+    (
+        nint                       address,
+        IReadOnlyCollection<byte?> bytes
+    )
     {
         if (address == nint.Zero) return;
 
@@ -24,21 +28,33 @@ public class MemoryPatch : IDisposable
         NewBytes = MergeBytes(trimmedBytes, OldBytes);
 
         DService.Instance().RegMemoryPatch(this);
-        if (startEnabled)
-            Enable();
     }
 
-    public MemoryPatch(nint address, string bytesString, bool startEnabled = false) :
-        this(address, ParseByteString(bytesString), startEnabled)
+    public MemoryPatch
+    (
+        nint   address,
+        string bytesString
+    ) :
+        this(address, ParseByteString(bytesString))
     {
     }
 
-    public MemoryPatch(string sig, IReadOnlyCollection<byte?> bytes, nint offset = 0, bool startEnabled = false) :
-        this(Scan(sig) + offset, bytes, startEnabled) =>
+    public MemoryPatch
+    (
+        string                     sig,
+        IReadOnlyCollection<byte?> bytes,
+        nint                       offset = 0
+    ) :
+        this(Scan(sig) + offset, bytes) =>
         Signature = sig;
 
-    public MemoryPatch(string sig, string bytesString, nint offset = 0, bool startEnabled = false) :
-        this(sig, ParseByteString(bytesString), offset, startEnabled)
+    public MemoryPatch
+    (
+        string sig,
+        string bytesString,
+        nint   offset = 0
+    ) :
+        this(sig, ParseByteString(bytesString), offset)
     {
     }
 
@@ -59,8 +75,13 @@ public class MemoryPatch : IDisposable
     public void Toggle() =>
         Set(!IsEnabled);
 
-    public void Set(bool enable) =>
-        (enable ? (Action)Enable : Disable)();
+    public void Set
+    (
+        bool enable
+    ) =>
+        (enable ?
+             (Action)Enable :
+             Disable)();
 
     public virtual void Dispose()
     {
@@ -71,7 +92,10 @@ public class MemoryPatch : IDisposable
 
     #region 私有
 
-    private static nint Scan(string sig)
+    private static nint Scan
+    (
+        string sig
+    )
     {
         if (ISigScanner.Instance().TryScanModule(sig, out var address))
             return address;
@@ -80,23 +104,34 @@ public class MemoryPatch : IDisposable
         return nint.Zero;
     }
 
-    private static byte?[] ParseByteString(string bytesString) =>
-        bytesString.Replace(" ", "")
-                   .Chunk(2)
-                   .Select
-                   (chunk => chunk.SequenceEqual("??") || chunk.SequenceEqual("**")
-                                 ? (byte?)null
-                                 : byte.Parse(new string(chunk), NumberStyles.HexNumber)
-                   )
-                   .ToArray();
+    private static byte?[] ParseByteString
+    (
+        string bytesString
+    ) =>
+    [
+        .. bytesString.Replace(" ", "")
+                      .Chunk(2)
+                      .Select
+                      (chunk => chunk.SequenceEqual("??") || chunk.SequenceEqual("**") ?
+                                    (byte?)null :
+                                    byte.Parse(new string(chunk), NumberStyles.HexNumber)
+                      )
+    ];
 
-    private static (byte?[] TrimmedBytes, int Skip) TrimBytes(IReadOnlyCollection<byte?> bytes)
+    private static (byte?[] TrimmedBytes, int Skip) TrimBytes
+    (
+        IReadOnlyCollection<byte?> bytes
+    )
     {
         var trimmedBytes = bytes.SkipWhile(b => !b.HasValue).ToArray();
         return (trimmedBytes, bytes.Count - trimmedBytes.Length);
     }
 
-    private static byte[] MergeBytes(byte?[] newBytes, byte[] oldBytes) =>
+    private static byte[] MergeBytes
+    (
+        byte?[] newBytes,
+        byte[]  oldBytes
+    ) =>
         newBytes.Select((b, i) => b ?? oldBytes[i]).ToArray();
 
     #endregion

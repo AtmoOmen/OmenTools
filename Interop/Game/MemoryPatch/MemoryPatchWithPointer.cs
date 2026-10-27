@@ -50,20 +50,18 @@ public class MemoryPatchWithPointer<T> : MemoryPatch
     (
         nint                       address,
         IReadOnlyCollection<byte?> bytes,
-        nint                       pointerOffset = 0,
-        bool                       startEnabled  = false
+        nint                       pointerOffset = 0
     )
-        : base(address, bytes, startEnabled) =>
+        : base(address, bytes) =>
         PointerAddress = address + pointerOffset;
 
     public MemoryPatchWithPointer
     (
         nint   address,
         string bytesString,
-        nint   pointerOffset = 0,
-        bool   startEnabled  = false
+        nint   pointerOffset = 0
     )
-        : base(address, bytesString, startEnabled) =>
+        : base(address, bytesString) =>
         PointerAddress = address + pointerOffset;
 
     public MemoryPatchWithPointer
@@ -71,10 +69,9 @@ public class MemoryPatchWithPointer<T> : MemoryPatch
         string                     sig,
         IReadOnlyCollection<byte?> bytes,
         nint                       scanOffset    = 0,
-        nint                       pointerOffset = 0,
-        bool                       startEnabled  = false
+        nint                       pointerOffset = 0
     )
-        : base(sig, bytes, scanOffset, startEnabled) =>
+        : base(sig, bytes, scanOffset) =>
         PointerAddress = Address + pointerOffset;
 
     public MemoryPatchWithPointer
@@ -82,9 +79,8 @@ public class MemoryPatchWithPointer<T> : MemoryPatch
         string sig,
         string bytesString,
         nint   scanOffset    = 0,
-        nint   pointerOffset = 0,
-        bool   startEnabled  = false
+        nint   pointerOffset = 0
     )
-        : base(sig, bytesString, scanOffset, startEnabled) =>
+        : base(sig, bytesString, scanOffset) =>
         PointerAddress = Address + pointerOffset;
 }
