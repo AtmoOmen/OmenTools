@@ -133,6 +133,56 @@ public static class SeStringExtension
             );
         }
     }
+    
+    // 只是复制
+    extension
+    (
+        RentedSeStringBuilder b
+    )
+    {
+        public LSeStringBuilder AppendDalamudSeString
+        (
+            DSeString value
+        ) =>
+            b.Append(new ReadOnlySeString(value.Encode()));
+
+        public LSeStringBuilder AppendDalamudSeString
+        (
+            DSeStringBuilder value
+        ) =>
+            b.Append(value.Build().Encode());
+
+        public LSeStringBuilder AppendDalamudSeString
+        (
+            Payload value
+        ) =>
+            b.Append(new ReadOnlySeString(new DSeString(value).Encode()));
+
+        public LSeStringBuilder AppendRentedSeStringBuilder
+        (
+            RentedSeStringBuilder value
+        ) =>
+            b.Append(value.Builder.ToReadOnlySeString());
+
+        public LSeStringBuilder AppendIcon
+        (
+            BitmapFontIcon icon
+        ) =>
+            b.AppendIcon((uint)icon);
+
+        public LSeStringBuilder AppendIcon
+        (
+            SeIconChar icon
+        ) =>
+            b.Append(icon.ToIconString());
+
+        public LSeStringBuilder AppendFormattable
+        (
+            IFormattable    value,
+            IFormatProvider provider
+        ) =>
+            b.Append(value.ToString(null, provider) ?? string.Empty);
+    }
 
     extension
     (
