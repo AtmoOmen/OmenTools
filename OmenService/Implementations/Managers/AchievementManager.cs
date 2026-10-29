@@ -10,21 +10,15 @@ using LuminaAchievement = Lumina.Excel.Sheets.Achievement;
 
 namespace OmenTools.OmenService;
 
-public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
+public unsafe class AchievementManager
+(
+    GameState             gameState,
+    ExecuteCommandManager executeCommandManager
+)
+    : OmenServiceBase<AchievementManager>
 {
-    private readonly ExecuteCommandManager executeCommandManager;
-    private readonly GameState             gameState;
-
-    public AchievementManager
-    (
-        GameState             inGameState,
-        ExecuteCommandManager inExecuteCommandManager
-    )
-    {
-        gameState             = inGameState;
-        executeCommandManager = inExecuteCommandManager;
-    }
-
+    public event Action<AchievementInfo>? AchievementReceived;
+    
     public Dictionary<uint, AchievementInfo> Infos { get; private set; } = [];
 
     public bool TryGetAchievement
@@ -117,7 +111,11 @@ public unsafe class AchievementManager : OmenServiceBase<AchievementManager>
     )
     {
         ReceiveAchievementProgressHook.Original(achievement, id, current, max);
-        Infos[id] = new(id, current, max);
+
+        var info = new AchievementInfo(id, current, max);
+        Infos[id] = info;
+        
+        AchievementReceived?.Invoke(info);
     }
 }
 
