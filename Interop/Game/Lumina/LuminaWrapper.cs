@@ -72,6 +72,12 @@ public static class LuminaWrapper
 
     public static uint GetItemIconID(uint rowID) =>
         LuminaGetter.TryGetRow<Item>(rowID, out var item) ? item.Icon : 0U;
+    
+    public static uint GetAchievementIconID(uint rowID) =>
+        LuminaGetter.TryGetRow<Achievement>(rowID, out var item) ? item.Icon : 0U;
+    
+    public static string GetAchievementName(uint rowID) =>
+        LuminaGetter.TryGetRow<Achievement>(rowID, out var item) ? item.Name.ToString() : string.Empty;
 
     public static string GetStatusName(uint rowID) =>
         LuminaGetter.TryGetRow<Status>(rowID, out var item) ? item.Name.ToString() : string.Empty;
