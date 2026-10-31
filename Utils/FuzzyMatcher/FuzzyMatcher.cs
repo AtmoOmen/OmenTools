@@ -816,10 +816,10 @@ public sealed class FuzzyMatcher<T> : IDisposable
             }
         }
 
-        return list.Select(static s => s.Trim()).Where(static s => s.Length > 0).ToList();
+        return [.. list.Select(static s => s.Trim()).Where(static s => s.Length > 0)];
     }
 
-    private static void AppendAsciiInitialism(StringBuilder builder, string text)
+    private static void AppendASCIIInitialism(StringBuilder builder, string text)
     {
         var tokens = SplitByCase(text);
 
@@ -977,7 +977,7 @@ public sealed class FuzzyMatcher<T> : IDisposable
             PinyinInitialisms  = isCjk ? ((DefaultPinyinProvider)pinyinProvider).GetPinyinInitialismCombinations(original) : [];
 
             var initialismBuilder = new StringBuilder();
-            AppendAsciiInitialism(initialismBuilder, original);
+            AppendASCIIInitialism(initialismBuilder, original);
             var asciiInit = initialismBuilder.ToString().ToLowerInvariant();
 
             var initialsList = new List<string>();
