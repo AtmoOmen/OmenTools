@@ -6,6 +6,7 @@ using OmenTools.Info.Game.AetheryteRecord.Data;
 using OmenTools.Info.Lumina.ExtraSheets;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
+using TerritoryIntendedUse = FFXIVClientStructs.FFXIV.Client.Enums.TerritoryIntendedUse;
 
 namespace OmenTools.OmenService;
 
@@ -37,6 +38,9 @@ public class AetheryteRecordManager
                 yield return record;
         }
     }
+
+    public static bool IsInAethernetTerritory() =>
+        GameState.TerritoryIntendedUse is TerritoryIntendedUse.Town or TerritoryIntendedUse.GoldSaucer;
 
     public AetheryteRecord? GetNearestAetheryte
     (
