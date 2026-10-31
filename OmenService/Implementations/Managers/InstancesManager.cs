@@ -12,21 +12,13 @@ using OmenTools.Threading.TaskHelper;
 
 namespace OmenTools.OmenService;
 
-public class InstancesManager : OmenServiceBase<InstancesManager>
+public class InstancesManager
+(
+    GameState             gameState,
+    ExecuteCommandManager executeCommandManager
+)
+    : OmenServiceBase<InstancesManager>
 {
-    private readonly ExecuteCommandManager executeCommandManager;
-    private readonly GameState             gameState;
-
-    public InstancesManager
-    (
-        GameState             inGameState,
-        ExecuteCommandManager inExecuteCommandManager
-    )
-    {
-        gameState             = inGameState;
-        executeCommandManager = inExecuteCommandManager;
-    }
-
     public static unsafe bool   IsInstancedArea => UIState.Instance()->PublicInstance.IsInstancedArea();
     public static unsafe uint   CurrentInstance => UIState.Instance()->PublicInstance.InstanceId;
     public static unsafe string CurrentVersion  => Framework.Instance()->GameVersionString;

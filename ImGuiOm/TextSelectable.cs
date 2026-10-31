@@ -277,15 +277,13 @@ public static partial class ImGuiOm
 }
 
 public class TextSelectableLinkTypeInfo
+(
+    string        pattern,
+    Action<Match> clickCallback,
+    uint          underlineColor
+)
 {
-    public Regex         Pattern        { get; }
-    public Action<Match> ClickCallback  { get; }
-    public uint          UnderlineColor { get; }
-
-    public TextSelectableLinkTypeInfo(string pattern, Action<Match> clickCallback, uint underlineColor)
-    {
-        Pattern        = new Regex(pattern, RegexOptions.Compiled);
-        ClickCallback  = clickCallback;
-        UnderlineColor = underlineColor;
-    }
+    public Regex         Pattern        { get; } = new(pattern, RegexOptions.Compiled);
+    public Action<Match> ClickCallback  { get; } = clickCallback;
+    public uint          UnderlineColor { get; } = underlineColor;
 }

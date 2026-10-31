@@ -9,21 +9,13 @@ using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
 
-public class ImageHelper : OmenServiceBase<ImageHelper>
+public class ImageHelper
+(
+    StandardTimeManager standardTimeManager,
+    HTTPClientHelper    httpClientHelper
+)
+    : OmenServiceBase<ImageHelper>
 {
-    private readonly HTTPClientHelper    httpClientHelper;
-    private readonly StandardTimeManager standardTimeManager;
-
-    public ImageHelper
-    (
-        StandardTimeManager inStandardTimeManager,
-        HTTPClientHelper    inHTTPClientHelper
-    )
-    {
-        standardTimeManager = inStandardTimeManager;
-        httpClientHelper    = inHTTPClientHelper;
-    }
-
     public static IDalamudTextureWrap? GetGameIcon
     (
         uint iconID,

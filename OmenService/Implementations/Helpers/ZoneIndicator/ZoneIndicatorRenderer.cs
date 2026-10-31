@@ -14,30 +14,17 @@ namespace OmenTools.OmenService.ZoneIndicator;
 /// <summary>
 ///     管理区域标记的数据更新，并通过当前活动相机绘制文字、图像与周边轮廓。
 /// </summary>
-public sealed unsafe class ZoneIndicatorRenderer : OmenServiceBase<ZoneIndicatorRenderer>
+/// <param name="fontManager">提供标记文字字体的管理器。</param>
+/// <param name="frameworkManager">调度标记数据更新的管理器。</param>
+/// <param name="windowManager">提供界面绘制事件的管理器。</param>
+public sealed unsafe class ZoneIndicatorRenderer
+(
+    FontManager      fontManager,
+    FrameworkManager frameworkManager,
+    WindowManager    windowManager
+)
+    : OmenServiceBase<ZoneIndicatorRenderer>
 {
-    private readonly FontManager      fontManager;
-    private readonly FrameworkManager frameworkManager;
-    private readonly WindowManager    windowManager;
-
-    /// <summary>
-    ///     使用指定的字体、框架更新和窗口绘制服务创建区域标记渲染器。
-    /// </summary>
-    /// <param name="inFontManager">提供标记文字字体的管理器。</param>
-    /// <param name="inFrameworkManager">调度标记数据更新的管理器。</param>
-    /// <param name="inWindowManager">提供界面绘制事件的管理器。</param>
-    public ZoneIndicatorRenderer
-    (
-        FontManager      inFontManager,
-        FrameworkManager inFrameworkManager,
-        WindowManager    inWindowManager
-    )
-    {
-        fontManager      = inFontManager;
-        frameworkManager = inFrameworkManager;
-        windowManager    = inWindowManager;
-    }
-
     #region 公开
 
     /// <summary>

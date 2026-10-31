@@ -19,16 +19,11 @@ using Action = System.Action;
 
 namespace OmenTools.OmenService;
 
-public partial class MovementManager : OmenServiceBase<MovementManager>
+public partial class MovementManager
+(
+    ExecuteCommandManager executeCommandManager
+) : OmenServiceBase<MovementManager>
 {
-    private readonly ExecuteCommandManager executeCommandManager;
-
-    public MovementManager
-    (
-        ExecuteCommandManager inExecuteCommandManager
-    ) =>
-        executeCommandManager = inExecuteCommandManager;
-
     public delegate bool TPSmartInZoneDelegate
     (
         Vector3         pos,

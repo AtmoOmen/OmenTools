@@ -12,16 +12,11 @@ using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
 
-public unsafe class GameResourceManager : OmenServiceBase<GameResourceManager>
+public unsafe class GameResourceManager
+(
+    GameState gameState
+) : OmenServiceBase<GameResourceManager>
 {
-    private readonly GameState gameState;
-
-    public GameResourceManager
-    (
-        GameState inGameState
-    ) =>
-        gameState = inGameState;
-
     public GameResourceManagerConfig Config { get; private set; } = null!;
 
     public void AddToBlacklist
