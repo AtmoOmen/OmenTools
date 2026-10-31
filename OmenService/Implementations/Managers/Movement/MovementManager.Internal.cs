@@ -34,6 +34,7 @@ public partial class MovementManager
     (
         byte* instance
     );
+
     private GetCurrentZoneMoveStateDelegate GetCurrentZoneMoveState = null!;
 
     private static uint TicketUsageGilSetting =>
@@ -206,20 +207,7 @@ public partial class MovementManager
                                                0U;
                 var hopPenalty = hopCumulativePenalty + 0U;
 
-                var hopCost = hop switch
-                {
-                    AetheryteHop a => TeleportCostCalculator.GetTeleportCost
-                    (
-                        a.Record.GetData(),
-                        state.Zone,
-                        a.Record.RowID,
-                        a.Record.Group,
-                        a.Record.IsAetheryte,
-                        a.Record.IsHouse
-                    ),
-                    EventHop e => e.Method.Cost,
-                    _          => 0U
-                };
+                var hopCost = TeleportCostCalculator.GetHopCost(hop, state.Zone);
 
                 var hopIncrement = hopCost                + hopPenalty;
                 var newHops      = priority.Hops          + 1;

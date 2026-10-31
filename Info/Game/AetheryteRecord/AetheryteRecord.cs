@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
@@ -9,13 +8,14 @@ using OmenTools.Info.Game.AetheryteRecord.Data;
 using OmenTools.Info.Game.AetheryteRecord.Enums;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
-using OmenTools.OmenService;
 using Map = Lumina.Excel.Sheets.Map;
 
 namespace OmenTools.Info.Game.AetheryteRecord;
 
 /// <summary>
-///     254 天穹街, 253 宇宙探索
+///     254 天穹街
+///     253 宇宙探索
+///     252 区域交通目的地
 /// </summary>
 public record AetheryteRecord
 (
@@ -33,6 +33,9 @@ public record AetheryteRecord
     public AetheryteRecordState State { get; private set; }
     public uint                 Cost  { get; private set; }
 
+    /// <summary>
+    ///     获取目的地的区域分组名称；区域交通记录可在创建时明确指定特殊归属。
+    /// </summary>
     public string RegionName
     {
         get
@@ -60,14 +63,21 @@ public record AetheryteRecord
 
             return field;
         }
+        init;
     }
 
     public bool       IsHouse         { get; init; }
     public EstateType HouseType       { get; init; }
     public int        ShareHouseIndex { get; init; } = -1;
-    
+
+    /// <summary>
+    ///     获取记录关联的以太之光数据；仅表示区域交通目的地的记录不关联以太之光，返回默认行。
+    /// </summary>
+    /// <returns>关联的以太之光行，或未关联时的默认行。</returns>
     public Aetheryte GetData() =>
-        LuminaGetter.GetRow<Aetheryte>(RowID).GetValueOrDefault();
+        Group == 252 ?
+            default :
+            LuminaGetter.GetRow<Aetheryte>(RowID).GetValueOrDefault();
 
     public TerritoryType GetZone() =>
         LuminaGetter.GetRow<TerritoryType>(ZoneID).GetValueOrDefault();
@@ -75,12 +85,13 @@ public record AetheryteRecord
     public Map GetMap() =>
         LuminaGetter.GetRow<Map>(MapID).GetValueOrDefault();
 
+    /// <summary>
+    ///     判断记录是否满足当前服务器及以太之光解锁条件；区域交通记录由已登记路线提供入口。
+    /// </summary>
+    /// <returns>当前可使用该记录时为真。</returns>
     public unsafe bool IsUnlocked()
     {
         if (IsHouse)
-            return true;
-
-        if (!AetheryteRecords.AethernetGroups.Contains(Group))
             return true;
 
         // 天穹街和宇宙探索都仅有原始服务器能进入
@@ -88,12 +99,17 @@ public record AetheryteRecord
             GameState.CurrentWorld != GameState.HomeWorld)
             return false;
 
-        return UIState.Instance()->IsAetheryteUnlocked(RowID);
+        return !AetheryteRecords.AethernetGroups.Contains(Group) ||
+               UIState.Instance()->IsAetheryteUnlocked(RowID);
     }
 
-    public void Update()
+    /// <summary>
+    ///     刷新记录的传送标记和费用，允许批量刷新时复用同一区域的路线费用。
+    /// </summary>
+    /// <param name="routeCost">已经计算的区域路线费用；未提供时按当前区域计算。</param>
+    public void Update(uint? routeCost = null)
     {
-        var info = GetAetheryteState(this);
+        var info = GetAetheryteState(this, routeCost);
         State = info.State;
         Cost  = info.Cost;
     }
@@ -105,7 +121,7 @@ public record AetheryteRecord
             !agent->IsAgentActive())
             return false;
 
-        if (agent->Data == null) 
+        if (agent->Data == null)
             return false;
 
         for (byte index = 0; index < agent->Data->Entries.Length; index++)
@@ -122,18 +138,20 @@ public record AetheryteRecord
 
     public static AetheryteRecord? Parse(Aetheryte data)
     {
-        if (data.RowId <= 1) 
+        if (data.RowId <= 1)
             return null;
         // 房屋
         if (data.PlaceName.RowId is 1145 or 1160)
             return null;
 
-        var map = data.Map.RowId != 0 ? data.Map.Value : data.Territory.Value.Map.Value;
+        var map = data.Map.RowId != 0 ?
+                      data.Map.Value :
+                      data.Territory.Value.Map.Value;
 
-        var name = data.IsAetheryte
-                       ? data.PlaceName.Value.Name.ToString()
-                       : data.AethernetName.Value.Name.ToString();
-        if (string.IsNullOrWhiteSpace(name)) 
+        var name = data.IsAetheryte ?
+                       data.PlaceName.Value.Name.ToString() :
+                       data.AethernetName.Value.Name.ToString();
+        if (string.IsNullOrWhiteSpace(name))
             return null;
 
         var subIndex = 0;
@@ -151,7 +169,7 @@ public record AetheryteRecord
                              .OrderBy(x => x.Territory.RowId)
                              .ThenBy(x => x.RowId)
                              .ToList();
-            all = all.ExceptBy(special.Select(x => x.RowId), x => x.RowId).ToList();
+            all = [.. all.ExceptBy(special.Select(x => x.RowId), x => x.RowId)];
 
             // 挑出这一组的大水晶
             var aetheryteMain = all.FirstOrDefault(x => x.IsAetheryte);
@@ -161,7 +179,7 @@ public record AetheryteRecord
                               .OrderBy(x => x.Territory.RowId)
                               .ThenBy(x => x.RowId)
                               .ToList();
-            all = all.ExceptBy(outdoors.Select(x => x.RowId), x => x.RowId).ToList();
+            all = [.. all.ExceptBy(outdoors.Select(x => x.RowId), x => x.RowId)];
 
             // 剩下的就各找各的先 Zone 再 RowID 排序
             var left = all.Where(x => !x.IsAetheryte)
@@ -244,33 +262,24 @@ public record AetheryteRecord
         return true;
     }
 
-    public static unsafe (AetheryteRecordState State, uint Cost) GetAetheryteState(AetheryteRecord aetheryte)
+    /// <summary>
+    ///     获取记录当前的传送标记及金币费用，区域交通与特殊区域按实际移动路线计费。
+    /// </summary>
+    /// <param name="aetheryte">需要计算状态的目的地记录。</param>
+    /// <param name="routeCost">批量刷新时已计算的区域路线费用。</param>
+    /// <returns>免费、收藏或返回标记，以及对应的金币费用。</returns>
+    public static unsafe (AetheryteRecordState State, uint Cost) GetAetheryteState(AetheryteRecord aetheryte, uint? routeCost = null)
     {
         if (!GameState.IsLoggedIn) return default;
+
+        if (aetheryte.Group is 252 or 253 or 254)
+            return (AetheryteRecordState.None, routeCost ?? TeleportCostCalculator.GetRouteCost(GameState.TerritoryType, aetheryte.ZoneID));
 
         var instance = PlayerState.Instance();
         if (instance == null) return default;
 
         var data     = aetheryte.GetData();
         var baseCost = TeleportCostCalculator.GetBaseTeleportCost(data, GameState.TerritoryType);
-
-        switch (aetheryte.Group)
-        {
-            // 天穹街 → 伊修加德基础层 (70)
-            case 254:
-            {
-                var ishgardData = LuminaGetter.GetRow<Aetheryte>(70).GetValueOrDefault();
-                baseCost = TeleportCostCalculator.GetBaseTeleportCost(ishgardData, GameState.TerritoryType);
-                return (AetheryteRecordState.None, baseCost);
-            }
-            // 宇宙探索 → 最佳威兔洞 (175)
-            case 253:
-            {
-                var burrowData = LuminaGetter.GetRow<Aetheryte>(175).GetValueOrDefault();
-                baseCost = TeleportCostCalculator.GetBaseTeleportCost(burrowData, GameState.TerritoryType);
-                return (AetheryteRecordState.None, baseCost);
-            }
-        }
 
         if (!aetheryte.IsAetheryte)
             return (AetheryteRecordState.None, baseCost);
@@ -292,7 +301,7 @@ public record AetheryteRecord
 
         return (AetheryteRecordState.None, baseCost);
     }
-    
+
     public static unsafe bool UseAethernetToZone(uint territoryTypeID)
     {
         var agent = AgentTelepotTown.Instance();
@@ -300,7 +309,7 @@ public record AetheryteRecord
             !agent->IsAgentActive())
             return false;
 
-        if (agent->Data == null) 
+        if (agent->Data == null)
             return false;
 
         for (byte index = 0; index < agent->Data->Entries.Length; index++)
@@ -316,9 +325,9 @@ public record AetheryteRecord
     }
 
     public virtual bool Equals(AetheryteRecord? other) =>
-        other?.RowID    == RowID    &&
-        other?.SubIndex == SubIndex &&
-        other?.Group    == Group;
+        other?.RowID   == RowID    &&
+        other.SubIndex == SubIndex &&
+        other.Group    == Group;
 
     public override string ToString() =>
         $"AetheryteRecord.{RowID}-{SubIndex}-{Group}";

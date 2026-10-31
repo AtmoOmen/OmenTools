@@ -4,6 +4,7 @@ using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.AetheryteRecord;
 using OmenTools.Info.Game.AetheryteRecord.Data;
 using OmenTools.Info.Lumina.ExtraSheets;
+using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
 
@@ -11,7 +12,8 @@ namespace OmenTools.OmenService;
 
 public class AetheryteRecordManager
 (
-    GameState gameState
+    GameState       gameState,
+    MovementManager movementManager
 ) : OmenServiceBase<AetheryteRecordManager>
 {
     public string HouseApartmentTemplate { get; set; } = "{houseType}（{zoneName}第{ward}区{plot}号房间）";
@@ -61,7 +63,7 @@ public class AetheryteRecordManager
         if (GameState.IsLoggedIn)
         {
             BuildRecords();
-            RefreshRecords();
+            RefreshRecords(true);
         }
 
         IClientState.Instance().TerritoryChanged += OnZoneChanged;
@@ -82,7 +84,7 @@ public class AetheryteRecordManager
     )
     {
         BuildRecords();
-        RefreshRecords();
+        RefreshRecords(true);
     }
 
     private void OnLogin()
@@ -90,7 +92,7 @@ public class AetheryteRecordManager
         if (!GameState.IsLoggedIn) return;
 
         BuildRecords();
-        RefreshRecords();
+        RefreshRecords(true);
     }
 
     private void OnZoneChanged
@@ -112,11 +114,11 @@ public class AetheryteRecordManager
         var pendingRecords = LuminaGetter.Get<Aetheryte>()
                                          .OrderBy(x => x.AethernetGroup)
                                          .ThenBy(x => x.Territory.RowId);
-        
+
         foreach (var data in pendingRecords)
         {
             var record = AetheryteRecord.Parse(data);
-            if (record == null || 
+            if (record == null ||
                 !record.IsUnlocked())
                 continue;
 
@@ -150,12 +152,90 @@ public class AetheryteRecordManager
         BuildFirmamentRecords();
         BuildCosmicExplorationRecords();
         BuildHouseRecords();
+        BuildEventTransportRecords();
     }
 
-    private void RefreshRecords()
+    private void BuildEventTransportRecords()
     {
-        foreach (var record in AllRecords)
+        var existingZones = AllRecords.Select(x => x.ZoneID).ToHashSet();
+        var targetZones = movementManager.EventTransportations
+                                         .SelectMany(x => x.TargetZones)
+                                         .Distinct()
+                                         .Order();
+
+        foreach (var zoneID in targetZones)
+        {
+            if (existingZones.Contains(zoneID))
+                continue;
+
+            var territory = LuminaGetter.GetRowOrDefault<TerritoryType>(zoneID);
+            var name      = territory.PlaceName.Value.Name.ToString();
+            if (string.IsNullOrWhiteSpace(name))
+                continue;
+
+            var version = zoneID == 1055 ?
+                              4U :
+                              territory.ExVersion.RowId;
+            var record = new AetheryteRecord
+            (
+                zoneID,
+                0,
+                252,
+                version,
+                zoneID,
+                territory.Map.RowId,
+                false,
+                Vector3.Zero,
+                name
+            )
+            {
+                RegionName = territory.TerritoryIntendedUse.RowId switch
+                {
+                    41 or 48 or 61        => territory.ContentFinderCondition.Value.ContentType.Value.Name.ToString(),
+                    _ when zoneID == 1055 => name,
+                    _                     => territory.PlaceNameZone.Value.Name.ToString()
+                }
+            };
+
+            var category = $"{version + 2}.0";
+
+            if (version == 0)
+            {
+                var region = territory.PlaceNameRegion.Value;
+                category = region.RowId is 22 or 23 or 24 ?
+                               region.Name.ToString() :
+                               VERSION_OTHER;
+            }
+
+            Records.TryAdd(category, []);
+            Records[category].Add(record);
+        }
+
+        foreach (var records in Records.Values)
+        {
+            var transports = records.Where(x => x.Group == 252)
+                                    .OrderBy(x => x.RegionName, StringComparer.Ordinal)
+                                    .ThenBy(x => x.ZoneID)
+                                    .ToList();
+            records.RemoveAll(x => x.Group == 252);
+            records.AddRange(transports);
+        }
+    }
+
+    private void RefreshRecords(bool calculateRouteCosts = false)
+    {
+        foreach (var record in AllRecords.Where(x => x.Group is not (252 or 253 or 254)))
             record.Update();
+
+        foreach (var record in AllRecords.Where(x => x.Group is 252 or 253 or 254))
+        {
+            record.Update
+            (
+                calculateRouteCosts ?
+                    TeleportCostCalculator.GetRouteCost(GameState.TerritoryType, record.ZoneID) :
+                    uint.MaxValue
+            );
+        }
     }
 
     private void BuildHouseRecords()
@@ -168,6 +248,7 @@ public class AetheryteRecordManager
         // 公寓
         var aptBuilding = HousingManager.GetOwnedHouseId(EstateType.ApartmentBuilding);
         var aptRoom     = HousingManager.GetOwnedHouseId(EstateType.ApartmentRoom);
+
         if (aptBuilding.Id != INVALID_HOUSE_ID && aptRoom.Id != INVALID_HOUSE_ID)
         {
             TryAddHouseRecord
@@ -187,6 +268,7 @@ public class AetheryteRecordManager
 
         // 个人房
         var personalInfo = HousingManager.GetOwnedHouseId(EstateType.PersonalEstate);
+
         if (personalInfo.Id != INVALID_HOUSE_ID)
         {
             TryAddHouseRecord
@@ -206,6 +288,7 @@ public class AetheryteRecordManager
 
         // 部队房
         var fcInfo = HousingManager.GetOwnedHouseId(EstateType.FreeCompanyEstate);
+
         if (fcInfo.Id != INVALID_HOUSE_ID)
         {
             TryAddHouseRecord
@@ -229,7 +312,7 @@ public class AetheryteRecordManager
             var sharedInfo = HousingManager.GetOwnedHouseId(EstateType.SharedEstate, i);
             if (sharedInfo.Id == INVALID_HOUSE_ID)
                 continue;
-            
+
             TryAddHouseRecord
             (
                 housingMarkers,
@@ -277,7 +360,7 @@ public class AetheryteRecordManager
                 ["zoneName"]  = territoryName,
                 ["houseType"] = houseTypeName,
                 ["ward"]      = nameArgs[0],
-                ["plot"]      = nameArgs[1],
+                ["plot"]      = nameArgs[1]
             }
         );
 
@@ -296,7 +379,7 @@ public class AetheryteRecordManager
         {
             IsHouse         = true,
             HouseType       = houseType,
-            ShareHouseIndex = shareHouseIndex,
+            ShareHouseIndex = shareHouseIndex
         };
 
         Records.TryAdd(VERSION_OTHER, []);

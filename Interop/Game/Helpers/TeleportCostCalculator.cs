@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Lumina;
-using OmenTools.OmenService;
 
 namespace OmenTools.Interop.Game.Helpers;
 
@@ -11,6 +10,55 @@ namespace OmenTools.Interop.Game.Helpers;
 /// </summary>
 public static class TeleportCostCalculator
 {
+    /// <summary>
+    ///     按移动管理器选出的实际路线，累加各段以太传送费用及区域交通费用，不计入选路惩罚。
+    /// </summary>
+    /// <param name="sourceZoneID">出发区域的 TerritoryType 行编号。</param>
+    /// <param name="targetZoneID">目的地区域的 TerritoryType 行编号。</param>
+    /// <returns>所选路线的金币总费用；当前已在目的地区域时为零，无可用路线时为无符号整数最大值。</returns>
+    public static uint GetRouteCost(uint sourceZoneID, uint targetZoneID)
+    {
+        if (sourceZoneID == targetZoneID)
+            return 0;
+
+        var route = MovementManager.FindBestPath(sourceZoneID, targetZoneID);
+        if (route.Count == 0)
+            return uint.MaxValue;
+
+        var cost   = 0U;
+        var zoneID = sourceZoneID;
+
+        foreach (var hop in route)
+        {
+            cost   += GetHopCost(hop, zoneID);
+            zoneID =  hop.TargetZone;
+        }
+
+        return cost;
+    }
+
+    /// <summary>
+    ///     计算单段交通的金币费用，以太传送应用免费、收藏及住宅折扣，区域事件使用其声明的费用。
+    /// </summary>
+    /// <param name="hop">需要计费的单段交通。</param>
+    /// <param name="sourceZoneID">该段交通的出发区域编号。</param>
+    /// <returns>该段交通的金币费用；过图线及城内以太网络免费。</returns>
+    public static uint GetHopCost(ZoneHop hop, uint sourceZoneID) =>
+        hop switch
+        {
+            AetheryteHop aetheryte => GetTeleportCost
+            (
+                aetheryte.Record.GetData(),
+                sourceZoneID,
+                aetheryte.Record.RowID,
+                aetheryte.Record.Group,
+                aetheryte.Record.IsAetheryte,
+                aetheryte.Record.IsHouse
+            ),
+            EventHop transport => transport.Method.Cost,
+            _                  => 0
+        };
+
     /// <summary>
     ///     计算两个 Territory 之间的基础距离费用 (CalcTeleportDistanceCost)
     /// </summary>
@@ -41,7 +89,9 @@ public static class TeleportCostCalculator
         // Expansion >= 400 表示至少一方是 3.0+ 扩展 → 乘数 = exp1 + exp2 + 600
         // 否则 (都是 2.x ARR+HW) → 乘数 = 1000
         var expSum = (uint)(curRow.Expansion + targetRow.Expansion);
-        var scaled = expSum >= 400 ? expSum + 600 : 1000u;
+        var scaled = expSum >= 400 ?
+                         expSum + 600 :
+                         1000u;
 
         // Step 5: raw = round(scaled * dist / 1000)
         // 游戏使用定点数除法魔数 0x20C49BA5E353F7CF ≈ 2^71/1000
@@ -148,7 +198,7 @@ public static class TeleportCostCalculator
         if (!isAetheryte)
             return baseCost;
 
-        if (!GameState.IsLoggedIn) 
+        if (!GameState.IsLoggedIn)
             return baseCost;
 
         var instance = PlayerState.Instance();
