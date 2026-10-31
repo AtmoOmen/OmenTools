@@ -6,6 +6,9 @@ namespace OmenTools.Threading;
 /// <summary>
 ///     将生命周期操作按时间预算分配到后续游戏帧中执行。
 /// </summary>
+/// <remarks>
+///     在使用之前请先考虑：相关工作是不是真的一定要在游戏主线程上完成，如果“不是”的话，请不要使用本类。
+/// </remarks>
 public static class FrameworkWorkScheduler
 {
     /// <summary>
@@ -43,7 +46,7 @@ public static class FrameworkWorkScheduler
                     }
                     while (index < items.Count && Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds < 1);
                 },
-                cancellationToken: cancellationToken
+                cancellationToken
             ).ConfigureAwait(false);
         }
     }

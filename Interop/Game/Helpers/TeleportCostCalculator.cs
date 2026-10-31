@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.Sheets;
+using OmenTools.Info.Game.AetheryteRecord;
 using OmenTools.Interop.Game.Lumina;
 
 namespace OmenTools.Interop.Game.Helpers;
@@ -16,25 +17,136 @@ public static class TeleportCostCalculator
     /// <param name="sourceZoneID">出发区域的 TerritoryType 行编号。</param>
     /// <param name="targetZoneID">目的地区域的 TerritoryType 行编号。</param>
     /// <returns>所选路线的金币总费用；当前已在目的地区域时为零，无可用路线时为无符号整数最大值。</returns>
-    public static uint GetRouteCost(uint sourceZoneID, uint targetZoneID)
+    public static uint GetRouteCost(uint sourceZoneID, uint targetZoneID) =>
+        GetRouteCosts(sourceZoneID, [targetZoneID]).GetValueOrDefault(targetZoneID, uint.MaxValue);
+
+    /// <summary>
+    ///     从同一出发区域批量计算多个目的地区域的路线费用。
+    /// </summary>
+    /// <param name="sourceZoneID">出发区域的 TerritoryType 行编号。</param>
+    /// <param name="targetZoneIDs">目的地区域的 TerritoryType 行编号集合。</param>
+    /// <returns>可到达区域及其路线费用。</returns>
+    public static Dictionary<uint, uint> GetRouteCosts
+    (
+        uint              sourceZoneID,
+        IEnumerable<uint> targetZoneIDs
+    ) =>
+        MovementManager.FindRouteCosts(sourceZoneID, targetZoneIDs);
+
+    internal static unsafe Func<uint, AetheryteRecord, uint> CaptureTeleportCosts
+    (
+        IEnumerable<AetheryteRecord> records
+    )
     {
-        if (sourceZoneID == targetZoneID)
-            return 0;
+        var territories = LuminaGetter.Get<TerritoryTypeTelepo>().ToDictionary
+        (
+            x => x.RowId,
+            x => (X: (int)x.X, Y: (int)x.Y, Expansion: (uint)x.Expansion, Relay: x.Relay.RowId)
+        );
+        var relays = LuminaGetter.Get<TelepoRelay>().ToDictionary
+        (
+            x => x.RowId,
+            x => (Width: x.Unknown_70, Hops: x.Relays.Select
+                         (hop => (Enter: hop.EnterTerritory.RowId, Exit: hop.ExitTerritory.RowId, Cost: (uint)hop.Cost)).ToArray())
+        );
+        var destinations = records.ToDictionary
+        (
+            x => x,
+            x => x.Group switch
+            {
+                254 => LuminaGetter.GetRowOrDefault<Aetheryte>(70).Territory.RowId,
+                253 => LuminaGetter.GetRowOrDefault<Aetheryte>(175).Territory.RowId,
+                _   => x.GetData().Territory.RowId
+            }
+        );
+        var free      = new HashSet<ushort>();
+        var favorites = new HashSet<ushort>();
+        var home      = 0U;
+        var player    = PlayerState.Instance();
 
-        var route = MovementManager.FindBestPath(sourceZoneID, targetZoneID);
-        if (route.Count == 0)
-            return uint.MaxValue;
-
-        var cost   = 0U;
-        var zoneID = sourceZoneID;
-
-        foreach (var hop in route)
+        if (GameState.IsLoggedIn &&
+            player != null)
         {
-            cost   += GetHopCost(hop, zoneID);
-            zoneID =  hop.TargetZone;
+            foreach (var id in player->FreeAetheryteIds)
+                free.Add(id);
+
+            foreach (var id in player->FavouriteAetherytes)
+                favorites.Add(id);
+
+            home = player->HomeAetheryteId;
         }
 
-        return cost;
+        return (source, record) =>
+        {
+            var cost = GetBaseCost(source, destinations[record]);
+
+            if (record.Group is 253 or 254 ||
+                !record.IsAetheryte)
+                return cost;
+
+            if (free.Contains((ushort)record.RowID))
+                return 0;
+
+            if (favorites.Contains((ushort)record.RowID))
+                return cost / 2;
+
+            if (record.RowID == home)
+                return cost;
+
+            return record.IsHouse ?
+                       cost / 4 :
+                       cost;
+        };
+
+        uint GetBaseCost(uint source, uint target)
+        {
+            if (!territories.TryGetValue(source, out var current)     ||
+                !territories.TryGetValue(target, out var destination) ||
+                !relays.TryGetValue(current.Relay, out var relay))
+                return 999;
+
+            int cost;
+
+            if (current.Relay == destination.Relay)
+                cost = CalcDistanceCost
+                (
+                    (current.X, current.Y, current.Expansion),
+                    (destination.X, destination.Y, destination.Expansion),
+                    relay.Width
+                );
+            else
+            {
+                if (destination.Relay >= relay.Hops.Length)
+                    return 999;
+
+                var hop = relay.Hops[destination.Relay];
+
+                if (hop.Enter == 0                                     ||
+                    hop.Exit  == 0                                     ||
+                    !territories.TryGetValue(hop.Enter, out var enter) ||
+                    !territories.TryGetValue(hop.Exit,  out var exit)  ||
+                    !relays.TryGetValue(exit.Relay, out var exitRelay))
+                    return 999;
+
+                cost = CalcDistanceCost
+                       (
+                           (current.X, current.Y, current.Expansion),
+                           (enter.X, enter.Y, enter.Expansion),
+                           relay.Width
+                       )             +
+                       (int)hop.Cost +
+                       CalcDistanceCost
+                       (
+                           (exit.X, exit.Y, exit.Expansion),
+                           (destination.X, destination.Y, destination.Expansion),
+                           exitRelay.Width
+                       );
+            }
+
+            return (uint)(cost > 1000 ?
+                              ((cost - 1000) / 2) + 1000 :
+                              cost);
+        }
     }
 
     /// <summary>
@@ -72,6 +184,19 @@ public static class TeleportCostCalculator
         TerritoryTypeTelepo curRow,
         TerritoryTypeTelepo targetRow,
         uint                worldWrapWidth
+    ) =>
+        CalcDistanceCost
+        (
+            (curRow.X, curRow.Y, curRow.Expansion),
+            (targetRow.X, targetRow.Y, targetRow.Expansion),
+            worldWrapWidth
+        );
+
+    private static int CalcDistanceCost
+    (
+        (int X, int Y, uint Expansion) curRow,
+        (int X, int Y, uint Expansion) targetRow,
+        uint                           worldWrapWidth
     )
     {
         // Step 1: 计算 X 距离 (带世界环绕)
@@ -88,7 +213,7 @@ public static class TeleportCostCalculator
         // Step 4: 大版本乘数
         // Expansion >= 400 表示至少一方是 3.0+ 扩展 → 乘数 = exp1 + exp2 + 600
         // 否则 (都是 2.x ARR+HW) → 乘数 = 1000
-        var expSum = (uint)(curRow.Expansion + targetRow.Expansion);
+        var expSum = curRow.Expansion + targetRow.Expansion;
         var scaled = expSum >= 400 ?
                          expSum + 600 :
                          1000u;

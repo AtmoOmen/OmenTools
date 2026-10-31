@@ -40,7 +40,7 @@ public record AetheryteRecord
     {
         get
         {
-            if (field == null)
+            if (string.IsNullOrWhiteSpace(field))
             {
                 var name = Group switch
                 {
@@ -58,7 +58,12 @@ public record AetheryteRecord
                 if (IsHouse)
                     name = LuminaWrapper.GetAddonText(8495);
 
-                field = name;
+                if (string.IsNullOrWhiteSpace(name))
+                    name = GetZone().PlaceName.Value.Name.ToString();
+
+                field = string.IsNullOrWhiteSpace(name) ?
+                            Name :
+                            name;
             }
 
             return field;
@@ -263,43 +268,34 @@ public record AetheryteRecord
     }
 
     /// <summary>
-    ///     获取记录当前的传送标记及金币费用，区域交通与特殊区域按实际移动路线计费。
+    ///     获取记录当前的传送标记及所选移动路线的金币费用，折扣仅在实际经过的以太传送分段中计算。
     /// </summary>
     /// <param name="aetheryte">需要计算状态的目的地记录。</param>
-    /// <param name="routeCost">批量刷新时已计算的区域路线费用。</param>
+    /// <param name="routeCost">批量刷新时已计算并包含实际传送分段折扣的路线费用；未提供时按当前区域计算。</param>
     /// <returns>免费、收藏或返回标记，以及对应的金币费用。</returns>
     public static unsafe (AetheryteRecordState State, uint Cost) GetAetheryteState(AetheryteRecord aetheryte, uint? routeCost = null)
     {
         if (!GameState.IsLoggedIn) return default;
 
-        if (aetheryte.Group is 252 or 253 or 254)
-            return (AetheryteRecordState.None, routeCost ?? TeleportCostCalculator.GetRouteCost(GameState.TerritoryType, aetheryte.ZoneID));
+        var cost = routeCost ?? TeleportCostCalculator.GetRouteCost(GameState.TerritoryType, aetheryte.ZoneID);
+
+        if (aetheryte.Group is 252 or 253 or 254 ||
+            !aetheryte.IsAetheryte)
+            return (AetheryteRecordState.None, cost);
 
         var instance = PlayerState.Instance();
-        if (instance == null) return default;
-
-        var data     = aetheryte.GetData();
-        var baseCost = TeleportCostCalculator.GetBaseTeleportCost(data, GameState.TerritoryType);
-
-        if (!aetheryte.IsAetheryte)
-            return (AetheryteRecordState.None, baseCost);
+        if (instance == null)
+            return (AetheryteRecordState.None, cost);
 
         if (instance->FreeAetheryteIds.Contains((ushort)aetheryte.RowID))
-            return (AetheryteRecordState.Free, 0);
+            return (AetheryteRecordState.Free, cost);
 
         if (instance->FavouriteAetherytes.Contains((ushort)aetheryte.RowID))
-            return (AetheryteRecordState.Favorite, baseCost / 2);
+            return (AetheryteRecordState.Favorite, cost);
 
-        if (instance->HomeAetheryteId == aetheryte.RowID)
-            return (AetheryteRecordState.Home, baseCost);
-
-        if (aetheryte.IsHouse)
-        {
-            var houseCost = baseCost / 4;
-            return (AetheryteRecordState.None, houseCost);
-        }
-
-        return (AetheryteRecordState.None, baseCost);
+        return (instance->HomeAetheryteId == aetheryte.RowID ?
+                    AetheryteRecordState.Home :
+                    AetheryteRecordState.None, cost);
     }
 
     public static unsafe bool UseAethernetToZone(uint territoryTypeID)

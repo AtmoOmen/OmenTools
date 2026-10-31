@@ -4,7 +4,6 @@ using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.AetheryteRecord;
 using OmenTools.Info.Game.AetheryteRecord.Data;
 using OmenTools.Info.Lumina.ExtraSheets;
-using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.OmenService.Abstractions;
 
@@ -23,6 +22,8 @@ public class AetheryteRecordManager
     public string HousePersonalName      { get; set; } = "个人房屋";
 
     public Dictionary<string, List<AetheryteRecord>> Records { get; private set; } = [];
+
+    private CancellationTokenSource refreshCancellation = new();
 
     /// <remarks>
     ///     如果需要获取公寓，请使用 <see cref="EstateType.ApartmentBuilding" /> 来筛选。
@@ -63,20 +64,28 @@ public class AetheryteRecordManager
         if (GameState.IsLoggedIn)
         {
             BuildRecords();
-            RefreshRecords(true);
+            BeginRefresh();
         }
 
         IClientState.Instance().TerritoryChanged += OnZoneChanged;
         gameState.Login                          += OnLogin;
         gameState.WorldChanged                   += OnWorldChanged;
+        gameState.Logout                         += OnLogout;
     }
 
     protected override void Uninit()
     {
+        refreshCancellation.Cancel();
+        refreshCancellation.Dispose();
+
         IClientState.Instance().TerritoryChanged -= OnZoneChanged;
         gameState.Login                          -= OnLogin;
         gameState.WorldChanged                   -= OnWorldChanged;
+        gameState.Logout                         -= OnLogout;
     }
+
+    private void OnLogout() =>
+        refreshCancellation.Cancel();
 
     private void OnWorldChanged
     (
@@ -84,7 +93,7 @@ public class AetheryteRecordManager
     )
     {
         BuildRecords();
-        RefreshRecords(true);
+        BeginRefresh();
     }
 
     private void OnLogin()
@@ -92,7 +101,7 @@ public class AetheryteRecordManager
         if (!GameState.IsLoggedIn) return;
 
         BuildRecords();
-        RefreshRecords(true);
+        BeginRefresh();
     }
 
     private void OnZoneChanged
@@ -100,11 +109,13 @@ public class AetheryteRecordManager
         uint zone
     )
     {
+        refreshCancellation.Cancel();
+
         if (GameState.ContentFinderCondition != 0 ||
             !GameState.IsLoggedIn)
             return;
 
-        RefreshRecords();
+        BeginRefresh();
     }
 
     private void BuildRecords()
@@ -176,6 +187,27 @@ public class AetheryteRecordManager
             var version = zoneID == 1055 ?
                               4U :
                               territory.ExVersion.RowId;
+            var regionName = zoneID switch
+            {
+                1061 => LuminaWrapper.GetZonePlaceName(156),
+                1360 => LuminaWrapper.GetZonePlaceName(144),
+                1055 => name,
+                _ => territory.TerritoryIntendedUse.RowId is 41 or 48 or 61 ?
+                         territory.ContentFinderCondition.Value.ContentType.Value.Name.ToString() :
+                         territory.PlaceNameZone.Value.Name.ToString()
+            };
+
+            if (string.IsNullOrWhiteSpace(regionName))
+            {
+                var entranceZones = movementManager.EventTransportations
+                                                   .Where(x => x.TargetZones.Contains(zoneID))
+                                                   .Select(x => x.SourceZone)
+                                                   .ToHashSet();
+                regionName = AllRecords.Where(x => entranceZones.Contains(x.ZoneID))
+                                       .Select(x => x.RegionName)
+                                       .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+            }
+
             var record = new AetheryteRecord
             (
                 zoneID,
@@ -189,12 +221,7 @@ public class AetheryteRecordManager
                 name
             )
             {
-                RegionName = territory.TerritoryIntendedUse.RowId switch
-                {
-                    41 or 48 or 61        => territory.ContentFinderCondition.Value.ContentType.Value.Name.ToString(),
-                    _ when zoneID == 1055 => name,
-                    _                     => territory.PlaceNameZone.Value.Name.ToString()
-                }
+                RegionName = regionName
             };
 
             var category = $"{version + 2}.0";
@@ -206,6 +233,9 @@ public class AetheryteRecordManager
                                region.Name.ToString() :
                                VERSION_OTHER;
             }
+
+            if (zoneID is 1061 or 1360)
+                category = VERSION_OTHER;
 
             Records.TryAdd(category, []);
             Records[category].Add(record);
@@ -222,19 +252,44 @@ public class AetheryteRecordManager
         }
     }
 
-    private void RefreshRecords(bool calculateRouteCosts = false)
+    private void BeginRefresh()
     {
-        foreach (var record in AllRecords.Where(x => x.Group is not (252 or 253 or 254)))
-            record.Update();
+        refreshCancellation.Cancel();
+        refreshCancellation.Dispose();
+        refreshCancellation = new();
+        _                   = RefreshRecordsAsync(refreshCancellation.Token);
+    }
 
-        foreach (var record in AllRecords.Where(x => x.Group is 252 or 253 or 254))
+    private async Task RefreshRecordsAsync
+    (
+        CancellationToken cancellationToken
+    )
+    {
+        try
         {
-            record.Update
+            var records = AllRecords.ToList();
+
+            var routeCosts = await MovementManager.FindRouteCostsAsync
+                             (
+                                 GameState.TerritoryType,
+                                 [.. records.Select(x => x.ZoneID).Distinct()],
+                                 cancellationToken
+                             ).ConfigureAwait(false);
+            await IFramework.Instance().Run
             (
-                calculateRouteCosts ?
-                    TeleportCostCalculator.GetRouteCost(GameState.TerritoryType, record.ZoneID) :
-                    uint.MaxValue
+                () =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    foreach (var record in records)
+                        record.Update(routeCosts.GetValueOrDefault(record.ZoneID, uint.MaxValue));
+                },
+                cancellationToken
             );
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // ignored
         }
     }
 
