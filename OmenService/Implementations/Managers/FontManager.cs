@@ -290,42 +290,8 @@ public class FontManager
         float size
     )
     {
-        var fontPath = Config.FontFileName;
-
-        if (!File.Exists(fontPath))
-        {
-            return FontAtlas.NewDelegateFontHandle
-            (e =>
-                {
-                    e.OnPreBuild
-                    (tk =>
-                        {
-                            var defualtFontPtr = tk.AddDalamudDefaultFont(size, DefaultFontRange);
-
-                            var mixedFontPtr0 = tk.AddGameSymbol
-                            (
-                                new()
-                                {
-                                    SizePx     = size,
-                                    PixelSnapH = true,
-                                    MergeFont  = defualtFontPtr
-                                }
-                            );
-
-                            tk.AddFontAwesomeIconFont
-                            (
-                                new()
-                                {
-                                    SizePx     = size,
-                                    PixelSnapH = true,
-                                    MergeFont  = mixedFontPtr0
-                                }
-                            );
-                        }
-                    );
-                }
-            );
-        }
+        var fontPath      = Config.FontFileName;
+        var iconFontIndex = 0;
 
         return FontAtlas.NewDelegateFontHandle
         (e =>
@@ -333,36 +299,55 @@ public class FontManager
                 e.OnPreBuild
                 (tk =>
                     {
-                        var fileFontPtr = tk.AddFontFromFile
-                        (
-                            fontPath,
-                            new()
-                            {
-                                SizePx      = size,
-                                PixelSnapH  = true,
-                                GlyphRanges = DefaultFontRange,
-                                FontNo      = Config.FontFaceIndex
-                            }
-                        );
+                        var font = File.Exists(fontPath) ?
+                                       tk.AddFontFromFile
+                                       (
+                                           fontPath,
+                                           new()
+                                           {
+                                               SizePx      = size,
+                                               PixelSnapH  = true,
+                                               GlyphRanges = DefaultFontRange,
+                                               FontNo      = Config.FontFaceIndex
+                                           }
+                                       ) :
+                                       tk.AddDalamudDefaultFont(size, DefaultFontRange);
 
-                        var mixedFontPtr0 = tk.AddGameSymbol
+                        tk.AddGameSymbol
                         (
                             new()
                             {
                                 SizePx     = size,
                                 PixelSnapH = true,
-                                MergeFont  = fileFontPtr
+                                MergeFont  = font
                             }
                         );
 
+                        iconFontIndex = tk.Fonts.Length;
                         tk.AddFontAwesomeIconFont
                         (
                             new()
                             {
                                 SizePx     = size,
-                                PixelSnapH = true,
-                                MergeFont  = mixedFontPtr0
+                                PixelSnapH = true
                             }
+                        );
+                    }
+                );
+
+                e.OnPostBuild
+                (tk =>
+                    {
+                        var iconFont = tk.Fonts[iconFontIndex];
+                        tk.FitRatio(iconFont);
+                        iconFont.Ascent = tk.Font.Ascent;
+                        tk.CopyGlyphsAcrossFonts
+                        (
+                            iconFont,
+                            tk.Font,
+                            missingOnly: false,
+                            rangeLow: '',
+                            rangeHigh: ''
                         );
                     }
                 );

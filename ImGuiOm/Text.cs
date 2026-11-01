@@ -45,31 +45,67 @@ public static partial class ImGuiOm
         Text(text);
     }
 
-    public static bool TextIcon(FontAwesomeIcon icon, string text, bool useStaticFont = false)
+    /// <summary>
+    /// 在同一行绘制图标和文字，根据图标与文字首字的可见字形中心进行垂直对齐。
+    /// </summary>
+    /// <param name="icon">需要绘制的 FontAwesome 图标。</param>
+    /// <param name="text">图标右侧的文字；为空时只绘制图标。</param>
+    /// <param name="useStaticFont">是否使用 Dalamud 的定宽图标字体；否则使用当前字体中的图标。</param>
+    /// <param name="padding">内容的内边距；未指定时使用当前样式的控件内边距。</param>
+    /// <param name="spacing">图标与文字的间隔，单位为屏幕像素；未指定时使用两倍水平内边距。</param>
+    /// <returns>保留原有禁用按钮的返回值，不响应点击。</returns>
+    public static unsafe bool TextIcon
+    (
+        FontAwesomeIcon icon,
+        string          text,
+        bool            useStaticFont = false,
+        Vector2?        padding       = null,
+        float?          spacing       = null
+    )
     {
-        var iconSize = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            iconSize = ImGui.CalcTextSize(icon.ToIconString());
+        var resolvedPadding = padding ?? ImGui.GetStyle().FramePadding;
+        var resolvedSpacing = spacing ?? 2f * resolvedPadding.X;
+        var iconText        = icon.ToIconString();
+        var textFont        = ImGui.GetFont();
+        var textFontSize    = ImGui.GetFontSize();
+        var textSize        = ImGui.CalcTextSize(text);
+        var textCenterY     = textSize.Y / 2f;
 
+        if (text.Length > 0)
+        {
+            var glyph = textFont.FindGlyph(text[0]);
+            textCenterY = (glyph->Y0 + glyph->Y1) / 2f * (textFontSize / textFont.FontSize);
+        }
+
+        Vector2 iconSize;
+        float   iconCenterY;
+
+        using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth, useStaticFont))
+        {
+            var font  = ImGui.GetFont();
+            var glyph = font.FindGlyph((ushort)icon);
+            iconSize    = ImGui.CalcTextSize(iconText);
+            iconCenterY = (glyph->Y0 + glyph->Y1) / 2f * (ImGui.GetFontSize() / font.FontSize);
+        }
+
+        var cursorPos    = ImGui.GetCursorScreenPos();
+        var buttonHeight = Math.Max(iconSize.Y, textSize.Y);
+        var iconOffsetY = text.Length > 0 ?
+                              textCenterY - iconCenterY :
+                              0f;
+        var iconPos        = cursorPos + resolvedPadding + new Vector2(0,                            iconOffsetY);
+        var textPos        = cursorPos + resolvedPadding + new Vector2(iconSize.X + resolvedSpacing, 0);
         var windowDrawList = ImGui.GetWindowDrawList();
-        var cursorPos      = ImGui.GetCursorScreenPos();
-        var padding        = ImGui.GetStyle().FramePadding;
-        var textSize       = ImGui.CalcTextSize(text);
-        var buttonHeight   = Math.Max(iconSize.Y, textSize.Y);
 
-        var result = false;
-
+        bool result;
         using (ImRaii.Disabled())
         using (ImRaii.PushColor(ImGuiCol.Button, 0))
-            result = ImGui.Button(string.Empty, new(iconSize.X + textSize.X + (3 * padding.X), buttonHeight + (2 * padding.Y)));
+            result = ImGui.Button(string.Empty, new(iconSize.X + textSize.X + resolvedSpacing + resolvedPadding.X, buttonHeight + (2f * resolvedPadding.Y)));
 
-        var iconPos = new Vector2(cursorPos.X + padding.X, cursorPos.Y + padding.Y);
+        using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth, useStaticFont))
+            windowDrawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
 
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            windowDrawList.AddText(iconPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
-
-        var textPos = new Vector2(iconPos.X + iconSize.X + (2 * padding.X), cursorPos.Y + padding.Y);
-        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
+        windowDrawList.AddText(textFont, textFontSize, textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 
         return result;
     }
@@ -100,8 +136,8 @@ public static partial class ImGuiOm
 
     public static void TextOutlined
     (
-        Vector4 textColor,
-        string  text,
+        Vector4  textColor,
+        string   text,
         Vector4? outlineColor     = null,
         float    outlineThickness = 1.5f
     ) =>
@@ -140,7 +176,9 @@ public static partial class ImGuiOm
         using var id    = ImRaii.PushId($"{url}_{displayText}_{showUnderline}");
         using var group = ImRaii.Group();
 
-        var text = string.IsNullOrEmpty(displayText) ? url : displayText;
+        var text = string.IsNullOrEmpty(displayText) ?
+                       url :
+                       displayText;
 
         var textSize  = ImGui.CalcTextSize(text);
         var cursorPos = ImGui.GetCursorScreenPos();
@@ -169,8 +207,10 @@ public static partial class ImGuiOm
             var         underlineStart     = cursorPos with { Y = cursorPos.Y + textSize.Y };
             var         underlineEnd       = new Vector2(cursorPos.X + textSize.X, cursorPos.Y + textSize.Y);
 
-            var isHovered      = ImGui.IsItemHovered();
-            var underlineColor = isHovered ? hoverColor : color;
+            var isHovered = ImGui.IsItemHovered();
+            var underlineColor = isHovered ?
+                                     hoverColor :
+                                     color;
 
             ImGui.GetWindowDrawList().AddLine
             (
