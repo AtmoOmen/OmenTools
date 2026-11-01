@@ -250,16 +250,13 @@ public static partial class ImGuiOm
     (
         string               id,
         FontAwesomeIcon      icon,
-        bool                 selected      = false,
-        ImGuiSelectableFlags flags         = ImGuiSelectableFlags.None,
-        bool                 useStaticFont = false
+        bool                 selected = false,
+        ImGuiSelectableFlags flags    = ImGuiSelectableFlags.None
     )
     {
         using var idPush = ImRaii.PushId($"{icon}_{id}");
 
-        var textSize = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            textSize = ImGui.CalcTextSize(icon.ToIconString());
+        var textSize = ImGui.CalcTextSize(icon.ToIconString());
 
         var windowDrawList   = ImGui.GetWindowDrawList();
         var cursorPos        = ImGui.GetCursorScreenPos();
@@ -270,8 +267,7 @@ public static partial class ImGuiOm
 
         var textPos = new Vector2(cursorPos.X + ((ImGui.GetItemRectSize().X - textSize.X + padding) / 2), cursorPos.Y + padding);
 
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
 
         return result;
     }
@@ -281,15 +277,12 @@ public static partial class ImGuiOm
         string               id,
         FontAwesomeIcon      icon,
         ref bool             selected,
-        ImGuiSelectableFlags flags         = ImGuiSelectableFlags.None,
-        bool                 useStaticFont = false
+        ImGuiSelectableFlags flags = ImGuiSelectableFlags.None
     )
     {
         using var idPush = ImRaii.PushId($"{icon}_{id}");
 
-        var textSize = Vector2.Zero;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            textSize = ImGui.CalcTextSize(icon.ToIconString());
+        var textSize = ImGui.CalcTextSize(icon.ToIconString());
 
         var windowDrawList   = ImGui.GetWindowDrawList();
         var cursorPos        = ImGui.GetCursorScreenPos();
@@ -300,8 +293,7 @@ public static partial class ImGuiOm
 
         var textPos = new Vector2(cursorPos.X + ((ImGui.GetItemRectSize().X - textSize.X + padding) / 2), cursorPos.Y + padding);
 
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
+        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), icon.ToIconString());
 
         return result;
     }

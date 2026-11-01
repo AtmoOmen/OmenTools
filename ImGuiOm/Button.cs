@@ -141,20 +141,19 @@ public static partial class ImGuiOm
     (
         string          id,
         FontAwesomeIcon icon,
-        string          tooltip       = "",
-        bool            useStaticFont = false
+        string          tooltip = ""
     )
     {
         using var idPush = ImRaii.PushId($"{id}_{icon}");
 
         var iconText   = icon.ToIconString();
-        var iconSize   = CalcIconSize(iconText, useStaticFont);
+        var iconSize   = ImGui.CalcTextSize(iconText);
         var buttonSize = new Vector2(GetSingleLineHeight());
         var result     = ImGui.Button(string.Empty, buttonSize);
         var (min, size) = GetItemRect();
         var iconPos = GetCenteredPosition(min, size, iconSize);
 
-        DrawIconText(iconPos, iconText, useStaticFont);
+        DrawIconText(iconPos, iconText);
 
         if (!tooltip.IsNullOrEmpty())
             TooltipHover(tooltip);
@@ -167,19 +166,18 @@ public static partial class ImGuiOm
         string          id,
         FontAwesomeIcon icon,
         Vector2         buttonSize,
-        string          tooltip       = "",
-        bool            useStaticFont = false
+        string          tooltip = ""
     )
     {
         using var idPush = ImRaii.PushId($"{id}_{icon}");
 
         var iconText = icon.ToIconString();
-        var iconSize = CalcIconSize(iconText, useStaticFont);
+        var iconSize = ImGui.CalcTextSize(iconText);
         var result   = ImGui.Button(string.Empty, buttonSize);
         var (min, size) = GetItemRect();
         var iconPos = GetCenteredPosition(min, size, iconSize);
 
-        DrawIconText(iconPos, iconText, useStaticFont);
+        DrawIconText(iconPos, iconText);
 
         if (!tooltip.IsNullOrEmpty())
             TooltipHover(tooltip);
@@ -190,14 +188,13 @@ public static partial class ImGuiOm
     public static bool ButtonIconWithTextVertical
     (
         FontAwesomeIcon icon,
-        string          text,
-        bool            useStaticFont = false
+        string          text
     )
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
 
         var iconText    = icon.ToIconString();
-        var iconSize    = CalcIconSize(iconText, useStaticFont);
+        var iconSize    = ImGui.CalcTextSize(iconText);
         var displaySpan = GetDisplaySpan(text);
         var textSize    = ImGui.CalcTextSize(displaySpan);
         var padding     = ImGui.GetStyle().FramePadding.X;
@@ -207,7 +204,7 @@ public static partial class ImGuiOm
         var (contentMin, contentSize) = GetButtonContentRect();
         var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
 
-        DrawIconText(iconPos, iconText, useStaticFont);
+        DrawIconText(iconPos, iconText);
         ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
@@ -217,14 +214,13 @@ public static partial class ImGuiOm
     (
         FontAwesomeIcon icon,
         string          text,
-        Vector2         buttonSize,
-        bool            useStaticFont = false
+        Vector2         buttonSize
     )
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
 
         var iconText    = icon.ToIconString();
-        var iconSize    = CalcIconSize(iconText, useStaticFont);
+        var iconSize    = ImGui.CalcTextSize(iconText);
         var displaySpan = GetDisplaySpan(text);
         var textSize    = ImGui.CalcTextSize(displaySpan);
         var spacing     = 3f * ImGuiHelpers.GlobalScale;
@@ -232,7 +228,7 @@ public static partial class ImGuiOm
         var (contentMin, contentSize) = GetButtonContentRect();
         var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
 
-        DrawIconText(iconPos, iconText, useStaticFont);
+        DrawIconText(iconPos, iconText);
         ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
@@ -241,14 +237,13 @@ public static partial class ImGuiOm
     public static bool ButtonIconWithText
     (
         FontAwesomeIcon icon,
-        string          text,
-        bool            useStaticFont = false
+        string          text
     )
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
 
         var iconText    = icon.ToIconString();
-        var iconSize    = CalcIconSize(iconText, useStaticFont);
+        var iconSize    = ImGui.CalcTextSize(iconText);
         var displaySpan = GetDisplaySpan(text);
         var textSize    = ImGui.CalcTextSize(displaySpan);
         var padding     = ImGui.GetStyle().FramePadding;
@@ -258,7 +253,7 @@ public static partial class ImGuiOm
         var (contentMin, contentSize) = GetButtonContentRect();
         var (iconPos, textPos)        = GetHorizontalLayout(contentMin, contentSize, iconSize, textSize, spacing);
 
-        DrawIconText(iconPos, iconText, useStaticFont);
+        DrawIconText(iconPos, iconText);
         ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
@@ -268,14 +263,13 @@ public static partial class ImGuiOm
     (
         FontAwesomeIcon icon,
         string          text,
-        Vector2         buttonSize,
-        bool            useStaticFont = false
+        Vector2         buttonSize
     )
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
 
         var iconText    = icon.ToIconString();
-        var iconSize    = CalcIconSize(iconText, useStaticFont);
+        var iconSize    = ImGui.CalcTextSize(iconText);
         var displaySpan = GetDisplaySpan(text);
         var textSize    = ImGui.CalcTextSize(displaySpan);
         var spacing     = ImGui.GetStyle().ItemSpacing.X;
@@ -283,7 +277,7 @@ public static partial class ImGuiOm
         var (contentMin, contentSize) = GetButtonContentRect();
         var (iconPos, textPos)        = GetHorizontalLayout(contentMin, contentSize, iconSize, textSize, spacing);
 
-        DrawIconText(iconPos, iconText, useStaticFont);
+        DrawIconText(iconPos, iconText);
         ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
@@ -342,8 +336,7 @@ public static partial class ImGuiOm
     (
         string          id,
         FontAwesomeIcon icon,
-        string          tooltip       = "",
-        bool            useStaticFont = false
+        string          tooltip = ""
     )
     {
         using var idPush = ImRaii.PushId(id);
@@ -356,9 +349,7 @@ public static partial class ImGuiOm
                                     .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered].ToUInt())
                                     .Push(ImGuiCol.Button,        0);
 
-        bool result;
-        using (ImRaii.PushFont(UiBuilder.IconFont, useStaticFont))
-            result = ImGui.Button($"{iconText}##{iconText}-{id}", size);
+        var result = ImGui.Button($"{iconText}##{iconText}-{id}", size);
 
         if (!tooltip.IsNullOrEmpty())
             TooltipHover(tooltip);
@@ -551,12 +542,13 @@ public static partial class ImGuiOm
         float         thickness
     )
     {
-        if (charge <= 0f) return;
-
-        if (charge >= 1f)
+        switch (charge)
         {
-            draw.AddRect(min, max, chargeColor, rounding, ImDrawFlags.None, thickness);
-            return;
+            case <= 0f:
+                return;
+            case >= 1f:
+                draw.AddRect(min, max, chargeColor, rounding, ImDrawFlags.None, thickness);
+                return;
         }
 
         var size = max - min;
@@ -573,7 +565,7 @@ public static partial class ImGuiOm
         if (branchTotalLength <= 0f) return;
 
         var progress = charge * branchTotalLength;
-        var startPos = new Vector2(min.X, min.Y + (size.Y * 0.5f));
+        var startPos = min with { Y = min.Y + (size.Y * 0.5f) };
 
         var remTop = progress;
         draw.PathClear();
@@ -581,7 +573,7 @@ public static partial class ImGuiOm
 
         if (remTop <= verticalHalf)
         {
-            draw.PathLineTo(new Vector2(min.X, startPos.Y - remTop));
+            draw.PathLineTo(min with { Y = startPos.Y - remTop });
             draw.PathStroke(chargeColor, ImDrawFlags.None, thickness);
         }
         else
@@ -611,7 +603,7 @@ public static partial class ImGuiOm
             {
                 if (remTop <= straightW)
                 {
-                    draw.PathLineTo(new Vector2(min.X + r + remTop, min.Y));
+                    draw.PathLineTo(min with { X = min.X + r + remTop });
                     draw.PathStroke(chargeColor, ImDrawFlags.None, thickness);
                 }
                 else
@@ -639,7 +631,7 @@ public static partial class ImGuiOm
 
                     if (remTop > 0f)
                     {
-                        draw.PathLineTo(new Vector2(max.X, min.Y + r + MathF.Min(remTop, verticalHalf)));
+                        draw.PathLineTo(max with { Y = min.Y + r + MathF.Min(remTop, verticalHalf) });
                         draw.PathStroke(chargeColor, ImDrawFlags.None, thickness);
                     }
                 }
@@ -652,7 +644,7 @@ public static partial class ImGuiOm
 
         if (remBottom <= verticalHalf)
         {
-            draw.PathLineTo(new Vector2(min.X, startPos.Y + remBottom));
+            draw.PathLineTo(min with { Y = startPos.Y + remBottom });
             draw.PathStroke(chargeColor, ImDrawFlags.None, thickness);
         }
         else
@@ -682,7 +674,7 @@ public static partial class ImGuiOm
             {
                 if (remBottom <= straightW)
                 {
-                    draw.PathLineTo(new Vector2(min.X + r + remBottom, max.Y));
+                    draw.PathLineTo(max with { X = min.X + r + remBottom });
                     draw.PathStroke(chargeColor, ImDrawFlags.None, thickness);
                 }
                 else
@@ -710,7 +702,7 @@ public static partial class ImGuiOm
 
                     if (remBottom > 0f)
                     {
-                        draw.PathLineTo(new Vector2(max.X, max.Y - r - MathF.Min(remBottom, verticalHalf)));
+                        draw.PathLineTo(max with { Y = max.Y - r - MathF.Min(remBottom, verticalHalf) });
                         draw.PathStroke(chargeColor, ImDrawFlags.None, thickness);
                     }
                 }

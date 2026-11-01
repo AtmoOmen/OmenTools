@@ -50,7 +50,6 @@ public static partial class ImGuiOm
     /// </summary>
     /// <param name="icon">需要绘制的 FontAwesome 图标。</param>
     /// <param name="text">图标右侧的文字；为空时只绘制图标。</param>
-    /// <param name="useStaticFont">是否使用 Dalamud 的定宽图标字体；否则使用当前字体中的图标。</param>
     /// <param name="padding">内容的内边距；未指定时使用当前样式的控件内边距。</param>
     /// <param name="spacing">图标与文字的间隔，单位为屏幕像素；未指定时使用两倍水平内边距。</param>
     /// <returns>保留原有禁用按钮的返回值，不响应点击。</returns>
@@ -58,9 +57,8 @@ public static partial class ImGuiOm
     (
         FontAwesomeIcon icon,
         string          text,
-        bool            useStaticFont = false,
-        Vector2?        padding       = null,
-        float?          spacing       = null
+        Vector2?        padding = null,
+        float?          spacing = null
     )
     {
         var resolvedPadding = padding ?? ImGui.GetStyle().FramePadding;
@@ -77,16 +75,9 @@ public static partial class ImGuiOm
             textCenterY = (glyph->Y0 + glyph->Y1) / 2f * (textFontSize / textFont.FontSize);
         }
 
-        Vector2 iconSize;
-        float   iconCenterY;
-
-        using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth, useStaticFont))
-        {
-            var font  = ImGui.GetFont();
-            var glyph = font.FindGlyph((ushort)icon);
-            iconSize    = ImGui.CalcTextSize(iconText);
-            iconCenterY = (glyph->Y0 + glyph->Y1) / 2f * (ImGui.GetFontSize() / font.FontSize);
-        }
+        var iconGlyph   = textFont.FindGlyph((ushort)icon);
+        var iconSize    = ImGui.CalcTextSize(iconText);
+        var iconCenterY = (iconGlyph->Y0 + iconGlyph->Y1) / 2f * (textFontSize / textFont.FontSize);
 
         var cursorPos    = ImGui.GetCursorScreenPos();
         var buttonHeight = Math.Max(iconSize.Y, textSize.Y);
@@ -102,8 +93,7 @@ public static partial class ImGuiOm
         using (ImRaii.PushColor(ImGuiCol.Button, 0))
             result = ImGui.Button(string.Empty, new(iconSize.X + textSize.X + resolvedSpacing + resolvedPadding.X, buttonHeight + (2f * resolvedPadding.Y)));
 
-        using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth, useStaticFont))
-            windowDrawList.AddText(ImGui.GetFont(), ImGui.GetFontSize(), iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
+        windowDrawList.AddText(textFont, textFontSize, iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
 
         windowDrawList.AddText(textFont, textFontSize, textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
 

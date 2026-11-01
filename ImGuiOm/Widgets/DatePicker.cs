@@ -107,8 +107,6 @@ public class DatePicker
 
     private void DrawWeekDays()
     {
-        using var font = ImRaii.PushFont(UiBuilder.DefaultFont);
-
         using var color = ImRaii.PushColor(ImGuiCol.Text, ImGui.GetStyle().Colors[(int)ImGuiCol.TextDisabled].ToUInt());
 
         foreach (var day in weekDays)

@@ -97,15 +97,6 @@ public static partial class ImGuiOm
         return (top, bottom);
     }
 
-    private static Vector2 CalcIconSize(string iconText, bool useStaticFont)
-    {
-        using var font = ImRaii.PushFont(UiBuilder.IconFont, useStaticFont);
-        return ImGui.CalcTextSize(iconText);
-    }
-
-    private static void DrawIconText(Vector2 position, string iconText, bool useStaticFont)
-    {
-        using var font = ImRaii.PushFont(UiBuilder.IconFont, useStaticFont);
+    private static void DrawIconText(Vector2 position, string iconText) =>
         ImGui.GetWindowDrawList().AddText(position, ImGui.GetColorU32(ImGuiCol.Text), iconText);
-    }
 }
