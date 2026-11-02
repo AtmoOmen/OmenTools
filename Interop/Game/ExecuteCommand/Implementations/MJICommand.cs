@@ -66,7 +66,7 @@ public sealed unsafe class MJICommand : ExecuteCommandBase
     ///     请求无人岛工房排班物品数据
     /// </summary>
     public static void RequestWorkshopItem() =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestMJIWorkshopAssignment);
+        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestMJIWorkshopDemand);
 
     /// <summary>
     ///     添加无人岛工房排班

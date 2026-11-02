@@ -2482,7 +2482,12 @@ public enum ExecuteCommandFlag
     ToggleMJISettingPanel = 3252,
 
     /// <summary>
-    ///     请求无人岛工房排班数据
+    ///     请求无人岛工房当前排班数据（首次打开界面触发）
+    /// </summary>
+    RequestMJIWorkshops = 3253,
+    
+    /// <summary>
+    ///     请求无人岛工房排班数据（手动切换天数触发）
     /// </summary>
     /// <remarks>
     ///     <para><c>param1</c>: 具体天数 (0 为本周期第一天, 7 为下周期第一天)</para>
@@ -2499,9 +2504,9 @@ public enum ExecuteCommandFlag
     RequestMJIWorkshopConsumption = 3255,
 
     /// <summary>
-    ///     请求无人岛工房排班物品数据
+    ///     请求无人岛工房需求数据
     /// </summary>
-    RequestMJIWorkshopAssignment = 3258,
+    RequestMJIWorkshopDemand = 3258,
 
     /// <summary>
     ///     无人岛工房排班
