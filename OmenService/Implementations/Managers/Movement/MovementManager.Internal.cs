@@ -163,7 +163,7 @@ public partial class MovementManager
     #region 路径
 
     /// <summary>
-    ///     按照金币费用和换乘惩罚选择到达目的地区域的路线，并应用当前传送券策略。
+    ///     按照金币费用和换乘惩罚选择到达目的地区域的路线，同等代价时优先减少城内以太之晶的使用，并应用当前传送券策略。
     /// </summary>
     /// <param name="source">出发区域编号。</param>
     /// <param name="target">目的地区域编号。</param>
@@ -317,7 +317,7 @@ public partial class MovementManager
         CancellationToken cancellationToken
     )
     {
-        var root      = new PathNode(new(source, Vector3.Zero), new(0, 0), 0, false, null, null);
+        var root      = new PathNode(new(source, Vector3.Zero), new(0, 0, 0), 0, false, null, null);
         var bestKnown = new Dictionary<PathState, PathNode> { [root.State] = root };
         var routes    = new Dictionary<uint, PathNode>();
         var edges     = new Dictionary<uint, PathConnection[]>();
@@ -383,7 +383,11 @@ public partial class MovementManager
                 var cost = new PathCost
                 (
                     node.Cost.EffectiveCost + connectionCost + ((uint)node.Cost.Hops * context.HopPenalty),
-                    node.Cost.Hops          + 1
+                    node.Cost.TeleportTownHops +
+                    (hop is TelepotTownHop ?
+                         1 :
+                         0),
+                    node.Cost.Hops + 1
                 );
 
                 if (bestKnown.TryGetValue(state, out var known) &&
@@ -428,6 +432,7 @@ public partial class MovementManager
     private readonly record struct PathCost
     (
         uint EffectiveCost,
+        int  TeleportTownHops,
         int  Hops
     ) : IComparable<PathCost>
     {
@@ -437,6 +442,10 @@ public partial class MovementManager
         )
         {
             var cmp = EffectiveCost.CompareTo(other.EffectiveCost);
+            if (cmp != 0)
+                return cmp;
+
+            cmp = TeleportTownHops.CompareTo(other.TeleportTownHops);
             return cmp != 0 ?
                        cmp :
                        Hops.CompareTo(other.Hops);
