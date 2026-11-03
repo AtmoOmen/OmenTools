@@ -1,6 +1,7 @@
 using System.Numerics;
 using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
@@ -35,7 +36,6 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 
     private static readonly CompSig AccountInfoCacheLoadSig =
         new("4C 8B DC 55 41 56 49 8D 6B ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 48 8B 05");
-
     private unsafe delegate nint AccountInfoCacheLoadDelegate
     (
         ulong accountID,
@@ -45,15 +45,7 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         byte  arg5,
         byte  arg6
     );
-
     private Hook<AccountInfoCacheLoadDelegate>? AccountInfoCacheLoadHook;
-
-    private delegate bool IsLocalPlayerInPartyDelegate();
-    private static readonly IsLocalPlayerInPartyDelegate IsLocalPlayerInParty =
-        new CompSig("E8 ?? ?? ?? ?? 84 C0 74 25 48 8B 8D ?? ?? ?? ??").GetDelegate<IsLocalPlayerInPartyDelegate>();
-    private delegate bool IsLocalPlayerPartyLeaderDelegate();
-    private static readonly IsLocalPlayerPartyLeaderDelegate IsLocalPlayerPartyLeader =
-        new CompSig("48 83 EC ?? E8 ?? ?? ?? ?? 84 C0 74 ?? 48 83 C4").GetDelegate<IsLocalPlayerPartyLeaderDelegate>();
 
     private Hook<AgentUpdateDelegate>? AgentMapUpdateHook;
 
@@ -161,12 +153,6 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     public bool IsMoving { get; private set; }
 
     /// <summary>
-    ///     当前玩家是否在小队中
-    /// </summary>
-    public static bool IsInAnyParty =>
-        InfoProxyCrossRealm.IsCrossRealmParty() || IPartyList.Instance().Length >= 2;
-
-    /// <summary>
     ///     当前玩家是否正处于步行模式
     /// </summary>
     public static unsafe bool IsWalking =>
@@ -241,14 +227,46 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     /// <summary>
     ///     当前是否在任一队伍中
     /// </summary>
-    public static bool IsInParty =>
-        IsLocalPlayerInParty();
+    public static unsafe bool IsInParty
+    {
+        get
+        {
+            if (GroupManager.Instance()->GetGroupWithCheck()->MemberCount > 1)
+                return true;
+
+            if (InfoProxyCrossRealm.IsCrossRealmParty() ||
+                InfoProxyCrossRealm.IsAllianceRaid())
+                return InfoProxyCrossRealm.GetPartyMemberCount() > 1;
+            
+            return false;
+        }
+    }
+    
+    /// <summary>
+    ///     当前是否在本地队伍中
+    /// </summary>
+    public static unsafe bool IsInLocalParty
+    {
+        get
+        {
+            if (InfoProxyCrossRealm.IsCrossRealmParty())
+                return false;
+            
+            return GroupManager.Instance()->GetGroupWithCheck()->MemberCount > 1;
+        }
+    }
+
+    /// <summary>
+    ///     当前是否在本地队伍中
+    /// </summary>
+    public static unsafe bool IsInCrossRealmParty =>
+        InfoProxyCrossRealm.IsCrossRealmParty();
 
     /// <summary>
     ///     当前是否为队长
     /// </summary>
     public static bool IsPartyLeader =>
-        IsLocalPlayerPartyLeader();
+        InfoProxyCrossRealm.IsLocalPlayerPartyLeader();
 
     /// <summary>
     ///     当前玩家对象
