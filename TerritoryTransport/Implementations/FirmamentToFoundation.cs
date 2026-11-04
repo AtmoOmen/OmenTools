@@ -14,9 +14,6 @@ public sealed class FirmamentToFoundation : EventTransportBase
     public override uint SourceZone =>
         SOURCE_ZONE;
 
-    public override IReadOnlyList<uint> TargetZones =>
-        [TARGET_ZONE];
-
     public override Vector3 EventPosition =>
         NPCPosition;
 
@@ -50,7 +47,6 @@ public sealed class FirmamentToFoundation : EventTransportBase
     #region 常量
 
     private const uint SOURCE_ZONE    = 886;
-    private const uint TARGET_ZONE    = 418;
     private const uint NPC_EVENT_ID   = 131343;
     private const uint EVENT_CATEGORY = 16777216;
     private const uint EVENT_PARAM    = 1;

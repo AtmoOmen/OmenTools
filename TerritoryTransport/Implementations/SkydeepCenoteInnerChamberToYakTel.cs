@@ -9,8 +9,6 @@ public sealed class SkydeepCenoteInnerChamberToYakTel : EventSimpleYesTransportB
 
     public override uint SourceZone => 1222;
 
-    public override IReadOnlyList<uint> TargetZones => [1189];
-
     public override Vector3 EventPosition => new(0.1f, -0.0f, -10.8f);
 
     protected override uint EventID => 131554;

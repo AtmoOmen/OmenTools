@@ -12,15 +12,12 @@ public sealed class ShiroganeToKugane : EventSimpleStringTransportBase
     public override uint SourceZone =>
         641;
 
-    public override IReadOnlyList<uint> TargetZones =>
-        [628];
-
     public override Vector3 EventPosition =>
         new(-857.0f, 2.0f, -822.5f);
 
     protected override uint EventID =>
         131249;
 
-    protected override string EventString => 
+    protected override string EventString =>
         LuminaWrapper.GetAddonText(6403);
 }

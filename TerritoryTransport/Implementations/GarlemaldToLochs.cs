@@ -9,8 +9,6 @@ public sealed class GarlemaldToLochs : EventSimpleYesTransportBase
 
     public override uint SourceZone => 958;
 
-    public override IReadOnlyList<uint> TargetZones => [621];
-
     public override Vector3 EventPosition => new(-493.2f, 27.6f, 632.6f);
 
     protected override uint EventID => 131419;

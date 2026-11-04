@@ -9,8 +9,6 @@ public sealed class RoyalMenagerieToLochs : EventSimpleYesTransportBase
 
     public override uint SourceZone => 740;
 
-    public override IReadOnlyList<uint> TargetZones => [621];
-
     public override Vector3 EventPosition => new(-466.3f, 383.0f, -126.9f);
 
     protected override uint EventID => 131288;

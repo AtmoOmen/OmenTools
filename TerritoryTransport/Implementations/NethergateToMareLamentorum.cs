@@ -9,8 +9,6 @@ public sealed class NethergateToMareLamentorum : EventSimpleYesTransportBase
 
     public override uint SourceZone => 1024;
 
-    public override IReadOnlyList<uint> TargetZones => [959];
-
     public override Vector3 EventPosition => new(-0.0f, 5.6f, 2.1f);
 
     protected override uint EventID => 131462;

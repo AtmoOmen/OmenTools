@@ -9,8 +9,6 @@ public sealed class SeaOfCloudsToParrock : EventSimpleYesTransportBase
 
     public override uint SourceZone => 401;
 
-    public override IReadOnlyList<uint> TargetZones => [567];
-
     public override Vector3 EventPosition => new(-813.9f, -88.3f, -834.3f);
 
     protected override uint EventID => 131223;

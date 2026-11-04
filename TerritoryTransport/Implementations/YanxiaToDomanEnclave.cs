@@ -9,8 +9,6 @@ public sealed class YanxiaToDomanEnclave : EventSimpleYesTransportBase
 
     public override uint SourceZone => 614;
 
-    public override IReadOnlyList<uint> TargetZones => [759];
-
     public override Vector3 EventPosition => new(-491.3f, 1.1f, 541.1f);
 
     protected override uint EventID => 131293;

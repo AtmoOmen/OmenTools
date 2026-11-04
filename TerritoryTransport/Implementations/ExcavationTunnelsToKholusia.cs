@@ -9,8 +9,6 @@ public sealed class ExcavationTunnelsToKholusia : EventSimpleYesTransportBase
 
     public override uint SourceZone => 895;
 
-    public override IReadOnlyList<uint> TargetZones => [814];
-
     public override Vector3 EventPosition => new(1.7f, 0.0f, 0.9f);
 
     protected override uint EventID => 131348;

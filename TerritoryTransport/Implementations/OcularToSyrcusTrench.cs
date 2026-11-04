@@ -9,8 +9,6 @@ public sealed class OcularToSyrcusTrench : EventSimpleYesTransportBase
 
     public override uint SourceZone => 844;
 
-    public override IReadOnlyList<uint> TargetZones => [842];
-
     public override Vector3 EventPosition => new(-0.0f, 0.9f, -11.1f);
 
     protected override uint EventID => 131325;

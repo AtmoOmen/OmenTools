@@ -12,15 +12,12 @@ public sealed class LavenderBedsToOldGridania : EventSimpleStringTransportBase
     public override uint SourceZone =>
         340;
 
-    public override IReadOnlyList<uint> TargetZones =>
-        [133];
-
     public override Vector3 EventPosition =>
         new(9.7f, 2.6f, 204.7f);
 
     protected override uint EventID =>
         131159;
 
-    protected override string EventString => 
+    protected override string EventString =>
         LuminaWrapper.GetAddonText(6403);
 }

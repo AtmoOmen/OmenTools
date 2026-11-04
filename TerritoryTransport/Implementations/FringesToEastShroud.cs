@@ -9,8 +9,6 @@ public sealed class FringesToEastShroud : EventSimpleYesTransportBase
 
     public override uint SourceZone => 612;
 
-    public override IReadOnlyList<uint> TargetZones => [152];
-
     public override Vector3 EventPosition => new(-662.0f, 130.0f, -532.3f);
 
     protected override uint EventID => 131250;

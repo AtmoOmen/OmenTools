@@ -9,8 +9,6 @@ public sealed class ParrockToLeofardsChambers : EventSimpleYesTransportBase
 
     public override uint SourceZone => 567;
 
-    public override IReadOnlyList<uint> TargetZones => [568];
-
     public override Vector3 EventPosition => new(22.3f, 3.6f, -18.8f);
 
     protected override uint EventID => 131225;

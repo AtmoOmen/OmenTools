@@ -9,8 +9,6 @@ public sealed class GangosToDomanEnclave : EventSimpleYesTransportBase
 
     public override uint SourceZone => 915;
 
-    public override IReadOnlyList<uint> TargetZones => [759];
-
     public override Vector3 EventPosition => new(-50.3f, 0.2f, -36.3f);
 
     protected override uint EventID => 131360;

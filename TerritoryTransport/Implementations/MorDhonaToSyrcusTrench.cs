@@ -9,8 +9,6 @@ public sealed class MorDhonaToSyrcusTrench : EventSimpleYesTransportBase
 
     public override uint SourceZone => 156;
 
-    public override IReadOnlyList<uint> TargetZones => [842];
-
     public override Vector3 EventPosition => new(353.6f, -25.4f, -374.1f);
 
     protected override uint EventID => 131322;

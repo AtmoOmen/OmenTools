@@ -94,7 +94,7 @@ public record AetheryteRecord
         LuminaGetter.GetRow<Map>(MapID).GetValueOrDefault();
 
     /// <summary>
-    ///     判断记录是否满足当前服务器及以太之光解锁条件；区域交通记录由已登记路线提供入口。
+    ///     判断记录是否满足当前服务器及解锁条件；区域交通目的地要求至少一条入口线路已满足非金币条件。
     /// </summary>
     /// <returns>当前可使用该记录时为真。</returns>
     public unsafe bool IsUnlocked()
@@ -102,13 +102,15 @@ public record AetheryteRecord
         if (IsHouse)
             return true;
 
-        // 天穹街和宇宙探索都仅有原始服务器能进入
-        if (Group is 254 or 253 &&
-            GameState.CurrentWorld != GameState.HomeWorld)
-            return false;
-
-        return !AetheryteRecords.AethernetGroups.Contains(Group) ||
-               UIState.Instance()->IsAetheryteUnlocked(RowID);
+        return Group switch
+        {
+            252 => MovementManager.Instance().EventTransportations.Any
+            (x => x.TargetZones.Contains(ZoneID) && x.IsUnlocked()
+            ),
+            254 or 253 when GameState.CurrentWorld != GameState.HomeWorld => false,
+            _ => !AetheryteRecords.AethernetGroups.Contains(Group) ||
+                 UIState.Instance()->IsAetheryteUnlocked(RowID)
+        };
     }
 
     /// <summary>
@@ -210,7 +212,7 @@ public record AetheryteRecord
             subIndex = finalList.IndexOf(x => x.RowId == data.RowId);
         }
 
-        Vector3 position = default;
+        Vector3 position;
 
         if (AetheryteRecords.NormalPositions.TryGetValue(data.RowId, out var redirectedPosition))
             position = redirectedPosition;

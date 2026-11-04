@@ -9,11 +9,7 @@ public sealed class GoldSaucerToNewGridania : EventSimpleYesTransportBase
 
     public override uint SourceZone => 144;
 
-    public override IReadOnlyList<uint> TargetZones => [132];
-
     public override Vector3 EventPosition => new(-38.2f, 0.0f, 100.5f);
 
     protected override uint EventID => 131184;
-
-    public override uint Cost => 120;
 }

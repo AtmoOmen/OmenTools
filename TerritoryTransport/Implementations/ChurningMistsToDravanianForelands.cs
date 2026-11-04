@@ -9,8 +9,6 @@ public sealed class ChurningMistsToDravanianForelands : EventSimpleYesTransportB
 
     public override uint SourceZone => 400;
 
-    public override IReadOnlyList<uint> TargetZones => [398];
-
     public override Vector3 EventPosition => new(198.0f, -68.6f, 706.6f);
 
     protected override uint EventID => 131200;

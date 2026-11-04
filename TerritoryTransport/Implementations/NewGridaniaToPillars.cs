@@ -9,11 +9,7 @@ public sealed class NewGridaniaToPillars : EventSimpleYesTransportBase
 
     public override uint SourceZone => 132;
 
-    public override IReadOnlyList<uint> TargetZones => [419];
-
     public override Vector3 EventPosition => new(28.7f, -19.0f, 101.0f);
 
     protected override uint EventID => 131230;
-    
-    public override uint Cost => 150;
 }

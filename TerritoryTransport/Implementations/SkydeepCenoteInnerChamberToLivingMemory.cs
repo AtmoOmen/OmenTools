@@ -9,8 +9,6 @@ public sealed class SkydeepCenoteInnerChamberToLivingMemory : EventSimpleYesTran
 
     public override uint SourceZone => 1222;
 
-    public override IReadOnlyList<uint> TargetZones => [1192];
-
     public override Vector3 EventPosition => new(0.0f, 0.2f, -84.5f);
 
     protected override uint EventID => 131561;

@@ -9,11 +9,7 @@ public sealed class RadzatHanToUpperDecks : EventSimpleYesTransportBase
 
     public override uint SourceZone => 963;
 
-    public override IReadOnlyList<uint> TargetZones => [128];
-
     public override Vector3 EventPosition => new(-142.3f, 28.0f, 229.3f);
 
     protected override uint EventID => 131433;
-    
-    public override uint Cost => 300;
 }

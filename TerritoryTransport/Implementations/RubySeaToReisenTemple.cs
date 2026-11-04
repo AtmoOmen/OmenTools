@@ -9,8 +9,6 @@ public sealed class RubySeaToReisenTemple : EventSimpleYesTransportBase
 
     public override uint SourceZone => 613;
 
-    public override IReadOnlyList<uint> TargetZones => [764];
-
     public override Vector3 EventPosition => new(282.2f, 16.2f, 842.0f);
 
     protected override uint EventID => 131295;

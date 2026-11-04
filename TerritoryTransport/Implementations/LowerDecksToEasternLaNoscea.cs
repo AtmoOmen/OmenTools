@@ -9,11 +9,7 @@ public sealed class LowerDecksToEasternLaNoscea : EventSimpleYesTransportBase
 
     public override uint SourceZone => 129;
 
-    public override IReadOnlyList<uint> TargetZones => [137];
-
     public override Vector3 EventPosition => new(-189.1f, 1.0f, 208.7f);
 
     protected override uint EventID => 131111;
-    
-    public override uint Cost => 40;
 }

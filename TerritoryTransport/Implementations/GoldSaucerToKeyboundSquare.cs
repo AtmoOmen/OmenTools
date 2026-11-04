@@ -9,8 +9,6 @@ public sealed class GoldSaucerToKeyboundSquare : EventSimpleYesTransportBase
 
     public override uint SourceZone => 144;
 
-    public override IReadOnlyList<uint> TargetZones => [1360];
-
     public override Vector3 EventPosition => new(4.6f, 4.0f, 62.8f);
 
     protected override uint EventID => 131633;

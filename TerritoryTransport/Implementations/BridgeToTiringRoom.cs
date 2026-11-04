@@ -9,8 +9,6 @@ public sealed class BridgeToTiringRoom : EventSimpleYesTransportBase
 
     public override uint SourceZone => 736;
 
-    public override IReadOnlyList<uint> TargetZones => [735];
-
     public override Vector3 EventPosition => new(7.3f, -0.0f, 0.1f);
 
     protected override uint EventID => 131284;

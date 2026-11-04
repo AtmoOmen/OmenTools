@@ -9,11 +9,7 @@ public sealed class WesternThanalanToLowerDecks : EventSimpleYesTransportBase
 
     public override uint SourceZone => 140;
 
-    public override IReadOnlyList<uint> TargetZones => [129];
-
     public override Vector3 EventPosition => new(-487.8f, 24.0f, -330.7f);
 
     protected override uint EventID => 131107;
-    
-    public override uint Cost => 80;
 }

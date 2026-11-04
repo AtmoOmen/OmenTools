@@ -9,8 +9,6 @@ public sealed class ExcavationTunnelsToCopiedFactory : EventSimpleYesTransportBa
 
     public override uint SourceZone => 895;
 
-    public override IReadOnlyList<uint> TargetZones => [896];
-
     public override Vector3 EventPosition => new(-0.1f, 0.0f, -93.3f);
 
     protected override uint EventID => 131350;

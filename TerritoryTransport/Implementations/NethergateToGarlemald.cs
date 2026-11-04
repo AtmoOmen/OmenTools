@@ -9,8 +9,6 @@ public sealed class NethergateToGarlemald : EventSimpleYesTransportBase
 
     public override uint SourceZone => 1024;
 
-    public override IReadOnlyList<uint> TargetZones => [958];
-
     public override Vector3 EventPosition => new(0.2f, 0.0f, 49.1f);
 
     protected override uint EventID => 131449;

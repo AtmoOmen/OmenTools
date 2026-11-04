@@ -9,8 +9,6 @@ public sealed class KholusiaToCrystarium : EventSimpleYesTransportBase
 
     public override uint SourceZone => 814;
 
-    public override IReadOnlyList<uint> TargetZones => [819];
-
     public override Vector3 EventPosition => new(796.8f, 1.8f, 258.6f);
 
     protected override uint EventID => 131332;

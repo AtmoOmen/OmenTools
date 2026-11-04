@@ -9,8 +9,6 @@ public sealed class UltimaThuleToLabyrinthos : EventSimpleYesTransportBase
 
     public override uint SourceZone => 960;
 
-    public override IReadOnlyList<uint> TargetZones => [956];
-
     public override Vector3 EventPosition => new(-375.4f, 80.7f, 613.9f);
 
     protected override uint EventID => 131418;

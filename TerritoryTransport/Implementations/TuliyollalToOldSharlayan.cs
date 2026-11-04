@@ -9,8 +9,6 @@ public sealed class TuliyollalToOldSharlayan : EventSimpleYesTransportBase
 
     public override uint SourceZone => 1185;
 
-    public override IReadOnlyList<uint> TargetZones => [962];
-
     public override Vector3 EventPosition => new(123.0f, -18.0f, 142.9f);
 
     protected override uint EventID => 131545;

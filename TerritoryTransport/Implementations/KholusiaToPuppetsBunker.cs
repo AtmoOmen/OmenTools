@@ -9,8 +9,6 @@ public sealed class KholusiaToPuppetsBunker : EventSimpleYesTransportBase
 
     public override uint SourceZone => 814;
 
-    public override IReadOnlyList<uint> TargetZones => [928];
-
     public override Vector3 EventPosition => new(701.8f, 293.6f, -159.1f);
 
     protected override uint EventID => 131373;
