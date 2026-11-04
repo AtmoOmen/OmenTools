@@ -8,6 +8,7 @@ using OmenTools.Info.Game.AetheryteRecord.Data;
 using OmenTools.Info.Game.AetheryteRecord.Enums;
 using OmenTools.Interop.Game.Helpers;
 using OmenTools.Interop.Game.Lumina;
+using OmenTools.TerritoryTransport.Abstractions;
 using Map = Lumina.Excel.Sheets.Map;
 
 namespace OmenTools.Info.Game.AetheryteRecord;
@@ -32,6 +33,8 @@ public record AetheryteRecord
 {
     public AetheryteRecordState State { get; private set; }
     public uint                 Cost  { get; private set; }
+
+    public EventTransportBase? EventTransport { get; init; }
 
     /// <summary>
     ///     获取目的地的区域分组名称；区域交通记录可在创建时明确指定特殊归属。

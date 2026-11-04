@@ -173,13 +173,14 @@ public class AetheryteRecordManager
     private void BuildEventTransportRecords()
     {
         var existingZones = AllRecords.Select(x => x.ZoneID).ToHashSet();
-        var targetZones = movementManager.EventTransportations
-                                         .SelectMany(x => x.TargetZones)
-                                         .Distinct()
-                                         .Order();
+        var targetTransports = movementManager.EventTransportations
+                                              .SelectMany(x => x.TargetZones, (transport, zoneID) => (ZoneID: zoneID, Transport: transport))
+                                              .GroupBy(x => x.ZoneID, x => x.Transport)
+                                              .OrderBy(x => x.Key);
 
-        foreach (var zoneID in targetZones)
+        foreach (var transports in targetTransports)
         {
+            var zoneID = transports.Key;
             if (existingZones.Contains(zoneID))
                 continue;
 
@@ -203,10 +204,7 @@ public class AetheryteRecordManager
 
             if (string.IsNullOrWhiteSpace(regionName))
             {
-                var entranceZones = movementManager.EventTransportations
-                                                   .Where(x => x.TargetZones.Contains(zoneID))
-                                                   .Select(x => x.SourceZone)
-                                                   .ToHashSet();
+                var entranceZones = transports.Select(x => x.SourceZone).ToHashSet();
                 regionName = AllRecords.Where(x => entranceZones.Contains(x.ZoneID))
                                        .Select(x => x.RegionName)
                                        .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
@@ -225,7 +223,8 @@ public class AetheryteRecordManager
                 name
             )
             {
-                RegionName = regionName
+                RegionName     = regionName,
+                EventTransport = transports.First()
             };
 
             var category = $"{version + 2}.0";
