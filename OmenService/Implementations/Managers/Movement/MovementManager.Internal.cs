@@ -167,14 +167,30 @@ public partial class MovementManager
     /// </summary>
     /// <param name="source">出发区域编号。</param>
     /// <param name="target">目的地区域编号。</param>
+    /// <param name="targetAetheryte">明确选择的目标以太之光；最终以传送进入目的地区域时仅使用该记录，传送券直传也使用该记录。</param>
     /// <returns>按执行顺序排列的交通分段；无需移动或无法到达时为空。</returns>
-    public static List<ZoneHop> FindBestPath(uint source, uint target)
+    public static List<ZoneHop> FindBestPath(uint source, uint target, AetheryteRecord? targetAetheryte = null)
     {
         if (source == target)
             return [];
 
         var context = CapturePathSearch(source);
-        var routes  = SearchPaths(context, source, [target], CancellationToken.None);
+
+        if (targetAetheryte != null)
+        {
+            context = context with
+            {
+                Aetherytes =
+                [
+                    .. context.Aetherytes.Where
+                    (x => x.TargetZone != target ||
+                          x.Record     == targetAetheryte
+                    )
+                ]
+            };
+        }
+
+        var routes = SearchPaths(context, source, [target], CancellationToken.None);
         if (!routes.TryGetValue(target, out var node))
             return [];
 
@@ -190,16 +206,16 @@ public partial class MovementManager
     }
 
     /// <summary>
-    ///     从同一出发区域搜索多个目的地区域，返回所选路线的实际金币费用，不包含换乘惩罚。
+    ///     从同一出发区域搜索多个目的地区域，按应用传送券后的实际金币支出选路，返回所选路线使用传送券前的展示费用，不包含换乘惩罚。
     /// </summary>
     /// <param name="source">出发区域编号。</param>
     /// <param name="targets">目的地区域编号集合。</param>
-    /// <returns>可到达的目的地区域及其金币费用；当前区域的费用为零。</returns>
+    /// <returns>可到达的目的地区域及其展示费用；保留免费、收藏及住宅折扣，传送券抵扣不计入展示费用，当前区域的费用为零。</returns>
     public static Dictionary<uint, uint> FindRouteCosts(uint source, IEnumerable<uint> targets)
     {
         var context = CapturePathSearch(source);
         return SearchPaths(context, source, [.. targets], CancellationToken.None)
-            .ToDictionary(x => x.Key, x => x.Value.GilCost);
+            .ToDictionary(x => x.Key, x => x.Value.DisplayGilCost);
     }
 
     internal static async Task<Dictionary<uint, uint>> FindRouteCostsAsync
@@ -218,7 +234,7 @@ public partial class MovementManager
         return await Task.Run
                (
                    () => SearchPaths(context, source, [.. targets], cancellationToken)
-                       .ToDictionary(x => x.Key, x => x.Value.GilCost),
+                       .ToDictionary(x => x.Key, x => x.Value.DisplayGilCost),
                    cancellationToken
                ).ConfigureAwait(false);
     }
@@ -279,8 +295,9 @@ public partial class MovementManager
         }
 
         var ticketType = TicketUsageType;
-        var useTickets = ticketType is 1 or 4 &&
-                         LocalPlayerState.GetItemCount(TELEPORT_TICKET_ITEM_ID) > 0;
+        var ticketCount = ticketType is 1 or 4 ?
+                              LocalPlayerState.GetItemCount(TELEPORT_TICKET_ITEM_ID) :
+                              0;
 
         return new
         (
@@ -298,12 +315,11 @@ public partial class MovementManager
                 ).ToArray()
             ),
             [.. records.Select(x => new AetheryteHop(x))],
-            nearest,
             TeleportCostCalculator.CaptureTeleportCosts(records),
             manager.AlwaysMinGilTransport ?
                 0 :
                 manager.config.HopCumulativePenalty,
-            useTickets,
+            ticketCount,
             ticketType,
             TicketUsageGilSetting
         );
@@ -317,7 +333,7 @@ public partial class MovementManager
         CancellationToken cancellationToken
     )
     {
-        var root      = new PathNode(new(source, Vector3.Zero), new(0, 0, 0), 0, false, null, null);
+        var root      = new PathNode(new(source, Vector3.Zero, context.TicketCount), new(0, 0, 0), 0, null, null);
         var bestKnown = new Dictionary<PathState, PathNode> { [root.State] = root };
         var routes    = new Dictionary<uint, PathNode>();
         var edges     = new Dictionary<uint, PathConnection[]>();
@@ -333,22 +349,7 @@ public partial class MovementManager
                 continue;
 
             if (pendingTargets.Remove(node.State.Zone))
-            {
-                var result = node;
-
-                if (context.UseTickets &&
-                    node.HasAetheryte  &&
-                    context.NearestAetherytes.TryGetValue(node.State.Zone, out var aetheryte))
-                {
-                    var directCost = context.TeleportCost(source, aetheryte);
-
-                    if (context.TicketType == 1 ||
-                        directCost         > context.TicketThreshold)
-                        result = new(node.State, node.Cost, directCost, true, root, new AetheryteHop(aetheryte));
-                }
-
-                routes[node.State.Zone] = result;
-            }
+                routes[node.State.Zone] = node;
 
             if (pendingTargets.Count == 0)
                 break;
@@ -373,16 +374,29 @@ public partial class MovementManager
 
             foreach (var (hop, connectionCost) in zoneEdges)
             {
+                var gilCost          = connectionCost;
+                var ticketsRemaining = node.State.TicketsRemaining;
+
+                if (hop is AetheryteHop  &&
+                    gilCost          > 0 &&
+                    ticketsRemaining > 0 &&
+                    (context.TicketType == 1 ||
+                     gilCost            >= context.TicketThreshold))
+                {
+                    gilCost = 0;
+                    ticketsRemaining--;
+                }
+
                 var arrival = hop switch
                 {
                     AetheryteHop aetheryte => aetheryte.Record.Position,
                     TelepotTownHop town    => town.Target.Position,
                     _                      => Vector3.Zero
                 };
-                var state = new PathState(hop.TargetZone, arrival);
+                var state = new PathState(hop.TargetZone, arrival, ticketsRemaining);
                 var cost = new PathCost
                 (
-                    node.Cost.EffectiveCost + connectionCost + ((uint)node.Cost.Hops * context.HopPenalty),
+                    node.Cost.EffectiveCost + gilCost + ((uint)node.Cost.Hops * context.HopPenalty),
                     node.Cost.TeleportTownHops +
                     (hop is TelepotTownHop ?
                          1 :
@@ -398,8 +412,7 @@ public partial class MovementManager
                 (
                     state,
                     cost,
-                    node.GilCost + connectionCost,
-                    node.HasAetheryte || hop is AetheryteHop,
+                    node.DisplayGilCost + connectionCost,
                     node,
                     hop
                 );
@@ -426,7 +439,8 @@ public partial class MovementManager
     private readonly record struct PathState
     (
         uint    Zone,
-        Vector3 Pos
+        Vector3 Pos,
+        uint    TicketsRemaining
     );
 
     private readonly record struct PathCost
@@ -456,10 +470,9 @@ public partial class MovementManager
     (
         Dictionary<uint, PathConnection[]> Edges,
         AetheryteHop[]                     Aetherytes,
-        Dictionary<uint, AetheryteRecord>  NearestAetherytes,
         Func<uint, AetheryteRecord, uint>  TeleportCost,
         uint                               HopPenalty,
-        bool                               UseTickets,
+        uint                               TicketCount,
         uint                               TicketType,
         uint                               TicketThreshold
     );
@@ -468,8 +481,7 @@ public partial class MovementManager
     (
         PathState State,
         PathCost  Cost,
-        uint      GilCost,
-        bool      HasAetheryte,
+        uint      DisplayGilCost,
         PathNode? Previous,
         ZoneHop?  Hop
     );
