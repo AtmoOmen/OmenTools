@@ -1,26 +1,101 @@
-using System.Runtime.InteropServices;
-using OmenTools.Dalamud;
 using OmenTools.Interop.Game.Models;
-using OmenTools.OmenService;
 
 namespace OmenTools.Info.Game.Packets.Upstream;
 
+/// <summary>
+///     统一解析客户端上行数据包的操作码。
+/// </summary>
 public static class UpstreamOpcode
 {
-    public static int EventStartOpcode             { get; private set; }
-    public static int EventActionOpcode            { get; private set; }
-    public static int EventCompleteOpcode          { get; private set; }
-    public static int DiveStartOpcode              { get; private set; }
-    public static int PositionUpdateOpcode         { get; private set; }
-    public static int PositionUpdateInstanceOpcode { get; private set; }
-    public static int TreasureOpenOpcode           { get; private set; }
-    public static int HeartbeatOpcode              { get; private set; }
-    public static int UseActionOpcode              { get; private set; }
-    public static int UseActionLocationOpcode      { get; private set; }
-    public static int MJIInteractOpcode            { get; private set; }
-    public static int ExecuteCommandOpcode         { get; private set; }
-    public static int CharaCardOpenOpcode          { get; private set; }
-    public static int HandOverItemOpcode           { get; private set; }
+    /// <summary>
+    ///     事件开始数据包的上行操作码。
+    /// </summary>
+    public static int EventStartOpcode { get; }
+
+    /// <summary>
+    ///     事件操作数据包的上行操作码。
+    /// </summary>
+    public static int EventActionOpcode { get; }
+
+    /// <summary>
+    ///     事件完成数据包的上行操作码。
+    /// </summary>
+    public static int EventCompleteOpcode { get; }
+
+    /// <summary>
+    ///     开始潜水数据包的上行操作码。
+    /// </summary>
+    public static int DiveStartOpcode { get; }
+
+    /// <summary>
+    ///     位置更新数据包的上行操作码。
+    /// </summary>
+    public static int PositionUpdateOpcode { get; }
+
+    /// <summary>
+    ///     副本位置更新数据包的上行操作码。
+    /// </summary>
+    public static int PositionUpdateInstanceOpcode { get; }
+
+    /// <summary>
+    ///     开启宝箱数据包的上行操作码。
+    /// </summary>
+    public static int TreasureOpenOpcode { get; }
+
+    /// <summary>
+    ///     心跳数据包的上行操作码。
+    /// </summary>
+    public static int HeartbeatOpcode { get; }
+
+    /// <summary>
+    ///     使用技能数据包的上行操作码。
+    /// </summary>
+    public static int UseActionOpcode { get; }
+
+    /// <summary>
+    ///     指定位置使用技能数据包的上行操作码。
+    /// </summary>
+    public static int UseActionLocationOpcode { get; }
+
+    /// <summary>
+    ///     无人岛交互数据包的上行操作码。
+    /// </summary>
+    public static int MJIInteractOpcode { get; }
+
+    /// <summary>
+    ///     执行指令数据包的上行操作码。
+    /// </summary>
+    public static int ExecuteCommandOpcode { get; }
+
+    /// <summary>
+    ///     打开冒险者铭牌数据包的上行操作码。
+    /// </summary>
+    public static int CharaCardOpenOpcode { get; }
+
+    /// <summary>
+    ///     交付物品数据包的上行操作码。
+    /// </summary>
+    public static int HandOverItemOpcode { get; }
+
+    static UpstreamOpcode()
+    {
+        EventStartOpcode             = PacketOpcodeReader.Read("EventStart",             (EventStartOpcodeBaseSig, 0x4));
+        EventActionOpcode            = PacketOpcodeReader.Read("EventAction",            (EventActionOpcodeBaseSig, 0x9E));
+        EventCompleteOpcode          = PacketOpcodeReader.Read("EventComplete",          (EventCompleteOpcodeBaseSig, 0x117));
+        DiveStartOpcode              = PacketOpcodeReader.Read("DiveStart",              (DiveStartOpcodeBaseSig, 0x4));
+        PositionUpdateInstanceOpcode = PacketOpcodeReader.Read("PositionUpdateInstance", (PositionUpdateInstanceBaseSig, 0x4));
+        TreasureOpenOpcode           = PacketOpcodeReader.Read("TreasureOpen",           (TreasureOpenOpcodeBaseSig, 0x4));
+        HeartbeatOpcode              = PacketOpcodeReader.Read("Heartbeat",              (HeartbeatOpcodeBaseSig, 0x4));
+        UseActionOpcode              = PacketOpcodeReader.Read("UseAction",              (UseActionOpcodeBaseSig, 0x4));
+        UseActionLocationOpcode      = PacketOpcodeReader.Read("UseActionLocation",      (UseActionLocationOpcodeBaseSig, 0x4));
+        MJIInteractOpcode            = PacketOpcodeReader.Read("MJIInteract",            (MJIInteractOpcodeBaseSig, 0x4));
+        ExecuteCommandOpcode         = PacketOpcodeReader.Read("ExecuteCommand",         (ExecuteCommandOpcodeBaseSig, 0x6D));
+        CharaCardOpenOpcode          = PacketOpcodeReader.Read("CharaCardOpen",          (CharaCardOpenOpcodeBaseSig, 0x4));
+        HandOverItemOpcode           = PacketOpcodeReader.Read("HandOverItem",           (HandOverItemOpcodeBaseSig, 0xBD));
+        PositionUpdateOpcode         = PacketOpcodeReader.Read("PositionUpdate",         (PositionUpdateBaseSig, 0x4));
+    }
+
+    #region 常量
 
     private static readonly CompSig EventStartOpcodeBaseSig =
         new("C7 44 24 ?? ?? ?? ?? ?? 48 C7 44 24 ?? ?? ?? ?? ?? 89 5C 24 ?? 0F 85");
@@ -70,66 +145,5 @@ public static class UpstreamOpcode
     private static readonly CompSig HandOverItemOpcodeBaseSig =
         new("E8 ?? ?? ?? ?? EB 3A 40 84 FF");
 
-    static UpstreamOpcode()
-    {
-        EventStartOpcode             = ReadOpcode("EventStart",             EventStartOpcodeBaseSig,        0x4);
-        EventActionOpcode            = ReadOpcode("EventAction",            EventActionOpcodeBaseSig,       0x9E);
-        EventCompleteOpcode          = ReadOpcode("EventComplete",          EventCompleteOpcodeBaseSig,     0x117);
-        DiveStartOpcode              = ReadOpcode("DiveStart",              DiveStartOpcodeBaseSig,         0x4);
-        PositionUpdateInstanceOpcode = ReadOpcode("PositionUpdateInstance", PositionUpdateInstanceBaseSig,  0x4);
-        TreasureOpenOpcode           = ReadOpcode("TreasureOpen",           TreasureOpenOpcodeBaseSig,      0x4);
-        HeartbeatOpcode              = ReadOpcode("Heartbeat",              HeartbeatOpcodeBaseSig,         0x4);
-        UseActionOpcode              = ReadOpcode("UseAction",              UseActionOpcodeBaseSig,         0x4);
-        UseActionLocationOpcode      = ReadOpcode("UseActionLocation",      UseActionLocationOpcodeBaseSig, 0x4);
-        MJIInteractOpcode            = ReadOpcode("MJIInteract",            MJIInteractOpcodeBaseSig,       0x4);
-        ExecuteCommandOpcode         = ReadOpcode("ExecuteCommand",         ExecuteCommandOpcodeBaseSig,    0x6D);
-        CharaCardOpenOpcode          = ReadOpcode("CharaCardOpen",          CharaCardOpenOpcodeBaseSig,     0x4);
-        HandOverItemOpcode           = ReadOpcode("HandOverItem",           HandOverItemOpcodeBaseSig,      0xBD);
-        PositionUpdateOpcode         = ReadOpcode("PositionUpdate",         PositionUpdateBaseSig,          0x4);
-    }
-
-    private static int ReadOpcode(string name, CompSig sig, int offset)
-    {
-        try
-        {
-            return Marshal.ReadInt32(sig.ScanText() + offset);
-        }
-        catch (Exception ex)
-        {
-            DLog.Error($"尝试读取 OPCODE {name} 时发生错误", ex);
-            NotifyHelper.Instance().Chat
-            (
-                $"尝试读取 OPCODE {name} 发生错误, 请在 Discord 内上报\n" +
-                $"Error while reading OPCODE {name}. Please report on Discord."
-            );
-        }
-
-        return 0;
-    }
-
-    private static int ReadOpcodes(string name, params (CompSig sig, int offset)[] data)
-    {
-        Exception? exception = null;
-
-        foreach (var (sig, offset) in data)
-        {
-            try
-            {
-                return Marshal.ReadInt32(sig.ScanText() + offset);
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-            }
-        }
-
-        DLog.Error($"尝试读取 OPCODE {name} 时发生错误", exception);
-        NotifyHelper.Instance().Chat
-        (
-            $"尝试读取 OPCODE {name} 发生错误, 请在 Discord 内上报\n" +
-            $"Error while reading OPCODE {name}. Please report on Discord."
-        );
-
-        return 0;
-    }
+    #endregion
 }

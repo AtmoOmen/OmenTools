@@ -7,6 +7,7 @@ using FFXIVClientStructs.FFXIV.Client.Network;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using OmenTools.Dalamud;
 using OmenTools.Info.Game.Packets.Abstractions;
+using OmenTools.Info.Game.Packets.Downstream;
 using OmenTools.Info.Game.Packets.Upstream;
 using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
@@ -185,7 +186,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     )
     {
         var opcode = *(ushort*)packet;
-        LogKnownGamePacket(*(ushort*)packet, (byte*)packet, isPrioritize);
+        LogKnownGamePacket(opcode, (byte*)packet, isPrioritize);
 
         var isPrevented = false;
 
@@ -198,7 +199,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 
                 if (isPrevented)
                 {
-                    if (Config.ShowReceivedPacketOpcodeLog)
+                    if (Config.ShowGamePacketOpcodeLog)
                         DLog.Debug("[Game Packet Manager] 上方该包已被阻止发送");
                     return false;
                 }
@@ -236,7 +237,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
         packet -= 16;
 
         var opcode = Marshal.ReadInt16(packet, 18);
-        LogKnownReceivedPacket(opcode, targetID);
+        LogKnownReceivedPacket(opcode, targetID, (byte*)packet);
 
         var isPrevented = false;
 
@@ -268,12 +269,17 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 
     private void LogKnownReceivedPacket
     (
-        int  opcode,
-        uint targetID
+        int   opcode,
+        uint  targetID,
+        byte* packet
     )
     {
         if (Config.ShowReceivedPacketOpcodeLog)
             DLog.Debug($"[Game Packet Manager] [下行] 操作码: {opcode} / 目标: 0x{targetID:X8}");
+
+        if (DOWNSTREAM_PACKET_HANDLERS.TryGetValue(opcode, out var handler) &&
+            handler.ShouldLog())
+            handler.Log(packet + 32);
     }
 
     private void LogKnownGamePacket
@@ -286,7 +292,8 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
         if (Config.ShowGamePacketOpcodeLog)
             DLog.Debug($"[Game Packet Manager] [上行] 操作码: {opcode} / 长度: {*(uint*)(packet + 8)} / 优先级: {isPrioritize}");
 
-        if (PacketHandlers.TryGetValue(opcode, out var handler) && handler.ShouldLog())
+        if (UPSTREAM_PACKET_HANDLERS.TryGetValue(opcode, out var handler) &&
+            handler.ShouldLog())
             handler.Log(packet);
     }
 
@@ -294,7 +301,7 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
     (
         byte* packet
     ) where T : unmanaged, IUpstreamPacket =>
-        DLog.Debug($"[Game Packet Manager] {((T*)packet)->Log()}");
+        DLog.Debug($"[Game Packet Manager] [上行] {((T*)packet)->Log()}");
 
     #region 注册 (私有)
 
@@ -362,7 +369,48 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
 
     #endregion
 
-    private static readonly Dictionary<int, PacketHandler> PacketHandlers = new()
+
+    private class PacketHandler
+    (
+        Func<bool>   shouldLog,
+        PacketLogger log
+    )
+    {
+        public Func<bool>   ShouldLog { get; } = shouldLog;
+        public PacketLogger Log       { get; } = log;
+    }
+
+    public class GamePacketManagerConfig : OmenServiceConfig
+    {
+        public bool ShowGamePacketOpcodeLog;
+        public bool ShowGamePacketEventStartLog;
+        public bool ShowGamePacketEventActionLog;
+        public bool ShowGamePacketEventCompleteLog;
+        public bool ShowGamePacketDiveStartLog;
+        public bool ShowGamePacketPositionUpdateLog;
+        public bool ShowGamePacketTreasureOpenLog;
+        public bool ShowGamePacketHeartbeatLog;
+        public bool ShowGamePacketUseActionLog;
+        public bool ShowGamePacketUseActionLocationLog;
+        public bool ShowGamePacketMJIInteractLog;
+        public bool ShowGamePacketExecuteCommandLog;
+        public bool ShowGamePacketCharaCardOpenLog;
+        public bool ShowGamePacketHandOverItemLog;
+
+        public bool ShowReceivedPacketOpcodeLog;
+
+        /// <summary>
+        ///     是否打印下行心跳回包的客户端时间戳与往返耗时字段。
+        /// </summary>
+        public bool ShowReceivedPacketHeartbeatLog;
+
+        public void Save() =>
+            this.Save(DService.Instance().GetOmenService<GamePacketManager>());
+    }
+
+    #region 常量
+
+    private static readonly Dictionary<int, PacketHandler> UPSTREAM_PACKET_HANDLERS = new()
     {
         [UpstreamOpcode.EventCompleteOpcode] =
             new
@@ -463,36 +511,15 @@ public unsafe class GamePacketManager : OmenServiceBase<GamePacketManager>
             )
     };
 
-    private class PacketHandler
-    (
-        Func<bool>   shouldLog,
-        PacketLogger log
-    )
+    private static readonly Dictionary<int, PacketHandler> DOWNSTREAM_PACKET_HANDLERS = new()
     {
-        public Func<bool>   ShouldLog { get; } = shouldLog;
-        public PacketLogger Log       { get; } = log;
-    }
+        [DownstreamOpcode.HeartbeatOpcode] =
+            new
+            (
+                () => Instance().Config.ShowReceivedPacketHeartbeatLog,
+                packet => DLog.Debug($"[Game Packet Manager] [下行] {((HeartbeatResponsePacket*)packet)->Log()}")
+            )
+    };
 
-    public class GamePacketManagerConfig : OmenServiceConfig
-    {
-        public bool ShowGamePacketOpcodeLog;
-        public bool ShowGamePacketEventStartLog;
-        public bool ShowGamePacketEventActionLog;
-        public bool ShowGamePacketEventCompleteLog;
-        public bool ShowGamePacketDiveStartLog;
-        public bool ShowGamePacketPositionUpdateLog;
-        public bool ShowGamePacketTreasureOpenLog;
-        public bool ShowGamePacketHeartbeatLog;
-        public bool ShowGamePacketUseActionLog;
-        public bool ShowGamePacketUseActionLocationLog;
-        public bool ShowGamePacketMJIInteractLog;
-        public bool ShowGamePacketExecuteCommandLog;
-        public bool ShowGamePacketCharaCardOpenLog;
-        public bool ShowGamePacketHandOverItemLog;
-
-        public bool ShowReceivedPacketOpcodeLog;
-
-        public void Save() =>
-            this.Save(DService.Instance().GetOmenService<GamePacketManager>());
-    }
+    #endregion
 }
