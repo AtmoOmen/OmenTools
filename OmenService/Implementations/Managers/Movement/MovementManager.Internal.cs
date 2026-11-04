@@ -39,12 +39,6 @@ public partial class MovementManager
 
     private GetCurrentZoneMoveStateDelegate GetCurrentZoneMoveState = null!;
 
-    private static uint TicketUsageGilSetting =>
-        IGameConfig.Instance().UiConfig.GetUInt("TelepoTicketGilSetting");
-
-    private static uint TicketUsageType =>
-        IGameConfig.Instance().UiConfig.GetUInt("TelepoTicketUseType");
-
     private Config config = null!;
 
     protected override unsafe void Init()
@@ -163,11 +157,11 @@ public partial class MovementManager
     #region 路径
 
     /// <summary>
-    ///     按照金币费用和换乘惩罚选择到达目的地区域的路线，同等代价时优先减少城内以太之晶的使用，并应用当前传送券策略。
+    ///     按照传送券抵扣前的金币费用和换乘惩罚选择到达目的地区域的路线，同等代价时优先减少城内以太之晶的使用。
     /// </summary>
     /// <param name="source">出发区域编号。</param>
     /// <param name="target">目的地区域编号。</param>
-    /// <param name="targetAetheryte">明确选择的目标以太之光；最终以传送进入目的地区域时仅使用该记录，传送券直传也使用该记录。</param>
+    /// <param name="targetAetheryte">明确选择的目标以太之光；最终以传送进入目的地区域时仅使用该记录。</param>
     /// <returns>按执行顺序排列的交通分段；无需移动或无法到达时为空。</returns>
     public static List<ZoneHop> FindBestPath(uint source, uint target, AetheryteRecord? targetAetheryte = null)
     {
@@ -206,7 +200,7 @@ public partial class MovementManager
     }
 
     /// <summary>
-    ///     从同一出发区域搜索多个目的地区域，按应用传送券后的实际金币支出选路，返回所选路线使用传送券前的展示费用，不包含换乘惩罚。
+    ///     从同一出发区域搜索多个目的地区域，按传送券抵扣前的金币费用选路，返回所选路线的展示费用，不包含换乘惩罚。
     /// </summary>
     /// <param name="source">出发区域编号。</param>
     /// <param name="targets">目的地区域编号集合。</param>
@@ -294,11 +288,6 @@ public partial class MovementManager
                 zoneEdges.Add(new EventHop(method, target));
         }
 
-        var ticketType = TicketUsageType;
-        var ticketCount = ticketType is 1 or 4 ?
-                              LocalPlayerState.GetItemCount(TELEPORT_TICKET_ITEM_ID) :
-                              0;
-
         return new
         (
             edges.ToDictionary
@@ -318,10 +307,7 @@ public partial class MovementManager
             TeleportCostCalculator.CaptureTeleportCosts(records),
             manager.AlwaysMinGilTransport ?
                 0 :
-                manager.config.HopCumulativePenalty,
-            ticketCount,
-            ticketType,
-            TicketUsageGilSetting
+                manager.config.HopCumulativePenalty
         );
     }
 
@@ -333,7 +319,7 @@ public partial class MovementManager
         CancellationToken cancellationToken
     )
     {
-        var root      = new PathNode(new(source, Vector3.Zero, context.TicketCount), new(0, 0, 0), 0, null, null);
+        var root      = new PathNode(new(source, Vector3.Zero), new(0, 0, 0), 0, null, null);
         var bestKnown = new Dictionary<PathState, PathNode> { [root.State] = root };
         var routes    = new Dictionary<uint, PathNode>();
         var edges     = new Dictionary<uint, PathConnection[]>();
@@ -374,29 +360,16 @@ public partial class MovementManager
 
             foreach (var (hop, connectionCost) in zoneEdges)
             {
-                var gilCost          = connectionCost;
-                var ticketsRemaining = node.State.TicketsRemaining;
-
-                if (hop is AetheryteHop  &&
-                    gilCost          > 0 &&
-                    ticketsRemaining > 0 &&
-                    (context.TicketType == 1 ||
-                     gilCost            >= context.TicketThreshold))
-                {
-                    gilCost = 0;
-                    ticketsRemaining--;
-                }
-
                 var arrival = hop switch
                 {
                     AetheryteHop aetheryte => aetheryte.Record.Position,
                     TelepotTownHop town    => town.Target.Position,
                     _                      => Vector3.Zero
                 };
-                var state = new PathState(hop.TargetZone, arrival, ticketsRemaining);
+                var state = new PathState(hop.TargetZone, arrival);
                 var cost = new PathCost
                 (
-                    node.Cost.EffectiveCost + gilCost + ((uint)node.Cost.Hops * context.HopPenalty),
+                    node.Cost.EffectiveCost + connectionCost + ((uint)node.Cost.Hops * context.HopPenalty),
                     node.Cost.TeleportTownHops +
                     (hop is TelepotTownHop ?
                          1 :
@@ -439,8 +412,7 @@ public partial class MovementManager
     private readonly record struct PathState
     (
         uint    Zone,
-        Vector3 Pos,
-        uint    TicketsRemaining
+        Vector3 Pos
     );
 
     private readonly record struct PathCost
@@ -471,10 +443,7 @@ public partial class MovementManager
         Dictionary<uint, PathConnection[]> Edges,
         AetheryteHop[]                     Aetherytes,
         Func<uint, AetheryteRecord, uint>  TeleportCost,
-        uint                               HopPenalty,
-        uint                               TicketCount,
-        uint                               TicketType,
-        uint                               TicketThreshold
+        uint                               HopPenalty
     );
 
     private sealed record PathNode
@@ -491,10 +460,4 @@ public partial class MovementManager
         ZoneHop Hop,
         uint    Cost
     );
-
-    #region 常量
-
-    private const uint TELEPORT_TICKET_ITEM_ID = 7569;
-
-    #endregion
 }
