@@ -9,10 +9,28 @@ namespace OmenTools.Interop.Windows.Models;
 public partial struct TCPInfo
 {
     /// <summary>
+    ///     当前连接已建立的时长，单位为毫秒。
+    /// </summary>
+    [FieldOffset(8)]
+    public ulong ConnectionTime;
+
+    /// <summary>
     ///     平滑往返耗时，单位为微秒。
     /// </summary>
     [FieldOffset(20)]
     public uint RoundTripTime;
+
+    /// <summary>
+    ///     当前连接累计发送的字节数。
+    /// </summary>
+    [FieldOffset(48)]
+    public ulong BytesSent;
+
+    /// <summary>
+    ///     当前连接累计重传的字节数，按无符号 32 位计数器回绕。
+    /// </summary>
+    [FieldOffset(68)]
+    public uint BytesRetransmitted;
 
     /// <summary>
     ///     查询已有套接字的 TCP 统计信息，返回 Winsock 错误码，成功时返回零。
