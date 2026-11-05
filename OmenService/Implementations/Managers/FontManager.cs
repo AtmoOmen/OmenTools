@@ -132,12 +132,12 @@ public class FontManager
     /// 获取用于字体图集构建的像素字号，不包含由图集负责处理的 Dalamud 全局界面缩放。
     /// </summary>
     /// <param name="scale">相对于应用配置缩放后的 Dalamud 默认字号的倍率。</param>
-    /// <returns>Dalamud 当前默认字号乘以配置缩放和指定倍率，保留一位小数。</returns>
+    /// <returns>Dalamud 当前默认字号乘以配置缩放和指定倍率，保留两位小数。</returns>
     public float GetActualFontSize
     (
         float scale
     ) =>
-        MathF.Round(IUiBuilder.Instance().FontDefaultSizePx * Config.FontScale * scale, 1);
+        MathF.Round(IUiBuilder.Instance().FontDefaultSizePx * Config.FontScale * scale, 2);
 
     public IFontHandle GetFont
     (
