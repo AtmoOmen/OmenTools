@@ -116,7 +116,7 @@ public class FontManager
     public IFontHandle UIFont60  => GetUIFont(0.6f);
 
     /// <summary>
-    /// 获取基础界面字体相对于 16 像素基准字号的显示倍率，包含一次 Dalamud 全局界面缩放。
+    /// 获取应用配置缩放后的界面字体相对于 16 像素基准字号的显示倍率，包含一次 Dalamud 全局界面缩放。
     /// </summary>
     public float GlobalFontScale => GetActualFontSize(1f) / DEFAULT_FONT_SIZE * ImGuiHelpers.GlobalScale;
 
@@ -131,13 +131,13 @@ public class FontManager
     /// <summary>
     /// 获取用于字体图集构建的像素字号，不包含由图集负责处理的 Dalamud 全局界面缩放。
     /// </summary>
-    /// <param name="scale">相对于基础字号的倍率。</param>
-    /// <returns>显式配置字号或 Dalamud 当前默认字号乘以指定倍率，保留一位小数。</returns>
+    /// <param name="scale">相对于应用配置缩放后的 Dalamud 默认字号的倍率。</param>
+    /// <returns>Dalamud 当前默认字号乘以配置缩放和指定倍率，保留一位小数。</returns>
     public float GetActualFontSize
     (
         float scale
     ) =>
-        MathF.Round((Config.FontSize ?? IUiBuilder.Instance().FontDefaultSizePx) * scale, 1);
+        MathF.Round(IUiBuilder.Instance().FontDefaultSizePx * Config.FontScale * scale, 1);
 
     public IFontHandle GetFont
     (
@@ -179,9 +179,9 @@ public class FontManager
             if (clearOld)
                 ClearFontHandles();
 
-            var sizes = PreBuildFontSizes.Select(GetActualFontSize)
-                                         .Distinct()
-                                         .ToArray();
+            var sizes = PREBUILD_FONT_SCALES.Select(GetActualFontSize)
+                                            .Distinct()
+                                            .ToArray();
 
             foreach (var size in sizes)
             {
@@ -686,9 +686,10 @@ public class FontManager
     public sealed class FontManagerConfig : OmenServiceConfig
     {
         /// <summary>
-        /// 基础像素字号；为 <see langword="null"/> 时跟随 Dalamud 的默认字号。
+        /// 相对于 Dalamud 默认字号的缩放倍率，默认为 1，随 Dalamud 的默认字号变化。
         /// </summary>
-        public float? FontSize;
+        public float FontScale = 1f;
+
         public string FontFileName = string.Empty;
         public int    FontFaceIndex;
 
@@ -734,8 +735,6 @@ public class FontManager
     private readonly Lazy<IFontHandle> trumpGothicFont340Lazy = new(() => FontAtlasGame.NewGameFontHandle(new(GameFontFamilyAndSize.TrumpGothic34)));
     private readonly Lazy<IFontHandle> trumpGothicFont680Lazy = new(() => FontAtlasGame.NewGameFontHandle(new(GameFontFamilyAndSize.TrumpGothic68)));
 
-    private static readonly float[] PreBuildFontSizes = [0.6f, 0.8f, 0.9f, 1.0f, 1.2f, 1.4f, 1.6f];
-
     private static readonly string[] FontExtensions = [".ttf", ".otf", ".ttc", ".otc"];
 
     private static readonly FrozenSet<string> FontExtensionSet = FontExtensions.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
@@ -743,6 +742,8 @@ public class FontManager
     #endregion
 
     #region 常量
+
+    private static readonly float[] PREBUILD_FONT_SCALES = [0.6f, 0.8f, 0.9f, 1.0f, 1.2f, 1.4f, 1.6f];
 
     private const float DEFAULT_FONT_SIZE = 16f;
 
