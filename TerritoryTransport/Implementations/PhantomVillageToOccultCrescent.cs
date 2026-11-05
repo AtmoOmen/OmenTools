@@ -68,7 +68,7 @@ public sealed class PhantomVillageToOccultCrescent : EventTransportBase
         [1346] = 1093
     }.ToFrozenDictionary();
 
-    private static readonly Vector3 NPCPosition = new(-71.93f, 5f, -16.02f);
+    private static readonly Vector3 NPCPosition = new(-74.3f, 5.0f, -15.5f);
 
     #endregion
 }
