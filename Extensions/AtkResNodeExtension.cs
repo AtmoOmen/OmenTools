@@ -11,6 +11,33 @@ public static unsafe class AtkResNodeExtension
 {
     extension(scoped ref AtkResNode node)
     {
+        /// <remarks>
+        ///     会自动移除节点本身设置位置的时间线，对于很多界面很有效。
+        /// </remarks>
+        public void SetFixedPosition
+        (
+            float x,
+            float y
+        )
+        {
+            fixed (AtkResNode* nodePtr = &node)
+            {
+                if (nodePtr->Timeline != null)
+                {
+                    var resource = nodePtr->Timeline->Resource;
+
+                    for (var animationIndex = 0; animationIndex < resource->AnimationCount; animationIndex++)
+                    {
+                        ref var positionGroup = ref resource->Animations[animationIndex].KeyGroups[0];
+                        for (var keyFrameIndex = 0; keyFrameIndex < positionGroup.KeyFrameCount; keyFrameIndex++)
+                            positionGroup.KeyFrames[keyFrameIndex].Value.Float2 = new(x, y);
+                    }
+                }
+
+                nodePtr->SetPositionFloat(x, y);
+            }
+        }
+
         public void OutlineNode()
         {
             fixed (AtkResNode* nodePtr = &node)
