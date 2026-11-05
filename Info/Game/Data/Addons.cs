@@ -16,6 +16,8 @@ public static unsafe class Addons
     public static AtkUnitBase* PartyList              => AddonHelper.GetByName("_PartyList");
     public static AtkUnitBase* TitleMenu              => AddonHelper.GetByName("_TitleMenu");
     public static AtkUnitBase* TitleLogo              => AddonHelper.GetByName("_TitleLogo");
+    public static AtkUnitBase* TitleRevision          => AddonHelper.GetByName("_TitleRevision");
+    public static AtkUnitBase* TitleRights            => AddonHelper.GetByName("_TitleRights");
     public static AtkUnitBase* TargetInfo             => AddonHelper.GetByName("_TargetInfo");
     public static AtkUnitBase* TargetInfoMainTarget   => AddonHelper.GetByName("_TargetInfoMainTarget");
     public static AtkUnitBase* TargetInfoCastBar      => AddonHelper.GetByName("_TargetInfoCastBar");
