@@ -9,6 +9,22 @@ public static unsafe class AtkComponentExtension
 {
     extension(scoped ref AtkComponentNode node)
     {
+        /// <remarks>
+        ///     会自动移除节点本身设置位置的时间线，对于很多界面很有效。
+        /// </remarks>
+        public void SetFixedPosition
+        (
+            float x,
+            float y
+        )
+        {
+            fixed (AtkComponentNode* nodePtr = &node)
+            {
+                if (nodePtr == null) return;
+                ((AtkResNode*)nodePtr)->SetFixedPosition(x, y);
+            }
+        }
+        
         public void OutlineNode()
         {
             fixed (AtkComponentNode* nodePtr = &node)
