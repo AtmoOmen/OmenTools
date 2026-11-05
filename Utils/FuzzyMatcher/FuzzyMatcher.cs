@@ -1,1186 +1,1076 @@
 using System.Buffers;
-using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
+using System.Globalization;
+using System.Numerics;
 using System.Text;
-using OmenTools.Info.Collections;
 using TinyPinyin;
 
 namespace OmenTools.Utils.FuzzyMatcher;
 
 /// <summary>
-///     高性能、线程安全的中英文模糊搜索匹配器
+///     预先建立文本与拼音索引，按字段相关度执行多词、精确短语和排除词搜索。
 /// </summary>
+/// <typeparam name="T">索引中保存并由搜索返回的数据类型。</typeparam>
 public sealed class FuzzyMatcher<T> : IDisposable
 {
-    private readonly Func<T, IEnumerable<(IEnumerable<string?> Texts, FuzzySearchWeight Weight)>>? defaultKeySelector;
+    private          SearchEntry[]    entries;
+    private readonly IComparer<Match> matchComparer;
+    private readonly CompareInfo      titleCompareInfo = CultureInfo.GetCultureInfo("zh-CN").CompareInfo;
 
-    private readonly List<SearchEntry>       entries        = [];
-    private readonly ReaderWriterLockSlim    lockSlim       = new();
-    private readonly LRUCache<CacheKey, T[]> cache          = new(64);
-    private readonly IPinyinProvider         pinyinProvider = new DefaultPinyinProvider();
+    private volatile CacheEntry[] cache = [];
 
-    private bool disposed;
-
+    /// <summary>
+    ///     根据调用方定义的字段建立索引，预先计算文本、拼音、字符掩码和排序键。
+    /// </summary>
+    /// <param name="items">需要建立索引的数据。</param>
+    /// <param name="fieldsSelector">每项数据的搜索字段；首个字段同时提供标题排序文本。</param>
+    /// <param name="tieBreaker">相关度与标题均相同时使用的最终排序规则。</param>
     public FuzzyMatcher
     (
-        IEnumerable<T>                                                               items,
-        Func<T, IEnumerable<(IEnumerable<string?> Texts, FuzzySearchWeight Weight)>> keySelector
+        IEnumerable<T>                         items,
+        Func<T, IEnumerable<FuzzySearchField>> fieldsSelector,
+        Comparison<T>?                         tieBreaker = null
     )
     {
         ArgumentNullException.ThrowIfNull(items);
-        ArgumentNullException.ThrowIfNull(keySelector);
+        ArgumentNullException.ThrowIfNull(fieldsSelector);
 
-        defaultKeySelector = keySelector;
+        matchComparer = new MatchComparer(tieBreaker);
+        var readings = new Dictionary<char, string[]>();
+        entries =
+        [
+            .. items.Where(static item => item is not null)
+                    .Select(item => new SearchEntry(item, fieldsSelector(item), readings, titleCompareInfo))
+                    .Where(static entry => entry.Fields.Length > 0)
+        ];
 
-        var itemList = items.Where(static item => item != null).ToList();
-        if (itemList.Count == 0) return;
-
-        var builtEntries = new SearchEntry[itemList.Count];
-
-        Parallel.For
-        (
-            0,
-            itemList.Count,
-            i =>
-            {
-                var item       = itemList[i];
-                var keyPairs   = keySelector(item);
-                var searchKeys = keyPairs.Select(pair => new SearchKey(pair.Texts, pair.Weight, pinyinProvider)).ToArray();
-                builtEntries[i] = new SearchEntry(item, searchKeys);
-            }
-        );
-
-        entries.AddRange(builtEntries);
+        for (var index = 0; index < entries.Length; index++)
+            entries[index].Order = index;
     }
 
-
     /// <summary>
-    ///     支持 CancellationToken 的搜索重载
+    ///     按相关度返回全部匹配项；空查询返回空数组，重复查询直接复用缓存结果。
     /// </summary>
-    public T[] Search(string query, Comparison<T>? tieBreaker = null, int limit = 30, CancellationToken cancellationToken = default)
+    /// <param name="query">支持多词、引号短语及减号排除词的查询文本。</param>
+    /// <returns>按最弱词匹配、标题短语、总分和标题排序的结果数组。</returns>
+    public T[] Search(string query)
     {
         if (string.IsNullOrWhiteSpace(query))
             return [];
 
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var trimmed = query.Trim();
-        var hasCjk  = trimmed.Any(IsCjk);
-
-        // 长度限制逻辑：中文允许单字，纯英文/数字等 ASCII 限制最少 2 字符
-        if (hasCjk)
+        foreach (var cached in cache)
         {
-            if (Compact(trimmed).Length < 1)
-                return [];
-        }
-        else
-        {
-            if (Compact(trimmed).Length < 2)
-                return [];
+            if (string.Equals(cached.Query, query, StringComparison.Ordinal))
+                return cached.Results;
         }
 
-        var normalizedQuery = NormalizeText(trimmed);
-        var key             = new CacheKey(normalizedQuery, limit, tieBreaker);
-
-        // 1. 读取 LRU 缓存
-        lockSlim.EnterReadLock();
-
-        try
-        {
-            if (cache.TryGet(key, out var cached)) return [.. cached];
-        }
-        finally
-        {
-            lockSlim.ExitReadLock();
-        }
-
-        // 2. 解析查询词组
-        var terms = ParseTerms(trimmed, pinyinProvider);
-        if (terms.Count == 0)
+        var terms = ParseTerms(query);
+        if (terms.Length == 0)
             return [];
 
-        // 3. 扫描匹配项并评分
-        List<(T Item, int Score)> matches = [];
-
-        lockSlim.EnterReadLock();
-
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (entries.Count > 1000)
-            {
-                var concurrentMatches = new ConcurrentBag<(T Item, int Score)>();
-                Parallel.ForEach
-                (
-                    entries,
-                    new ParallelOptions { CancellationToken = cancellationToken },
-                    entry =>
-                    {
-                        if (TryScore(entry, terms, out var score)) concurrentMatches.Add((entry.Item, score));
-                    }
-                );
-                matches.AddRange(concurrentMatches);
-            }
-            else
-            {
-                foreach (var entry in entries)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (TryScore(entry, terms, out var score)) matches.Add((entry.Item, score));
-                }
-            }
-        }
-        finally
-        {
-            lockSlim.ExitReadLock();
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        // 4. 使用 Min-Heap 维护 Top-K 结果
-        var pq = new PriorityQueue<T, MatchPriority>(matches.Count);
-
-        foreach (var match in matches)
-        {
-            var priority = new MatchPriority(match.Score, match.Item, tieBreaker);
-
-            if (pq.Count < limit) pq.Enqueue(match.Item, priority);
-            else
-            {
-                pq.TryPeek(out _, out var topPriority);
-
-                if (priority.CompareTo(topPriority) > 0)
-                {
-                    pq.Dequeue();
-                    pq.Enqueue(match.Item, priority);
-                }
-            }
-        }
-
-        var result                                             = new T[pq.Count];
-        for (var i = result.Length - 1; i >= 0; i--) result[i] = pq.Dequeue();
-
-        // 5. 写入缓存
-        lockSlim.EnterWriteLock();
-
-        try
-        {
-            cache.AddOrUpdateAll([new(key, result)]);
-        }
-        finally
-        {
-            lockSlim.ExitWriteLock();
-        }
-
-        return [.. result];
+        var results = SearchCore(terms);
+        Store(query, results);
+        return results;
     }
 
     /// <summary>
-    ///     异步流式搜索匹配项
+    ///     释放索引和查询缓存持有的数据引用。
     /// </summary>
-    public async IAsyncEnumerable<T> SearchAsync
+    public void Dispose()
+    {
+        entries = [];
+        cache   = [];
+    }
+
+    private T[] SearchCore
     (
-        string                                     query,
-        Comparison<T>?                             tieBreaker        = null,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default
+        SearchTerm[] terms
     )
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var results = Search(query, tieBreaker, int.MaxValue, cancellationToken);
+        var phrase     = BuildPhrase(terms);
+        var phraseTerm = default(SearchTerm);
+        var hasPhrase  = false;
 
-        foreach (var item in results)
+        if (phrase != null)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            yield return item;
-            await Task.Yield();
+            phraseTerm = new(phrase, false, true);
+            hasPhrase  = true;
         }
-    }
 
-    #region CRUD 动态管理 APIs
-
-    public void Add(T item)
-    {
-        if (defaultKeySelector == null)
-            throw new InvalidOperationException("No default key selector was provided in the constructor.");
-        Add(item, defaultKeySelector);
-    }
-
-    public void Add(T item, Func<T, IEnumerable<(IEnumerable<string?> Texts, FuzzySearchWeight Weight)>> keySelector)
-    {
-        if (item == null) return;
-        lockSlim.EnterWriteLock();
-
-        try
-        {
-            var keyPairs   = keySelector(item);
-            var searchKeys = keyPairs.Select(pair => new SearchKey(pair.Texts, pair.Weight, pinyinProvider)).ToArray();
-            entries.Add(new SearchEntry(item, searchKeys));
-            cache.Clear();
-        }
-        finally
-        {
-            lockSlim.ExitWriteLock();
-        }
-    }
-
-    public void AddRange(IEnumerable<T> items)
-    {
-        if (defaultKeySelector == null)
-            throw new InvalidOperationException("No default key selector was provided in the constructor.");
-        AddRange(items, defaultKeySelector);
-    }
-
-    public void AddRange(IEnumerable<T> items, Func<T, IEnumerable<(IEnumerable<string?> Texts, FuzzySearchWeight Weight)>> keySelector)
-    {
-        ArgumentNullException.ThrowIfNull(items);
-        ArgumentNullException.ThrowIfNull(keySelector);
-
-        var itemList = items.Where(static item => item != null).ToList();
-        if (itemList.Count == 0) return;
-
-        var builtEntries = new SearchEntry[itemList.Count];
-        Parallel.For
+        var buffer = ArrayPool<Match>.Shared.Rent
         (
-            0,
-            itemList.Count,
-            i =>
-            {
-                var item       = itemList[i];
-                var keyPairs   = keySelector(item);
-                var searchKeys = keyPairs.Select(pair => new SearchKey(pair.Texts, pair.Weight, pinyinProvider)).ToArray();
-                builtEntries[i] = new SearchEntry(item, searchKeys);
-            }
+            entries.Length > 0 ?
+                entries.Length :
+                1
         );
 
-        lockSlim.EnterWriteLock();
-
         try
         {
-            entries.AddRange(builtEntries);
-            cache.Clear();
-        }
-        finally
-        {
-            lockSlim.ExitWriteLock();
-        }
-    }
+            var matches = buffer.AsSpan();
+            var count   = 0;
 
-    public bool Remove(T item)
-    {
-        if (item == null) return false;
-        lockSlim.EnterWriteLock();
-
-        try
-        {
-            var index = entries.FindIndex(e => EqualityComparer<T>.Default.Equals(e.Item, item));
-
-            if (index >= 0)
+            foreach (var entry in entries)
             {
-                entries.RemoveAt(index);
-                cache.Clear();
-                return true;
-            }
-
-            return false;
-        }
-        finally
-        {
-            lockSlim.ExitWriteLock();
-        }
-    }
-
-    public void Clear()
-    {
-        lockSlim.EnterWriteLock();
-
-        try
-        {
-            entries.Clear();
-            cache.Clear();
-        }
-        finally
-        {
-            lockSlim.ExitWriteLock();
-        }
-    }
-
-    #endregion
-
-    #region 核心评分逻辑
-
-    private static bool TryScore(SearchEntry entry, IReadOnlyList<SearchTerm> terms, out int score)
-    {
-        score = 0;
-        var bestKeyScore  = 0;
-        var matchedAnyKey = false;
-
-        foreach (var key in entry.Keys)
-        {
-            if (TryScoreKey(key, terms, out var keyScore))
-            {
-                matchedAnyKey = true;
-                bestKeyScore  = Math.Max(bestKeyScore, keyScore);
-            }
-        }
-
-        if (!matchedAnyKey)
-            return false;
-
-        score = bestKeyScore;
-        return true;
-    }
-
-    private static bool TryScoreKey(SearchKey key, IReadOnlyList<SearchTerm> terms, out int keyScore)
-    {
-        keyScore = 0;
-
-        // 1. 验证排除项 (Negative Terms) - 只要有任一 exclusion term 在当前 key 的 segments 中命中，则该 key 失败
-        foreach (var term in terms)
-        {
-            if (term.IsNegative)
-            {
-                if (AnySegmentMatches(key.Segments, term, key.Weight))
-                    return false;
-            }
-        }
-
-        // 2. 评分正向项 (Positive Terms) - 遵循 AND 语义，即所有 positive term 都必须在当前 key 的某些 segments 中命中
-        var positiveTermsCount = 0;
-        var totalKeyScore      = 0;
-
-        foreach (var term in terms)
-        {
-            if (term.IsNegative) continue;
-
-            positiveTermsCount++;
-
-            var bestTermScore = 0;
-
-            foreach (var segment in key.Segments)
-            {
-                var termSegmentScore = ScoreSegment(segment, term, key.Weight);
-                bestTermScore = Math.Max(bestTermScore, termSegmentScore);
-            }
-
-            if (bestTermScore == 0) return false;
-
-            totalKeyScore += bestTermScore;
-        }
-
-        if (positiveTermsCount == 0)
-        {
-            // 如果仅有排除项且未触发排除，则给基础分
-            keyScore = key.Weight.BaseScore;
-            return true;
-        }
-
-        keyScore = totalKeyScore + (positiveTermsCount * 24);
-        return true;
-    }
-
-    private static bool AnySegmentMatches(SegmentKey[] segments, SearchTerm term, FuzzySearchWeight weight)
-    {
-        foreach (var t in segments)
-        {
-            if (ScoreSegment(t, term, weight) > 0)
-                return true;
-        }
-
-        return false;
-    }
-
-    private static int ScoreSegment(SegmentKey segment, SearchTerm term, FuzzySearchWeight weight)
-    {
-        // 0. 粗筛：如果字符掩码不包含查询掩码，必然无法通过子序列或等值匹配
-        if (!term.Mask.IsSubsetOf(segment.Mask))
-            return 0;
-
-        // 双引号精确匹配路径
-        if (term.IsExact)
-        {
-            if (segment.Original.Equals(term.Original, StringComparison.Ordinal))
-                return (weight.BaseScore * 4) + (term.Original.Length * 10);
-
-            if (segment.Original.Contains(term.Original, StringComparison.OrdinalIgnoreCase))
-                return (weight.BaseScore * 2) + (term.Original.Length * 5);
-
-            if (segment.Compact.Contains(term.Compact, StringComparison.Ordinal))
-                return (weight.BaseScore * 2) + (term.Compact.Length * 5);
-
-            return 0;
-        }
-
-        var bestScore = 0;
-
-        // 通道 1：完全等值匹配 (Exact Match)
-        if (segment.Original.Equals(term.Original, StringComparison.Ordinal))
-        {
-            var exactScore = (weight.BaseScore * 4) + (term.Original.Length * 10);
-            bestScore = Math.Max(bestScore, exactScore);
-        }
-
-        // 通道 2：前缀匹配 (Prefix Match)
-        if (segment.Original.StartsWith(term.Original, StringComparison.Ordinal))
-        {
-            var prefixScore = (weight.BaseScore * 2) + (term.Original.Length * 8);
-            bestScore = Math.Max(bestScore, prefixScore);
-        }
-
-        // 通道 3：常规文本子序列模糊匹配 (Fuzzy Match on Original Text)
-        var textFuzzy = FuzzyMatch(segment.Original, term.Original, weight);
-        bestScore = Math.Max(bestScore, textFuzzy);
-
-        // 通道 4：压缩后文本子序列模糊匹配 (Fuzzy Match on Compact Text)
-        var compactFuzzy = FuzzyMatch(segment.Compact, term.Compact, weight);
-        bestScore = Math.Max(bestScore, compactFuzzy);
-
-        // 通道 5：英文首字母/Case边界缩写匹配 (Initialisms Match)
-        foreach (var init in segment.Initialisms)
-        {
-            var initFuzzy = FuzzyMatch(init, term.Compact, weight with { BaseScore = weight.InitialismBase });
-            bestScore = Math.Max(bestScore, initFuzzy);
-        }
-
-        // 通道 6：中文拼音子序列匹配 (Symmetrical Pinyin Match)
-        foreach (var py in segment.PinyinCombinations)
-        {
-            var pyFuzzy = FuzzyMatch(py, term.Compact, weight);
-            bestScore = Math.Max(bestScore, (int)(pyFuzzy * 0.9)); // 拼音权重微调，优先匹配汉字原文
-        }
-
-        // 通道 7：无序拆分组合匹配 (Unordered Match)
-        if (bestScore == 0 && term.Compact.Length >= 6)
-        {
-            var unordered = TryUnorderedMatch(segment.Compact, term.Compact, weight);
-            bestScore = Math.Max(bestScore, unordered);
-        }
-
-        // 通道 8：编辑距离容错匹配 (Approximate Match) - 最弱兜底
-        if (bestScore == 0 && term.Compact.Length >= 3)
-        {
-            var approx = ApproximateMatch(segment.Compact, term.Compact, weight);
-            bestScore = Math.Max(bestScore, approx);
-        }
-
-        return bestScore;
-    }
-
-    #endregion
-
-    #region 子序列双向 greedy 匹配核心 (Zero Alloc)
-
-    private static int FuzzyMatch(string source, string pattern, FuzzySearchWeight weight)
-    {
-        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(pattern)) return 0;
-        if (pattern.Length > source.Length) return 0;
-
-        // 1. 左向贪心匹配
-        int[]? rentedLeft = null;
-        var posLeft = pattern.Length <= 256
-                          ? stackalloc int[pattern.Length]
-                          : rentedLeft = ArrayPool<int>.Shared.Rent(pattern.Length);
-
-        var leftMatch = false;
-        var siIndex   = 0;
-        leftMatch = true;
-
-        for (var pi = 0; pi < pattern.Length; pi++)
-        {
-            while (siIndex < source.Length && source[siIndex] != pattern[pi])
-                siIndex++;
-
-            if (siIndex >= source.Length)
-            {
-                leftMatch = false;
-                break;
-            }
-
-            posLeft[pi] = siIndex;
-            siIndex++;
-        }
-
-        if (!leftMatch)
-        {
-            if (rentedLeft != null) ArrayPool<int>.Shared.Return(rentedLeft);
-            return 0;
-        }
-
-        // 2. 右向贪心匹配 (当左侧存在子序列时，右侧也必然存在，无需额外校验)
-        int[]? rentedRight = null;
-        var posRight = pattern.Length <= 256
-                           ? stackalloc int[pattern.Length]
-                           : rentedRight = ArrayPool<int>.Shared.Rent(pattern.Length);
-
-        var si = source.Length - 1;
-
-        for (var pi = pattern.Length - 1; pi >= 0; pi--)
-        {
-            while (si >= 0 && source[si] != pattern[pi])
-                si--;
-            posRight[pi] = si;
-            si--;
-        }
-
-        // 评分比对，选取两种排列的较高分数 (解决旧匹配只用右侧覆写的问题)
-        var scoreLeft  = CalculateAlignmentScore(source, posLeft,  pattern.Length, weight);
-        var scoreRight = CalculateAlignmentScore(source, posRight, pattern.Length, weight);
-
-        if (rentedLeft  != null) ArrayPool<int>.Shared.Return(rentedLeft);
-        if (rentedRight != null) ArrayPool<int>.Shared.Return(rentedRight);
-
-        return Math.Max(Math.Max(scoreLeft, scoreRight), 0);
-    }
-
-    private static int CalculateAlignmentScore(string source, Span<int> positions, int patternLength, FuzzySearchWeight weight)
-    {
-        var score = weight.BaseScore;
-
-        for (var pi = 0; pi < patternLength; pi++)
-        {
-            score += weight.ConsecutiveBonus;
-            score += PositionBonus(source, positions[pi], weight.BoundaryBonus);
-
-            if (pi > 0)
-            {
-                if (positions[pi] == positions[pi - 1] + 1)
-                    score += weight.ConsecutiveBonus * 2;
-
-                var gap = positions[pi] - positions[pi - 1] - 1;
-                score -= gap * weight.GapPenalty;
-            }
-        }
-
-        score += Math.Max(0, weight.BoundaryBonus - positions[0]);
-        return score;
-    }
-
-    private static int PositionBonus(string source, int pos, int boundaryBonus)
-    {
-        if (pos == 0) return boundaryBonus;
-
-        var prev = source[pos - 1];
-
-        // 动态以 boundaryBonus 比例衡量加分，解除硬编码量纲硬伤
-        if (prev is ' ' or '_' or '-' or '.' or '\n' or '/')
-            return (int)(boundaryBonus * 0.8);
-        if (char.IsLower(prev) && char.IsUpper(source[pos]))
-            return (int)(boundaryBonus * 0.6);
-        if (char.IsDigit(prev) ^ char.IsDigit(source[pos]))
-            return (int)(boundaryBonus * 0.6);
-
-        return 0;
-    }
-
-    #endregion
-
-    #region 编辑距离兜底算法 (Zero Alloc)
-
-    private static int ApproximateMatch(string source, string pattern, FuzzySearchWeight weight)
-    {
-        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(pattern)) return 0;
-        if (pattern.Length < 3) return 0;
-
-        var maxDistance  = pattern.Length <= 5 ? 1 : 2;
-        var bestDistance = int.MaxValue;
-
-        var lenDiff   = source.Length - pattern.Length;
-        var lastStart = -1;
-
-        for (var start = 0; start <= lenDiff + maxDistance; start++)
-        {
-            var actualStart = Math.Max(0, start - maxDistance);
-            if (actualStart == lastStart) continue;
-            lastStart = actualStart;
-
-            var windowEnd = Math.Min(source.Length, actualStart + pattern.Length + (maxDistance * 2));
-            if (actualStart >= windowEnd) continue;
-
-            var window = source.AsSpan(actualStart, windowEnd - actualStart);
-
-            var distance = DamerauLevenshteinDistance(window, pattern, maxDistance);
-            if (distance < 0) continue;
-
-            bestDistance = Math.Min(bestDistance, distance);
-        }
-
-        if (bestDistance > maxDistance) return 0;
-
-        return Math.Max(weight.ApproximateBase + (pattern.Length * 4) - (bestDistance * 40), 0);
-    }
-
-    private static int DamerauLevenshteinDistance(ReadOnlySpan<char> source, string pattern, int maxDistance)
-    {
-        var slen = source.Length;
-        var plen = pattern.Length;
-
-        var    rowSize   = plen + 1;
-        var    totalSize = rowSize * 3;
-        int[]? rented    = null;
-        var buffer = totalSize <= 256
-                         ? stackalloc int[totalSize]
-                         : rented = ArrayPool<int>.Shared.Rent(totalSize);
-
-        try
-        {
-            var v0 = buffer[..rowSize];
-            var v1 = buffer[rowSize..(rowSize * 2)];
-            var v2 = buffer[(rowSize          * 2)..totalSize];
-
-            for (var j = 0; j <= plen; j++)
-                v0[j] = j;
-
-            for (var i = 1; i <= slen; i++)
-            {
-                v2[0] = i;
-                var rowMin = v2[0];
-
-                for (var j = 1; j <= plen; j++)
+                var weakest = int.MaxValue;
+                var total   = 0;
+                var matched = true;
+
+                foreach (var term in terms)
                 {
-                    var cost = source[i - 1] == pattern[j - 1] ? 0 : 1;
+                    if (term.IsASCIIAlphanumeric &&
+                        entry.MaskReliable       &&
+                        (entry.ConsumableMask & term.Mask) != term.Mask)
+                    {
+                        if (term.Excluded)
+                            continue;
 
-                    var deletion     = v1[j]     + 1;
-                    var insertion    = v2[j - 1] + 1;
-                    var substitution = v1[j - 1] + cost;
+                        matched = false;
+                        break;
+                    }
 
-                    var value = Math.Min(Math.Min(deletion, insertion), substitution);
+                    var best = 0;
 
-                    if (i             > 1               &&
-                        j             > 1               &&
-                        source[i - 1] == pattern[j - 2] &&
-                        source[i - 2] == pattern[j - 1]) value = Math.Min(value, v0[j - 2] + 1);
+                    foreach (var field in entry.Fields)
+                    {
+                        best = Math.Max(best, ScoreField(field, in term));
 
-                    v2[j]  = value;
-                    rowMin = Math.Min(rowMin, value);
+                        if (best >= field.MaxScore)
+                            break;
+                    }
+
+                    if (term.Excluded)
+                    {
+                        if (best == 0)
+                            continue;
+
+                        matched = false;
+                        break;
+                    }
+
+                    if (best == 0)
+                    {
+                        matched = false;
+                        break;
+                    }
+
+                    weakest =  Math.Min(weakest, best);
+                    total   += best;
                 }
 
-                if (rowMin > maxDistance) return -1;
+                if (!matched)
+                    continue;
 
-                var temp = v0;
-                v0 = v1;
-                v1 = v2;
-                v2 = temp;
+                var phraseScore = 0;
+
+                if (hasPhrase)
+                    phraseScore = ScoreField(entry.Fields[0], in phraseTerm);
+
+                matches[count++] = new
+                (
+                    entry,
+                    total > 0 ?
+                        weakest :
+                        0,
+                    total,
+                    phraseScore
+                );
             }
 
-            var best = int.MaxValue;
-            for (var j = 0; j <= plen; j++)
-                best = Math.Min(best, v1[j]);
+            matches = matches[..count];
+            matches.Sort(matchComparer);
 
-            return best <= maxDistance ? best : -1;
+            var results = new T[count];
+
+            for (var index = 0; index < count; index++)
+                results[index] = matches[index].Entry.Item;
+
+            return results;
         }
         finally
         {
-            if (rented != null)
-                ArrayPool<int>.Shared.Return(rented);
+            ArrayPool<Match>.Shared.Return(buffer, true);
         }
     }
 
-    #endregion
-
-    #region 无序拆分匹配
-
-    private static int TryUnorderedMatch(string source, string query, FuzzySearchWeight weight)
+    private static string? BuildPhrase
+    (
+        SearchTerm[] terms
+    )
     {
-        var bestScore  = 0;
-        var sourceSpan = source.AsSpan();
+        var length = 0;
 
-        for (var split = 3; split <= query.Length - 3; split++)
+        foreach (var term in terms)
         {
-            var part1 = query.AsSpan(0, split);
-            var part2 = query.AsSpan(split);
+            if (!term.Excluded)
+                length += term.Text.Length;
+        }
 
-            if (QuickSubsequence(sourceSpan,         part1, out var end1) &&
-                QuickSubsequence(sourceSpan[end1..], part2, out _))
+        if (length == 0)
+            return null;
+
+        return string.Create
+        (
+            length,
+            terms,
+            static (span, source) =>
             {
-                var s1 = FuzzyMatch(source, part1.ToString(), weight);
-                var s2 = FuzzyMatch(source, part2.ToString(), weight);
-                if (s1 > 0 && s2 > 0)
-                    bestScore = Math.Max(bestScore, s1 + s2);
+                var offset = 0;
+
+                foreach (var term in source)
+                {
+                    if (term.Excluded)
+                        continue;
+
+                    term.Text.CopyTo(span[offset..]);
+                    offset += term.Text.Length;
+                }
             }
+        );
+    }
 
-            if (QuickSubsequence(sourceSpan,         part2, out var end2) &&
-                QuickSubsequence(sourceSpan[end2..], part1, out _))
+    private void Store
+    (
+        string query,
+        T[]    results
+    )
+    {
+        var current = cache;
+        var next    = new CacheEntry[Math.Min(current.Length + 1, CACHE_CAPACITY)];
+        next[0] = new(query, results);
+        Array.Copy(current, 0, next, 1, Math.Min(current.Length, CACHE_CAPACITY - 1));
+        cache = next;
+    }
+
+    private static int ScoreField
+    (
+        SearchField   field,
+        in SearchTerm term
+    )
+    {
+        var text = term.Text;
+        var literal = term.IsASCIIAlphanumeric ?
+                          field.LiteralText :
+                          field.Text;
+        var position = literal.IndexOf(text, StringComparison.Ordinal);
+
+        if (position >= 0)
+        {
+            if (!term.Excluded              &&
+                text.Length == 1            &&
+                !field.AllowSingleCharacter &&
+                field.Text.Length != 1)
+                return 0;
+
+            if (field.Text.Length == text.Length)
+                return field.NativeWeight + 90;
+
+            if (field.ShortMatchPenalty > 0 &&
+                text.Length             <= 3)
+                return field.NativeWeight - field.ShortMatchPenalty;
+
+            return field.NativeWeight +
+                   (position == 0 ?
+                        60 :
+                        30);
+        }
+
+        if (term.Exact ||
+            term.Excluded)
+            return ScorePinyin(field, in term, false);
+
+        if (field.AllowChineseSplit &&
+            text.Length >= 4        &&
+            term.IsChinese)
+        {
+            for (var split = 2; split <= text.Length - 2; split++)
             {
-                var s1 = FuzzyMatch(source, part2.ToString(), weight);
-                var s2 = FuzzyMatch(source, part1.ToString(), weight);
-                if (s1 > 0 && s2 > 0)
-                    bestScore = Math.Max(bestScore, s1 + s2);
+                var left      = text.AsSpan(0, split);
+                var right     = text.AsSpan(split);
+                var remaining = field.Text.AsSpan();
+                var offset    = 0;
+
+                while (remaining.IndexOf(left) is var start &&
+                       start >= 0)
+                {
+                    var begin     = offset + start;
+                    var end       = begin  + left.Length;
+                    var length    = Math.Min(field.Text.Length - end, right.Length + MAX_CHINESE_GAP);
+                    var preceding = Math.Max(0, begin          - right.Length      - MAX_CHINESE_GAP);
+                    if (field.Text.AsSpan(end,       length).Contains(right, StringComparison.Ordinal) ||
+                        field.Text.AsSpan(preceding, begin - preceding).Contains(right, StringComparison.Ordinal))
+                        return field.NativeWeight - 100;
+
+                    offset    += start + 1;
+                    remaining =  field.Text.AsSpan(offset);
+                }
             }
         }
 
-        return bestScore;
+        if (field.AllowAcronym &&
+            text.Length >= 2   &&
+            field.Acronym.Contains(text, StringComparison.Ordinal))
+            return field.NativeWeight - 200;
+
+        return ScorePinyin(field, in term, true);
     }
 
-    private static bool QuickSubsequence(ReadOnlySpan<char> source, ReadOnlySpan<char> pattern, out int endPos)
+    private static int ScorePinyin
+    (
+        SearchField   field,
+        in SearchTerm term,
+        bool          allowInitials
+    )
     {
-        endPos = 0;
-        var si = 0;
+        if (field.PinyinWeight == 0 ||
+            !term.HasASCIILetter    ||
+            term.Text.Length < 2)
+            return 0;
 
-        foreach (var t in pattern)
+        if (term.IsASCIIAlphanumeric &&
+            field.MaskReliable       &&
+            (field.ConsumableMask & term.Mask) != term.Mask)
+            return 0;
+
+        if (term.Text.Length > field.MaxConsumable)
+            return 0;
+
+        if (term.IsASCIIAlphanumeric)
         {
-            while (si < source.Length && source[si] != t)
-                si++;
-            if (si >= source.Length) return false;
-            si++;
+            if ((field.StartMask & term.FirstBit) == 0)
+                return 0;
+
+            if (!IsSubsequence(field.PinyinStream, term.Text))
+                return 0;
         }
 
-        endPos = si;
-        return true;
+        var text = term.Text.AsSpan();
+
+        return text.Length <= MAX_ACTIVE_TEXT_LENGTH ?
+                   ScorePinyinActive(field, in term, allowInitials, text) :
+                   ScorePinyinDense(field, in term, allowInitials, text);
     }
 
-    #endregion
-
-    #region 字符串处理与智能分词
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsCjk(char ch) => ch >= 0x4e00 && ch <= 0x9fff;
-
-    private static string NormalizeText(string? text)
+    private static int ScorePinyinActive
+    (
+        SearchField        field,
+        in SearchTerm      term,
+        bool               allowInitials,
+        ReadOnlySpan<char> text
+    )
     {
-        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        var last      = text.Length;
+        var finalBit  = 1UL << last;
+        var rowLength = last + 1;
+        var allowBest = term is { Exact: false, Excluded: false };
+        var buffer = rowLength <= MAX_STACK_ROW_LENGTH ?
+                         stackalloc int[rowLength * 2] :
+                         new int[rowLength        * 2];
+        var previous = buffer[..rowLength];
+        var current  = buffer[rowLength..];
+        previous.Fill(-1);
+        current.Fill(-1);
 
-        var builder      = new StringBuilder(text.Length);
-        var pendingSpace = false;
+        var previousActive = 0UL;
+        var currentActive  = 0UL;
+        var best           = 0;
 
-        foreach (var ch in text.Trim())
+        var source = field.LiteralText;
+
+        for (var index = 0; index < source.Length; index++)
         {
-            if (char.IsWhiteSpace(ch))
+            if (source[index] == ' ')
             {
-                pendingSpace = builder.Length > 0;
+                if (index     > 0                                &&
+                    index + 1 < source.Length                    &&
+                    char.IsAsciiLetterOrDigit(source[index - 1]) &&
+                    char.IsAsciiLetterOrDigit(source[index + 1]))
+                {
+                    var stale = previousActive;
+
+                    while (stale != 0)
+                    {
+                        previous[BitOperations.TrailingZeroCount(stale)] =  -1;
+                        stale                                            &= stale - 1;
+                    }
+
+                    previousActive = 0;
+                }
+
                 continue;
             }
 
-            if (pendingSpace)
+            previous[0]    =  0;
+            previousActive |= 1UL;
+
+            var outdated = currentActive;
+
+            while (outdated != 0)
             {
-                builder.Append(' ');
-                pendingSpace = false;
+                current[BitOperations.TrailingZeroCount(outdated)] =  -1;
+                outdated                                           &= outdated - 1;
             }
 
-            builder.Append(char.ToLowerInvariant(ch));
-        }
+            currentActive = 0;
 
-        return builder.ToString();
-    }
+            var active = previousActive & ~finalBit;
 
-    private static string Compact(string? text)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
-
-        var builder = new StringBuilder(text.Length);
-
-        foreach (var ch in text)
-        {
-            if (!char.IsLetterOrDigit(ch)) continue;
-            builder.Append(char.ToLowerInvariant(ch));
-        }
-
-        return builder.ToString();
-    }
-
-    /// <summary>
-    ///     支持 CJK 边界、数字边界、CamelCase、以及连续大写缩写词的智能分词器
-    /// </summary>
-    private static List<string> SplitByCase(string text)
-    {
-        if (string.IsNullOrEmpty(text)) return [];
-        var list  = new List<string>();
-        var len   = text.Length;
-        var start = 0;
-
-        for (var i = 0; i < len; i++)
-        {
-            if (i == len - 1)
+            while (active != 0)
             {
-                list.Add(text[start..len]);
-                break;
-            }
+                var consumed = BitOperations.TrailingZeroCount(active);
+                active &= active - 1;
 
-            var curr = text[i];
-            var next = text[i + 1];
+                var initials = previous[consumed];
+                var target   = text[consumed];
 
-            var split = false;
-
-            // 1. 中文与非中文边界
-            if (IsCjk(curr) != IsCjk(next)) split = true;
-            // 2. 数字与字母边界
-            else if (char.IsDigit(curr) != char.IsDigit(next)) split = true;
-            // 3. 小写与大写边界 (如 camelCase)
-            else if (char.IsLower(curr) && char.IsUpper(next)) split = true;
-            // 4. 连续大写缩写词在小写前的边界 (如 HTMLParser)
-            else if (char.IsUpper(curr) && char.IsUpper(next) && i + 2 < len && char.IsLower(text[i + 2])) split = true;
-
-            if (split)
-            {
-                list.Add(text[start..(i + 1)]);
-                start = i + 1;
-            }
-        }
-
-        return [.. list.Select(static s => s.Trim()).Where(static s => s.Length > 0)];
-    }
-
-    private static void AppendASCIIInitialism(StringBuilder builder, string text)
-    {
-        var tokens = SplitByCase(text);
-
-        foreach (var token in tokens)
-        {
-            if (token.Length == 0) continue;
-
-            var allUpper = true;
-
-            foreach (var t in token)
-            {
-                if (char.IsLetter(t) && !char.IsUpper(t))
+                if (source[index] == target)
                 {
-                    allUpper = false;
-                    break;
+                    var next = consumed + 1;
+
+                    if (current[next] < 0 ||
+                        initials      < current[next])
+                    {
+                        current[next] =  initials;
+                        currentActive |= 1UL << next;
+                    }
+                }
+
+                var remaining = text[consumed..];
+                var readings  = field.Readings[index];
+
+                if (readings.Length > 0)
+                {
+                    foreach (var reading in readings)
+                    {
+                        var sameInitial = reading[0] == target;
+
+                        if (sameInitial && remaining.StartsWith(reading, StringComparison.Ordinal))
+                        {
+                            var next = consumed + reading.Length;
+
+                            if (current[next] < 0 ||
+                                initials      < current[next])
+                            {
+                                current[next] =  initials;
+                                currentActive |= 1UL << next;
+                            }
+                        }
+                        else if (allowBest                            &&
+                                 initials         == 0                &&
+                                 remaining.Length >= 2                &&
+                                 reading.Length   >= remaining.Length &&
+                                 reading.AsSpan().StartsWith(remaining, StringComparison.Ordinal))
+                            best = Math.Max(best, field.PinyinWeight - 40);
+
+                        if (allowInitials       &&
+                            field.AllowInitials &&
+                            sameInitial)
+                        {
+                            var next = consumed + 1;
+
+                            if (current[next] < 0 ||
+                                initials + 1  < current[next])
+                            {
+                                current[next] =  initials + 1;
+                                currentActive |= 1UL << next;
+                            }
+                        }
+                    }
                 }
             }
 
-            // IBM 等纯大写缩写作为 acronym，保留其所有字母至首字母字段
-            if (allUpper && token.Length > 1)
+            if ((currentActive & finalBit) != 0)
             {
-                foreach (var ch in token)
-                {
-                    if (char.IsLetterOrDigit(ch))
-                        builder.Append(char.ToLowerInvariant(ch));
-                }
-            }
-            else
-            {
-                var first = token[0];
-                if (char.IsLetterOrDigit(first))
-                    builder.Append(char.ToLowerInvariant(first));
-            }
-        }
-    }
+                var initials = current[last];
 
-    #endregion
+                if (initials == 0)
+                    return field.PinyinWeight + 30;
 
-    #region 查询词析构
-
-    private static List<SearchTerm> ParseTerms(string rawQuery, IPinyinProvider pinyinProvider)
-    {
-        if (string.IsNullOrWhiteSpace(rawQuery)) return [];
-
-        var terms     = new List<SearchTerm>();
-        var remaining = rawQuery.Trim();
-
-        // 1. 析构双引号精确搜索短语
-        while (true)
-        {
-            var startIdx = remaining.IndexOf('"');
-            if (startIdx == -1) break;
-
-            var endIdx = remaining.IndexOf('"', startIdx + 1);
-            if (endIdx == -1) break;
-
-            var exactText = remaining.Substring(startIdx + 1, endIdx - startIdx - 1).Trim();
-            if (exactText.Length > 0) terms.Add(CreateSearchTerm(exactText, true, false, pinyinProvider));
-
-            remaining = (remaining[..startIdx] + " " + remaining[(endIdx + 1)..]).Trim();
-        }
-
-        // 2. 析构普通空格分词，支持以减号 '-' 标志的负向排除项
-        var parts = remaining.Split(' ', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (var part in parts)
-        {
-            var isNegative = false;
-            var cleanPart  = part;
-
-            if (cleanPart.StartsWith('-') && cleanPart.Length > 1)
-            {
-                isNegative = true;
-                cleanPart  = cleanPart[1..];
+                best = Math.Max(best, field.PinyinWeight - 250 + Math.Min(60, last - initials));
             }
 
-            var subTokens = SplitByCase(cleanPart);
-            foreach (var token in subTokens) terms.Add(CreateSearchTerm(token, false, isNegative, pinyinProvider));
+            var swapBuffer = previous;
+            previous = current;
+            current  = swapBuffer;
+
+            (previousActive, currentActive) = (currentActive, previousActive);
         }
 
-        return terms;
+        return best;
     }
 
-    private static SearchTerm CreateSearchTerm(string text, bool isExact, bool isNegative, IPinyinProvider pinyinProvider)
-    {
-        var normalized = NormalizeText(text);
-        var compact    = Compact(text);
-        var isCjk      = text.Any(IsCjk);
-
-        string[] pinyinCombinations   = [];
-        if (isCjk) pinyinCombinations = pinyinProvider.GetPinyinCombinations(normalized);
-
-        return new SearchTerm
-        (
-            normalized,
-            compact,
-            pinyinCombinations,
-            isCjk,
-            isExact,
-            isNegative,
-            new CharMask(compact + (isCjk ? "\u4e00" : ""))
-        );
-    }
-
-    #endregion
-
-    #region 内部数据模型
-
-    private readonly record struct SearchEntry
+    private static int ScorePinyinDense
     (
-        T           Item,
-        SearchKey[] Keys
-    );
-
-    private sealed class SearchKey
+        SearchField        field,
+        in SearchTerm      term,
+        bool               allowInitials,
+        ReadOnlySpan<char> text
+    )
     {
-        public SegmentKey[]      Segments { get; }
-        public FuzzySearchWeight Weight   { get; }
+        var rowLength = text.Length + 1;
+        var allowBest = term is { Exact: false, Excluded: false };
+        var buffer = rowLength <= MAX_STACK_ROW_LENGTH ?
+                         stackalloc int[rowLength * 2] :
+                         new int[rowLength        * 2];
+        var previous = buffer[..rowLength];
+        var current  = buffer[rowLength..];
+        previous.Fill(-1);
+        var best = 0;
 
-        public SearchKey(IEnumerable<string?> primarySegments, FuzzySearchWeight weight, IPinyinProvider pinyinProvider)
+        var source = field.LiteralText;
+
+        for (var index = 0; index < source.Length; index++)
         {
-            Weight = weight;
-            var segmentsList = new List<SegmentKey>();
-            var uniqueTexts  = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var text in primarySegments)
+            if (source[index] == ' ')
             {
-                var normalized = NormalizeText(text);
-                if (string.IsNullOrWhiteSpace(normalized) || !uniqueTexts.Add(normalized))
+                if (index     > 0                                &&
+                    index + 1 < source.Length                    &&
+                    char.IsAsciiLetterOrDigit(source[index - 1]) &&
+                    char.IsAsciiLetterOrDigit(source[index + 1]))
+                    previous.Fill(-1);
+
+                continue;
+            }
+
+            previous[0] = 0;
+            current.Fill(-1);
+
+            for (var consumed = 0; consumed < text.Length; consumed++)
+            {
+                var initials = previous[consumed];
+                if (initials < 0)
                     continue;
 
-                segmentsList.Add(new SegmentKey(normalized, pinyinProvider));
+                var target = text[consumed];
+
+                if (source[index] == target)
+                {
+                    var next = consumed + 1;
+                    if (current[next] < 0 ||
+                        initials      < current[next])
+                        current[next] = initials;
+                }
+
+                var remaining = text[consumed..];
+                var readings  = field.Readings[index];
+
+                if (readings.Length == 0)
+                    continue;
+
+                foreach (var reading in readings)
+                {
+                    var sameInitial = reading[0] == target;
+
+                    if (sameInitial && remaining.StartsWith(reading, StringComparison.Ordinal))
+                    {
+                        var next = consumed + reading.Length;
+                        if (current[next] < 0 ||
+                            initials      < current[next])
+                            current[next] = initials;
+                    }
+                    else if (allowBest                            &&
+                             initials         == 0                &&
+                             remaining.Length >= 2                &&
+                             reading.Length   >= remaining.Length &&
+                             reading.AsSpan().StartsWith(remaining, StringComparison.Ordinal))
+                        best = Math.Max(best, field.PinyinWeight - 40);
+
+                    if (allowInitials       &&
+                        field.AllowInitials &&
+                        sameInitial)
+                    {
+                        var next = consumed + 1;
+                        if (current[next] < 0 ||
+                            initials + 1  < current[next])
+                            current[next] = initials + 1;
+                    }
+                }
             }
 
-            Segments = [.. segmentsList];
+            if (current[text.Length] >= 0)
+            {
+                var initials = current[text.Length];
+
+                if (initials == 0)
+                    return field.PinyinWeight + 30;
+
+                best = Math.Max(best, field.PinyinWeight - 250 + Math.Min(60, text.Length - initials));
+            }
+
+            var swap = previous;
+            previous = current;
+            current  = swap;
+        }
+
+        return best;
+    }
+
+    private static SearchTerm[] ParseTerms
+    (
+        string query
+    )
+    {
+        var input = query.IsNormalized(NormalizationForm.FormKC) ?
+                        query :
+                        query.Normalize(NormalizationForm.FormKC);
+        var terms = new List<SearchTerm>(4);
+        var index = 0;
+
+        while (index < input.Length)
+        {
+            if (char.IsWhiteSpace(input[index]))
+            {
+                index++;
+                continue;
+            }
+
+            var excluded = input[index] == '-';
+
+            if (excluded)
+                index++;
+
+            var            quoted       = false;
+            var            exact        = false;
+            var            segmentStart = index;
+            StringBuilder? builder      = null;
+
+            while (index < input.Length)
+            {
+                var character = input[index];
+
+                if (character is '"' or '“' or '”' or '「' or '」')
+                {
+                    builder ??= new StringBuilder(input.Length);
+                    builder.Append(input, segmentStart, index - segmentStart);
+
+                    quoted = !quoted;
+                    exact  = true;
+                    index++;
+                    segmentStart = index;
+                    continue;
+                }
+
+                if (!quoted &&
+                    char.IsWhiteSpace(character))
+                    break;
+
+                index++;
+            }
+
+            string raw;
+
+            if (builder == null)
+                raw = input[segmentStart..index];
+            else
+            {
+                builder.Append(input, segmentStart, index - segmentStart);
+                raw = builder.ToString();
+            }
+
+            var text = Normalize(raw);
+            if (text.Length > 0)
+                terms.Add(new(text, excluded, exact));
+        }
+
+        return Distinct(terms);
+    }
+
+    private static SearchTerm[] Distinct
+    (
+        List<SearchTerm> terms
+    )
+    {
+        for (var index = 0; index < terms.Count; index++)
+        {
+            for (var other = terms.Count - 1; other > index; other--)
+            {
+                if (terms[index] != terms[other])
+                    continue;
+
+                terms.RemoveAt(other);
+            }
+        }
+
+        return [.. terms];
+    }
+
+    private static string Normalize
+    (
+        string text,
+        bool   preserveBoundaries = false
+    )
+    {
+        if (!preserveBoundaries &&
+            IsPlainASCII(text))
+            return text;
+
+        var normalized = text.IsNormalized(NormalizationForm.FormKD) ?
+                             text :
+                             text.Normalize(NormalizationForm.FormKD);
+        var builder = new StringBuilder(normalized.Length);
+
+        foreach (var character in normalized)
+        {
+            if (character      == '̈' &&
+                builder.Length > 0    &&
+                builder[^1]    == 'u')
+                builder[^1] = 'v';
+            else if (char.IsLetterOrDigit(character))
+                builder.Append(char.ToLowerInvariant(character));
+            else if (preserveBoundaries                        &&
+                     builder.Length                     > 0    &&
+                     builder[^1]                        != ' ' &&
+                     char.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+                builder.Append(' ');
+        }
+
+        return builder.ToString();
+    }
+
+    private static bool IsPlainASCII
+    (
+        string text
+    )
+    {
+        foreach (var character in text)
+        {
+            if (character is >= 'a' and <= 'z' or >= '0' and <= '9')
+                continue;
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsChinese(char character) =>
+        character is >= '\u3400' and <= '\u9fff' or >= '豈' and <= '﫿';
+
+    private static bool IsSubsequence
+    (
+        string stream,
+        string text
+    )
+    {
+        if (stream.Length == 0)
+            return false;
+
+        var span     = stream.AsSpan();
+        var position = 0;
+
+        while (true)
+        {
+            var index = span.IndexOf(text[position]);
+            if (index < 0)
+                return false;
+
+            position++;
+
+            if (position == text.Length)
+                return true;
+
+            span = span[(index + 1)..];
         }
     }
 
-    private sealed class SegmentKey
+    private static bool TryGetMaskBit
+    (
+        char      character,
+        out ulong bit
+    )
     {
-        public string   Original           { get; }
-        public string   Compact            { get; }
-        public string[] PinyinCombinations { get; }
-        public string[] PinyinInitialisms  { get; }
-        public string[] Initialisms        { get; }
-        public CharMask Mask               { get; }
-
-        public SegmentKey(string original, IPinyinProvider pinyinProvider)
+        switch (character)
         {
-            Original = original;
-            Compact  = Compact(original);
-
-            var isCjk = original.Any(IsCjk);
-            PinyinCombinations = isCjk ? pinyinProvider.GetPinyinCombinations(original) : [];
-            PinyinInitialisms  = isCjk ? ((DefaultPinyinProvider)pinyinProvider).GetPinyinInitialismCombinations(original) : [];
-
-            var initialismBuilder = new StringBuilder();
-            AppendASCIIInitialism(initialismBuilder, original);
-            var asciiInit = initialismBuilder.ToString().ToLowerInvariant();
-
-            var initialsList = new List<string>();
-            if (!string.IsNullOrEmpty(asciiInit)) initialsList.Add(asciiInit);
-            initialsList.AddRange(PinyinInitialisms);
-            Initialisms = [.. initialsList.Distinct()];
-
-            var maskBuilder = new StringBuilder();
-            maskBuilder.Append(Original);
-            maskBuilder.Append(Compact);
-            foreach (var p in PinyinCombinations) maskBuilder.Append(p);
-            foreach (var init in Initialisms) maskBuilder.Append(init);
-            Mask = new CharMask(maskBuilder.ToString());
+            case >= 'a' and <= 'z':
+                bit = 1UL << (character - 'a');
+                return true;
+            case >= '0' and <= '9':
+                bit = 1UL << (26 + character - '0');
+                return true;
+            default:
+                bit = 0;
+                return false;
         }
     }
 
     private readonly record struct SearchTerm
+    {
+        public string Text                { get; }
+        public bool   Excluded            { get; }
+        public bool   Exact               { get; }
+        public bool   HasASCIILetter      { get; }
+        public bool   IsASCIIAlphanumeric { get; }
+        public bool   IsChinese           { get; }
+        public ulong  Mask                { get; }
+        public ulong  FirstBit            { get; }
+
+        public SearchTerm(string text, bool excluded, bool exact)
+        {
+            Text     = text;
+            Excluded = excluded;
+            Exact    = exact;
+
+            var hasASCIILetter    = false;
+            var asciiAlphanumeric = text.Length > 0;
+            var mask              = 0UL;
+
+            foreach (var character in text)
+            {
+                if (char.IsAsciiLetter(character))
+                    hasASCIILetter = true;
+
+                if (!char.IsAsciiLetterOrDigit(character))
+                    asciiAlphanumeric = false;
+
+                if (TryGetMaskBit(character, out var bit))
+                    mask |= bit;
+            }
+
+            HasASCIILetter      = hasASCIILetter;
+            IsASCIIAlphanumeric = asciiAlphanumeric;
+            IsChinese           = text.IsChinese();
+            Mask                = mask;
+            FirstBit = TryGetMaskBit(text[0], out var firstBit) ?
+                           firstBit :
+                           0;
+        }
+    }
+
+    private readonly struct Match
     (
-        string   Original,
-        string   Compact,
-        string[] PinyinCombinations,
-        bool     IsCjk,
-        bool     IsExact,
-        bool     IsNegative,
-        CharMask Mask
+        SearchEntry entry,
+        int         weakest,
+        int         total,
+        int         phrase
+    )
+    {
+        public SearchEntry Entry   { get; } = entry;
+        public int         Weakest { get; } = weakest;
+        public int         Total   { get; } = total;
+        public int         Phrase  { get; } = phrase;
+    }
+
+    private sealed class MatchComparer
+    (
+        Comparison<T>? tieBreaker
+    ) : IComparer<Match>
+    {
+        public int Compare(Match left, Match right)
+        {
+            var result = right.Weakest.CompareTo(left.Weakest);
+            if (result != 0)
+                return result;
+
+            result = right.Phrase.CompareTo(left.Phrase);
+            if (result != 0)
+                return result;
+
+            result = right.Total.CompareTo(left.Total);
+            if (result != 0)
+                return result;
+
+            result = left.Entry.Fields[0].Text.Length.CompareTo(right.Entry.Fields[0].Text.Length);
+            if (result != 0)
+                return result;
+
+            result = SortKey.Compare(left.Entry.TitleSortKey, right.Entry.TitleSortKey);
+
+            return result != 0 ?
+                       result :
+                       tieBreaker?.Invoke(left.Entry.Item, right.Entry.Item) ?? left.Entry.Order.CompareTo(right.Entry.Order);
+        }
+    }
+
+    private sealed record CacheEntry
+    (
+        string Query,
+        T[]    Results
     );
 
-    private readonly struct CharMask
+    private sealed class SearchEntry
     {
-        private readonly ulong mask;
+        public T             Item           { get; }
+        public SearchField[] Fields         { get; }
+        public SortKey       TitleSortKey   { get; }
+        public ulong         ConsumableMask { get; }
+        public bool          MaskReliable   { get; }
+        public int           Order          { get; set; }
 
-        public CharMask(string text)
+        public SearchEntry
+        (
+            T                             item,
+            IEnumerable<FuzzySearchField> source,
+            Dictionary<char, string[]>    readings,
+            CompareInfo                   compareInfo
+        )
         {
-            ulong m = 0;
+            Item = item;
+            var fields = new List<SearchField>();
+            var title  = string.Empty;
 
-            foreach (var c in text)
+            foreach (var field in source)
             {
-                var low = char.ToLowerInvariant(c);
+                if (fields.Count == 0)
+                    title = field.Text;
 
-                switch (low)
-                {
-                    case >= 'a' and <= 'z':
-                        m |= 1UL << (low - 'a');
-                        break;
-                    case >= '0' and <= '9':
-                        m |= 1UL << (26 + (low - '0'));
-                        break;
-                    default:
-                    {
-                        if (IsCjk(low))
-                            m |= 1UL << 63;
-                        break;
-                    }
-                }
+                fields.Add(new(field, readings));
             }
 
-            mask = m;
-        }
+            TitleSortKey = compareInfo.GetSortKey(title, CompareOptions.IgnoreCase);
+            Fields       = [.. fields.OrderByDescending(static field => field.MaxScore)];
+            var mask         = 0UL;
+            var maskReliable = true;
 
-        public bool IsSubsetOf(CharMask other) => (mask & other.mask) == mask;
-    }
-
-    #endregion
-
-    #region 拼音扩展抽象接口与实现
-
-    private interface IPinyinProvider
-    {
-        string GetPinyin(string text, string separator);
-
-        string[] GetPinyinCombinations(string segment);
-    }
-
-    private sealed class DefaultPinyinProvider : IPinyinProvider
-    {
-        public string GetPinyin(string text, string separator) =>
-            PinyinHelper.GetPinyin(text, separator);
-
-        public string[] GetPinyinCombinations(string segment)
-        {
-            if (string.IsNullOrWhiteSpace(segment)) return [];
-
-            var results = new List<StringBuilder> { new() };
-
-            foreach (var ch in segment)
+            foreach (var field in Fields)
             {
-                List<string> options = [];
-
-                var p = PinyinHelper.GetPinyin(ch.ToString(), string.Empty).ToLowerInvariant();
-                options.Add(!string.IsNullOrWhiteSpace(p) ? p : ch.ToString().ToLowerInvariant());
-
-                var nextResults = new List<StringBuilder>();
-
-                foreach (var res in results)
-                {
-                    foreach (var opt in options)
-                    {
-                        var sb = new StringBuilder(res.ToString());
-                        sb.Append(opt);
-                        nextResults.Add(sb);
-                    }
-                }
-
-                results = nextResults;
-
-                if (results.Count > 8) results = results.Take(8).ToList();
+                mask         |= field.ConsumableMask;
+                maskReliable &= field.MaskReliable;
             }
 
-            return results.Select(static sb => sb.ToString()).Distinct().ToArray();
+            ConsumableMask = mask;
+            MaskReliable   = maskReliable;
         }
+    }
 
-        public string[] GetPinyinInitialismCombinations(string segment)
+    private sealed class SearchField
+    {
+        public string     Text                 { get; }
+        public string     LiteralText          { get; }
+        public string     Acronym              { get; }
+        public string     PinyinStream         { get; }
+        public string[][] Readings             { get; }
+        public int        NativeWeight         { get; }
+        public int        PinyinWeight         { get; }
+        public int        MaxScore             { get; }
+        public int        MaxConsumable        { get; }
+        public ulong      ConsumableMask       { get; }
+        public ulong      StartMask            { get; }
+        public bool       MaskReliable         { get; }
+        public bool       AllowInitials        { get; }
+        public bool       AllowSingleCharacter { get; }
+        public bool       AllowChineseSplit    { get; }
+        public bool       AllowAcronym         { get; }
+        public int        ShortMatchPenalty    { get; }
+
+        public SearchField(FuzzySearchField field, Dictionary<char, string[]> readings)
         {
-            if (string.IsNullOrWhiteSpace(segment)) return [];
+            var text         = field.Text;
+            var nativeWeight = field.NativeWeight;
+            var pinyinWeight = field.PinyinWeight;
+            AllowSingleCharacter = field.AllowSingleCharacter;
+            AllowChineseSplit    = field.AllowChineseSplit;
+            AllowAcronym         = field.AllowAcronym;
+            ShortMatchPenalty    = field.ShortMatchPenalty;
+            Text                 = Normalize(text);
+            LiteralText          = Normalize(text, true);
+            NativeWeight         = nativeWeight;
+            AllowInitials        = field.AllowInitials;
+            Readings             = new string[LiteralText.Length][];
+            var acronym = new StringBuilder();
 
-            var results = new List<StringBuilder> { new() };
-
-            foreach (var ch in segment)
+            for (var index = 0; index < text.Length; index++)
             {
-                List<char> options = [];
-
-                var p = PinyinHelper.GetPinyin(ch.ToString(), string.Empty).ToLowerInvariant();
-                options.Add(!string.IsNullOrWhiteSpace(p) ? p[0] : char.ToLowerInvariant(ch));
-
-                var nextResults = new List<StringBuilder>();
-
-                foreach (var res in results)
-                {
-                    foreach (var opt in options.Distinct())
-                    {
-                        var sb = new StringBuilder(res.ToString());
-                        sb.Append(opt);
-                        nextResults.Add(sb);
-                    }
-                }
-
-                results = nextResults;
-
-                if (results.Count > 8) results = results.Take(8).ToList();
+                var character = text[index];
+                if (char.IsAsciiLetter(character) &&
+                    (index == 0                             ||
+                     !char.IsLetterOrDigit(text[index - 1]) ||
+                     (char.IsUpper(character) &&
+                      (char.IsLower(text[index - 1]) ||
+                       (index + 1 < text.Length &&
+                        char.IsLower(text[index + 1]))))))
+                    acronym.Append(char.ToLowerInvariant(character));
             }
 
-            return results.Select(static sb => sb.ToString()).Distinct().ToArray();
+            Acronym = acronym.ToString();
+
+            for (var index = 0; index < LiteralText.Length; index++)
+            {
+                var character = LiteralText[index];
+
+                if (pinyinWeight == 0 ||
+                    !IsChinese(character))
+                {
+                    Readings[index] = [];
+                    continue;
+                }
+
+                if (!readings.TryGetValue(character, out var reading))
+                {
+                    reading = FuzzyPinyinReadings.POLYPHONIC_READINGS.TryGetValue(character, out var alternatives) ?
+                                  alternatives :
+                                  [Normalize(PinyinHelper.GetPinyin(character))];
+                    readings.Add(character, reading);
+                }
+
+                Readings[index] = reading;
+            }
+
+            PinyinWeight = Readings.Any(static reading => reading.Length > 0) ?
+                               pinyinWeight :
+                               0;
+            MaxScore = Math.Max(nativeWeight + 90, PinyinWeight + 30);
+
+            var mask          = 0UL;
+            var startMask     = 0UL;
+            var maskReliable  = true;
+            var maxConsumable = 0;
+            var streamBuilder = new StringBuilder(LiteralText.Length * 2);
+
+            foreach (var character in LiteralText)
+            {
+                if (!TryGetMaskBit(character, out var bit))
+                    continue;
+
+                mask      |= bit;
+                startMask |= bit;
+            }
+
+            for (var index = 0; index < Readings.Length; index++)
+            {
+                var maximum = 1;
+
+                foreach (var reading in Readings[index])
+                {
+                    foreach (var character in reading)
+                    {
+                        if (TryGetMaskBit(character, out var bit))
+                            mask |= bit;
+                        else
+                            maskReliable = false;
+                    }
+
+                    if (reading.Length == 0)
+                        continue;
+
+                    if (TryGetMaskBit(reading[0], out var startBit))
+                        startMask |= startBit;
+
+                    streamBuilder.Append(reading);
+                    maximum = Math.Max(maximum, reading.Length);
+                }
+
+                var source = LiteralText[index];
+                if (source is > ' ' and < '\u007F')
+                    streamBuilder.Append(source);
+
+                if (source != ' ')
+                    maxConsumable += maximum;
+            }
+
+            ConsumableMask = mask;
+            StartMask      = startMask;
+            MaskReliable   = maskReliable;
+            MaxConsumable  = maxConsumable;
+            PinyinStream = PinyinWeight == 0 ?
+                               string.Empty :
+                               streamBuilder.ToString();
         }
     }
 
-    #endregion
+    #region 常量
 
-    #region 线程安全 LRU 缓存
-
-    private readonly struct CacheKey
-    (
-        string         query,
-        int            limit,
-        Comparison<T>? tieBreaker
-    ) : IEquatable<CacheKey>
-    {
-        public string         Query      { get; } = query;
-        public int            Limit      { get; } = limit;
-        public Comparison<T>? TieBreaker { get; } = tieBreaker;
-
-        public bool Equals(CacheKey other) =>
-            string.Equals(Query, other.Query, StringComparison.Ordinal) &&
-            Limit == other.Limit                                        &&
-            Equals(TieBreaker, other.TieBreaker);
-
-        public override bool Equals(object? obj) => obj is CacheKey other && Equals(other);
-
-        public override int GetHashCode() => HashCode.Combine(Query, Limit, TieBreaker);
-    }
+    private const int MAX_CHINESE_GAP        = 8;
+    private const int MAX_STACK_ROW_LENGTH   = 256;
+    private const int MAX_ACTIVE_TEXT_LENGTH = 62;
+    private const int CACHE_CAPACITY         = 16;
 
     #endregion
-
-    #region Heap Priority Key Helper
-
-    private readonly struct MatchPriority
-    (
-        int            score,
-        T              item,
-        Comparison<T>? tieBreaker
-    ) : IComparable<MatchPriority>
-    {
-        public int Score { get; } = score;
-        public T   Item  { get; } = item;
-
-        public int CompareTo(MatchPriority other)
-        {
-            var comp = Score.CompareTo(other.Score);
-            if (comp != 0) return comp;
-
-            if (tieBreaker != null)
-                return -tieBreaker(Item, other.Item);
-
-            return 0;
-        }
-    }
-
-    #endregion
-
-    public void Dispose()
-    {
-        if (disposed) return;
-        cache.Dispose();
-        lockSlim.Dispose();
-        disposed = true;
-    }
 }
