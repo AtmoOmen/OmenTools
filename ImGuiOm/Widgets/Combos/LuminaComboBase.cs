@@ -11,7 +11,7 @@ public abstract class LuminaComboBase<T>
 )
     where T : struct, IExcelRow<T>
 {
-    private static readonly Vector2 PopupSize = ScaledVector2(600f, 400f);
+    private static Vector2 PopupSize => ScaledVector2(600f, 400f);
 
     protected enum ComboSelectionMode
     {
@@ -31,9 +31,10 @@ public abstract class LuminaComboBase<T>
         LuminaGetter.GetRow<T>(SelectedID).GetValueOrDefault();
 
     public List<T> SelectedItems =>
-        SelectedIDs.Select(x => LuminaGetter.GetRow<T>(x).GetValueOrDefault())
-                   .Where(x => x.RowId > 0)
-                   .ToList();
+    [
+        .. SelectedIDs.Select(x => LuminaGetter.GetRow<T>(x).GetValueOrDefault())
+                      .Where(x => x.RowId > 0)
+    ];
 
     public bool DrawRadio() =>
         DrawCore(ComboSelectionMode.Radio);
@@ -70,6 +71,10 @@ public abstract class LuminaComboBase<T>
         ComboSelectionMode mode,
         bool               isSelected
     );
+
+    protected virtual uint? GetGroupID(T item) => null;
+
+    protected virtual bool DrawGroupHeader(uint groupID, IReadOnlyList<T> items, ComboSelectionMode mode) => false;
 
     protected static ImGuiSelectableFlags GetSelectableFlags
     (
@@ -116,6 +121,22 @@ public abstract class LuminaComboBase<T>
         var visibleItems = BuildVisibleItems(mode);
         if (visibleItems.Count == 0) return false;
 
+        if (visibleItems.Any(item => GetGroupID(item).HasValue))
+        {
+            var changed = false;
+
+            foreach (var group in visibleItems.GroupBy(GetGroupID).OrderBy(group => group.Key))
+            {
+                if (group.Key is { } groupID)
+                    changed |= DrawGroupHeader(groupID, [.. group], mode);
+
+                foreach (var item in group)
+                    changed |= DrawRow(item, mode);
+            }
+
+            return changed;
+        }
+
         var clipper     = new ImGuiListClipper();
         var selectState = false;
 
@@ -125,21 +146,23 @@ public abstract class LuminaComboBase<T>
         {
             for (var i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
             {
-                var item       = visibleItems[i];
-                var isSelected = IsSelected(item, mode);
-
-                using var rowID = ImRaii.PushId($"Row_{item.RowId}");
-
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-
-                if (DrawSelector(mode, isSelected) || DrawDataColumns(item, mode, isSelected))
-                    selectState |= ApplySelection(item.RowId, mode);
+                selectState |= DrawRow(visibleItems[i], mode);
             }
         }
 
         clipper.End();
         return selectState;
+    }
+
+    private bool DrawRow(T item, ComboSelectionMode mode)
+    {
+        var       isSelected = IsSelected(item, mode);
+        using var rowID      = ImRaii.PushId($"Row_{item.RowId}");
+        ImGui.TableNextRow();
+        ImGui.TableNextColumn();
+        var selectorChanged = DrawSelector(mode, isSelected);
+        var rowChanged      = DrawDataColumns(item, mode, isSelected);
+        return (selectorChanged || rowChanged) && ApplySelection(item.RowId, mode);
     }
 
     private List<T> BuildVisibleItems
@@ -194,13 +217,10 @@ public abstract class LuminaComboBase<T>
     (
         ComboSelectionMode mode,
         bool               isSelected
-    )
-    {
-        if (mode == ComboSelectionMode.Radio)
-            return ImGui.RadioButton(string.Empty, isSelected);
-
-        return ImGui.Checkbox(string.Empty, ref isSelected);
-    }
+    ) =>
+        mode == ComboSelectionMode.Radio ?
+            ImGui.RadioButton(string.Empty, isSelected) :
+            ImGui.Checkbox(string.Empty, ref isSelected);
 
     private bool ApplySelection
     (
