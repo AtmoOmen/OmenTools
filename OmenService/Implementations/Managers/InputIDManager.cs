@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.System.Input;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
+using InputDataExpansion = FFXIVClientStructs.Expansion.FFXIV.Client.System.Input.InputData;
 
 namespace OmenTools.OmenService;
 
@@ -41,7 +42,7 @@ public unsafe class InputIDManager : OmenServiceBase<InputIDManager>
     private Hook<IsInputIDDelegate>? IsInputIDDownHook;
     private Hook<IsInputIDDelegate>? IsInputIDReleasedHook;
 
-    private static readonly CompSig CrossHotbarSlotPressedSig = 
+    private static readonly CompSig CrossHotbarSlotPressedSig =
         new("E8 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? 48 8B 03 48 8B CB FF 50 ?? B9");
     private Hook<IsInputIDDelegate>? CrossHotbarSlotPressedHook;
 
@@ -120,12 +121,16 @@ public unsafe class InputIDManager : OmenServiceBase<InputIDManager>
             _ =>
             {
                 var list = ImmutableList.Create<Delegate>(method);
-                return methods.Length > 0 ? list.AddRange(methods) : list;
+                return methods.Length > 0 ?
+                           list.AddRange(methods) :
+                           list;
             },
             (_, currentList) =>
             {
                 var newList = currentList.Add(method);
-                return methods.Length > 0 ? newList.AddRange(methods) : newList;
+                return methods.Length > 0 ?
+                           newList.AddRange(methods) :
+                           newList;
             }
         );
 
@@ -301,11 +306,29 @@ public unsafe class InputIDManager : OmenServiceBase<InputIDManager>
 
     #region Invokes
 
-    public bool IsInputIDPressed(InputId id) => IsInputIDPressedHook!.Original(ToStruct(), id);
+    /// <summary>
+    ///     查询指定输入是否刚刚按下，并跳过输入事件回调。
+    /// </summary>
+    /// <param name="id">待查询的输入编号。</param>
+    /// <param name="isCrossHotbarSlot">是否采用十字热键栏槽位查询，允许额外的手柄修饰键。</param>
+    /// <returns>对应按键刚刚按下时返回真，否则返回假。</returns>
+    public bool IsInputIDPressed(InputId id, bool isCrossHotbarSlot = false) =>
+        isCrossHotbarSlot ?
+            CrossHotbarSlotPressedHook.Original(ToStruct(), id) :
+            IsInputIDPressedHook!.Original(ToStruct(), id);
 
     public bool IsInputIDHeld(InputId id) => IsInputIDHeldHook!.Original(ToStruct(), id);
 
-    public bool IsInputIDDown(InputId id) => IsInputIDDownHook!.Original(ToStruct(), id);
+    /// <summary>
+    ///     查询指定输入是否持续按下，并跳过输入事件回调。
+    /// </summary>
+    /// <param name="id">待查询的输入编号。</param>
+    /// <param name="isCrossHotbarSlot">是否采用十字热键栏槽位查询，允许额外的手柄修饰键。</param>
+    /// <returns>对应按键持续按下时返回真，否则返回假。</returns>
+    public bool IsInputIDDown(InputId id, bool isCrossHotbarSlot = false) =>
+        isCrossHotbarSlot ?
+            ((InputDataExpansion*)ToStruct())->IsCrossHotbarSlotDown(id) :
+            IsInputIDDownHook!.Original(ToStruct(), id);
 
     public bool IsInputIDReleased(InputId id) => IsInputIDReleasedHook!.Original(ToStruct(), id);
 

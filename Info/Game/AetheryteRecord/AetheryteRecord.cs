@@ -18,6 +18,7 @@ namespace OmenTools.Info.Game.AetheryteRecord;
 ///     253 宇宙探索
 ///     252 区域交通目的地
 /// </summary>
+/// <param name="RowID">若为自定义的请固定传入 0。</param>
 public record AetheryteRecord
 (
     uint    RowID,

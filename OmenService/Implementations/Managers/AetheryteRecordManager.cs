@@ -212,7 +212,7 @@ public class AetheryteRecordManager
 
             var record = new AetheryteRecord
             (
-                zoneID,
+                0,
                 0,
                 252,
                 version,
@@ -484,7 +484,7 @@ public class AetheryteRecordManager
 
             var record = new AetheryteRecord
             (
-                70,
+                0,
                 (byte)index,
                 254,
                 1,
@@ -517,7 +517,7 @@ public class AetheryteRecordManager
                 var placeName = LuminaWrapper.GetPlaceName(index + offset);
                 var record = new AetheryteRecord
                 (
-                    175,
+                    0,
                     index,
                     253,
                     version,
