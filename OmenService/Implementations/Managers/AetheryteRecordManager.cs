@@ -39,6 +39,24 @@ public class AetheryteRecordManager
         }
     }
 
+    /// <summary>
+    ///     仅包含 Aetheryte 表中的以太之光，不含任何自定义
+    /// </summary>
+    public IEnumerable<AetheryteRecord> GameRecords
+    {
+        get
+        {
+            foreach (var list in Records.Values)
+            foreach (var record in list)
+            {
+                if (record.RowID == 0)
+                    continue;
+
+                yield return record;
+            }
+        }
+    }
+
     public static bool IsInAethernetTerritory() =>
         GameState.TerritoryIntendedUse is TerritoryIntendedUse.Town or TerritoryIntendedUse.GoldSaucer;
 
