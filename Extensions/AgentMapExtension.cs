@@ -1,12 +1,57 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
 using OmenTools.Interop.Game.Lumina;
+using AgentMapExpansion = FFXIVClientStructs.Expansion.FFXIV.Client.UI.Agent.AgentMap;
 
 namespace OmenTools.Extensions;
 
 public static class AgentMapExtension
 {
+    extension
+    (
+        scoped ref AgentMapExpansion agent
+    )
+    {
+        public void SetMapByZoneAndOpen
+        (
+            uint    territoryTypeID,
+            string? mapTitle = null
+        ) =>
+            Unsafe.As<AgentMapExpansion, AgentMap>(ref agent).SetMapByZoneAndOpen(territoryTypeID, mapTitle);
+
+        public void SetMapAndOpen
+        (
+            uint    mapID,
+            string? mapTitle = null
+        ) =>
+            Unsafe.As<AgentMapExpansion, AgentMap>(ref agent).SetMapAndOpen(mapID, mapTitle);
+
+        public void SetMapFlagByZoneAndOpen
+        (
+            uint    territoryTypeID,
+            Vector3 worldPosition,
+            string? mapTitle = null
+        ) =>
+            Unsafe.As<AgentMapExpansion, AgentMap>(ref agent).SetMapFlagByZoneAndOpen(territoryTypeID, worldPosition, mapTitle);
+
+        public void SetMapFlagAndOpen
+        (
+            uint    mapID,
+            Vector3 worldPosition,
+            string? mapTitle = null
+        ) =>
+            Unsafe.As<AgentMapExpansion, AgentMap>(ref agent).SetMapFlagAndOpen(mapID, worldPosition, mapTitle);
+
+        public void SetMapFlagAndOpen
+        (
+            Vector3 worldPosition,
+            string? mapTitle = null
+        ) =>
+            Unsafe.As<AgentMapExpansion, AgentMap>(ref agent).SetMapFlagAndOpen(worldPosition, mapTitle);
+    }
+
     extension
     (
         scoped ref AgentMap agent
