@@ -25,17 +25,20 @@ public static class TeleportCostCalculator
     /// </summary>
     /// <param name="sourceZoneID">出发区域的 TerritoryType 行编号。</param>
     /// <param name="targetZoneIDs">目的地区域的 TerritoryType 行编号集合。</param>
+    /// <param name="applyTeleportDiscounts">是否应用免费、收藏及住宅等以太传送折扣；关闭后按基础距离费用选路和计费。</param>
     /// <returns>可到达区域及其路线费用。</returns>
     public static Dictionary<uint, uint> GetRouteCosts
     (
         uint              sourceZoneID,
-        IEnumerable<uint> targetZoneIDs
+        IEnumerable<uint> targetZoneIDs,
+        bool              applyTeleportDiscounts = true
     ) =>
-        MovementManager.FindRouteCosts(sourceZoneID, targetZoneIDs);
+        MovementManager.FindRouteCosts(sourceZoneID, targetZoneIDs, applyTeleportDiscounts);
 
     internal static unsafe Func<uint, AetheryteRecord, uint> CaptureTeleportCosts
     (
-        IEnumerable<AetheryteRecord> records
+        IEnumerable<AetheryteRecord> records,
+        bool                         applyTeleportDiscounts = true
     )
     {
         var territories = LuminaGetter.Get<TerritoryTypeTelepo>().ToDictionary
@@ -64,7 +67,8 @@ public static class TeleportCostCalculator
         var home      = 0U;
         var player    = PlayerState.Instance();
 
-        if (GameState.IsLoggedIn &&
+        if (applyTeleportDiscounts &&
+            GameState.IsLoggedIn   &&
             player != null)
         {
             foreach (var id in player->FreeAetheryteIds)
@@ -80,7 +84,8 @@ public static class TeleportCostCalculator
         {
             var cost = GetBaseCost(source, destinations[record]);
 
-            if (record.Group is 253 or 254 ||
+            if (!applyTeleportDiscounts    ||
+                record.Group is 253 or 254 ||
                 !record.IsAetheryte)
                 return cost;
 

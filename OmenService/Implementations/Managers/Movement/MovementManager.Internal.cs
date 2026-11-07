@@ -204,10 +204,11 @@ public partial class MovementManager
     /// </summary>
     /// <param name="source">出发区域编号。</param>
     /// <param name="targets">目的地区域编号集合。</param>
-    /// <returns>可到达的目的地区域及其展示费用；保留免费、收藏及住宅折扣，传送券抵扣不计入展示费用，当前区域的费用为零。</returns>
-    public static Dictionary<uint, uint> FindRouteCosts(uint source, IEnumerable<uint> targets)
+    /// <param name="applyTeleportDiscounts">是否应用免费、收藏及住宅等以太传送折扣；关闭后按基础距离费用选路和计费。</param>
+    /// <returns>可到达的目的地区域及其展示费用；根据参数决定是否应用以太传送折扣，传送券抵扣不计入展示费用，当前区域的费用为零。</returns>
+    public static Dictionary<uint, uint> FindRouteCosts(uint source, IEnumerable<uint> targets, bool applyTeleportDiscounts = true)
     {
-        var context = CapturePathSearch(source);
+        var context = CapturePathSearch(source, applyTeleportDiscounts);
         return SearchPaths(context, source, [.. targets], CancellationToken.None)
             .ToDictionary(x => x.Key, x => x.Value.DisplayGilCost);
     }
@@ -233,7 +234,7 @@ public partial class MovementManager
                ).ConfigureAwait(false);
     }
 
-    private static unsafe PathSearchContext CapturePathSearch(uint source)
+    private static unsafe PathSearchContext CapturePathSearch(uint source, bool applyTeleportDiscounts = true)
     {
         var manager = Instance();
         var records = AetheryteRecordManager.Instance().AllRecords
@@ -304,7 +305,7 @@ public partial class MovementManager
                 ).ToArray()
             ),
             [.. records.Select(x => new AetheryteHop(x))],
-            TeleportCostCalculator.CaptureTeleportCosts(records),
+            TeleportCostCalculator.CaptureTeleportCosts(records, applyTeleportDiscounts),
             manager.AlwaysMinGilTransport ?
                 0 :
                 manager.config.HopCumulativePenalty
