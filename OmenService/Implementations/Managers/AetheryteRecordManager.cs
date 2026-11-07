@@ -303,7 +303,7 @@ public class AetheryteRecordManager
                     cancellationToken.ThrowIfCancellationRequested();
 
                     foreach (var record in records)
-                        record.Update(routeCosts.GetValueOrDefault(record.ZoneID, uint.MaxValue));
+                        record.Update(routeCosts.GetValueOrDefault(record.ZoneID, 0U));
                 },
                 cancellationToken
             );
