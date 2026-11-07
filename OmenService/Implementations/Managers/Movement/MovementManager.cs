@@ -339,7 +339,10 @@ public partial class MovementManager
         instance = null;
 
         if (!LayoutWorld.Instance()->ActiveLayout->InstancesByType.TryGetValuePointer
-                (InstanceType.ExitRange, out var exitRanges))
+            (
+                InstanceType.ExitRange,
+                out var exitRanges
+            ))
             return false;
 
         foreach (var exitRange in exitRanges->Value->Values)
