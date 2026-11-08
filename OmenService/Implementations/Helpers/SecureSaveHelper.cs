@@ -1,13 +1,35 @@
 using System.Collections.Concurrent;
+using System.Text;
 using System.Threading.Channels;
 using OmenTools.Dalamud;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
 
+/// <summary>
+/// 按文件路径合并保存请求，并通过临时文件替换目标文件完成写入。
+/// </summary>
 public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
 {
-    public void WriteAllText(string path, string content)
+    /// <summary>
+    /// 将文本编码为无字节序标记的 UTF-8，并加入文件保存队列。
+    /// 同一路径的连续请求会合并，仅写入最新内容。
+    /// </summary>
+    /// <param name="path">需要写入的文件路径。</param>
+    /// <param name="content">需要保存的文本内容。</param>
+    public void WriteAllText(string path, string content) =>
+        EnqueueWrite(path, UTF8.GetBytes(content));
+
+    /// <summary>
+    /// 复制二进制内容并加入文件保存队列，调用返回后即可修改或释放原始缓冲区。
+    /// 同一路径的连续请求会合并，仅写入最新内容。
+    /// </summary>
+    /// <param name="path">需要写入的文件路径。</param>
+    /// <param name="content">需要保存的二进制内容。</param>
+    public void WriteAllBytes(string path, ReadOnlySpan<byte> content) =>
+        EnqueueWrite(path, [.. content]);
+
+    private void EnqueueWrite(string path, byte[] content)
     {
         var fullPath = Path.GetFullPath(path);
 
@@ -19,8 +41,7 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
                 p => new Lazy<FileChannelEntry>
                 (() =>
                     {
-                        var cts = CancellationTokenSource.CreateLinkedTokenSource(cancelSource.Token);
-                        var channel = Channel.CreateUnbounded<string>
+                        var channel = Channel.CreateUnbounded<byte[]>
                         (
                             new UnboundedChannelOptions
                             {
@@ -28,9 +49,9 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
                             }
                         );
 
-                        var processingTask = ProcessFileQueueAsync(p, channel.Reader, cts.Token);
+                        _ = ProcessFileQueueAsync(p, channel.Reader, cancelSource.Token);
 
-                        return new(channel, cts, processingTask);
+                        return new(channel);
                     }
                 )
             ).Value;
@@ -49,6 +70,9 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
 
     private readonly CancellationTokenSource cancelSource = new();
 
+    /// <summary>
+    /// 初始化保存队列，并启动空闲队列清理任务。
+    /// </summary>
     public SecureSaveHelper() =>
         _ = CleanIdleChannelsAsync();
 
@@ -58,7 +82,7 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
         pathEntries.Clear();
     }
 
-    private static async Task ProcessFileQueueAsync(string filePath, ChannelReader<string> reader, CancellationToken ct)
+    private static async Task ProcessFileQueueAsync(string filePath, ChannelReader<byte[]> reader, CancellationToken ct)
     {
         try
         {
@@ -66,7 +90,7 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
             {
                 await Task.Delay(500, ct);
 
-                string? latestContent                                 = null;
+                byte[]? latestContent                                 = null;
                 while (reader.TryRead(out var content)) latestContent = content;
 
                 if (latestContent != null) await AtomicWriteAsync(filePath, latestContent);
@@ -75,7 +99,7 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
         }
         catch (OperationCanceledException)
         {
-            string? latestContent = null;
+            byte[]? latestContent = null;
             while (reader.TryRead(out var content))
                 latestContent = content;
 
@@ -84,13 +108,13 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
         }
     }
 
-    private static async Task AtomicWriteAsync(string filePath, string content)
+    private static async Task AtomicWriteAsync(string filePath, byte[] content)
     {
         var tempFile = $"{filePath}.{Guid.NewGuid()}.tmp";
 
         try
         {
-            await File.WriteAllTextAsync(tempFile, content);
+            await File.WriteAllBytesAsync(tempFile, content);
             if (File.Exists(filePath))
                 File.Replace(tempFile, filePath, null);
             else
@@ -145,11 +169,18 @@ public class SecureSaveHelper : OmenServiceBase<SecureSaveHelper>
 
     private record FileChannelEntry
     (
-        Channel<string>         Channel,
-        CancellationTokenSource Cts,
-        Task                    ProcessingTask
+        Channel<byte[]> Channel
     )
     {
+        /// <summary>
+        /// 获取或设置最近一次提交保存请求的 UTC 时间。
+        /// </summary>
         public DateTime LastAccessed { get; set; } = DateTime.UtcNow;
     }
+
+    #region 常量
+
+    private static readonly UTF8Encoding UTF8 = new(false);
+
+    #endregion
 }
