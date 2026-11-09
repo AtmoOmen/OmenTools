@@ -51,7 +51,7 @@ public abstract unsafe class EventTransportBase
          (warp.WarpLogic.RowId                               == NORMAL_WARP_LOGIC &&
           GetConditionFailureFlags(warp.WarpCondition.Value) == WarpConditionFailure.None));
 
-    public bool IsEventNearby() =>
+    public virtual bool IsEventNearby() =>
         EventFramework.Instance()->IsEventIDNearby(EventID);
 
     public IEnumerable<uint> EnumerateReachableTargets

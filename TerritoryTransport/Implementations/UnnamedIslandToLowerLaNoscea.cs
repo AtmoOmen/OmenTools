@@ -12,7 +12,12 @@ public sealed class UnnamedIslandToLowerLaNoscea : EventSimpleYesTransportBase
 
     public override IReadOnlyList<uint> TargetZones => [135];
 
-    public override Vector3 EventPosition => new(-434.7f, -0.2f, 205.8f);
+    public override Vector3 EventPosition => new(-436.0f, -0.2f, 207.3f);
 
     protected override uint EventID => 984091;
+
+    protected override bool UseOriginalEntityID => true;
+
+    public override bool IsEventNearby() =>
+        LocalPlayerState.DistanceTo3D(EventPosition) <= 4 && base.IsEventNearby();
 }
