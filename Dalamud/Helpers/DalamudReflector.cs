@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Reflection;
 using System.Runtime.Loader;
-using Dalamud.Plugin;
 
 namespace OmenTools.Dalamud.Helpers;
 
@@ -13,17 +12,24 @@ public static class DalamudReflector
     ///     直接调用过不了混淆, 所以反射
     /// </summary>
     public static nint GetMemberFuncByName(Type staticType, string propertyName) =>
-        (nint)(staticType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ??
+        (nint)(staticType.GetProperty
+               (
+                   propertyName,
+                   BindingFlags.Public |
+                   BindingFlags.Static |
+                   BindingFlags.FlattenHierarchy
+               )?.GetValue(null) ??
                throw new MissingMemberException(staticType.FullName, propertyName));
 
     public static object GetPluginManager() =>
         IDalamudPluginInterface.Instance().GetType().Assembly.GetType("Dalamud.Service`1", true)
-                ?.MakeGenericType(IDalamudPluginInterface.Instance().GetType().Assembly.GetType("Dalamud.Plugin.Internal.PluginManager", true)!).GetMethod("Get")
-                ?.Invoke(null, BindingFlags.Default, null, [], null);
+                               ?.MakeGenericType
+                                   (IDalamudPluginInterface.Instance().GetType().Assembly.GetType("Dalamud.Plugin.Internal.PluginManager", true)!).GetMethod("Get")
+                               ?.Invoke(null, BindingFlags.Default, null, [], null);
 
     public static async Task<List<object>> GetPluginMaster(string masterURL)
     {
-        List<object> plugins = null;
+        List<object> plugins;
 
         try
         {
@@ -31,7 +37,7 @@ public static class DalamudReflector
             var pluginRepository = Activator.CreateInstance
             (
                 IDalamudPluginInterface.Instance().GetType().Assembly
-                        .GetType("Dalamud.Plugin.Internal.Types.PluginRepository")!,
+                                       .GetType("Dalamud.Plugin.Internal.Types.PluginRepository")!,
                 happyHTTPClient,
                 masterURL,
                 true
@@ -46,7 +52,9 @@ public static class DalamudReflector
 
             if (!await firstCompleted)
             {
-                var secondTask = ReferenceEquals(firstCompleted, reloadPluginMasterTask) ? reloadAsyncTask : reloadPluginMasterTask;
+                var secondTask = ReferenceEquals(firstCompleted, reloadPluginMasterTask) ?
+                                     reloadAsyncTask :
+                                     reloadPluginMasterTask;
                 if (!await secondTask) return null;
             }
 
@@ -81,8 +89,8 @@ public static class DalamudReflector
 
     public static object GetService(string serviceFullName) =>
         IDalamudPluginInterface.Instance().GetType().Assembly.GetType("Dalamud.Service`1", true)
-                ?.MakeGenericType(IDalamudPluginInterface.Instance().GetType().Assembly.GetType(serviceFullName, true)!).GetMethod("Get")
-                ?.Invoke(null, BindingFlags.Default, null, [], null);
+                               ?.MakeGenericType(IDalamudPluginInterface.Instance().GetType().Assembly.GetType(serviceFullName, true)!).GetMethod("Get")
+                               ?.Invoke(null, BindingFlags.Default, null, [], null);
 
     public static bool TryGetLocalPlugin(IDalamudPlugin instance, out object localPlugin, out AssemblyLoadContext context, out Type type)
     {
@@ -98,7 +106,9 @@ public static class DalamudReflector
 
             foreach (var t in installedPlugins)
             {
-                type = t.GetType().Name == "LocalDevPlugin" ? t.GetType().BaseType : t.GetType();
+                type = t.GetType().Name == "LocalDevPlugin" ?
+                           t.GetType().BaseType :
+                           t.GetType();
                 if (type == null) continue;
 
                 var plugin = (IDalamudPlugin)type
