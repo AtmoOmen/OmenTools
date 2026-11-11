@@ -339,8 +339,8 @@ public static class vnavmeshIPC
     public static Vector3? QueryNearestPointOnMesh
     (
         Vector3 pos,
-        float   halfExtentXZ,
-        float   halfExtentY
+        float   halfExtentXZ = 2048,
+        float   halfExtentY  = 2048
     ) =>
         QueryMeshNearestPoint?.TryInvokeFunc(pos, halfExtentXZ, halfExtentY);
 
@@ -354,8 +354,8 @@ public static class vnavmeshIPC
     public static Vector3? QueryNearestPointInVoxel
     (
         Vector3 point,
-        float   halfExtentXZ,
-        float   halfExtentY
+        float   halfExtentXZ = 2048,
+        float   halfExtentY  = 2048
     ) =>
         QueryVoxelNearestPoint?.TryInvokeFunc(point, halfExtentXZ, halfExtentY);
 
@@ -364,13 +364,13 @@ public static class vnavmeshIPC
     /// </summary>
     /// <param name="pos">位置</param>
     /// <param name="halfExtentY">Y半区</param>
-    /// <param name="allowUnreachable">允许不可达</param>
+    /// <param name="allowUnreachable">允许网格不可达</param>
     /// <returns></returns>
     public static bool QueryIsPointOnMesh
     (
         Vector3 pos,
-        float   halfExtentY,
-        bool    allowUnreachable
+        float   halfExtentY      = 2048,
+        bool    allowUnreachable = true
     ) =>
         QueryMeshIsPointOnMesh?.TryInvokeFunc(pos, halfExtentY, allowUnreachable) ?? false;
 
@@ -384,8 +384,8 @@ public static class vnavmeshIPC
     public static Vector3? QueryNearestPointReachable
     (
         Vector3 pos,
-        float   halfExtentXZ,
-        float   halfExtentY
+        float   halfExtentXZ = 2048,
+        float   halfExtentY  = 2048
     ) =>
         QueryMeshNearestPointReachable?.TryInvokeFunc(pos, halfExtentXZ, halfExtentY);
 
