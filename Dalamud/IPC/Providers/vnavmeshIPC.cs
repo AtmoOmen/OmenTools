@@ -61,6 +61,9 @@ public static class vnavmeshIPC
     [IPCSubscriber("vnavmesh.Query.Mesh.NearestPoint")]
     private static IPCSubscriber<Vector3, float, float, Vector3?>? QueryMeshNearestPoint;
 
+    [IPCSubscriber("vnavmesh.Query.Voxel.NearestPoint")]
+    private static IPCSubscriber<Vector3, float, float, Vector3?>? QueryVoxelNearestPoint;
+
     [IPCSubscriber("vnavmesh.Query.Mesh.IsPointOnMesh")]
     private static IPCSubscriber<Vector3, float, bool, bool>? QueryMeshIsPointOnMesh;
 
@@ -340,6 +343,21 @@ public static class vnavmeshIPC
         float   halfExtentY
     ) =>
         QueryMeshNearestPoint?.TryInvokeFunc(pos, halfExtentXZ, halfExtentY);
+
+    /// <summary>
+    ///     查询指定范围内距离目标位置最近的可达体素点。
+    /// </summary>
+    /// <param name="point">目标位置，同时作为搜索范围的中心。</param>
+    /// <param name="halfExtentXZ">搜索范围在 X、Z 方向的半长度。</param>
+    /// <param name="halfExtentY">搜索范围在 Y 方向的半长度。</param>
+    /// <returns>最近的可达体素点；未找到、导航数据未就绪或接口不可用时返回 <see langword="null"/>。</returns>
+    public static Vector3? QueryNearestPointInVoxel
+    (
+        Vector3 point,
+        float   halfExtentXZ,
+        float   halfExtentY
+    ) =>
+        QueryVoxelNearestPoint?.TryInvokeFunc(point, halfExtentXZ, halfExtentY);
 
     /// <summary>
     ///     检查点是否在网格上
