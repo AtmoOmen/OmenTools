@@ -53,7 +53,7 @@ public sealed class DService
         {
             try
             {
-                ExpansionInterop.Initialize(instance.SigScanner.SearchBase);
+                ExpansionInterop.Initialize(instance.SigScanner.SearchBase, DLog.Error);
             }
             catch (Exception ex)
             {
@@ -130,7 +130,7 @@ public sealed class DService
             // TODO: 等待 Lumina 更新 World 定义
             Sheets.Worlds.Clear();
             Sheets.CNWorlds.Clear();
-            
+
             LGBAssets.ZoneLineExitRanges.Clear();
         }
         catch (Exception ex)
