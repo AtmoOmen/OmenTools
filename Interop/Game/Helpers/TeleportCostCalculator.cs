@@ -16,9 +16,9 @@ public static class TeleportCostCalculator
     /// </summary>
     /// <param name="sourceZoneID">出发区域的 TerritoryType 行编号。</param>
     /// <param name="targetZoneID">目的地区域的 TerritoryType 行编号。</param>
-    /// <returns>所选路线的金币总费用；当前已在目的地区域时为零，无可用路线时为无符号整数最大值。</returns>
+    /// <returns>所选路线的金币总费用；当前已在目的地区域时为零，无可用路线时为0。</returns>
     public static uint GetRouteCost(uint sourceZoneID, uint targetZoneID) =>
-        GetRouteCosts(sourceZoneID, [targetZoneID]).GetValueOrDefault(targetZoneID, uint.MaxValue);
+        GetRouteCosts(sourceZoneID, [targetZoneID]).GetValueOrDefault(targetZoneID, 0U);
 
     /// <summary>
     ///     从同一出发区域批量计算多个目的地区域的路线费用。
