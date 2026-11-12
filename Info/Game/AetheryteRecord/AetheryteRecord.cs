@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -32,6 +33,12 @@ public record AetheryteRecord
     string  Name
 )
 {
+    /// <summary>
+    ///     获取由行号、子索引、分组和区域编号组成的唯一标识符，用于持久化数据键和界面控件标识。
+    /// </summary>
+    public string UniqueID =>
+        string.Create(CultureInfo.InvariantCulture, $"AetheryteRecord.{RowID}-{SubIndex}-{Group}-{ZoneID}");
+
     public AetheryteRecordState State { get; private set; }
     public uint                 Cost  { get; private set; }
 
@@ -199,16 +206,7 @@ public record AetheryteRecord
                           .ToList();
 
             // 最终成品
-            var finalList = new List<Aetheryte> { aetheryteMain };
-            // 再剩下普通的
-            foreach (var aetheryte in left)
-                finalList.Add(aetheryte);
-            // 再野外的
-            foreach (var aetheryte in outdoors)
-                finalList.Add(aetheryte);
-            // 最后特殊的
-            foreach (var aetheryte in special)
-                finalList.Add(aetheryte);
+            List<Aetheryte> finalList = [aetheryteMain, .. left, .. outdoors, .. special];
 
             subIndex = finalList.IndexOf(x => x.RowId == data.RowId);
         }
