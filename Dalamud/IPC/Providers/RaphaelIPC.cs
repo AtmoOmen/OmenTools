@@ -8,6 +8,9 @@ namespace OmenTools.Dalamud;
 public static class RaphaelIPC
 {
     public const string INTERNAL_NAME = "Raphael.Dalamud";
+    
+    public static bool IsPluginEnabled() =>
+        IDalamudPluginInterface.Instance().IsPluginEnabled(INTERNAL_NAME);
 
     [IPCSubscriber("Raphael.Dalamud.StartCalculation")]
     private static IPCSubscriber<uint> StartCalculationSubscriber;
