@@ -9,11 +9,11 @@ public static class vnavmeshIPC
 {
     public const string INTERNAL_NAME = "vnavmesh";
 
-    public static bool IsPluginEnabled() =>
+    public static bool IsPluginEnabled(bool onlyCN = true) =>
         IDalamudPluginInterface.Instance().IsPluginEnabled
         (
             INTERNAL_NAME,
-            plugin => plugin.Manifest.Author.Contains("AtmoOmen")
+            plugin => !onlyCN || plugin.Manifest.Author.Contains("AtmoOmen")
         );
 
 
