@@ -5,12 +5,18 @@ using Dalamud.Utility;
 
 namespace OmenTools.ImGuiOm;
 
+/// <summary>提供基于当前 ImGui 字体和样式的布局、绘制及交互控件。</summary>
 public static partial class ImGuiOm
 {
-    private const float HOLD_BUTTON_FLASH_DURATION = 0.5f;
+    private static readonly Dictionary<uint, (float Charge, float FlashTime)> HoldButtonStates = [];
 
-    private static readonly Dictionary<string, (float Charge, float FlashTime)> HoldButtonStates = [];
-
+    /// <summary>绘制开关按钮，并在点击时切换状态。</summary>
+    /// <param name="id">控件唯一标识。</param>
+    /// <param name="value">当前状态，点击后更新。</param>
+    /// <param name="height">按钮高度；不大于零时使用当前文本行高。</param>
+    /// <param name="bgActiveColor">开启时的打包背景颜色。</param>
+    /// <param name="bgColor">关闭时的打包背景颜色。</param>
+    /// <returns>状态发生变化时返回真。</returns>
     public static bool ToggleButton
     (
         string   id,
@@ -58,6 +64,13 @@ public static partial class ImGuiOm
         return changed;
     }
 
+    /// <summary>使用向量颜色绘制开关按钮，并在点击时切换状态。</summary>
+    /// <param name="id">控件唯一标识。</param>
+    /// <param name="value">当前状态，点击后更新。</param>
+    /// <param name="bgActiveColor">开启时的背景颜色。</param>
+    /// <param name="bgColor">关闭时的背景颜色。</param>
+    /// <param name="height">按钮高度；不大于零时使用当前文本行高。</param>
+    /// <returns>状态发生变化时返回真。</returns>
     public static bool ToggleButton
     (
         string   id,
@@ -75,6 +88,13 @@ public static partial class ImGuiOm
             bgColor?.ToUInt()
         );
 
+    /// <summary>绘制图片按钮，将图片等比缩放到按钮内容区域内。</summary>
+    /// <param name="textureID">图片纹理标识。</param>
+    /// <param name="buttonSize">按钮尺寸。</param>
+    /// <param name="imageSize">图片原始尺寸。</param>
+    /// <param name="uv0">纹理左上角坐标。</param>
+    /// <param name="uv1">纹理右下角坐标；默认值表示完整纹理。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonImage
     (
         ImTextureID textureID,
@@ -99,10 +119,14 @@ public static partial class ImGuiOm
         var max  = ImGui.GetItemRectMax();
         var draw = ImGui.GetWindowDrawList();
 
-        var bgCol = held ? ImGui.GetColorU32(ImGuiCol.ButtonActive) : hovered ? ImGui.GetColorU32(ImGuiCol.ButtonHovered) : ImGui.GetColorU32(ImGuiCol.Button);
+        var background = ImGuiCol.Button;
+        if (held)
+            background = ImGuiCol.ButtonActive;
+        else if (hovered)
+            background = ImGuiCol.ButtonHovered;
 
         var rounding = ImGui.GetStyle().FrameRounding;
-        draw.AddRectFilled(min, max, bgCol, rounding);
+        draw.AddRectFilled(min, max, ImGui.GetColorU32(background), rounding);
 
         var borderCol  = ImGui.GetColorU32(ImGuiCol.Border);
         var borderSize = ImGui.GetStyle().FrameBorderSize;
@@ -119,24 +143,26 @@ public static partial class ImGuiOm
 
         var contentSize = contentMax - contentMin;
 
-        var imgDrawMin = contentMin;
-        var imgDrawMax = contentMax;
+        var horizontalScale = contentSize.X / MathF.Max(1e-6f, imageSize.X);
+        var verticalScale   = contentSize.Y / MathF.Max(1e-6f, imageSize.Y);
+        var scale           = MathF.Min(horizontalScale, verticalScale);
 
-        var sx = contentSize.X / MathF.Max(1e-6f, imageSize.X);
-        var sy = contentSize.Y / MathF.Max(1e-6f, imageSize.Y);
-        var s  = MathF.Min(sx, sy);
-
-        var drawSize = imageSize                * s;
+        var drawSize = imageSize                * scale;
         var offset   = (contentSize - drawSize) * 0.5f;
 
-        imgDrawMin = contentMin + offset;
-        imgDrawMax = imgDrawMin + drawSize;
+        var imageMin = contentMin + offset;
+        var imageMax = imageMin   + drawSize;
 
-        draw.AddImage(textureID, imgDrawMin, imgDrawMax, uv0, uv1, 0xFFFFFFFF);
+        draw.AddImage(textureID, imageMin, imageMax, uv0, uv1, ImGui.GetColorU32(Vector4.One));
 
         return pressed;
     }
 
+    /// <summary>绘制正方形图标按钮，按可见字形边界居中图标。</summary>
+    /// <param name="id">控件唯一标识。</param>
+    /// <param name="icon">按钮图标。</param>
+    /// <param name="tooltip">悬停提示；为空时不显示。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonIcon
     (
         string          id,
@@ -146,21 +172,16 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId($"{id}_{icon}");
 
-        var iconText   = icon.ToIconString();
-        var iconSize   = ImGui.CalcTextSize(iconText);
-        var buttonSize = new Vector2(GetSingleLineHeight());
-        var result     = ImGui.Button(string.Empty, buttonSize);
-        var (min, size) = GetItemRect();
-        var iconPos = GetCenteredPosition(min, size, iconSize);
-
-        DrawIconText(iconPos, iconText);
-
-        if (!tooltip.IsNullOrEmpty())
-            TooltipHover(tooltip);
-
-        return result;
+        var iconText = icon.ToIconString();
+        return TextMetrics.Measure(iconText).DrawButton(string.Empty, iconText, tooltip);
     }
 
+    /// <summary>绘制指定尺寸的图标按钮，按可见字形边界居中图标。</summary>
+    /// <param name="id">控件唯一标识。</param>
+    /// <param name="icon">按钮图标。</param>
+    /// <param name="buttonSize">按钮尺寸。</param>
+    /// <param name="tooltip">悬停提示；为空时不显示。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonIcon
     (
         string          id,
@@ -172,117 +193,94 @@ public static partial class ImGuiOm
         using var idPush = ImRaii.PushId($"{id}_{icon}");
 
         var iconText = icon.ToIconString();
-        var iconSize = ImGui.CalcTextSize(iconText);
-        var result   = ImGui.Button(string.Empty, buttonSize);
-        var (min, size) = GetItemRect();
-        var iconPos = GetCenteredPosition(min, size, iconSize);
-
-        DrawIconText(iconPos, iconText);
-
-        if (!tooltip.IsNullOrEmpty())
-            TooltipHover(tooltip);
-
-        return result;
+        return TextMetrics.Measure(iconText).DrawButton(string.Empty, iconText, tooltip, buttonSize);
     }
 
+    /// <summary>绘制图标在上、文字在下的按钮，尺寸按内容和样式计算。</summary>
+    /// <param name="icon">按钮图标。</param>
+    /// <param name="text">按钮标签；双井号后的部分仅参与控件标识。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonIconWithTextVertical
     (
         FontAwesomeIcon icon,
         string          text
     )
-    {
-        using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
+        => ButtonWithIcon(icon, text, null, true);
 
-        var iconText    = icon.ToIconString();
-        var iconSize    = ImGui.CalcTextSize(iconText);
-        var displaySpan = GetDisplaySpan(text);
-        var textSize    = ImGui.CalcTextSize(displaySpan);
-        var padding     = ImGui.GetStyle().FramePadding.X;
-        var spacing     = 3f * ImGuiHelpers.GlobalScale;
-        var buttonSize  = new Vector2(MathF.Max(iconSize.X, textSize.X) + (padding * 2), GetDoubleLineHeight());
-        var result      = ImGui.Button(string.Empty, buttonSize);
-        var (contentMin, contentSize) = GetButtonContentRect();
-        var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
-
-        DrawIconText(iconPos, iconText);
-        ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
-
-        return result;
-    }
-
+    /// <summary>在指定尺寸的按钮中垂直排列并居中图标和文字。</summary>
+    /// <param name="icon">按钮图标。</param>
+    /// <param name="text">按钮标签；双井号后的部分仅参与控件标识。</param>
+    /// <param name="buttonSize">按钮尺寸。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonIconWithTextVertical
     (
         FontAwesomeIcon icon,
         string          text,
         Vector2         buttonSize
     )
-    {
-        using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
+        => ButtonWithIcon(icon, text, buttonSize, true);
 
-        var iconText    = icon.ToIconString();
-        var iconSize    = ImGui.CalcTextSize(iconText);
-        var displaySpan = GetDisplaySpan(text);
-        var textSize    = ImGui.CalcTextSize(displaySpan);
-        var spacing     = 3f * ImGuiHelpers.GlobalScale;
-        var result      = ImGui.Button(string.Empty, buttonSize);
-        var (contentMin, contentSize) = GetButtonContentRect();
-        var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
-
-        DrawIconText(iconPos, iconText);
-        ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
-
-        return result;
-    }
-
+    /// <summary>绘制图标在左、文字在右的按钮，尺寸按内容和样式计算。</summary>
+    /// <param name="icon">按钮图标。</param>
+    /// <param name="text">按钮标签；双井号后的部分仅参与控件标识。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonIconWithText
     (
         FontAwesomeIcon icon,
         string          text
     )
-    {
-        using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
+        => ButtonWithIcon(icon, text, null, false);
 
-        var iconText    = icon.ToIconString();
-        var iconSize    = ImGui.CalcTextSize(iconText);
-        var displaySpan = GetDisplaySpan(text);
-        var textSize    = ImGui.CalcTextSize(displaySpan);
-        var padding     = ImGui.GetStyle().FramePadding;
-        var spacing     = ImGui.GetStyle().ItemSpacing.X;
-        var buttonSize  = new Vector2(iconSize.X + textSize.X + (padding.X * 2) + spacing, GetSingleLineHeight());
-        var result      = ImGui.Button(string.Empty, buttonSize);
-        var (contentMin, contentSize) = GetButtonContentRect();
-        var (iconPos, textPos)        = GetHorizontalLayout(contentMin, contentSize, iconSize, textSize, spacing);
-
-        DrawIconText(iconPos, iconText);
-        ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
-
-        return result;
-    }
-
+    /// <summary>在指定尺寸的按钮中水平排列并居中图标和文字。</summary>
+    /// <param name="icon">按钮图标。</param>
+    /// <param name="text">按钮标签；双井号后的部分仅参与控件标识。</param>
+    /// <param name="buttonSize">按钮尺寸。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonIconWithText
     (
         FontAwesomeIcon icon,
         string          text,
         Vector2         buttonSize
     )
+        => ButtonWithIcon(icon, text, buttonSize, false);
+
+    private static bool ButtonWithIcon(FontAwesomeIcon icon, string text, Vector2? requestedSize, bool vertical)
     {
-        using var idPush = ImRaii.PushId($"{text}_{icon.ToIconString()}");
+        var       iconText = icon.ToIconString();
+        using var idPush   = ImRaii.PushId($"{text}_{iconText}");
 
-        var iconText    = icon.ToIconString();
-        var iconSize    = ImGui.CalcTextSize(iconText);
         var displaySpan = GetDisplaySpan(text);
-        var textSize    = ImGui.CalcTextSize(displaySpan);
-        var spacing     = ImGui.GetStyle().ItemSpacing.X;
-        var result      = ImGui.Button(string.Empty, buttonSize);
-        var (contentMin, contentSize) = GetButtonContentRect();
-        var (iconPos, textPos)        = GetHorizontalLayout(contentMin, contentSize, iconSize, textSize, spacing);
-
-        DrawIconText(iconPos, iconText);
-        ImGui.GetWindowDrawList().AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
+        var iconMetrics = TextMetrics.Measure(iconText);
+        var textMetrics = TextMetrics.Measure(displaySpan);
+        var style       = ImGui.GetStyle();
+        var spacing = vertical ?
+                          3f * ImGuiHelpers.GlobalScale :
+                          style.ItemSpacing.X;
+        var contentSize = vertical ?
+                              new Vector2(MathF.Max(iconMetrics.Size.X, textMetrics.Size.X), iconMetrics.Size.Y + spacing + textMetrics.Size.Y) :
+                              new Vector2(iconMetrics.Size.X + spacing + textMetrics.Size.X, MathF.Max(iconMetrics.Size.Y, textMetrics.Size.Y));
+        var minimumHeight = vertical ?
+                                GetDoubleLineHeight() :
+                                GetSingleLineHeight();
+        var buttonSize = requestedSize ??
+                         new Vector2(contentSize.X + (2f * style.FramePadding.X), MathF.Max(minimumHeight, contentSize.Y + (2f * style.FramePadding.Y)));
+        var result = ImGui.Button(string.Empty, buttonSize);
+        var (contentMin, availableSize) = GetButtonContentRect();
+        var (iconPosition, textPosition) = vertical ?
+                                               GetVerticalLayout(contentMin, availableSize, iconMetrics.Size, textMetrics.Size, spacing) :
+                                               GetHorizontalLayout(contentMin, availableSize, iconMetrics.Size, textMetrics.Size, spacing);
+        var drawList = ImGui.GetWindowDrawList();
+        var color    = ImGui.GetColorU32(ImGuiCol.Text);
+        drawList.AddText(iconPosition - new Vector2(0, iconMetrics.OffsetY), color, iconText);
+        drawList.AddText(textPosition - new Vector2(0, textMetrics.OffsetY), color, displaySpan);
 
         return result;
     }
 
+    /// <summary>绘制图片在上、文字在下的按钮，图片保持原始尺寸。</summary>
+    /// <param name="icon">图片纹理。</param>
+    /// <param name="text">按钮标签；双井号后的部分仅参与控件标识。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonImageWithTextVertical
     (
         IDalamudTextureWrap icon,
@@ -291,23 +289,31 @@ public static partial class ImGuiOm
     {
         using var idPush = ImRaii.PushId($"{text}_{icon.Handle}");
 
-        var iconSize    = icon.Size;
-        var displaySpan = GetDisplaySpan(text);
-        var textSize    = ImGui.CalcTextSize(displaySpan);
-        var padding     = ImGui.GetStyle().FramePadding.X;
-        var spacing     = 3f * ImGuiHelpers.GlobalScale;
-        var buttonSize  = new Vector2(MathF.Max(iconSize.X, textSize.X) + (padding * 2), GetDoubleLineHeight());
-        var result      = ImGui.Button(string.Empty, buttonSize);
+        var iconSize      = icon.Size;
+        var displaySpan   = GetDisplaySpan(text);
+        var textMetrics   = TextMetrics.Measure(displaySpan);
+        var textSize      = textMetrics.Size;
+        var padding       = ImGui.GetStyle().FramePadding.X;
+        var spacing       = 3f * ImGuiHelpers.GlobalScale;
+        var contentHeight = iconSize.Y + spacing + MathF.Max(textSize.Y, textMetrics.LineAdvance);
+        var buttonSize = new Vector2
+            (MathF.Max(iconSize.X, textSize.X) + (padding * 2), MathF.Max(GetDoubleLineHeight(), contentHeight + (2f * ImGui.GetStyle().FramePadding.Y)));
+        var result = ImGui.Button(string.Empty, buttonSize);
         var (contentMin, contentSize) = GetButtonContentRect();
         var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
         var windowDrawList = ImGui.GetWindowDrawList();
 
         windowDrawList.AddImage(icon.Handle, iconPos, iconPos + iconSize);
-        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
+        windowDrawList.AddText(textPos                        - new Vector2(0, textMetrics.OffsetY), ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
     }
 
+    /// <summary>在指定尺寸的按钮中垂直排列并居中图片和文字。</summary>
+    /// <param name="icon">图片纹理，保持原始尺寸。</param>
+    /// <param name="text">按钮标签；双井号后的部分仅参与控件标识。</param>
+    /// <param name="buttonSize">按钮尺寸。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonImageWithTextVertical
     (
         IDalamudTextureWrap icon,
@@ -319,19 +325,25 @@ public static partial class ImGuiOm
 
         var iconSize    = icon.Size;
         var displaySpan = GetDisplaySpan(text);
-        var textSize    = ImGui.CalcTextSize(displaySpan);
-        var spacing     = 3f * ImGuiHelpers.GlobalScale;
-        var result      = ImGui.Button(string.Empty, buttonSize);
+        var textMetrics = TextMetrics.Measure(displaySpan);
+        var (textSize, _) = textMetrics;
+        var spacing = 3f * ImGuiHelpers.GlobalScale;
+        var result  = ImGui.Button(string.Empty, buttonSize);
         var (contentMin, contentSize) = GetButtonContentRect();
         var (iconPos, textPos)        = GetVerticalLayout(contentMin, contentSize, iconSize, textSize, spacing);
         var windowDrawList = ImGui.GetWindowDrawList();
 
         windowDrawList.AddImage(icon.Handle, iconPos, iconPos + iconSize);
-        windowDrawList.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
+        windowDrawList.AddText(textPos                        - new Vector2(0, textMetrics.OffsetY), ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return result;
     }
 
+    /// <summary>绘制占满可用宽度、使用选择项背景样式的图标按钮。</summary>
+    /// <param name="id">控件唯一标识。</param>
+    /// <param name="icon">按钮图标。</param>
+    /// <param name="tooltip">悬停提示；为空时不显示。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonIconSelectable
     (
         string          id,
@@ -349,7 +361,7 @@ public static partial class ImGuiOm
                                     .Push(ImGuiCol.ButtonHovered, colors[(int)ImGuiCol.HeaderHovered].ToUInt())
                                     .Push(ImGuiCol.Button,        0);
 
-        var result = ImGui.Button($"{iconText}##{iconText}-{id}", size);
+        var result = TextMetrics.Measure(iconText).DrawButton($"{iconText}-{id}", iconText, availableSize: size);
 
         if (!tooltip.IsNullOrEmpty())
             TooltipHover(tooltip);
@@ -357,6 +369,9 @@ public static partial class ImGuiOm
         return result;
     }
 
+    /// <summary>绘制占满可用宽度、使用选择项背景样式的文字按钮。</summary>
+    /// <param name="text">按钮标签。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonSelectable
     (
         string text
@@ -365,7 +380,7 @@ public static partial class ImGuiOm
         var style    = ImGui.GetStyle();
         var padding  = style.FramePadding;
         var colors   = style.Colors;
-        var textSize = ImGui.CalcTextSize(text);
+        var textSize = TextMetrics.Measure(GetDisplaySpan(text)).Size;
 
         var size = new Vector2(MathF.Max(ImGui.GetContentRegionAvail().X, textSize.X + (2 * padding.X)), GetSingleLineHeight());
 
@@ -378,6 +393,9 @@ public static partial class ImGuiOm
         return result;
     }
 
+    /// <summary>绘制占满当前可用宽度的按钮。</summary>
+    /// <param name="text">按钮标签。</param>
+    /// <returns>按钮被点击时返回真。</returns>
     public static bool ButtonStretch
     (
         string text
@@ -389,6 +407,10 @@ public static partial class ImGuiOm
         return result;
     }
 
+    /// <summary>绘制持续按住后触发的按钮，并使用标签作为状态标识。</summary>
+    /// <param name="text">按钮标签。</param>
+    /// <param name="autoReset">触发后是否清空蓄力。</param>
+    /// <returns>蓄力完成且闪烁结束时返回真。</returns>
     public static bool HoldButton
     (
         string text,
@@ -396,6 +418,12 @@ public static partial class ImGuiOm
     ) =>
         HoldButton(text, text, autoReset);
 
+    /// <summary>绘制指定尺寸和蓄力时长的长按按钮。</summary>
+    /// <param name="text">按钮标签及状态标识。</param>
+    /// <param name="autoReset">触发后是否清空蓄力。</param>
+    /// <param name="size">按钮尺寸；非正分量由内容和样式计算。</param>
+    /// <param name="duration">完成蓄力所需秒数。</param>
+    /// <returns>蓄力完成且闪烁结束时返回真。</returns>
     public static bool HoldButton
     (
         string  text,
@@ -405,6 +433,14 @@ public static partial class ImGuiOm
     ) =>
         HoldButton(text, text, autoReset, size, duration);
 
+    /// <summary>使用向量颜色绘制具有独立标识的长按按钮。</summary>
+    /// <param name="id">控件唯一标识。</param>
+    /// <param name="text">按钮标签。</param>
+    /// <param name="chargeColor">蓄力边框颜色。</param>
+    /// <param name="autoReset">触发后是否清空蓄力。</param>
+    /// <param name="size">按钮尺寸；非正分量由内容和样式计算。</param>
+    /// <param name="duration">完成蓄力所需秒数。</param>
+    /// <returns>蓄力完成且闪烁结束时返回真。</returns>
     public static bool HoldButton
     (
         string   id,
@@ -416,6 +452,14 @@ public static partial class ImGuiOm
     ) =>
         HoldButton(id, text, autoReset, size, duration, chargeColor?.ToUInt());
 
+    /// <summary>绘制具有蓄力边框和完成闪烁效果的长按按钮。</summary>
+    /// <param name="id">控件唯一标识。</param>
+    /// <param name="text">按钮标签；双井号后的部分不显示。</param>
+    /// <param name="autoReset">触发后是否清空蓄力。</param>
+    /// <param name="size">按钮尺寸；非正分量由内容和样式计算。</param>
+    /// <param name="duration">完成蓄力所需秒数；非正值按一秒处理。</param>
+    /// <param name="chargeColor">蓄力边框的打包颜色；未指定时使用当前勾选颜色。</param>
+    /// <returns>蓄力完成且闪烁结束时返回真。</returns>
     public static bool HoldButton
     (
         string  id,
@@ -426,10 +470,13 @@ public static partial class ImGuiOm
         uint?   chargeColor = null
     )
     {
-        var (charge, flashTime) = HoldButtonStates.GetValueOrDefault(id);
+        using var idPush  = ImRaii.PushId(id);
+        var       stateID = ImGui.GetID("##hold");
+        var (charge, flashTime) = HoldButtonStates.GetValueOrDefault(stateID);
 
         var displaySpan = GetDisplaySpan(text);
-        var textSize    = ImGui.CalcTextSize(displaySpan);
+        var textMetrics = TextMetrics.Measure(displaySpan);
+        var textSize    = textMetrics.Size;
         var padding     = ImGui.GetStyle().FramePadding;
         var buttonSize = new Vector2
         (
@@ -441,7 +488,6 @@ public static partial class ImGuiOm
                 GetSingleLineHeight()
         );
 
-        using var idPush = ImRaii.PushId(id);
         ImGui.InvisibleButton("##hold", buttonSize);
         var held    = ImGui.IsItemActive();
         var hovered = ImGui.IsItemHovered();
@@ -467,16 +513,23 @@ public static partial class ImGuiOm
                     charge = 0f;
             }
         }
-        else if (held)
+        else
         {
-            charge = MathF.Min(charge + (chargeRate * ImGui.GetIO().DeltaTime), 1f);
-            if (charge >= 1f)
+            var previousCharge = charge;
+            charge = held switch
+            {
+                true when autoReset || charge < 1f => MathF.Min(charge + (chargeRate * ImGui.GetIO().DeltaTime), 1f),
+                false                              => MathF.Max(charge - (decayRate  * ImGui.GetIO().DeltaTime), 0f),
+                _                                  => charge
+            };
+            if (held && charge >= 1f && (autoReset || previousCharge < 1f))
                 flashTime = HOLD_BUTTON_FLASH_DURATION;
         }
-        else
-            charge = MathF.Max(charge - (decayRate * ImGui.GetIO().DeltaTime), 0f);
 
-        HoldButtonStates[id] = (charge, flashTime);
+        if (charge > 0f || flashTime > 0f)
+            HoldButtonStates[stateID] = (charge, flashTime);
+        else
+            HoldButtonStates.Remove(stateID);
 
         var min            = ImGui.GetItemRectMin();
         var max            = ImGui.GetItemRectMax();
@@ -491,11 +544,11 @@ public static partial class ImGuiOm
                              flashTime / HOLD_BUTTON_FLASH_DURATION :
                              0f;
 
-        var bgCol = held || isFlashing ?
-                        Vector4.Lerp(colors[(int)ImGuiCol.ButtonHovered], colors[(int)ImGuiCol.ButtonActive], 0.5f + (0.5f * charge)).ToUInt() :
-                        hovered ?
-                            ImGui.GetColorU32(ImGuiCol.ButtonHovered) :
-                            ImGui.GetColorU32(ImGuiCol.Button);
+        var bgCol = ImGui.GetColorU32(ImGuiCol.Button);
+        if (held || isFlashing)
+            bgCol = ImGui.GetColorU32(Vector4.Lerp(colors[(int)ImGuiCol.ButtonHovered], colors[(int)ImGuiCol.ButtonActive], 0.5f + (0.5f * charge)));
+        else if (hovered)
+            bgCol = ImGui.GetColorU32(ImGuiCol.ButtonHovered);
 
         draw.AddRectFilled(min, max, bgCol, rounding);
 
@@ -525,8 +578,8 @@ public static partial class ImGuiOm
             DrawHoldProgressBorder(draw, min, max, rounding, charge, activeCol, chargeThickness);
         }
 
-        var textPos = GetCenteredPosition(min, buttonRectSize, textSize);
-        draw.AddText(textPos, colors[(int)ImGuiCol.Text].ToUInt(), displaySpan);
+        var textPos = textMetrics.CenterIn(min, buttonRectSize);
+        draw.AddText(textPos, ImGui.GetColorU32(ImGuiCol.Text), displaySpan);
 
         return completed;
     }
@@ -709,4 +762,10 @@ public static partial class ImGuiOm
             }
         }
     }
+
+    #region 常量
+
+    private const float HOLD_BUTTON_FLASH_DURATION = 0.5f;
+
+    #endregion
 }

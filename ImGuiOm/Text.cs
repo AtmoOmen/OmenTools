@@ -5,31 +5,51 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
+    /// <summary>按当前控件的文本基线绘制非格式化文本。</summary>
+    /// <param name="text">需要显示的文本。</param>
     public static void Text(string text)
     {
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.X);
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(text);
     }
 
+    /// <summary>在同一行绘制图片及文字，并垂直居中两者。</summary>
+    /// <param name="text">图片右侧的文本。</param>
+    /// <param name="imageHandle">图片纹理句柄。</param>
+    /// <param name="imageSize">图片绘制尺寸。</param>
     public static void TextImage(string text, nint imageHandle, Vector2 imageSize) =>
         TextImage(text, new ImTextureID(imageHandle), imageSize);
 
+    /// <summary>在同一行绘制图片及文字，并提交完整内容的布局占位。</summary>
+    /// <param name="text">图片右侧的文本。</param>
+    /// <param name="imageHandle">图片纹理标识。</param>
+    /// <param name="imageSize">图片绘制尺寸。</param>
     public static void TextImage(string text, ImTextureID imageHandle, Vector2 imageSize)
     {
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + ImGui.GetStyle().FramePadding.Y);
-        ImGui.Image(imageHandle, imageSize);
+        var metrics       = TextMetrics.Measure(text);
+        var origin        = ImGui.GetCursorScreenPos();
+        var spacing       = ImGui.GetStyle().ItemSpacing.X;
+        var height        = MathF.Max(imageSize.Y, MathF.Max(metrics.Size.Y, metrics.LineAdvance));
+        var imagePosition = origin + new Vector2(0,                     (height - imageSize.Y) / 2f);
+        var textOrigin    = origin + new Vector2(imageSize.X + spacing, 0);
+        var textPosition  = metrics.CenterIn(textOrigin, metrics.Size with { Y = height });
+        var drawList      = ImGui.GetWindowDrawList();
 
-        ImGui.SameLine();
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() - ImGui.GetStyle().FramePadding.Y);
-        Text(text);
+        drawList.AddImage(imageHandle, imagePosition, imagePosition + imageSize, Vector2.Zero, Vector2.One, ImGui.GetColorU32(Vector4.One));
+        drawList.AddText(textPosition, ImGui.GetColorU32(ImGuiCol.Text), text);
+        ImGui.Dummy(new Vector2(imageSize.X + spacing + metrics.Size.X, height));
     }
 
+    /// <summary>在当前可用宽度内水平居中绘制文本。</summary>
+    /// <param name="text">需要显示的文本。</param>
     public static void TextCentered(string text)
     {
-        CenterAlignFor(ImGui.CalcTextSize(text).X);
+        CenterAlignFor(TextMetrics.Measure(text).Size.X);
         Text(text);
     }
 
+    /// <summary>使用禁用样式绘制自动换行的文本。</summary>
+    /// <param name="text">需要显示的文本。</param>
     public static void TextDisabledWrapped(string text)
     {
         using var disabled = ImRaii.Disabled();
@@ -37,23 +57,26 @@ public static partial class ImGuiOm
         ImGui.TextWrapped(text);
     }
 
+    /// <summary>使用禁用样式和指定换行宽度绘制文本。</summary>
+    /// <param name="text">需要显示的文本。</param>
+    /// <param name="warpPos">换行位置，相对于当前字体大小与界面缩放计算。</param>
     public static void TextDisabledWrapped(string text, float warpPos)
     {
         using var disabled = ImRaii.Disabled();
         using var warp     = ImRaii.TextWrapPos(ImGui.GetFontSize() * GlobalUIScale * warpPos);
 
-        Text(text);
+        ImGui.TextUnformatted(text);
     }
 
     /// <summary>
-    /// 在同一行绘制图标和文字，根据图标与文字首字的可见字形中心进行垂直对齐。
+    /// 在同一行绘制图标和文字，根据统一的文本度量在内容区域内垂直居中。
     /// </summary>
     /// <param name="icon">需要绘制的 FontAwesome 图标。</param>
     /// <param name="text">图标右侧的文字；为空时只绘制图标。</param>
     /// <param name="padding">内容的内边距；未指定时使用当前样式的控件内边距。</param>
     /// <param name="spacing">图标与文字的间隔，单位为屏幕像素；未指定时使用两倍水平内边距。</param>
-    /// <returns>保留原有禁用按钮的返回值，不响应点击。</returns>
-    public static unsafe bool TextIcon
+    /// <returns>始终返回假，内容不响应点击。</returns>
+    public static bool TextIcon
     (
         FontAwesomeIcon icon,
         string          text,
@@ -62,68 +85,44 @@ public static partial class ImGuiOm
     )
     {
         var resolvedPadding = padding ?? ImGui.GetStyle().FramePadding;
-        var resolvedSpacing = spacing ?? 2f * resolvedPadding.X;
-        var iconText        = icon.ToIconString();
-        var textFont        = ImGui.GetFont();
-        var textFontSize    = ImGui.GetFontSize();
-        var textSize        = ImGui.CalcTextSize(text);
-        var textCenterY     = textSize.Y / 2f;
-
-        if (text.Length > 0)
-        {
-            var glyph = textFont.FindGlyph(text[0]);
-            textCenterY = (glyph->Y0 + glyph->Y1) / 2f * (textFontSize / textFont.FontSize);
-        }
-
-        var iconGlyph   = textFont.FindGlyph((ushort)icon);
-        var iconSize    = ImGui.CalcTextSize(iconText);
-        var iconCenterY = (iconGlyph->Y0 + iconGlyph->Y1) / 2f * (textFontSize / textFont.FontSize);
-
-        var cursorPos    = ImGui.GetCursorScreenPos();
-        var buttonHeight = Math.Max(iconSize.Y, textSize.Y);
-        var iconOffsetY = text.Length > 0 ?
-                              textCenterY - iconCenterY :
-                              0f;
-        var iconPos        = cursorPos + resolvedPadding + new Vector2(0,                            iconOffsetY);
-        var textPos        = cursorPos + resolvedPadding + new Vector2(iconSize.X + resolvedSpacing, 0);
+        var resolvedSpacing = text.Length == 0 ?
+                                  0f :
+                                  spacing ?? 2f * resolvedPadding.X;
+        var iconText       = icon.ToIconString();
+        var textMetrics    = TextMetrics.Measure(text);
+        var iconMetrics    = TextMetrics.Measure(iconText);
+        var contentHeight  = MathF.Max(ImGui.GetFontSize(), MathF.Max(iconMetrics.Size.Y, textMetrics.Size.Y));
+        var buttonSize     = new Vector2(iconMetrics.Size.X + textMetrics.Size.X + resolvedSpacing, contentHeight) + (2f * resolvedPadding);
+        var contentOrigin  = ImGui.GetCursorScreenPos()                                                            + resolvedPadding;
+        var iconPos        = iconMetrics.CenterIn(contentOrigin, iconMetrics.Size with { Y = contentHeight });
+        var textOrigin     = contentOrigin + new Vector2(iconMetrics.Size.X + resolvedSpacing, 0);
+        var textPos        = textMetrics.CenterIn(textOrigin, textMetrics.Size with { Y = contentHeight });
         var windowDrawList = ImGui.GetWindowDrawList();
 
-        bool result;
-        using (ImRaii.Disabled())
-        using (ImRaii.PushColor(ImGuiCol.Button, 0))
-            result = ImGui.Button(string.Empty, new(iconSize.X + textSize.X + resolvedSpacing + resolvedPadding.X, buttonHeight + (2f * resolvedPadding.Y)));
+        ImGui.Dummy(buttonSize);
+        var color = ImGui.GetColorU32(ImGuiCol.Text);
+        windowDrawList.AddText(iconPos, color, iconText);
+        windowDrawList.AddText(textPos, color, text);
 
-        windowDrawList.AddText(textFont, textFontSize, iconPos, ImGui.GetColorU32(ImGuiCol.Text), iconText);
-
-        windowDrawList.AddText(textFont, textFontSize, textPos, ImGui.GetColorU32(ImGuiCol.Text), text);
-
-        return result;
+        return false;
     }
 
+    /// <summary>在当前布局位置绘制带描边的文本。</summary>
+    /// <param name="textColor">文本的打包颜色。</param>
+    /// <param name="text">需要显示的文本。</param>
+    /// <param name="outlineColor">描边的打包颜色。</param>
+    /// <param name="outlineThickness">描边向外扩展的像素距离。</param>
     public static void TextOutlined(uint textColor, string text, uint outlineColor = 0xFF000000, float outlineThickness = 1.5f)
     {
-        var originalPos = ImGui.GetCursorPos();
-
-        using (ImRaii.Group())
-        {
-            // 8 方向阴影
-            for (var x = -outlineThickness; x <= outlineThickness; x += 0.5f)
-            for (var y = -outlineThickness; y <= outlineThickness; y += 0.5f)
-            {
-                if (x == 0 && y == 0) continue;
-
-                ImGui.SetCursorPos(originalPos + new Vector2(x, y));
-                using (ImRaii.PushColor(ImGuiCol.Text, outlineColor))
-                    ImGui.TextUnformatted(text);
-            }
-
-            // 原始文字
-            ImGui.SetCursorPos(originalPos);
-            using (ImRaii.PushColor(ImGuiCol.Text, textColor))
-                ImGui.TextUnformatted(text);
-        }
+        TextOutlined(ImGui.GetCursorScreenPos(), textColor, text, outlineColor, outlineThickness, ImGui.GetWindowDrawList());
+        ImGui.Dummy(ImGui.CalcTextSize(text));
     }
 
+    /// <summary>使用向量颜色在当前布局位置绘制带描边的文本。</summary>
+    /// <param name="textColor">文本颜色。</param>
+    /// <param name="text">需要显示的文本。</param>
+    /// <param name="outlineColor">描边颜色；未指定时使用黑色。</param>
+    /// <param name="outlineThickness">描边向外扩展的像素距离。</param>
     public static void TextOutlined
     (
         Vector4  textColor,
@@ -139,6 +138,13 @@ public static partial class ImGuiOm
             outlineThickness
         );
 
+    /// <summary>在指定屏幕坐标绘制带描边的文本，不提交布局占位。</summary>
+    /// <param name="position">文本绘制原点。</param>
+    /// <param name="textColor">文本的打包颜色。</param>
+    /// <param name="text">需要显示的文本。</param>
+    /// <param name="outlineColor">描边的打包颜色。</param>
+    /// <param name="outlineThickness">描边向外扩展的像素距离。</param>
+    /// <param name="drawList">目标绘制列表；未指定时使用背景绘制列表。</param>
     public static void TextOutlined
     (
         Vector2        position,
@@ -149,18 +155,24 @@ public static partial class ImGuiOm
         ImDrawListPtr? drawList         = null
     )
     {
-        drawList ??= ImGui.GetBackgroundDrawList();
+        var target = drawList ?? ImGui.GetBackgroundDrawList();
 
         for (var x = -outlineThickness; x <= outlineThickness; x += 0.5f)
         for (var y = -outlineThickness; y <= outlineThickness; y += 0.5f)
         {
-            if (x == 0 && y == 0) continue;
-            drawList?.AddText(position + new Vector2(x, y), outlineColor, text);
+            if (x == 0 && y == 0)
+                continue;
+            target.AddText(position + new Vector2(x, y), outlineColor, text);
         }
 
-        drawList?.AddText(position, textColor, text);
+        target.AddText(position, textColor, text);
     }
 
+    /// <summary>绘制可点击的文本链接，在点击后打开目标地址。</summary>
+    /// <param name="url">目标地址。</param>
+    /// <param name="displayText">显示文本；为空时显示地址。</param>
+    /// <param name="showUnderline">是否绘制下划线。</param>
+    /// <returns>链接被点击时返回真。</returns>
     public static bool TextLink(string url, string? displayText = null, bool showUnderline = true)
     {
         using var id    = ImRaii.PushId($"{url}_{displayText}_{showUnderline}");

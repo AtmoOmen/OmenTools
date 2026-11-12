@@ -4,6 +4,11 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
+    /// <summary>在最近提交的控件被指定鼠标键点击且修饰键条件满足时复制文本。</summary>
+    /// <param name="textToCopy">需要复制到剪贴板的文本。</param>
+    /// <param name="mouseButton">触发复制的鼠标键。</param>
+    /// <param name="key">需要按住的按键；未指定时不限制。</param>
+    /// <param name="keyConflict">需要松开的按键；未指定时不限制。</param>
     public static void ClickToCopy
     (
         string           textToCopy,
@@ -20,9 +25,13 @@ public static partial class ImGuiOm
             ImGui.SetClipboardText(textToCopy);
     }
 
+    /// <summary>移动当前光标，使指定宽度的后续控件在可用区域内水平居中。</summary>
+    /// <param name="itemWidth">后续控件的屏幕像素宽度。</param>
     public static void CenterAlignFor(float itemWidth) =>
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + ((ImGui.GetContentRegionAvail().X - itemWidth) / 2));
 
+    /// <summary>移动当前光标，使指定宽度的后续控件与可用区域右侧对齐。</summary>
+    /// <param name="itemWidth">后续控件的屏幕像素宽度。</param>
     public static void RightAlignFor(float itemWidth) =>
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (ImGui.GetContentRegionAvail().X - itemWidth));
 
@@ -96,7 +105,4 @@ public static partial class ImGuiOm
 
         return (top, bottom);
     }
-
-    private static void DrawIconText(Vector2 position, string iconText) =>
-        ImGui.GetWindowDrawList().AddText(position, ImGui.GetColorU32(ImGuiCol.Text), iconText);
 }

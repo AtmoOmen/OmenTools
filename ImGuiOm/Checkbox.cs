@@ -4,6 +4,12 @@ namespace OmenTools.ImGuiOm;
 
 public static partial class ImGuiOm
 {
+    /// <summary>根据选中状态使用不同的文本颜色绘制复选框。</summary>
+    /// <param name="label">复选框标签。</param>
+    /// <param name="selected">当前状态，点击后更新。</param>
+    /// <param name="enabledColor">选中时的打包文本颜色；默认使用黄色。</param>
+    /// <param name="disabledColor">未选中时的打包文本颜色；默认使用白色。</param>
+    /// <returns>状态变化时返回真。</returns>
     public static bool CheckboxColored
     (
         string   label,
@@ -12,11 +18,19 @@ public static partial class ImGuiOm
         uint?    disabledColor = null
     )
     {
-        using var color0 = ImRaii.PushColor(ImGuiCol.Text, enabledColor  ?? KnownColor.Yellow.ToUInt(), selected);
-        using var color1 = ImRaii.PushColor(ImGuiCol.Text, disabledColor ?? KnownColor.White.ToUInt(),  !selected);
+        var color = selected ?
+                        enabledColor  ?? KnownColor.Yellow.ToUInt() :
+                        disabledColor ?? KnownColor.White.ToUInt();
+        using var colorScope = ImRaii.PushColor(ImGuiCol.Text, color);
         return ImGui.Checkbox(label, ref selected);
     }
 
+    /// <summary>使用向量颜色按选中状态绘制复选框。</summary>
+    /// <param name="label">复选框标签。</param>
+    /// <param name="selected">当前状态，点击后更新。</param>
+    /// <param name="enabledColor">选中时的文本颜色。</param>
+    /// <param name="disabledColor">未选中时的文本颜色。</param>
+    /// <returns>状态变化时返回真。</returns>
     public static bool CheckboxColored
     (
         string   label,

@@ -4,6 +4,10 @@ using OmenTools.Interop.Game.Lumina;
 
 namespace OmenTools.ImGuiOm.Widgets.Combos;
 
+/// <summary>提供游戏数据搜索、分组、裁剪及单选或多选交互的下拉控件基类。</summary>
+/// <typeparam name="T">游戏数据行类型。</typeparam>
+/// <param name="id">控件唯一标识。</param>
+/// <param name="searcher">数据搜索器。</param>
 public abstract class LuminaComboBase<T>
 (
     string            id,
@@ -24,21 +28,30 @@ public abstract class LuminaComboBase<T>
     protected string            ID       { get; init; } = id;
     private   bool              IsSelectedOnly;
 
-    public abstract uint          SelectedID  { get; set; }
+    /// <summary>获取或设置单选模式下选中的数据行标识，零表示未选择。</summary>
+    public abstract uint SelectedID { get; set; }
+
+    /// <summary>获取或设置多选模式下选中的数据行标识集合。</summary>
     public abstract HashSet<uint> SelectedIDs { get; set; }
 
+    /// <summary>获取单选模式下选中的数据行；未选择时返回默认值。</summary>
     public T SelectedItem =>
         LuminaGetter.GetRow<T>(SelectedID).GetValueOrDefault();
 
+    /// <summary>获取多选模式下选中的有效数据行。</summary>
     public List<T> SelectedItems =>
     [
         .. SelectedIDs.Select(x => LuminaGetter.GetRow<T>(x).GetValueOrDefault())
                       .Where(x => x.RowId > 0)
     ];
 
+    /// <summary>绘制允许清空选择的单选下拉控件。</summary>
+    /// <returns>选中项发生变化时返回真。</returns>
     public bool DrawRadio() =>
         DrawCore(ComboSelectionMode.Radio);
 
+    /// <summary>绘制允许同时选择多个数据行的下拉控件。</summary>
+    /// <returns>选中项集合发生变化时返回真。</returns>
     public bool DrawCheckbox() =>
         DrawCore(ComboSelectionMode.Checkbox);
 
@@ -91,15 +104,10 @@ public abstract class LuminaComboBase<T>
     {
         using var drawID = ImRaii.PushId(ID);
 
-        if (ImGui.BeginCombo("###Combo", GetPreviewText(mode), ImGuiComboFlags.HeightLarge))
-            ImGui.EndCombo();
-
-        if (ImGui.IsItemClicked())
-            ImGui.OpenPopup($"###Popup_{ID}");
-
         ImGui.SetNextWindowSize(PopupSize);
-        using var popup = ImRaii.Popup($"###Popup_{ID}");
-        if (!popup) return false;
+        using var combo = ImRaii.Combo("###Combo", GetPreviewText(mode), ImGuiComboFlags.HeightLarge);
+        if (!combo)
+            return false;
 
         var selectedOnlyLabel = $"##SelectedOnly_{ID}";
         ImGui.Checkbox(selectedOnlyLabel, ref IsSelectedOnly);

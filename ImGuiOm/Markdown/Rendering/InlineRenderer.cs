@@ -67,12 +67,8 @@ internal static class InlineRenderer
             y += line.Height + lineSpacing;
         }
 
-        // Reset the cursor to the captured origin before reserving layout space: link and image
-        // tokens move the cursor, so when the last drawn token is a link or image the live cursor
-        // is no longer at origin.
         ImGui.SetCursorScreenPos(origin);
 
-        // Reserve the space the text occupied so following blocks flow beneath it.
         ImGui.Dummy(new Vector2(wrapWidth, y));
     }
 
@@ -105,14 +101,10 @@ internal static class InlineRenderer
                        ResolveImageSize(new Vector2(IMAGE_PLACEHOLDER_WIDTH, ImGui.GetFontSize()), run, availableWidth, config, headingScale);
         }
 
-        // Measure with the role's font pushed so the measured width matches what DrawToken draws. The
-        // italic overhang and bold stroke are not added per token: CJK is laid out one character per
-        // token, so charging each of them the overhang would space the glyphs out. InlineLayout adds
-        // it once at the end of the run instead.
         using ScopedMarkdownFont font = new(run.Role, headingScale, config);
 
-        var baseWidth = ImGui.CalcTextSizeA(font.Font, font.PixelSize, float.MaxValue, 0.0F, text, out _).X;
-        return new Vector2(baseWidth, font.PixelSize);
+        var metrics = TextMetrics.Measure(text);
+        return metrics.Size with { Y = metrics.LineAdvance };
     }
 
     private static Vector2 ResolveImageSize
@@ -178,7 +170,6 @@ internal static class InlineRenderer
             }
             else
             {
-                // Placeholder box with the src/alt text for remote or unresolved images.
                 var size = ImGui.GetFontSize();
                 drawList.AddRect(pos, pos + new Vector2(token.Width, size), MarkdownColors.Separator());
                 drawList.AddText(pos      + new Vector2(2.0F,        0.0F), color, token.Text);
@@ -196,7 +187,6 @@ internal static class InlineRenderer
 
         if (role == MarkdownFontRole.Code)
         {
-            // Subtle background behind inline code.
             Vector2 pad = new(2.0F, 1.0F);
             drawList.AddRectFilled(pos - pad, pos + new Vector2(token.Width, lineHeight) + pad, MarkdownColors.InlineCodeBackground(), 2.0F);
         }
@@ -205,7 +195,6 @@ internal static class InlineRenderer
 
         if (token.LinkURL is not null || token.Style.Underline)
         {
-            // Underline and hit-test the link token.
             var underlineY = pos.Y + lineHeight;
             drawList.AddLine(pos with { Y = underlineY }, pos with { X = pos.X + token.Width, Y = underlineY }, color, 1.0F);
 

@@ -5,10 +5,9 @@ using StandardTimeManager = OmenTools.OmenService.StandardTimeManager;
 
 namespace OmenTools.ImGuiOm.Widgets;
 
+/// <summary>按指定区域文化绘制支持月份导航和年份选择的日期控件。</summary>
 public class DatePicker
 {
-    private const float NAVIGATION_BUTTON_SPACING = 2f;
-
     private CultureInfo cultureInfo;
     private bool        isYearView;
     private DateTime    viewDate = StandardTimeManager.Instance().Now;
@@ -25,8 +24,10 @@ public class DatePicker
         UpdateLocalizedStrings();
     }
 
+    /// <summary>获取或设置月份标题的日期格式。</summary>
     public string DateFormat { get; set; } = "yyyy.MM";
 
+    /// <summary>获取或设置控件宽度；不大于零时根据标题、导航按钮及日期单元格计算。</summary>
     public float Width { get; set; }
 
     /// <summary>
@@ -50,7 +51,7 @@ public class DatePicker
         ImGui.Spacing();
 
         if (isYearView)
-            changed |= DrawYearPicker(pickerWidth);
+            DrawYearPicker(pickerWidth);
         else
         {
             using var table = ImRaii.Table
@@ -86,7 +87,7 @@ public class DatePicker
             viewDate = viewDate.AddMonths(-1);
 
         var title          = viewDate.ToString(DateFormat, cultureInfo);
-        var titleWidth     = ImGui.CalcTextSize(title).X;
+        var titleWidth     = TextMetrics.Measure(title).Size.X;
         var titleAreaWidth = MathF.Max(0f, pickerWidth - (navGroupWidth * 2));
         var titleStartX    = startX + navGroupWidth + MathF.Max(0f, (titleAreaWidth - titleWidth) / 2f);
 
@@ -150,7 +151,7 @@ public class DatePicker
         return changed;
     }
 
-    private bool DrawYearPicker(float pickerWidth)
+    private void DrawYearPicker(float pickerWidth)
     {
         var currentYear = viewDate.Year;
 
@@ -163,7 +164,8 @@ public class DatePicker
             ImGuiTableFlags.NoBordersInBody | ImGuiTableFlags.SizingStretchSame,
             new Vector2(pickerWidth, 0f)
         );
-        if (!table) return false;
+        if (!table)
+            return;
 
         for (var i = 0; i < 12; i++)
         {
@@ -175,7 +177,7 @@ public class DatePicker
 
             if (ImGui.Button($"{year}", new(-1, 0)))
             {
-                viewDate   = new DateTime(year, viewDate.Month, viewDate.Day);
+                viewDate   = viewDate.AddYears(year - viewDate.Year);
                 isYearView = false;
             }
         }
@@ -189,7 +191,6 @@ public class DatePicker
         if (ImGui.Button(">>", new Vector2(-1, 0)))
             viewDate = viewDate.AddYears(10);
 
-        return false;
     }
 
     private void UpdateLocalizedStrings()
@@ -211,7 +212,7 @@ public class DatePicker
         if (Width > 0f)
             return Width;
 
-        var titleWidth  = ImGui.CalcTextSize(viewDate.ToString(DateFormat, cultureInfo)).X;
+        var titleWidth  = TextMetrics.Measure(viewDate.ToString(DateFormat, cultureInfo)).Size.X;
         var buttonWidth = ImGui.GetFrameHeight();
         var cellWidth   = GetCalendarCellWidth();
 
@@ -220,11 +221,11 @@ public class DatePicker
 
     private float GetCalendarCellWidth()
     {
-        var maxTextWidth = ImGui.CalcTextSize("0000").X;
+        var maxTextWidth = TextMetrics.Measure("0000").Size.X;
         foreach (var day in weekDays)
-            maxTextWidth = MathF.Max(maxTextWidth, ImGui.CalcTextSize(day).X);
+            maxTextWidth = MathF.Max(maxTextWidth, TextMetrics.Measure(day).Size.X);
 
-        maxTextWidth = MathF.Max(maxTextWidth, ImGui.CalcTextSize("30").X);
+        maxTextWidth = MathF.Max(maxTextWidth, TextMetrics.Measure("30").Size.X);
 
         var style = ImGui.GetStyle();
         return maxTextWidth + (style.FramePadding.X * 2f) + (style.CellPadding.X * 2f);
@@ -239,4 +240,10 @@ public class DatePicker
         if (remainingWidth > 0f)
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (remainingWidth / 2f));
     }
+
+    #region 常量
+
+    private const float NAVIGATION_BUTTON_SPACING = 2f;
+
+    #endregion
 }

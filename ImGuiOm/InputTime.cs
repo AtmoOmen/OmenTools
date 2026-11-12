@@ -21,18 +21,20 @@ public static partial class ImGuiOm
         var hours   = time.Hour;
         var minutes = time.Minute;
         var seconds = time.Second;
-        var width   = ImGui.CalcTextSize("00").X + (ImGui.GetStyle().FramePadding.X * 2);
+        var width   = TextMetrics.Measure("00").Size.X + (ImGui.GetStyle().FramePadding.X * 2);
 
         ImGui.SetNextItemWidth(width);
         var changed = ImGui.InputInt("##Hour", ref hours);
 
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(culture.DateTimeFormat.TimeSeparator);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(width);
         changed |= ImGui.InputInt("##Minute", ref minutes);
 
         ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted(culture.DateTimeFormat.TimeSeparator);
         ImGui.SameLine();
         ImGui.SetNextItemWidth(width);
