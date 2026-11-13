@@ -53,15 +53,8 @@ public class LogMessageCombo : LuminaComboBase<LogMessage>
         ComboSelectionMode mode
     )
     {
-        ImGui.TableSetupColumn
-        (
-            mode == ComboSelectionMode.Radio ?
-                "RadioButton" :
-                "Checkbox",
-            ImGuiTableColumnFlags.WidthFixed,
-            ImGui.GetTextLineHeightWithSpacing()
-        );
-        ImGui.TableSetupColumn("Text", ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn("###Selected", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("###Text",     ImGuiTableColumnFlags.WidthStretch);
     }
 
     protected override void DrawHeaders()

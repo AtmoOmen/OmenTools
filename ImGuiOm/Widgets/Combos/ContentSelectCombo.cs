@@ -53,20 +53,11 @@ public class ContentSelectCombo : LuminaComboBase<ContentFinderCondition>
         ComboSelectionMode mode
     )
     {
-        ImGui.TableSetupColumn
-        (
-            mode == ComboSelectionMode.Radio ?
-                "RadioButton" :
-                "Checkbox",
-            ImGuiTableColumnFlags.WidthFixed,
-            mode == ComboSelectionMode.Radio ?
-                20f * GlobalUIScale :
-                ImGui.GetTextLineHeightWithSpacing()
-        );
-        ImGui.TableSetupColumn("Icon",      ImGuiTableColumnFlags.WidthFixed,   20f * GlobalUIScale);
-        ImGui.TableSetupColumn("Level",     ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize(LuminaWrapper.GetAddonText(335)).X);
-        ImGui.TableSetupColumn("DutyName",  ImGuiTableColumnFlags.WidthStretch, 40);
-        ImGui.TableSetupColumn("PlaceName", ImGuiTableColumnFlags.WidthStretch, 40);
+        ImGui.TableSetupColumn("###Selected", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("###Icon",      ImGuiTableColumnFlags.WidthFixed,   20f * GlobalUIScale);
+        ImGui.TableSetupColumn("###Level",     ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize(LuminaWrapper.GetAddonText(335)).X);
+        ImGui.TableSetupColumn("###DutyName",  ImGuiTableColumnFlags.WidthStretch, 40);
+        ImGui.TableSetupColumn("###PlaceName", ImGuiTableColumnFlags.WidthStretch, 40);
     }
 
     protected override void DrawHeaders()

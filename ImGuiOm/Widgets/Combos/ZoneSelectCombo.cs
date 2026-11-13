@@ -54,16 +54,9 @@ public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
         ComboSelectionMode mode
     )
     {
-        ImGui.TableSetupColumn
-        (
-            mode == ComboSelectionMode.Radio ?
-                "RadioButton" :
-                "Checkbox",
-            ImGuiTableColumnFlags.WidthFixed,
-            ImGui.GetTextLineHeightWithSpacing()
-        );
-        ImGui.TableSetupColumn("Region", ImGuiTableColumnFlags.WidthStretch, 40);
-        ImGui.TableSetupColumn("Zone",   ImGuiTableColumnFlags.WidthStretch, 50);
+        ImGui.TableSetupColumn("###Selected", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("###Region",   ImGuiTableColumnFlags.WidthStretch, 40);
+        ImGui.TableSetupColumn("###Zone",     ImGuiTableColumnFlags.WidthStretch, 50);
     }
 
     protected override void DrawHeaders()

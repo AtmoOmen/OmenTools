@@ -56,16 +56,9 @@ public class WorldSelectCombo : LuminaComboBase<WorldTemp>
         ComboSelectionMode mode
     )
     {
-        ImGui.TableSetupColumn
-        (
-            mode == ComboSelectionMode.Radio ?
-                "RadioButton" :
-                "Checkbox",
-            ImGuiTableColumnFlags.WidthFixed,
-            ImGui.GetTextLineHeightWithSpacing()
-        );
-        ImGui.TableSetupColumn("World",      ImGuiTableColumnFlags.WidthStretch, 50);
-        ImGui.TableSetupColumn("DataCenter", ImGuiTableColumnFlags.WidthStretch, 40);
+        ImGui.TableSetupColumn("###Selected",   ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("###World",      ImGuiTableColumnFlags.WidthStretch, 50);
+        ImGui.TableSetupColumn("###DataCenter", ImGuiTableColumnFlags.WidthStretch, 40);
     }
 
     protected override void DrawHeaders()

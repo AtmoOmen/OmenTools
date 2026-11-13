@@ -55,7 +55,7 @@ public class AetheryteCombo : LuminaComboBase<Aetheryte>
 
     protected override void SetupColumns(ComboSelectionMode mode)
     {
-        ImGui.TableSetupColumn("###Selected", ImGuiTableColumnFlags.WidthFixed, ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("###Selected", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
         ImGui.TableSetupColumn("###Name",     ImGuiTableColumnFlags.WidthStretch);
         ImGui.TableSetupColumn("###Zone",     ImGuiTableColumnFlags.WidthStretch);
     }

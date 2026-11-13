@@ -58,15 +58,8 @@ public class CompanionCombo : LuminaComboBase<Companion>
         ComboSelectionMode mode
     )
     {
-        ImGui.TableSetupColumn
-        (
-            mode == ComboSelectionMode.Radio ?
-                "RadioButton" :
-                "Checkbox",
-            ImGuiTableColumnFlags.WidthFixed,
-            ImGui.GetTextLineHeightWithSpacing()
-        );
-        ImGui.TableSetupColumn("Companion", ImGuiTableColumnFlags.WidthStretch, 50);
+        ImGui.TableSetupColumn("###Selected", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("###Companion", ImGuiTableColumnFlags.WidthStretch, 50);
     }
 
     protected override void DrawHeaders()

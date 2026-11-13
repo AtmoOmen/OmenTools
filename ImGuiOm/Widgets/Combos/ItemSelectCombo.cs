@@ -55,16 +55,9 @@ public class ItemSelectCombo : LuminaComboBase<Item>
         ComboSelectionMode mode
     )
     {
-        ImGui.TableSetupColumn
-        (
-            mode == ComboSelectionMode.Radio ?
-                "RadioButton" :
-                "Checkbox",
-            ImGuiTableColumnFlags.WidthFixed,
-            ImGui.GetTextLineHeightWithSpacing()
-        );
-        ImGui.TableSetupColumn("ItemLevel", ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize($"14{LuminaWrapper.GetAddonText(7873)}").X);
-        ImGui.TableSetupColumn("Item",      ImGuiTableColumnFlags.WidthStretch, 80);
+        ImGui.TableSetupColumn("###Selected",  ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("###ItemLevel", ImGuiTableColumnFlags.WidthFixed,   ImGui.CalcTextSize($"14{LuminaWrapper.GetAddonText(7873)}").X);
+        ImGui.TableSetupColumn("###Item",      ImGuiTableColumnFlags.WidthStretch, 80);
     }
 
     protected override void DrawHeaders()

@@ -59,16 +59,9 @@ public class StatusSelectCombo : LuminaComboBase<Status>
         ComboSelectionMode mode
     )
     {
-        ImGui.TableSetupColumn
-        (
-            mode == ComboSelectionMode.Radio ?
-                "RadioButton" :
-                "Checkbox",
-            ImGuiTableColumnFlags.WidthFixed,
-            ImGui.GetTextLineHeightWithSpacing()
-        );
-        ImGui.TableSetupColumn("Job",    ImGuiTableColumnFlags.WidthStretch, 40);
-        ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.WidthStretch, 50);
+        ImGui.TableSetupColumn("###Selected", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("###Job",      ImGuiTableColumnFlags.WidthStretch, 40);
+        ImGui.TableSetupColumn("###Status",   ImGuiTableColumnFlags.WidthStretch, 50);
     }
 
     protected override void DrawHeaders()

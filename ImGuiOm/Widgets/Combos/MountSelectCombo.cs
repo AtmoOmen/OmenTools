@@ -52,15 +52,8 @@ public class MountSelectCombo : LuminaComboBase<Mount>
         ComboSelectionMode mode
     )
     {
-        ImGui.TableSetupColumn
-        (
-            mode == ComboSelectionMode.Radio ?
-                "RadioButton" :
-                "Checkbox",
-            ImGuiTableColumnFlags.WidthFixed,
-            ImGui.GetTextLineHeightWithSpacing()
-        );
-        ImGui.TableSetupColumn("Mount", ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn("###Selected", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
+        ImGui.TableSetupColumn("###Mount",    ImGuiTableColumnFlags.WidthStretch);
     }
 
     protected override void DrawHeaders()
