@@ -6,6 +6,7 @@ using FFXIVClientStructs.FFXIV.Client.LayoutEngine;
 using FFXIVClientStructs.FFXIV.Client.LayoutEngine.Layer;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina.Excel.Sheets;
+using OmenTools.Dalamud;
 using OmenTools.Info.Game.Data;
 using OmenTools.Info.Game.Packets.Upstream;
 using OmenTools.Interop.Game.Helpers;
@@ -280,7 +281,12 @@ public partial class MovementManager
 
         if (ICondition.Instance()[ConditionFlag.InFlight])
         {
-            if (!RaycastHelper.TryGetGroundPosition(localPlayer.Position, out var groundPosition)) return;
+            if (!RaycastHelper.TryGetGroundPosition(localPlayer.Position, out var groundPosition)) 
+                return;
+            
+            if (vnavmeshIPC.IsPluginEnabled() &&
+                vnavmeshIPC.QueryNearestPointReachable(localPlayer.Position) is { } optimizedGroundPosition)
+                groundPosition = optimizedGroundPosition;
 
             TPPlayerAddress(groundPosition);
 
