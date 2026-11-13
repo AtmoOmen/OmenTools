@@ -290,8 +290,25 @@ public class FontManager
         float size
     )
     {
-        var fontPath      = Config.FontFileName;
-        var iconFontIndex = 0;
+        var fontPath = Config.FontFileName;
+        var iconFontHandle = FontAtlas.NewDelegateFontHandle
+        (e =>
+            {
+                e.OnPreBuild
+                (tk =>
+                    {
+                        tk.Font = tk.AddFontAwesomeIconFont
+                        (
+                            new()
+                            {
+                                SizePx     = size,
+                                PixelSnapH = true
+                            }
+                        );
+                    }
+                );
+            }
+        );
 
         return FontAtlas.NewDelegateFontHandle
         (e =>
@@ -323,22 +340,14 @@ public class FontManager
                             }
                         );
 
-                        iconFontIndex = tk.Fonts.Length;
-                        tk.AddFontAwesomeIconFont
-                        (
-                            new()
-                            {
-                                SizePx     = size,
-                                PixelSnapH = true
-                            }
-                        );
+                        tk.Font = font;
                     }
                 );
 
                 e.OnPostBuild
                 (tk =>
                     {
-                        var iconFont = tk.Fonts[iconFontIndex];
+                        var iconFont = tk.GetFont(iconFontHandle);
                         tk.FitRatio(iconFont);
                         iconFont.Ascent = tk.Font.Ascent;
                         tk.CopyGlyphsAcrossFonts
@@ -346,8 +355,8 @@ public class FontManager
                             iconFont,
                             tk.Font,
                             missingOnly: false,
-                            rangeLow: '',
-                            rangeHigh: ''
+                            rangeLow: '\ue000',
+                            rangeHigh: '\uf8ff'
                         );
                     }
                 );
