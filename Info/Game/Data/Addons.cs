@@ -32,6 +32,12 @@ public static unsafe class Addons
     public static AtkUnitBase* ActionContents         => AddonHelper.GetByName("_ActionContents");
     public static AtkUnitBase* RaceChocoboParameter   => AddonHelper.GetByName("_RaceChocoboParameter");
     public static AtkUnitBase* ScreenText             => AddonHelper.GetByName("_ScreenText");
+
+    /// <summary>
+    ///     获取普通浮动提示子界面，未加载时返回空指针。
+    /// </summary>
+    public static AtkUnitBase* WideText => AddonHelper.GetByName("_WideText");
+
     public static AtkUnitBase* FlyText                => AddonHelper.GetByName("_FlyText");
     public static AtkUnitBase* NotificationLoot       => AddonHelper.GetByName("_NotificationLoot");
     public static AtkUnitBase* ChatLogPanel0          => AddonHelper.GetByName("ChatLogPanel_0");
