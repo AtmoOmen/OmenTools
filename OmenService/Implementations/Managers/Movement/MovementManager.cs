@@ -111,11 +111,18 @@ public partial class MovementManager
     /// </summary>
     public bool TPGround()
     {
-        if (LocalPlayerState.Object is not { } localPlayer ||
-            !RaycastHelper.TryGetNearestVerticalHit(localPlayer.Position, out var hitInfo))
+        if (LocalPlayerState.Object is not { } localPlayer)
             return false;
 
-        TPSmart_InZone(hitInfo.Point);
+        var position = localPlayer.Position + new Vector3(0, 2, 0);
+
+        if (vnavmeshIPC.IsPluginEnabled() &&
+            vnavmeshIPC.QueryNearestPointReachable(position) is { } reachablePosition)
+            position = reachablePosition;
+        else if (RaycastHelper.TryGetNearestVerticalHit(localPlayer.Position, out var hitInfo))
+            position = hitInfo.Point;
+
+        TPSmart_InZone(position);
         return true;
     }
 
