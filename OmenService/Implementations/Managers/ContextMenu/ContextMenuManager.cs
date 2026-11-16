@@ -435,7 +435,7 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
             {
                 var previousAddon = GetAddonByID(previous.AddonID);
                 if (previousAddon is not null)
-                    previousAddon->Hide(true, false, 0);
+                    previousAddon->Hide(true, false, 1);
             }
             finally
             {
@@ -489,19 +489,19 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
             {
                 DLog.Debug
                 (
-                    $"[Context Menu Manager] 打开菜单\n"                                                    +
-                    $"类型：{menuType}\n"                                                                  +
-                    $"Addon：{currentArgs.Addon->NameString ?? "[空]"} ({currentArgs.Addon->Id})\n"       +
-                    $"目标名称：{currentArgs.TargetName         ?? "[空]"}\n"                                 +
-                    $"目标 Object ID：0x{currentArgs.TargetObjectID:X}\n"                                  +
-                    $"目标 Content ID：{currentArgs.TargetContentID}\n"                                    +
-                    $"目标 Home World ID：{currentArgs.TargetHomeWorldID}\n"                               +
-                    $"目标角色：0x{(nint)currentArgs.TargetCharacter:X}（玩家: {currentArgs.IsTargetPlayer}）\n" +
-                    $"物品 ID：{currentArgs.TargetItemID}\n"                                               +
-                    $"幻化物品 ID：{currentArgs.TargetGlamourID}\n"                                          +
-                    $"Inventory Type：{currentArgs.TargetInventoryType?.ToString() ?? "[空]"}\n"          +
-                    $"Inventory Slot：{currentArgs.TargetInventorySlot?.ToString() ?? "[空]"}\n"          +
-                    $"Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"                      +
+                    $"[Context Menu Manager] 打开菜单\n"                                                                   +
+                    $"类型：{menuType}\n"                                                                                 +
+                    $"Addon：{(currentArgs.Addon is null ? "[空]" : currentArgs.Addon->NameString)} ({parentAddonID})\n" +
+                    $"目标名称：{currentArgs.TargetName ?? "[空]"}\n"                                                        +
+                    $"目标 Object ID：0x{currentArgs.TargetObjectID:X}\n"                                                 +
+                    $"目标 Content ID：{currentArgs.TargetContentID}\n"                                                   +
+                    $"目标 Home World ID：{currentArgs.TargetHomeWorldID}\n"                                              +
+                    $"目标角色：0x{(nint)currentArgs.TargetCharacter:X}（玩家: {currentArgs.IsTargetPlayer}）\n"                +
+                    $"物品 ID：{currentArgs.TargetItemID}\n"                                                              +
+                    $"幻化物品 ID：{currentArgs.TargetGlamourID}\n"                                                         +
+                    $"Inventory Type：{currentArgs.TargetInventoryType?.ToString() ?? "[空]"}\n"                         +
+                    $"Inventory Slot：{currentArgs.TargetInventorySlot?.ToString() ?? "[空]"}\n"                         +
+                    $"Agent Context：0x{(nint)currentArgs.DefaultAgentContext:X}\n"                                     +
                     $"Inventory Agent Context：0x{(nint)currentArgs.InventoryAgentContext:X}"
                 );
             }
@@ -758,7 +758,7 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
             frame.AddonID        = id;
             frame.Agent->AddonId = id;
             if (previousAddon is not null && previousAddon->Id != id)
-                previousAddon->Hide(true, false, 0);
+                previousAddon->Hide(true, false, 1);
 
             var addon = GetAddonByID(id);
 
@@ -1041,10 +1041,10 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
     private static ContextMenuOpenedArgs BuildArgs
     (
         AgentInterface* agent,
-        AtkUnitBase* addon
+        AtkUnitBase*    addon
     )
     {
-        var args = new ContextMenuOpenedArgs
+        var args = new ContextMenuOpenedArgs(agent)
         {
             Addon = addon
         };

@@ -70,15 +70,10 @@ public sealed unsafe class ContextMenuOpenedArgs
 
     public AgentInventoryContext* InventoryAgentContext { get; set; }
 
-    public required AtkUnitBase* Addon
-    {
-        get;
-        set
-        {
-            ArgumentNullException.ThrowIfNull(value);
-            field = value;
-        }
-    }
+    /// <summary>
+    ///     菜单所属的游戏界面；为空时不绑定父界面，也不阻止其他界面的交互。
+    /// </summary>
+    public AtkUnitBase* Addon { get; set; }
 
     /// <remarks>
     ///     菜单的屏幕坐标，未指定时取当前鼠标位置。
