@@ -47,8 +47,6 @@ public sealed unsafe class ContextMenuOpenedArgs
         {
             IsSelfInitiated       = IsSelfInitiated,
             Addon                 = Addon,
-            AddonName             = AddonName,
-            OwnerAddonID          = OwnerAddonID,
             Position              = Position,
             TargetObjectID        = TargetObjectID,
             TargetContentID       = TargetContentID,
@@ -72,11 +70,15 @@ public sealed unsafe class ContextMenuOpenedArgs
 
     public AgentInventoryContext* InventoryAgentContext { get; set; }
 
-    public AtkUnitBase* Addon { get; set; }
-
-    public string? AddonName { get; set; }
-
-    public uint OwnerAddonID { get; set; }
+    public required AtkUnitBase* Addon
+    {
+        get;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            field = value;
+        }
+    }
 
     /// <remarks>
     ///     菜单的屏幕坐标，未指定时取当前鼠标位置。

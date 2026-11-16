@@ -460,7 +460,7 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
 
         try
         {
-            args        = BuildArgs(agent);
+            args        = BuildArgs(agent, GetAddonByID(parentAddonID));
             currentArgs = args;
 
             var isPrevented = false;
@@ -491,8 +491,8 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
                 (
                     $"[Context Menu Manager] 打开菜单\n"                                                    +
                     $"类型：{menuType}\n"                                                                  +
-                    $"Addon：{currentArgs.AddonName ?? "[空]"} ({currentArgs.OwnerAddonID})\n"            +
-                    $"目标名称：{currentArgs.TargetName ?? "[空]"}\n"                                         +
+                    $"Addon：{currentArgs.Addon->NameString ?? "[空]"} ({currentArgs.Addon->Id})\n"       +
+                    $"目标名称：{currentArgs.TargetName         ?? "[空]"}\n"                                 +
                     $"目标 Object ID：0x{currentArgs.TargetObjectID:X}\n"                                  +
                     $"目标 Content ID：{currentArgs.TargetContentID}\n"                                    +
                     $"目标 Home World ID：{currentArgs.TargetHomeWorldID}\n"                               +
@@ -1040,17 +1040,21 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
 
     private static ContextMenuOpenedArgs BuildArgs
     (
-        AgentInterface* agent
+        AgentInterface* agent,
+        AtkUnitBase* addon
     )
     {
-        var args = new ContextMenuOpenedArgs(agent);
+        var args = new ContextMenuOpenedArgs
+        {
+            Addon = addon
+        };
 
         if (agent == (AgentInterface*)AgentInventoryContext.Instance())
         {
             var inventoryAgent = AgentInventoryContext.Instance();
-            args.InventoryAgentContext = inventoryAgent;
-            args.OwnerAddonID          = inventoryAgent->OwnerAddonId;
+
             args.Addon                 = GetAddonByID(inventoryAgent->OwnerAddonId);
+            args.InventoryAgentContext = inventoryAgent;
             args.TargetInventoryType   = inventoryAgent->TargetInventoryId;
             args.TargetInventorySlot   = inventoryAgent->TargetInventorySlotId;
 
@@ -1064,9 +1068,9 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
         else if (agent == (AgentInterface*)AgentContext.Instance())
         {
             var contextAgent = AgentContext.Instance();
-            args.DefaultAgentContext = contextAgent;
-            args.OwnerAddonID        = contextAgent->OwnerAddon;
+
             args.Addon               = GetAddonByID(contextAgent->OwnerAddon);
+            args.DefaultAgentContext = contextAgent;
             args.TargetObjectID      = contextAgent->TargetObjectId;
             args.TargetContentID     = contextAgent->TargetContentId;
             args.TargetHomeWorldID   = contextAgent->TargetHomeWorldId;
@@ -1074,9 +1078,6 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
             args.TargetCharacter     = contextAgent->CurrentContextMenuTarget;
         }
 
-        args.AddonName = args.Addon is null ?
-                             null :
-                             args.Addon->NameString;
         return args;
     }
 

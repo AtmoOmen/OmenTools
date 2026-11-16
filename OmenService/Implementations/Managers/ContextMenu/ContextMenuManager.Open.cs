@@ -8,6 +8,11 @@ namespace OmenTools.OmenService;
 
 public unsafe partial class ContextMenuManager
 {
+    /// <summary>
+    ///     打开自定义右键菜单，并通过原生菜单生命周期阻止所属游戏界面的交互。
+    /// </summary>
+    /// <param name="args">菜单上下文；所属界面由 <see cref="ContextMenuOpenedArgs.AddonID" /> 指定。</param>
+    /// <param name="entries">本次打开时额外添加的菜单条目。</param>
     public void Open
     (
         ContextMenuOpenedArgs            args,
@@ -51,7 +56,7 @@ public unsafe partial class ContextMenuManager
                 new(values, 8),
                 args.Agent,
                 0, // 与客户端自身打开 ContextMenu 时的 eventKind 一致
-                (ushort)args.OwnerAddonID,
+                args.Addon->Id,
                 depthLayer,
                 items,
                 false
@@ -90,20 +95,24 @@ public unsafe partial class ContextMenuManager
         currentMenu = frame;
     }
 
+    /// <summary>
+    ///     打开物品右键菜单，并在指定父界面时通过原生菜单生命周期阻止其交互。
+    /// </summary>
+    /// <param name="itemID">菜单目标的物品 ID。</param>
+    /// <param name="parentID">所属游戏界面的 ID；未指定时打开不绑定游戏界面的菜单。</param>
     public void OpenItem
     (
-        uint  itemID,
-        uint? parentID = null
+        uint         itemID,
+        AtkUnitBase* addon
     )
     {
         if (!LuminaGetter.TryGetRow<Item>(itemID, out var row))
             return;
 
-        var parentAddonID = parentID ?? 0;
-
         var args = new ContextMenuOpenedArgs
         {
             InventoryAgentContext = AgentInventoryContext.Instance(),
+            Addon                 = addon,
             TargetItemID          = itemID
         };
 
@@ -118,13 +127,13 @@ public unsafe partial class ContextMenuManager
                     new()
                     {
                         Name      = LuminaWrapper.GetAddonText(2150),
-                        OnClicked = _ => AgentItemComp.Instance()->CompareItem((ushort)parentAddonID, itemID, 0, 0)
+                        OnClicked = _ => AgentItemComp.Instance()->CompareItem(addon->Id, itemID, 0, 0)
                     },
                     // 试穿
                     new()
                     {
                         Name      = LuminaWrapper.GetAddonText(2426),
-                        OnClicked = _ => AgentTryon.TryOn(parentAddonID, itemID)
+                        OnClicked = _ => AgentTryon.TryOn(addon->Id, itemID)
                     }
                 ]
             );

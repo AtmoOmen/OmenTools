@@ -82,8 +82,8 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
         if (context == null || context->CurrentContextMenu == null)
             return;
 
-        if (captured.Context      == (nint)context     &&
-            captured.OwnerAddonID == args.OwnerAddonID &&
+        if (captured.Context      == (nint)context  &&
+            captured.OwnerAddonID == args.Addon->Id &&
             HasHandler(context, nativeMenuSize, captured.Handler))
         {
             args.TargetItemID = ItemUtil.GetBaseId(captured.ItemID).ItemId;
@@ -101,7 +101,7 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
         uint itemID    = 0;
         uint glamourID = 0;
 
-        switch (args.AddonName)
+        switch (args.Addon->NameString)
         {
             case "FreeCompanyChest":
             {
