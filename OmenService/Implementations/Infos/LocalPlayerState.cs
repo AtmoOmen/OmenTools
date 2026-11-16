@@ -287,6 +287,15 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
             PlayerState.Instance()->GetClassJobLevel((int)classJobID, shouldGetSynced);
 
     /// <summary>
+    ///     获取当前玩家指定职业是否已解锁。
+    /// </summary>
+    public static unsafe bool IsClassJobUnlocked
+    (
+        uint classJobID
+    ) =>
+        GetClassJobLevel(classJobID) != 0;
+
+    /// <summary>
     ///     获取当前玩家第一个可用的职业套装
     /// </summary>
     public static unsafe bool TryFindClassJobGearset
