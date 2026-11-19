@@ -12,14 +12,6 @@ namespace OmenTools.Interop.Game.Helpers;
 /// </summary>
 public static unsafe class ContentsFinderHelper
 {
-    /// <summary>
-    ///     使用当前匹配语言、其余选项关闭的任务搜索器设置。
-    /// </summary>
-    public static ContentsFinderOption DefaultOption => new()
-    {
-        Languages = ContentsFinderOption.Get().Languages
-    };
-
     static ContentsFinderHelper()
     {
         RequestContentsFinder         = RequestContentsFinderSig.GetDelegate<RequestContentsFinderDelegate>();
@@ -73,7 +65,7 @@ public static unsafe class ContentsFinderHelper
         option.LevelSync                 &= option.UnrestrictedParty;
         option.IsLimitedLevelingRoulette =  false;
 
-        DLog.Debug($"[ContentsFinderHelper] 一般副本 ({string.Join(", ", (uint[])[.. rowIDs])})\n{option}");
+        DLog.Debug($"[ContentsFinderHelper] 一般副本（{string.Join(", ", (uint[])[.. rowIDs])}）\n{option}");
         fixed (uint* entries = rowIDs)
             return RequestContentsFinder(entries, (uint)rowIDs.Length, 0, &option);
     }

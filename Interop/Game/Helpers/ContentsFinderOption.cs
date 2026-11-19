@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Dalamud.Game.Config;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using Lumina.Data;
 
 namespace OmenTools.Interop.Game.Helpers;
 
@@ -17,7 +18,7 @@ public struct ContentsFinderOption : IEquatable<ContentsFinderOption>
     public bool Supply;
 
     /// <summary>
-    ///     匹配语言位掩码：日语为 1，英语为 2，德语为 4，法语为 8。
+    ///     国际服匹配语言位掩码：日语为 1，英语为 2，德语为 4，法语为 8；其他客户端固定发送 1。
     /// </summary>
     [FieldOffset(1)]
     public byte Languages;
@@ -71,25 +72,38 @@ public struct ContentsFinderOption : IEquatable<ContentsFinderOption>
     public byte RequestFlags;
 
     /// <summary>
-    ///     读取当前任务搜索器设置、中途加入配置及四种匹配语言。
+    ///     使用当前匹配语言、其余选项关闭的任务搜索器设置。
+    /// </summary>
+    public static ContentsFinderOption Default => new()
+    {
+        Languages = Get().Languages
+    };
+
+    /// <summary>
+    ///     读取当前任务搜索器设置与中途加入配置；国际服读取四种匹配语言，其他客户端使用固定值 1。
     /// </summary>
     /// <returns>当前设置的值副本。</returns>
     public static unsafe ContentsFinderOption Get()
     {
         ref var finder    = ref UIState.Instance()->ContentsFinder;
         var     config    = DService.Instance().GameConfig.UiConfig;
-        byte    languages = 0;
-        if (config.GetUInt(nameof(UiConfigOption.ContentsFinderUseLangTypeJA)) != 0)
-            languages |= 1;
+        byte    languages = 1;
 
-        if (config.GetUInt(nameof(UiConfigOption.ContentsFinderUseLangTypeEN)) != 0)
-            languages |= 2;
+        if (GameState.IsGL)
+        {
+            languages = 0;
+            if (config.GetUInt(nameof(UiConfigOption.ContentsFinderUseLangTypeJA)) != 0)
+                languages |= 1;
 
-        if (config.GetUInt(nameof(UiConfigOption.ContentsFinderUseLangTypeDE)) != 0)
-            languages |= 4;
+            if (config.GetUInt(nameof(UiConfigOption.ContentsFinderUseLangTypeEN)) != 0)
+                languages |= 2;
 
-        if (config.GetUInt(nameof(UiConfigOption.ContentsFinderUseLangTypeFR)) != 0)
-            languages |= 8;
+            if (config.GetUInt(nameof(UiConfigOption.ContentsFinderUseLangTypeDE)) != 0)
+                languages |= 4;
+
+            if (config.GetUInt(nameof(UiConfigOption.ContentsFinderUseLangTypeFR)) != 0)
+                languages |= 8;
+        }
 
         return new()
         {
