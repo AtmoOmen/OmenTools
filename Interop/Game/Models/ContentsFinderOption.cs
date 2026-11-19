@@ -1,9 +1,8 @@
 using System.Runtime.InteropServices;
 using Dalamud.Game.Config;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using Lumina.Data;
 
-namespace OmenTools.Interop.Game.Helpers;
+namespace OmenTools.Interop.Game.Models;
 
 /// <summary>
 ///     与客户端申请函数使用的十字节结构对应的任务搜索器设置。
