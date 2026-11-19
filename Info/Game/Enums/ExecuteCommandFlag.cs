@@ -2340,17 +2340,18 @@ public enum ExecuteCommandFlag
     RequestTrustedFriend = 2651,
 
     /// <summary>
-    ///     请求剧情辅助器数据
+    ///     请求剧情辅助器数据，不提交副本申请。
     /// </summary>
     RequestDutySupport = 2653,
 
     /// <summary>
-    ///     发送剧情辅助器申请请求
+    ///     提交指定副本及辅助成员的剧情辅助器申请。
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: DawnStroy 序号</para>
-    ///     <para><c>param2</c>: 前四位 DawnStroyMemberUIParam 序号的幂次方 (a1 * 256^0 + a2 * 256^1 + a3 * 256^2 + a4 * 256^3)</para>
-    ///     <para><c>param2</c>: 后三位 DawnStroyMemberUIParam 序号的幂次方 (a1 * 256^0 + a2 * 256^1 + a3 * 256^2)</para>
+    ///     <para><c>param1</c>：DawnContent 行编号，使用一个字节表示，不是 ContentFinderCondition 行编号。</para>
+    ///     <para><c>param2</c>：前四个辅助成员的 DawnQuestMember 行编号，按低字节优先排列，即 <c>member1 | (member2 &lt;&lt; 8) | (member3 &lt;&lt; 16) | (member4 &lt;&lt; 24)</c>。</para>
+    ///     <para><c>param3</c>：后三个辅助成员的 DawnQuestMember 行编号，按低字节优先排列，即 <c>member5 | (member6 &lt;&lt; 8) | (member7 &lt;&lt; 16)</c>。</para>
+    ///     <para>每个成员编号占一个字节，不包含玩家本人；未使用的成员槽填零。服务器仍会检查解锁与进入条件。</para>
     /// </remarks>
     /// <seealso cref="SendDutySupportCommand" />
     SendDutySupport = 2654,
@@ -2485,7 +2486,7 @@ public enum ExecuteCommandFlag
     ///     请求无人岛工房当前排班数据（首次打开界面触发）
     /// </summary>
     RequestMJIWorkshops = 3253,
-    
+
     /// <summary>
     ///     请求无人岛工房排班数据（手动切换天数触发）
     /// </summary>
