@@ -24,14 +24,12 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 {
     private static readonly CompSig AccountInfoUpdateSig =
         new("40 56 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B 01");
-
     private unsafe delegate bool AccountInfoUpdateDelegate
     (
         AccountInfo* accountInfo,
         ulong        accountID,
         byte         forceReload
     );
-
     private Hook<AccountInfoUpdateDelegate>? AccountInfoUpdateHook;
 
     private static readonly CompSig AccountInfoCacheLoadSig =
