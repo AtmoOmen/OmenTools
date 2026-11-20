@@ -1,15 +1,21 @@
 using System.Runtime.InteropServices;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Event;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Excel.Sheets;
+using InteropGenerator.Runtime;
 using OmenTools.Dalamud;
+using OmenTools.Info.Models;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.Interop.Game.Models;
 using OmenTools.Threading.TaskHelper;
+using FFXIVClientStructs.Expansion.FFXIV.Client.UI.Info;
+using InfoProxyPartyMember = FFXIVClientStructs.Expansion.FFXIV.Client.UI.Info.InfoProxyPartyMember;
+using InfoProxyItemSearch = FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyItemSearch;
+using AgentCountDownSettingDialog = FFXIVClientStructs.Expansion.FFXIV.Client.UI.Agent.AgentCountDownSettingDialog;
 
 namespace OmenTools.OmenService;
 
@@ -51,6 +57,20 @@ public unsafe partial class GameState
 
     private Hook<WarpInfo.Delegates.CompleteWarp>? CompleteWarpHook;
 
+    private Hook<InfoProxyPartyMember.Delegates.InitCountdown>? InitCountdownHook;
+
+    private Hook<AgentCountDownSettingDialog.Delegates.UpdateCountdown>? UpdateCountdownHook;
+
+    private Hook<AgentCountDownSettingDialog.Delegates.CancelCountdown>? CancelCountdownHook;
+
+    private Hook<AgentCountDownSettingDialog.Delegates.CompleteCountdown>? CompleteCountdownHook;
+
+    private Hook<AgentCountDownSettingDialog.Delegates.CloseCountdown>? CloseCountdownHook;
+
+    private CountdownInfo? countdownInfo;
+
+    private uint countdownRemainingSeconds;
+
     private TaskHelper taskHelper = null!;
 
     private uint worldID;
@@ -91,6 +111,46 @@ public unsafe partial class GameState
             (WarpInfo.Delegates.CompleteWarp)CompleteWarpDetour
         );
         CompleteWarpHook.Enable();
+
+        InitCountdownHook = IGameInteropProvider.Instance().HookFromMemberFunction
+        (
+            typeof(InfoProxyPartyMember.MemberFunctionPointers),
+            nameof(InfoProxyPartyMember.InitCountdown),
+            (InfoProxyPartyMember.Delegates.InitCountdown)InitCountdownDetour
+        );
+        InitCountdownHook.Enable();
+
+        UpdateCountdownHook = IGameInteropProvider.Instance().HookFromMemberFunction
+        (
+            typeof(AgentCountDownSettingDialog.MemberFunctionPointers),
+            nameof(AgentCountDownSettingDialog.UpdateCountdown),
+            (AgentCountDownSettingDialog.Delegates.UpdateCountdown)UpdateCountdownDetour
+        );
+        UpdateCountdownHook.Enable();
+
+        CancelCountdownHook = IGameInteropProvider.Instance().HookFromMemberFunction
+        (
+            typeof(AgentCountDownSettingDialog.MemberFunctionPointers),
+            nameof(AgentCountDownSettingDialog.CancelCountdown),
+            (AgentCountDownSettingDialog.Delegates.CancelCountdown)CancelCountdownDetour
+        );
+        CancelCountdownHook.Enable();
+
+        CompleteCountdownHook = IGameInteropProvider.Instance().HookFromMemberFunction
+        (
+            typeof(AgentCountDownSettingDialog.MemberFunctionPointers),
+            nameof(AgentCountDownSettingDialog.CompleteCountdown),
+            (AgentCountDownSettingDialog.Delegates.CompleteCountdown)CompleteCountdownDetour
+        );
+        CompleteCountdownHook.Enable();
+
+        CloseCountdownHook = IGameInteropProvider.Instance().HookFromMemberFunction
+        (
+            typeof(AgentCountDownSettingDialog.MemberFunctionPointers),
+            nameof(AgentCountDownSettingDialog.CloseCountdown),
+            (AgentCountDownSettingDialog.Delegates.CloseCountdown)CloseCountdownDetour
+        );
+        CloseCountdownHook.Enable();
     }
 
     protected override void Uninit()
@@ -110,6 +170,126 @@ public unsafe partial class GameState
 
         CompleteWarpHook?.Dispose();
         CompleteWarpHook = null;
+
+        InitCountdownHook?.Dispose();
+        InitCountdownHook = null;
+
+        UpdateCountdownHook?.Dispose();
+        UpdateCountdownHook = null;
+
+        CancelCountdownHook?.Dispose();
+        CancelCountdownHook = null;
+
+        CompleteCountdownHook?.Dispose();
+        CompleteCountdownHook = null;
+
+        CloseCountdownHook?.Dispose();
+        CloseCountdownHook = null;
+
+        countdownInfo = null;
+    }
+
+    private void InitCountdownDetour
+    (
+        InfoProxyPartyMember* info,
+        CountdownStartData*   data
+    )
+    {
+        var countdown = new CountdownInfo
+        {
+            AccountID          = data->AccountID,
+            ContentID          = data->ContentID,
+            EntityID           = data->EntityID,
+            HomeWorldID        = data->HomeWorldID,
+            Name               = data->NameString,
+            DurationSeconds    = data->DurationSeconds,
+            IsCombatBlocked    = data->IsCombatBlocked,
+            IsTextCommand      = data->IsTextCommand,
+            IsRecordReadyCheck = data->IsRecordReadyCheck
+        };
+        var agent    = AgentCountDownSettingDialog.Instance();
+        var canStart = !data->IsCombatBlocked && agent != null && agent->IsLoggedIn && Conditions.Instance()->HasPermission(203);
+
+        InitCountdownHook.Original(info, data);
+
+        if (!canStart)
+        {
+            CountdownStartFailed?.Invoke(countdown);
+            return;
+        }
+
+        countdownInfo             = countdown;
+        countdownRemainingSeconds = countdown.DurationSeconds;
+        CountdownStart?.Invoke(countdown);
+    }
+
+    private void UpdateCountdownDetour(AgentCountDownSettingDialog* agent, uint remainingSeconds)
+    {
+        if (agent->Active && countdownInfo is { } countdown && countdownRemainingSeconds != remainingSeconds)
+        {
+            countdownRemainingSeconds = remainingSeconds;
+            CountdownUpdate?.Invoke(countdown, remainingSeconds);
+        }
+
+        UpdateCountdownHook.Original(agent, remainingSeconds);
+    }
+
+    private void CancelCountdownDetour
+    (
+        AgentCountDownSettingDialog* agent,
+        uint                         entityID,
+        CStringPointer               name,
+        ushort                       homeWorldID
+    )
+    {
+        CountdownCancellation? cancellation = null;
+
+        if (agent->Active && countdownInfo is { } countdown)
+        {
+            cancellation = new CountdownCancellation
+            {
+                Countdown   = countdown,
+                EntityID    = entityID,
+                HomeWorldID = homeWorldID,
+                Name = name.Value == null ?
+                           string.Empty :
+                           name.ToString(),
+                IsSystemCancellation = entityID == 0xE0000000 && name.Value == null
+            };
+        }
+
+        CancelCountdownHook.Original(agent, entityID, name, homeWorldID);
+
+        countdownInfo = null;
+
+        if (cancellation is not null)
+            CountdownCancel?.Invoke(cancellation);
+    }
+
+    private void CompleteCountdownDetour(AgentCountDownSettingDialog* agent)
+    {
+        var countdown = countdownInfo;
+        var wasActive = agent->Active;
+
+        CompleteCountdownHook.Original(agent);
+
+        countdownInfo = null;
+
+        if (wasActive && countdown is not null)
+            CountdownComplete?.Invoke(countdown);
+    }
+
+    private void CloseCountdownDetour(AgentCountDownSettingDialog* agent)
+    {
+        var countdown = countdownInfo;
+
+        CloseCountdownHook.Original(agent);
+
+        if (!agent->Active)
+            countdownInfo = null;
+
+        if (countdown is not null)
+            CountdownClose?.Invoke(countdown);
     }
 
     private void ProcessRequestResultDetour

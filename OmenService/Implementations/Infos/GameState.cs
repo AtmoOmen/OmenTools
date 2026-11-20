@@ -8,7 +8,9 @@ using Lumina.Data;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Data;
 using OmenTools.Info.Lumina.ExtraSheets;
+using OmenTools.Info.Models;
 using OmenTools.Interop.Game.Lumina;
+using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
 using Action = System.Action;
 using Map = Lumina.Excel.Sheets.Map;
@@ -53,6 +55,38 @@ public unsafe partial class GameState
     /// </summary>
     public event Action<WarpType>? WarpComplete;
 
+    /// <summary>
+    ///     服务器发送的战斗倒计时通过原生状态与权限检查并开始时触发，参数为独立的托管数据快照。
+    /// </summary>
+    public event Action<CountdownInfo>? CountdownStart;
+
+    /// <summary>
+    ///     服务器发送的倒计时因战斗状态、登录状态、操作权限或代理不可用而未能开始时触发。
+    /// </summary>
+    public event Action<CountdownInfo>? CountdownStartFailed;
+
+    /// <summary>
+    ///     活动倒计时的显示秒数变化时触发，参数依次为倒计时数据和剩余秒数。
+    ///     同一秒数只通知一次，零秒通知先于战斗开始通知。
+    /// </summary>
+    public event Action<CountdownInfo, uint>? CountdownUpdate;
+
+    /// <summary>
+    ///     活动倒计时收到取消或系统清理通知并完成原生处理时触发，包含倒计时和取消者数据。
+    /// </summary>
+    public event Action<CountdownCancellation>? CountdownCancel;
+
+    /// <summary>
+    ///     原生倒计时发出战斗开始消息及提示音后触发，不包含取消或界面清理。
+    /// </summary>
+    public event Action<CountdownInfo>? CountdownComplete;
+
+    /// <summary>
+    ///     原生函数清理倒计时及取消确认界面后触发，包含取消、登出、脱离小队及回放界面清理。
+    ///     界面关闭本身不表示计时自然完成。
+    /// </summary>
+    public event Action<CountdownInfo>? CountdownClose;
+
     #endregion
 
     /// <summary>
@@ -60,13 +94,13 @@ public unsafe partial class GameState
     /// </summary>
     public static float FrameDeltaTime =>
         Framework.Instance()->FrameDeltaTime;
-    
+
     /// <summary>
     ///     当前游戏的帧计数。
     /// </summary>
     public static uint FrameCounter =>
         Framework.Instance()->FrameCounter;
-    
+
     /// <summary>
     ///     当前游戏是否为手柄模式。
     /// </summary>
