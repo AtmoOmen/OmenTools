@@ -38,7 +38,7 @@ public class LeveSelectCombo : LuminaComboBase<Leve>
             return string.Empty;
 
         return mode == ComboSelectionMode.Radio ?
-                   $"[{item.ClassJobCategory.Value.Name}] \ue06a{item.ClassJobLevel} {item.Name}" :
+                   $"[{item.ClassJobCategory.Value.Name}] \ue06a{item.ClassJobLevel.ToSESmallCount()} {item.Name}" :
                    $"[{SelectedIDs.Count}] {item.Name}";
     }
 
