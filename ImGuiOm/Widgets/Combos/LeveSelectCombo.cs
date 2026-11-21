@@ -38,7 +38,7 @@ public class LeveSelectCombo : LuminaComboBase<Leve>
             return string.Empty;
 
         return mode == ComboSelectionMode.Radio ?
-                   $"[{item.ClassJobCategory.Value.Name}] {item.Name} [\ue06a {item.ClassJobLevel}]" :
+                   $"[{item.ClassJobCategory.Value.Name}] \ue06a{item.ClassJobLevel} {item.Name}" :
                    $"[{SelectedIDs.Count}] {item.Name}";
     }
 
@@ -77,11 +77,11 @@ public class LeveSelectCombo : LuminaComboBase<Leve>
 
         if (ITextureProvider.Instance().TryGetFromGameIcon(new(iconID), out var icon))
         {
-            ImGui.Image(icon.GetWrapOrEmpty().Handle, new(ImGui.GetTextLineHeight()));
-            ImGui.SameLine();
+            ImGuiOm.TextImage(item.ClassJobCategory.Value.Name.ToString(), icon.GetWrapOrEmpty().Handle, new(ImGui.GetFrameHeight()));
         }
+        else
+            ImGui.TextUnformatted(item.ClassJobCategory.Value.Name.ToString());
 
-        ImGui.TextUnformatted(item.ClassJobCategory.Value.Name.ToString());
         ImGui.TableNextColumn();
         ImGui.TextUnformatted(item.ClassJobLevel.ToString());
         ImGui.TableNextColumn();
