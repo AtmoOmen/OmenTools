@@ -1,9 +1,11 @@
 using System.Numerics;
 using Dalamud.Game.Config;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using Lumina.Data;
 using Lumina.Excel.Sheets;
 using OmenTools.Info.Game.Data;
@@ -88,6 +90,21 @@ public unsafe partial class GameState
     public event Action<CountdownInfo>? CountdownClose;
 
     #endregion
+
+    /// <summary>
+    ///     当前所在小队的玩家人数
+    /// </summary>
+    public static byte PartyMemberCount
+    {
+        get
+        {
+            if (InfoProxyCrossRealm.IsCrossRealmParty() ||
+                InfoProxyCrossRealm.IsAllianceRaid())
+                return InfoProxyCrossRealm.GetPartyMemberCount();
+
+            return GroupManager.Instance()->GetGroupWithCheck()->MemberCount;
+        }
+    }
 
     /// <summary>
     ///     当前游戏的帧偏差。

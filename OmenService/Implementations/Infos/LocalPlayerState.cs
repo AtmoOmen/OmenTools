@@ -225,20 +225,8 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     /// <summary>
     ///     当前是否在任一队伍中
     /// </summary>
-    public static unsafe bool IsInParty
-    {
-        get
-        {
-            if (GroupManager.Instance()->GetGroupWithCheck()->MemberCount > 1)
-                return true;
-
-            if (InfoProxyCrossRealm.IsCrossRealmParty() ||
-                InfoProxyCrossRealm.IsAllianceRaid())
-                return InfoProxyCrossRealm.GetPartyMemberCount() > 1;
-            
-            return false;
-        }
-    }
+    public static unsafe bool IsInParty =>
+        GameState.PartyMemberCount > 1;
     
     /// <summary>
     ///     当前是否在本地队伍中
@@ -247,7 +235,8 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     {
         get
         {
-            if (InfoProxyCrossRealm.IsCrossRealmParty())
+            if (InfoProxyCrossRealm.IsCrossRealmParty() ||
+                InfoProxyCrossRealm.IsAllianceRaid())
                 return false;
             
             return GroupManager.Instance()->GetGroupWithCheck()->MemberCount > 1;
