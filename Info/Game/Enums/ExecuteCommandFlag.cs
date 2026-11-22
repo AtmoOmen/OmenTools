@@ -1487,16 +1487,16 @@ public enum ExecuteCommandFlag
     LoadInteriorFurnishInventory = 1111,
 
     /// <summary>
-    ///     向房屋仓库存入指定的物品
+    ///     请求加载当前地块的室外家具容器
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: HouseManager 相关区域的 HouseID 地址的高 32 位</para>
-    ///     <para><c>param2</c>: HouseManager 相关区域的 HouseID</para>
-    ///     <para><c>param3</c>: InventoryType</para>
-    ///     <para><c>param4</c>: InventorySlot</para>
+    ///     <para><c>param1</c>: 固定为0</para>
+    ///     <para><c>param2</c>: 地块索引</para>
+    ///     <para><c>param3</c>: 0为已布置庭具，1为仓库庭具</para>
+    ///     <para><c>param4</c>: 固定为0</para>
     /// </remarks>
     /// <seealso cref="HousingCommand" />
-    StoreFurniture = 1112,
+    RequestExteriorFurnitureInventory = 1112,
 
     /// <summary>
     ///     从房屋中取回指定的家具
@@ -1582,12 +1582,12 @@ public enum ExecuteCommandFlag
     SetHousingEstateTag = 1120,
 
     /// <summary>
-    ///     刷新放置的家具数据
+    ///     请求加载当前房屋的室内家具容器
     /// </summary>
     /// <remarks>
-    ///     <para><c>param1</c>: 0 - 室外; 1 - 室内</para>
+    ///     <para><c>param1</c>: 0为已布置家具，1为仓库家具</para>
     /// </remarks>
-    RequestPlacedFurnitures = 1121,
+    RequestInteriorFurnitureInventory = 1121,
 
     /// <summary>
     ///     移动到庭院/房屋门前

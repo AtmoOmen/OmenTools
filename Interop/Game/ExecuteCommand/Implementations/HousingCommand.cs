@@ -1,7 +1,6 @@
-﻿using FFXIVClientStructs.FFXIV.Client.Game;
-using OmenTools.Info.Game.Enums;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using OmenTools.Interop.Game.ExecuteCommand.Abstractions;
-using OmenTools.OmenService;
+using ExpandedInventoryManager = FFXIVClientStructs.Expansion.FFXIV.Client.Game.InventoryManager;
 
 namespace OmenTools.Interop.Game.ExecuteCommand.Implementations;
 
@@ -62,14 +61,22 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ViewHouseDetail, territoryType, (wardIndex * 256) + plotIndex, apartmentRoomIndex);
 
     /// <summary>
-    ///     向当前房屋仓库存入指定物品
+    ///     通过客户端原生家具存入请求，将指定背包物品移入当前房屋的室内或室外仓库。
     /// </summary>
+    /// <param name="inventoryType">家具所在的背包容器。</param>
+    /// <param name="inventorySlot">家具所在的背包栏位。</param>
     public static void Store(InventoryType inventoryType, uint inventorySlot)
     {
-        var (houseIDHigh, houseID) = GetCurrentHouseID();
-        if (houseIDHigh == houseID && houseID == 0) return;
+        var housingManager   = HousingManager.Instance();
+        var inventoryManager = ExpandedInventoryManager.Instance();
+        var item             = inventoryManager->GetInventorySlot(inventoryType, (int)inventorySlot);
+        if (item == null)
+            return;
 
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.StoreFurniture, houseIDHigh, houseID, (uint)inventoryType, inventorySlot);
+        if (housingManager->IsInside())
+            inventoryManager->StoreInteriorFurniture(item);
+        else
+            inventoryManager->StoreExteriorFurniture(housingManager->GetCurrentHouseId(), item);
     }
 
     /// <summary>
@@ -78,7 +85,14 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// <param name="light">房间亮度等级</param>
     /// <param name="enableSSAO">是否开启环境光遮蔽 (SSAO)</param>
     public static void SetIndoorEnvironment(BrightnessLevel light, bool enableSSAO) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetIndoorEnvironment, (uint)light, enableSSAO ? 0U : 1);
+        ExecuteCommandManager.Instance().ExecuteCommand
+        (
+            ExecuteCommandFlag.SetIndoorEnvironment,
+            (uint)light,
+            enableSSAO ?
+                0U :
+                1
+        );
 
     /// <summary>
     ///     请求门牌数据
@@ -133,7 +147,12 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         var (houseIDHigh, houseID) = GetCurrentHouseID();
         if (houseIDHigh == houseID && houseID == 0) return;
 
-        var flags = (allowTeleport ? 1U : 0U) | (allowEnter ? 65536U : 0U);
+        var flags = (allowTeleport ?
+                         1U :
+                         0U) |
+                    (allowEnter ?
+                         65536U :
+                         0U);
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.SetHousingGuestAccess, houseIDHigh, houseID, flags);
     }
 
@@ -198,7 +217,9 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
             houseIDHigh,
             houseID,
             (uint)inventoryType,
-            toStoreRoom ? inventorySlot + 65536U : inventorySlot
+            toStoreRoom ?
+                inventorySlot + 65536U :
+                inventorySlot
         );
     }
 
@@ -246,10 +267,26 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.LoadInteriorFurnishInventory);
 
     /// <summary>
-    ///     刷新放置的家具数据
+    ///     请求加载当前房屋或地块的家具容器。
     /// </summary>
-    public static void RequestPlacedFurnitures(bool isIndoor) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestPlacedFurnitures, isIndoor ? 1U : 0U);
+    /// <param name="isIndoor">是否请求室内家具；否则请求当前地块的庭具。</param>
+    /// <param name="fromStoreroom">是否请求仓库家具；否则请求已布置家具。</param>
+    public static void RequestFurnitureInventory(bool isIndoor, bool fromStoreroom)
+    {
+        var storeroom = fromStoreroom ?
+                            1U :
+                            0U;
+        if (isIndoor)
+            ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.RequestInteriorFurnitureInventory, storeroom);
+        else
+            ExecuteCommandManager.Instance().ExecuteCommand
+            (
+                ExecuteCommandFlag.RequestExteriorFurnitureInventory,
+                0,
+                (uint)HousingManager.Instance()->GetCurrentPlot(),
+                storeroom
+            );
+    }
 
     /// <summary>
     ///     请求房屋共享室友名单
@@ -297,7 +334,13 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     ///     切换房屋雇员是否显示主手武器
     /// </summary>
     public static void SetDrawnSword(bool isVisible) =>
-        ExecuteCommandManager.Instance().ExecuteCommand(ExecuteCommandFlag.ToggleHousingRetainerWeapon, isVisible ? 1U : 0U);
+        ExecuteCommandManager.Instance().ExecuteCommand
+        (
+            ExecuteCommandFlag.ToggleHousingRetainerWeapon,
+            isVisible ?
+                1U :
+                0U
+        );
 
     private static uint GetEstateTagFlag(uint tagIndexFirst, uint tagIndexSecond, uint tagIndexThird) =>
         (tagIndexFirst << 16) | (tagIndexSecond << 8) | tagIndexThird;
