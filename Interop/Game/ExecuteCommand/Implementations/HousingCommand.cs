@@ -76,7 +76,7 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
         if (housingManager->IsInside())
             inventoryManager->StoreInteriorFurniture(item);
         else
-            inventoryManager->StoreExteriorFurniture(housingManager->GetCurrentHouseId(), item);
+            inventoryManager->StoreExteriorFurniture((uint)housingManager->GetCurrentPlot(), item);
     }
 
     /// <summary>
@@ -208,8 +208,12 @@ public sealed unsafe class HousingCommand : ExecuteCommandBase
     /// </summary>
     public static void Restore(InventoryType inventoryType, uint inventorySlot, bool toStoreRoom = false)
     {
-        var (houseIDHigh, houseID) = GetCurrentHouseID();
-        if (houseIDHigh == houseID && houseID == 0) return;
+        var manager = HousingManager.Instance();
+        var (houseIDHigh, houseID) = manager->IsInside() ?
+                                         GetCurrentHouseID() :
+                                         (0U, (uint)manager->GetCurrentPlot());
+        if (manager->IsInside() && houseIDHigh == 0 && houseID == 0)
+            return;
 
         ExecuteCommandManager.Instance().ExecuteCommand
         (
