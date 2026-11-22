@@ -18,9 +18,10 @@ public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
             [
                 x => x.RowId.ToString(),
                 x => x.Name.ToString(),
-                x => x.PlaceName.ValueNullable?.Name.ToString()       ?? string.Empty,
-                x => x.PlaceNameZone.ValueNullable?.Name.ToString()   ?? string.Empty,
-                x => x.PlaceNameRegion.ValueNullable?.Name.ToString() ?? string.Empty
+                x => x.PlaceName.ValueNullable?.Name.ToString()              ?? string.Empty,
+                x => x.PlaceNameZone.ValueNullable?.Name.ToString()          ?? string.Empty,
+                x => x.PlaceNameRegion.ValueNullable?.Name.ToString()        ?? string.Empty,
+                x => x.ContentFinderCondition.ValueNullable?.Name.ToString() ?? string.Empty
             ],
             resultLimit: 200
         );
@@ -47,7 +48,7 @@ public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
     }
 
     protected override int GetTableColumnCount() =>
-        3;
+        4;
 
     protected override void SetupColumns
     (
@@ -55,8 +56,9 @@ public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
     )
     {
         ImGui.TableSetupColumn("###Selected", ImGuiTableColumnFlags.WidthFixed,   ImGui.GetFrameHeight());
-        ImGui.TableSetupColumn("###Region",   ImGuiTableColumnFlags.WidthStretch, 40);
+        ImGui.TableSetupColumn("###Region",   ImGuiTableColumnFlags.WidthStretch, 20);
         ImGui.TableSetupColumn("###Zone",     ImGuiTableColumnFlags.WidthStretch, 50);
+        ImGui.TableSetupColumn("###Duty",     ImGuiTableColumnFlags.WidthStretch, 50);
     }
 
     protected override void DrawHeaders()
@@ -66,6 +68,8 @@ public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
         ImGui.TableNextColumn();
         ImGui.TableNextColumn();
         ImGui.TextUnformatted(LuminaWrapper.GetAddonText(870));
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(LuminaWrapper.GetAddonText(2225));
     }
 
     protected override bool DrawDataColumns
@@ -75,13 +79,9 @@ public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
         bool               isSelected
     )
     {
-        var zoneName   = zone.ExtractPlaceName();
-        var regionName = zone.PlaceNameRegion.ValueNullable?.Name.ToString() ?? string.Empty;
-
-        if (mode                              == ComboSelectionMode.Radio        &&
-            zone.ContentFinderCondition.RowId > 0                                &&
-            zone.ContentFinderCondition.Value.Name.ToString() is var contentName &&
-            !string.IsNullOrEmpty(contentName)) zoneName += $" ({contentName})";
+        var zoneName    = zone.ExtractPlaceName();
+        var regionName  = zone.PlaceNameRegion.ValueNullable?.Name.ToString()        ?? string.Empty;
+        var contentName = zone.ContentFinderCondition.ValueNullable?.Name.ToString() ?? string.Empty;
 
         ImGui.TableNextColumn();
         ImGui.TextUnformatted(regionName);
@@ -96,6 +96,9 @@ public class ZoneSelectCombo : LuminaComboBase<TerritoryType>
 
         if (mode == ComboSelectionMode.Radio)
             ImGuiOm.TooltipHover(zoneName);
+        
+        ImGui.TableNextColumn();
+        ImGui.TextUnformatted(contentName);
 
         return clicked;
     }
