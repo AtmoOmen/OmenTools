@@ -4,10 +4,10 @@ using System.Numerics;
 namespace OmenTools.ImGuiOm;
 
 /// <summary>
-/// 保存当前字体的文本尺寸、图标字形顶部偏移及行推进距离，用于自定义绘制和居中布局。
-/// 普通文本保留 ImGui 的布局尺寸，纯私用区图标使用可见字形的垂直边界。
+/// 保存当前字体的文本尺寸、图标字形偏移及行推进距离，用于自定义绘制和居中布局。
+/// 普通文本保留 ImGui 的布局尺寸，纯私用区图标使用可见字形的水平与垂直边界。
 /// </summary>
-/// <param name="Size">文本布局宽度及用于对齐的高度，单位为屏幕像素。</param>
+/// <param name="Size">文本布局尺寸或纯图标可见字形尺寸，单位为屏幕像素。</param>
 /// <param name="OffsetY">绘制原点到可见字形顶部的垂直偏移，单位为屏幕像素。</param>
 public readonly record struct TextMetrics
 (
@@ -15,6 +15,9 @@ public readonly record struct TextMetrics
     float   OffsetY
 )
 {
+    /// <summary>获取绘制原点到可见字形左侧的水平偏移，单位为屏幕像素。</summary>
+    public float OffsetX { get; private init; }
+
     /// <summary>获取相邻文本行之间的垂直推进距离，单位为屏幕像素。</summary>
     public float LineAdvance { get; private init; }
 
@@ -27,14 +30,17 @@ public readonly record struct TextMetrics
     /// </summary>
     /// <param name="text">需要度量的文本。</param>
     /// <param name="scale">相对于当前字体大小的缩放比例。</param>
-    /// <returns>包含布局尺寸、垂直偏移、行推进距离及字体大小的度量结果。</returns>
+    /// <returns>包含布局尺寸、字形偏移、行推进距离及字体大小的度量结果。</returns>
     public static unsafe TextMetrics Measure(ReadOnlySpan<char> text, float scale = 1f)
     {
         var font       = ImGui.GetFont();
         var fontSize   = ImGui.GetFontSize();
         var glyphScale = fontSize / font.FontSize;
         var size       = ImGui.CalcTextSize(text);
+        var lineX      = 0f;
         var lineY      = 0f;
+        var minimumX   = float.PositiveInfinity;
+        var maximumX   = float.NegativeInfinity;
         var minimumY   = float.PositiveInfinity;
         var maximumY   = float.NegativeInfinity;
 
@@ -42,12 +48,16 @@ public readonly record struct TextMetrics
         {
             if (character == '\n')
             {
+                lineX =  0f;
                 lineY += fontSize;
                 continue;
             }
 
             if (char.IsWhiteSpace(character))
+            {
+                lineX += font.FindGlyph(character)->AdvanceX * glyphScale;
                 continue;
+            }
 
             if (char.GetUnicodeCategory(character) != UnicodeCategory.PrivateUse)
                 return new(size * scale, 0)
@@ -57,33 +67,41 @@ public readonly record struct TextMetrics
                 };
 
             var glyph = font.FindGlyph(character);
-            if (glyph->Y1 <= glyph->Y0)
-                continue;
 
-            minimumY = MathF.Min(minimumY, lineY + (glyph->Y0 * glyphScale));
-            maximumY = MathF.Max(maximumY, lineY + (glyph->Y1 * glyphScale));
+            if (glyph->X1 > glyph->X0 &&
+                glyph->Y1 > glyph->Y0)
+            {
+                minimumX = MathF.Min(minimumX, lineX + (glyph->X0 * glyphScale));
+                maximumX = MathF.Max(maximumX, lineX + (glyph->X1 * glyphScale));
+                minimumY = MathF.Min(minimumY, lineY + (glyph->Y0 * glyphScale));
+                maximumY = MathF.Max(maximumY, lineY + (glyph->Y1 * glyphScale));
+            }
+
+            lineX += glyph->AdvanceX * glyphScale;
         }
 
-        if (!float.IsFinite(minimumY))
+        if (!float.IsFinite(minimumX) ||
+            !float.IsFinite(minimumY))
             return new(size * scale, 0)
             {
                 LineAdvance = fontSize * scale,
                 FontSize    = fontSize * scale
             };
 
-        return new(size with { Y = maximumY - minimumY } * scale, minimumY * scale)
+        return new(new Vector2(maximumX - minimumX, maximumY - minimumY) * scale, minimumY * scale)
         {
+            OffsetX     = minimumX * scale,
             LineAdvance = fontSize * scale,
             FontSize    = fontSize * scale
         };
     }
 
-    /// <summary>计算文本在指定屏幕矩形内居中时的绘制原点，并补偿图标字形顶部偏移。</summary>
+    /// <summary>计算文本在指定屏幕矩形内居中时的绘制原点，并补偿图标字形偏移。</summary>
     /// <param name="origin">目标矩形左上角的屏幕坐标。</param>
     /// <param name="size">目标矩形的尺寸。</param>
     /// <returns>可直接传递给绘制列表的文本原点。</returns>
     public Vector2 CenterIn(Vector2 origin, Vector2 size) =>
-        origin + ((size - Size) / 2f) - new Vector2(0, OffsetY);
+        origin + ((size - Size) / 2f) - new Vector2(OffsetX, OffsetY);
 
     /// <summary>按度量时的字体大小居中绘制文本，并向当前布局提交占位区域。</summary>
     /// <param name="text">与度量结果对应的文本。</param>
