@@ -3,6 +3,7 @@ using Dalamud.Hooking;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.Group;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
@@ -149,6 +150,13 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     ///     当前玩家是否正在移动
     /// </summary>
     public bool IsMoving { get; private set; }
+
+    /// <summary>
+    ///     当前玩家的位置
+    /// </summary>
+    /// <remarks>始终有效，若本地玩家对象为空则取摄像机位置。</remarks>
+    public static unsafe Vector3 Position =>
+        Framework.Instance()->BGCollisionModule->ForcedStreamingSphere.ToVector3();
 
     /// <summary>
     ///     当前玩家是否正处于步行模式
