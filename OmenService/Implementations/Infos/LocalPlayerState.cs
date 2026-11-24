@@ -12,6 +12,7 @@ using OmenTools.Info.Game.Data;
 using OmenTools.Interop.Game.Lumina;
 using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
+using OmenTools.Threading.TaskHelper;
 using AccountInfo = FFXIVClientStructs.Expansion.FFXIV.Client.Game.AccountInfo;
 using AgentUpdateDelegate = FFXIVClientStructs.Expansion.FFXIV.Client.UI.Agent.AgentUpdateDelegate;
 using Control = FFXIVClientStructs.FFXIV.Client.Game.Control.Control;
@@ -48,10 +49,17 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 
     private Hook<AgentUpdateDelegate>? AgentMapUpdateHook;
 
-    private ulong lastAccountID;
+    private ulong       lastAccountID;
+    private TaskHelper? switchClassJobTaskHelper;
 
     protected override unsafe void Init()
     {
+        switchClassJobTaskHelper ??= new()
+        {
+            TimeoutMS       = 3_000,
+            RetryIntervalMS = 50
+        };
+
         AgentMapUpdateHook ??= IGameInteropProvider.Instance().HookFromAddress<AgentUpdateDelegate>
         (
             AgentMap.Instance()->VirtualTable->GetVFuncByName("Update"),
@@ -68,6 +76,9 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 
     protected override void Uninit()
     {
+        switchClassJobTaskHelper?.Dispose();
+        switchClassJobTaskHelper = null;
+
         AgentMapUpdateHook?.Dispose();
         AgentMapUpdateHook = null;
 
@@ -235,7 +246,7 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
     /// </summary>
     public static unsafe bool IsInParty =>
         GameState.PartyMemberCount > 1;
-    
+
     /// <summary>
     ///     当前是否在本地队伍中
     /// </summary>
@@ -246,7 +257,7 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
             if (InfoProxyCrossRealm.IsCrossRealmParty() ||
                 InfoProxyCrossRealm.IsAllianceRaid())
                 return false;
-            
+
             return GroupManager.Instance()->GetGroupWithCheck()->MemberCount > 1;
         }
     }
@@ -434,6 +445,247 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
         return true;
     }
 
+    /// <summary>
+    ///     切换至指定职业，优先切换已保存套装，否则从兵装库穿戴最高装等主手并按需处理灵魂水晶
+    /// </summary>
+    public static unsafe void SwitchClassJob
+    (
+        uint classJob
+    )
+    {
+        if (classJob == 0        ||
+            ClassJob == classJob ||
+            Object   == null)
+            return;
+
+        if (!LuminaGetter.TryGetRow(classJob, out ClassJob jobData) ||
+            jobData.ExpArrayIndex < 0)
+            return;
+
+        var playerState = PlayerState.Instance();
+        if (playerState == null)
+            return;
+
+        var jobLevel = playerState->GetClassJobLevel((int)classJob, false);
+        if (jobLevel == 0)
+            return;
+
+        Instance().switchClassJobTaskHelper?.Abort();
+
+        if (RaptureGearsetModule.Instance() != null             &&
+            TryFindClassJobGearset(classJob, out var gearsetID) &&
+            SwitchGearset(gearsetID))
+            return;
+
+        var inventoryManager = InventoryManager.Instance();
+        if (inventoryManager == null)
+            return;
+
+        var pvpProfile = PvPProfile.Instance();
+        var pvpRank = pvpProfile != null ?
+                          pvpProfile->GetPvPRank() :
+                          (byte)0;
+
+        var parentClassJobID  = jobData.ClassJobParent.RowId;
+        var soulCrystalItemID = jobData.ItemSoulCrystal.RowId;
+        var requiresSoulCrystal = parentClassJobID  != classJob &&
+                                  soulCrystalItemID != 0;
+
+        ushort soulCrystalSlot = 0;
+        var    hasEquippedSoul = false;
+
+        if (requiresSoulCrystal)
+        {
+            var equippedSoul = inventoryManager->GetInventorySlot(InventoryType.EquippedItems, SOUL_CRYSTAL_SLOT);
+            hasEquippedSoul = equippedSoul != null     &&
+                              !equippedSoul->IsEmpty() &&
+                              equippedSoul->GetBaseItemId() == soulCrystalItemID;
+
+            if (!hasEquippedSoul &&
+                !TryFindItemSlot(inventoryManager, InventoryType.ArmorySoulCrystal, soulCrystalItemID, out soulCrystalSlot))
+                return;
+        }
+
+        var equippedMainHand = inventoryManager->GetInventorySlot(InventoryType.EquippedItems, MAIN_HAND_SLOT);
+
+        if (equippedMainHand != null     &&
+            !equippedMainHand->IsEmpty() &&
+            TryCanEquipMainHand(equippedMainHand, playerState, jobLevel, (byte)classJob, pvpRank, out _))
+        {
+            if (requiresSoulCrystal)
+            {
+                if (!hasEquippedSoul)
+                    inventoryManager->MoveItemSlot(InventoryType.ArmorySoulCrystal, soulCrystalSlot, InventoryType.EquippedItems, SOUL_CRYSTAL_SLOT, true);
+
+                return;
+            }
+
+            var equippedSoul = inventoryManager->GetInventorySlot(InventoryType.EquippedItems, SOUL_CRYSTAL_SLOT);
+
+            if (equippedSoul != null &&
+                !equippedSoul->IsEmpty())
+            {
+                var soulContainer = inventoryManager->GetInventoryContainer(InventoryType.ArmorySoulCrystal);
+
+                if (soulContainer != null &&
+                    soulContainer->IsLoaded)
+                {
+                    for (var i = 0; i < soulContainer->Size; i++)
+                    {
+                        var slot = soulContainer->GetInventorySlot(i);
+                        if (slot == null ||
+                            !slot->IsEmpty())
+                            continue;
+
+                        inventoryManager->MoveItemSlot(InventoryType.EquippedItems, SOUL_CRYSTAL_SLOT, InventoryType.ArmorySoulCrystal, (ushort)i);
+                        return;
+                    }
+                }
+
+                return;
+            }
+        }
+
+        var mainHandContainer = inventoryManager->GetInventoryContainer(InventoryType.ArmoryMainHand);
+        if (mainHandContainer == null ||
+            !mainHandContainer->IsLoaded)
+            return;
+
+        var    foundMainHand = false;
+        ushort bestSlot      = 0;
+        uint   bestItemLevel = 0;
+        var    bestIsHQ      = false;
+
+        for (var i = 0; i < mainHandContainer->Size; i++)
+        {
+            var slot = mainHandContainer->GetInventorySlot(i);
+            if (slot == null    ||
+                slot->IsEmpty() ||
+                !TryCanEquipMainHand(slot, playerState, jobLevel, (byte)classJob, pvpRank, out var itemData))
+                continue;
+
+            var itemLevel     = itemData.LevelItem.RowId;
+            var isHighQuality = slot->IsHighQuality();
+            var isBetter = !foundMainHand            ||
+                           itemLevel > bestItemLevel ||
+                           (itemLevel == bestItemLevel &&
+                            isHighQuality              &&
+                            !bestIsHQ);
+            if (!isBetter)
+                continue;
+
+            foundMainHand = true;
+            bestSlot      = (ushort)i;
+            bestItemLevel = itemLevel;
+            bestIsHQ      = isHighQuality;
+        }
+
+        if (!foundMainHand)
+            return;
+
+        inventoryManager->MoveItemSlot(InventoryType.ArmoryMainHand, bestSlot, InventoryType.EquippedItems, MAIN_HAND_SLOT, true);
+
+        if (!requiresSoulCrystal)
+            return;
+
+        Instance().switchClassJobTaskHelper?.Enqueue
+        (
+            () => TryEquipPendingSoulCrystal(classJob, parentClassJobID, soulCrystalItemID),
+            $"SwitchClassJob_{classJob}"
+        );
+    }
+
+    private static unsafe bool TryEquipPendingSoulCrystal
+    (
+        uint targetClassJobID,
+        uint parentClassJobID,
+        uint soulCrystalItemID
+    )
+    {
+        if (Object   == null ||
+            ClassJob == targetClassJobID)
+            return true;
+
+        if (ClassJob != parentClassJobID)
+            return false;
+
+        var manager = InventoryManager.Instance();
+        if (manager == null)
+            return true;
+
+        if (TryFindItemSlot(manager, InventoryType.ArmorySoulCrystal, soulCrystalItemID, out var targetSoulSlot))
+            manager->MoveItemSlot(InventoryType.ArmorySoulCrystal, targetSoulSlot, InventoryType.EquippedItems, SOUL_CRYSTAL_SLOT, true);
+
+        return true;
+    }
+
+    private static unsafe bool TryCanEquipMainHand
+    (
+        InventoryItem* item,
+        PlayerState*   playerState,
+        ushort         jobLevel,
+        byte           classJobID,
+        byte           pvpRank,
+        out Item       itemData
+    )
+    {
+        itemData = default;
+
+        if (item->IsCollectable())
+            return false;
+
+        var baseItemID = item->GetBaseItemId();
+        if (baseItemID == 0 ||
+            !LuminaGetter.TryGetRow(baseItemID, out itemData))
+            return false;
+
+        if (itemData.EquipSlotCategory is not { IsValid: true, Value.MainHand: 1 })
+            return false;
+
+        return InventoryManager.CanEquip
+               (
+                   baseItemID,
+                   playerState->Race,
+                   playerState->Sex,
+                   jobLevel,
+                   classJobID,
+                   playerState->GrandCompany,
+                   pvpRank,
+                   null
+               ) ==
+               0;
+    }
+
+    private static unsafe bool TryFindItemSlot
+    (
+        InventoryManager* inventoryManager,
+        InventoryType     inventoryType,
+        uint              baseItemID,
+        out ushort        slotIndex
+    )
+    {
+        slotIndex = 0;
+
+        var container = inventoryManager->GetInventoryContainer(inventoryType);
+        if (container == null ||
+            !container->IsLoaded)
+            return false;
+
+        for (var i = 0; i < container->Size; i++)
+        {
+            var slot = container->GetInventorySlot(i);
+            if (slot == null    ||
+                slot->IsEmpty() ||
+                slot->GetBaseItemId() != baseItemID)
+                continue;
+
+            slotIndex = (ushort)i;
+            return true;
+        }
+
+        return false;
+    }
+
     public static unsafe bool HasStatus
     (
         uint    statusID,
@@ -597,4 +849,11 @@ public class LocalPlayerState : OmenServiceBase<LocalPlayerState>
 
         return target.Position + (Vector3.Normalize(Object.Position - target.Position) * target.HitboxRadius);
     }
+
+    #region 常量
+
+    private const ushort MAIN_HAND_SLOT    = 0;
+    private const ushort SOUL_CRYSTAL_SLOT = 13;
+
+    #endregion
 }
