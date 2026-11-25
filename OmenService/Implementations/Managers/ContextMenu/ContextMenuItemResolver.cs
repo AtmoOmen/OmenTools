@@ -213,6 +213,20 @@ internal sealed unsafe class ContextMenuItemResolver : IDisposable
                 glamourID = item.GlamourItemId;
                 break;
             }
+            case "Tryon":
+            {
+                var agent = AgentTryon.Instance();
+                if (agent == null || agent->ContextMenuItem == null || !HasHandler(context, nativeMenuSize, (nint)agent, 3, 8))
+                    break;
+
+                if (agent->ContextMenuItem->EquipSlotCategory < 13)
+                {
+                    itemID    = agent->ContextMenuItem->Id;
+                    glamourID = agent->ContextMenuItem->GlamourId;
+                }
+
+                break;
+            }
             case "MiragePrismPrismBox":
             case "MiragePrismPrismBoxCrystallize":
             {
