@@ -1,6 +1,7 @@
 using System.Numerics;
 using Dalamud.Interface.Colors;
 using Dalamud.Utility.Numerics;
+using OmenTools.OmenService.KeyboardShortcut;
 using static OmenTools.ImGuiOm.ImGuiOm;
 
 namespace OmenTools.ImGuiOm.Widgets;
@@ -18,6 +19,9 @@ public sealed class ImageGallery
                                           DEFAULT_POPUP_ID :
                                           popupID;
 
+    private readonly List<KeyboardShortcutEvent> pendingShortcuts = [];
+
+    private int     shortcutScopeID;
     private double  galleryTransitionStart;
     private double  snapFeedbackStart = -10;
     private double  snapHoldUntil;
@@ -130,11 +134,18 @@ public sealed class ImageGallery
         if (!popup)
         {
             isDragging = false;
+            KeyboardShortcutManager.Instance().Release(ref shortcutScopeID);
             return;
         }
 
         if (urls.Count == 0)
+        {
+            KeyboardShortcutManager.Instance().Release(ref shortcutScopeID);
             return;
+        }
+
+        pendingShortcuts.Clear();
+        KeyboardShortcutManager.Instance().Drain(shortcutScopeID, pendingShortcuts);
 
         previewImageIndex = Math.Clamp
         (
@@ -196,28 +207,40 @@ public sealed class ImageGallery
         ImGuiP.SetItemUsingMouseWheel();
         var isCloseHovered = ImGui.IsItemHovered();
 
-        if (closeClicked)
+        var shouldClose = closeClicked ||
+                          HasPendingShortcut(ImGuiKey.Escape);
+
+        if (shouldClose)
         {
             isDragging = false;
+            KeyboardShortcutManager.Instance().Release(ref shortcutScopeID);
             ImGui.CloseCurrentPopup();
         }
+        else
+            KeyboardShortcutManager.Instance().KeepAlive
+            (
+                ref shortcutScopeID,
+                hasMultiple ?
+                    MATCHES_MULTI_IMAGE_SHORTCUT :
+                    MATCHES_SINGLE_IMAGE_SHORTCUT
+            );
 
         var requestedIndex = previewImageIndex;
 
         if (hasMultiple)
         {
             if (goPrevious ||
-                ImGui.IsKeyPressed(ImGuiKey.LeftArrow))
+                HasPendingShortcut(ImGuiKey.LeftArrow))
                 requestedIndex--;
 
             if (goNext ||
-                ImGui.IsKeyPressed(ImGuiKey.RightArrow))
+                HasPendingShortcut(ImGuiKey.RightArrow))
                 requestedIndex++;
 
-            if (ImGui.IsKeyPressed(ImGuiKey.Home))
+            if (HasPendingShortcut(ImGuiKey.Home))
                 requestedIndex = 0;
 
-            if (ImGui.IsKeyPressed(ImGuiKey.End))
+            if (HasPendingShortcut(ImGuiKey.End))
                 requestedIndex = urls.Count - 1;
 
             requestedIndex = Math.Clamp
@@ -395,11 +418,11 @@ public sealed class ImageGallery
                             ImGui.GetIO().MouseWheel :
                             0f;
             var keyZoomDelta = 0f;
-            if (ImGui.IsKeyPressed(ImGuiKey.Equal) ||
-                ImGui.IsKeyPressed(ImGuiKey.KeypadAdd))
+            if (HasPendingShortcut(ImGuiKey.Equal) ||
+                HasPendingShortcut(ImGuiKey.KeypadAdd))
                 keyZoomDelta = 1f;
-            else if (ImGui.IsKeyPressed(ImGuiKey.Minus) ||
-                     ImGui.IsKeyPressed(ImGuiKey.KeypadSubtract))
+            else if (HasPendingShortcut(ImGuiKey.Minus) ||
+                     HasPendingShortcut(ImGuiKey.KeypadSubtract))
                 keyZoomDelta = -1f;
 
             if (wheel != 0f)
@@ -431,9 +454,9 @@ public sealed class ImageGallery
                     now
                 );
 
-            if (ImGui.IsKeyPressed(ImGuiKey.Key0)    ||
-                ImGui.IsKeyPressed(ImGuiKey.Keypad0) ||
-                ImGui.IsKeyPressed(ImGuiKey.R))
+            if (HasPendingShortcut(ImGuiKey.Key0)    ||
+                HasPendingShortcut(ImGuiKey.Keypad0) ||
+                HasPendingShortcut(ImGuiKey.R))
                 SetZoomTarget
                 (
                     defaultZoom,
@@ -445,8 +468,8 @@ public sealed class ImageGallery
                     true,
                     now
                 );
-            else if (ImGui.IsKeyPressed(ImGuiKey.Key1) ||
-                     ImGui.IsKeyPressed(ImGuiKey.Keypad1))
+            else if (HasPendingShortcut(ImGuiKey.Key1) ||
+                     HasPendingShortcut(ImGuiKey.Keypad1))
                 SetZoomTarget
                 (
                     Math.Clamp(1f, minZoom, maxZoom),
@@ -1396,7 +1419,58 @@ public sealed class ImageGallery
         return (new Vector2(0f, (1f - aspect) / 2f), new Vector2(1f, (1f + aspect) / 2f));
     }
 
+    private bool HasPendingShortcut(ImGuiKey key)
+    {
+        foreach (var shortcut in pendingShortcuts)
+        {
+            if (shortcut.Key == key)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool MatchesGalleryShortcut
+    (
+        KeyboardShortcutEvent shortcut,
+        bool                  allowNavigation
+    ) =>
+        shortcut.Key switch
+        {
+            ImGuiKey.Equal => shortcut.Modifiers is KeyboardShortcutModifiers.None or KeyboardShortcutModifiers.Shift,
+            ImGuiKey.KeypadAdd or
+                ImGuiKey.Minus or
+                ImGuiKey.KeypadSubtract => shortcut.Modifiers == KeyboardShortcutModifiers.None,
+            ImGuiKey.Escape or
+                ImGuiKey.Key0 or
+                ImGuiKey.Keypad0 or
+                ImGuiKey.R or
+                ImGuiKey.Key1 or
+                ImGuiKey.Keypad1 => shortcut is
+                {
+                    IsRepeat: false,
+                    Modifiers: KeyboardShortcutModifiers.None
+                },
+            ImGuiKey.LeftArrow or
+                ImGuiKey.RightArrow => allowNavigation &&
+                                       shortcut.Modifiers == KeyboardShortcutModifiers.None,
+            ImGuiKey.Home or
+                ImGuiKey.End => allowNavigation &&
+                                shortcut is
+                                {
+                                    IsRepeat: false,
+                                    Modifiers: KeyboardShortcutModifiers.None
+                                },
+            _ => false
+        };
+
     #region 常量
+
+    private static readonly Func<KeyboardShortcutEvent, bool> MATCHES_SINGLE_IMAGE_SHORTCUT =
+        static shortcut => MatchesGalleryShortcut(shortcut, false);
+
+    private static readonly Func<KeyboardShortcutEvent, bool> MATCHES_MULTI_IMAGE_SHORTCUT =
+        static shortcut => MatchesGalleryShortcut(shortcut, true);
 
     private const string DEFAULT_POPUP_ID = "OmenImageGalleryPopup";
 
