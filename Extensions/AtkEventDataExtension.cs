@@ -18,9 +18,14 @@ public static unsafe class AtkEventDataExtension
         public bool    IsControlHeld => data.MouseData.Modifier.HasFlag(ModifierFlag.Ctrl);
         public bool    IsShiftHeld   => data.MouseData.Modifier.HasFlag(ModifierFlag.Shift);
         public bool    IsDragging    => data.MouseData.Modifier.HasFlag(ModifierFlag.Dragging);
-        public bool    IsScrollUp    => data.MouseData.WheelDirection is 1;
-        public bool    IsScrollDown  => data.MouseData.WheelDirection is -1;
+        public bool    IsScrollUp    => data.MouseData.WheelDirection >= 1;
+        public bool    IsScrollDown  => data.MouseData.WheelDirection <= -1;
         public Vector2 MousePosition => new(data.MouseData.PosX, data.MouseData.PosY);
+
+        /// <summary>
+        ///     获取当前鼠标滚轮事件的有符号滚动量，正数表示向上，负数表示向下。
+        /// </summary>
+        public int ScrollValue => data.MouseData.WheelDirection;
     }
 
     extension
@@ -38,8 +43,13 @@ public static unsafe class AtkEventDataExtension
         public bool    IsControlHeld => eventData.GetAtkEventData()->MouseData.Modifier.HasFlag(ModifierFlag.Ctrl);
         public bool    IsShiftHeld   => eventData.GetAtkEventData()->MouseData.Modifier.HasFlag(ModifierFlag.Shift);
         public bool    IsDragging    => eventData.GetAtkEventData()->MouseData.Modifier.HasFlag(ModifierFlag.Dragging);
-        public bool    IsScrollUp    => eventData.GetAtkEventData()->MouseData.WheelDirection is 1;
-        public bool    IsScrollDown  => eventData.GetAtkEventData()->MouseData.WheelDirection is -1;
+        public bool    IsScrollUp    => eventData.GetAtkEventData()->MouseData.WheelDirection >= 1;
+        public bool    IsScrollDown  => eventData.GetAtkEventData()->MouseData.WheelDirection <= -1;
         public Vector2 MousePosition => new(eventData.GetAtkEventData()->MouseData.PosX, eventData.GetAtkEventData()->MouseData.PosY);
+
+        /// <summary>
+        ///     获取当前鼠标滚轮事件的有符号滚动量，正数表示向上，负数表示向下。
+        /// </summary>
+        public int ScrollValue => eventData.GetAtkEventData()->MouseData.WheelDirection;
     }
 }
