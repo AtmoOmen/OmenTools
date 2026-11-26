@@ -53,11 +53,14 @@ public sealed class DService
         {
             try
             {
-                ExpansionInterop.Initialize(instance.SigScanner.SearchBase, DLog.Error);
+                ExpansionInterop.Init(instance.SigScanner.SearchBase, out var addresses);
+
+                if (addresses.Count > 0)
+                    DLog.Error($"[FFXIVClientStructs.Expansion] 无法解析下列地址。\n{string.Join('\n', addresses)}");
             }
             catch (Exception ex)
             {
-                DLog.Error("[OmenTools] 初始化 FFXIVClientStructs.Expansion 时发生错误。", ex);
+                DLog.Error("[FFXIVClientStructs.Expansion] 初始化时发生错误。", ex);
             }
 
 
@@ -143,7 +146,7 @@ public sealed class DService
         }
         finally
         {
-            await IFramework.Instance().Run(ExpansionInterop.Uninitialize).ConfigureAwait(false);
+            await IFramework.Instance().Run(ExpansionInterop.Uninit).ConfigureAwait(false);
             IsInitialized = false;
             IsDisposed    = true;
         }
