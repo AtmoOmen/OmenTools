@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using OmenTools.Dalamud;
 using Task = System.Threading.Tasks.Task;
 
 namespace OmenTools.Interop.Windows.Helpers;
@@ -45,7 +46,7 @@ public static class KeyEmulationHelper
                 break;
             }
             default:
-                IPluginLog.Instance().Error($"尝试发送非法按键 {key}, 已阻止");
+                DLog.Error($"阻止了发送非法按键“{key}”。");
                 break;
         }
     }
