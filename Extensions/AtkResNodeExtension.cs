@@ -7,7 +7,7 @@ using OmenTools.Interop.Game.Models;
 
 namespace OmenTools.Extensions;
 
-public static unsafe partial class AtkResNodeExtension
+public static unsafe class AtkResNodeExtension
 {
     extension
     (
