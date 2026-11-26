@@ -1,5 +1,6 @@
 using System.Globalization;
 using Dalamud;
+using OmenTools.Dalamud;
 
 namespace OmenTools.Interop.Game;
 
@@ -100,7 +101,7 @@ public class MemoryPatch : IDisposable
         if (ISigScanner.Instance().TryScanModule(sig, out var address))
             return address;
 
-        IPluginLog.Instance().Warning($"未能为 MemoryPatch 搜寻到签名 {sig}");
+        DLog.Warning($"未能为 MemoryPatch 搜寻到签名“{sig}”。");
         return nint.Zero;
     }
 
