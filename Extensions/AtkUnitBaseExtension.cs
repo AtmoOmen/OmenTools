@@ -10,6 +10,63 @@ public static unsafe class AtkUnitBaseExtension
 {
     extension(scoped ref AtkUnitBase addon)
     {
+        /// <summary>
+        ///     获取界面位置。
+        /// </summary>
+        public Vector2 Position => new(addon.X, addon.Y);
+
+        /// <summary>
+        ///     获取或设置界面大小，同时更新窗口节点及碰撞节点列表。
+        /// </summary>
+        public Vector2 Size
+        {
+            get
+            {
+                ushort width  = 0;
+                ushort height = 0;
+                addon.GetSize(&width, &height, false);
+                return new Vector2(width, height);
+            }
+            set => addon.Resize(value);
+        }
+
+        /// <summary>
+        ///     获取根节点大小；根节点不存在时返回零。
+        /// </summary>
+        public Vector2 RootSize => addon.RootNode is null ?
+                                       Vector2.Zero :
+                                       new Vector2(addon.RootNode->Width, addon.RootNode->Height);
+
+        /// <summary>
+        ///     获取界面及根节点是否均处于可见状态。
+        /// </summary>
+        public bool IsActuallyVisible =>
+            addon.IsVisible             &&
+            addon.RootNode is not null  &&
+            addon.RootNode->IsVisible() &&
+            (addon.VisibilityFlags & 5) is 0;
+
+        /// <summary>
+        ///     更新界面、窗口与标题栏碰撞节点的大小，并重建绘制和碰撞节点列表。
+        /// </summary>
+        /// <param name="newSize">新的界面宽度与高度。</param>
+        public void Resize(Vector2 newSize)
+        {
+            var windowNode = addon.WindowNode;
+            if (windowNode is null)
+                return;
+
+            windowNode->SetWidth((ushort)newSize.X);
+            windowNode->SetHeight((ushort)newSize.Y);
+
+            if (addon.WindowHeaderCollisionNode is not null)
+                addon.WindowHeaderCollisionNode->SetWidth((ushort)(newSize.X - 14.0f));
+
+            addon.SetSize((ushort)newSize.X, (ushort)newSize.Y);
+            windowNode->Component->UldManager.UpdateDrawNodeList();
+            addon.UpdateCollisionNodeList(false);
+        }
+
         public T* As<T>() where T : unmanaged
         {
             fixed (AtkUnitBase* addonPtr = &addon)
@@ -179,7 +236,9 @@ public static unsafe class AtkUnitBaseExtension
             {
                 if (!addonPtr->IsAddonAndNodesReady()) return string.Empty;
 
-                var windowNode = windowNodeID != null ? (AtkComponentNode*)addonPtr->GetNodeById(windowNodeID.Value) : addonPtr->WindowNode;
+                var windowNode = windowNodeID != null ?
+                                     (AtkComponentNode*)addonPtr->GetNodeById(windowNodeID.Value) :
+                                     addonPtr->WindowNode;
                 if (windowNode == null) return string.Empty;
 
                 var mainTitle     = string.Empty;
@@ -192,7 +251,9 @@ public static unsafe class AtkUnitBaseExtension
                 if (subTitleNode != null)
                     subTitle = subTitleNode->GetText().ToString();
 
-                var windowTitle = !string.IsNullOrWhiteSpace(subTitle) ? subTitle : mainTitle;
+                var windowTitle = !string.IsNullOrWhiteSpace(subTitle) ?
+                                      subTitle :
+                                      mainTitle;
                 return windowTitle;
             }
         }
