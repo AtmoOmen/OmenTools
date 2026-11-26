@@ -9,23 +9,36 @@ public static unsafe class AtkExtension
 {
     extension(scoped ref AtkImageNode node)
     {
+        /// <summary>
+        ///     获取图像节点当前选中纹理部件的图标行号。
+        /// </summary>
+        /// <returns>图标行号；纹理部件或资源无效时返回零。</returns>
         public uint GetIconID()
         {
             fixed (AtkImageNode* ptr = &node)
             {
-                if (ptr == null) return 0;
+                if (ptr == null)
+                    return 0;
 
                 var partList = ptr->PartsList;
-                if (partList == null) return 0;
+                if (partList == null)
+                    return 0;
+                if (ptr->PartId >= partList->PartCount)
+                    return 0;
 
                 var parts = partList->Parts;
-                if (parts == null) return 0;
+                if (parts == null)
+                    return 0;
 
                 var asset = parts[ptr->PartId].UldAsset;
-                if (asset == null) return 0;
+                if (asset == null)
+                    return 0;
+                if (asset->AtkTexture.TextureType != TextureType.Resource)
+                    return 0;
 
                 var resource = asset->AtkTexture.Resource;
-                if (resource == null) return 0;
+                if (resource == null)
+                    return 0;
 
                 return resource->IconId;
             }
