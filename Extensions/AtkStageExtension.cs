@@ -10,11 +10,32 @@ public static unsafe class AtkStageExtension
 {
     extension(scoped ref AtkStage atkStage)
     {
+        /// <summary>
+        ///     清除输入管理器、碰撞管理器及界面中保存的目标节点焦点和鼠标点击引用。
+        /// </summary>
+        /// <param name="targetNode">即将释放或需要取消焦点的节点。</param>
         public void ClearNodeFocus(AtkResNode* targetNode)
         {
             if (targetNode is null) return;
 
-            foreach (ref var focusEntry in atkStage.AtkInputManager->FocusList)
+            var inputManager = atkStage.AtkInputManager;
+
+            if (inputManager->FocusedNode == targetNode)
+                inputManager->FocusedNode = null;
+
+            if ((AtkResNode*)atkStage.AtkCollisionManager->IntersectingCollisionNode == targetNode)
+                atkStage.AtkCollisionManager->IntersectingCollisionNode = null;
+
+            for (var index = 0; index < inputManager->SavedMouseClicksCollisionNodes.Length; index++)
+            {
+                if ((AtkResNode*)inputManager->SavedMouseClicksCollisionNodes[index].Value != targetNode)
+                    continue;
+
+                inputManager->SavedMouseClicksCollisionNodes[index] = null;
+                inputManager->SavedMouseClicks[index]               = default;
+            }
+
+            foreach (ref var focusEntry in inputManager->FocusList)
             {
                 if (focusEntry.AtkEventListener is null) continue;
 
@@ -22,9 +43,6 @@ public static unsafe class AtkStageExtension
                 {
                     focusEntry.AtkEventTarget = null;
                     focusEntry.FocusParam     = 0;
-
-                    atkStage.AtkInputManager->FocusedNode                   = null;
-                    atkStage.AtkCollisionManager->IntersectingCollisionNode = null;
 
                     var addon = (AtkUnitBase*)focusEntry.AtkEventListener;
 
