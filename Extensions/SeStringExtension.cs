@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -17,6 +18,25 @@ namespace OmenTools.Extensions;
 
 public static class SeStringExtension
 {
+    extension(ReadOnlySeString seString)
+    {
+        /// <summary>
+        ///     将富文本的文本表示解析为忽略大小写且不受区域性影响的正则表达式。
+        /// </summary>
+        /// <returns>解析后的正则表达式；表达式无效时返回空模式。</returns>
+        public Regex AsRegex()
+        {
+            try
+            {
+                return new Regex(seString.ToString(), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            }
+            catch (RegexParseException)
+            {
+                return new Regex(string.Empty);
+            }
+        }
+    }
+
     private const char SE_SQUARE_COUNT_BASE_CHAR = '\uE08F';
     private const char SE_SMALL_COUNT_BASE_CHAR  = '\uE060';
     private const char SE_HEX_COUNT_BASE_CHAR    = '\uE0B0';
@@ -133,7 +153,7 @@ public static class SeStringExtension
             );
         }
     }
-    
+
     // 只是复制
     extension
     (
@@ -271,7 +291,7 @@ public static class SeStringExtension
                     paramValue
                 ]
             );
-        
+
         public static ReadOnlySeString FormatIncorrectCommandParamLogMessage
         (
             int              index,
@@ -306,7 +326,7 @@ public static class SeStringExtension
 
             return builder.ToReadOnlySeString();
         }
-        
+
         public static ReadOnlySeString CreatePlayerLink
         (
             string            playerName,
