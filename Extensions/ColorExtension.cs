@@ -1,7 +1,6 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using OmenTools.Dalamud.DataShare.Attributes;
 
 namespace OmenTools.Extensions;
@@ -35,24 +34,19 @@ public static unsafe class ColorExtension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 ToVector4() =>
             UIntToVector4.GetOrAdd(color, _ => ImGui.ColorConvertU32ToFloat4(color));
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 ReverseToVector4() =>
-            ReverseUIntToVector4.GetOrAdd(color, _ =>
+            ReverseUIntToVector4.GetOrAdd
+            (
+                color,
+                _ =>
                 {
                     var processed = ImGui.ColorConvertU32ToFloat4(color);
                     processed = new Vector4(processed.Z, processed.Y, processed.X, 1f);
                     return processed;
                 }
             );
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector4 GetVector4UIColor() =>
-            AtkStage.Instance()->AtkUIColorHolder->GetColor(true, color).ToVector4();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint GetUIntUIColor() =>
-            AtkStage.Instance()->AtkUIColorHolder->GetColor(true, color);
     }
 
     extension(scoped in Vector4 color)
@@ -94,9 +88,9 @@ public static unsafe class ColorExtension
             return new Vector4(r, g, b, a);
         }
     }
-    
+
     #region 数据
-    
+
     [DataShareTag]
     private const string IMGUI_COL_TO_VECTOR4_TAG = "OmenTools.Extensions.ColorExtension.ImGuiColToVector4";
 
@@ -132,6 +126,6 @@ public static unsafe class ColorExtension
 
     private static readonly Dictionary<uint, Vector4> ReverseUIntToVector4 =
         IDalamudPluginInterface.Instance().GetOrCreateData(REVERSE_UINT_TO_VECTOR4_TAG, static () => new Dictionary<uint, Vector4>());
-    
+
     #endregion
 }
