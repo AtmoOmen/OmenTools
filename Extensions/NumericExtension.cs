@@ -5,12 +5,49 @@ using System.Text;
 using Dalamud.Utility;
 using Lumina.Data;
 using Lumina.Text.ReadOnly;
-using OmenTools.OmenService;
 
 namespace OmenTools.Extensions;
 
 public static class NumericExtension
 {
+    extension<T>(T value) where T : IBinaryInteger<T>
+    {
+        /// <summary>
+        ///     判断整数是否包含指定掩码中的任意标志位。
+        /// </summary>
+        /// <param name="mask">要检查的标志位掩码。</param>
+        /// <returns>至少有一个指定标志位置位时返回真。</returns>
+        public bool ReadFlag(T mask) =>
+            (value & mask) != T.Zero;
+    }
+
+    extension<T>(ref T value) where T : struct, IBinaryInteger<T>
+    {
+        /// <summary>
+        ///     将掩码指定的标志位置位，并直接修改整数变量。
+        /// </summary>
+        /// <param name="mask">要置位的标志位掩码。</param>
+        public void SetFlag(T mask) =>
+            value |= mask;
+
+        /// <summary>
+        ///     将掩码指定的标志位清零，并直接修改整数变量。
+        /// </summary>
+        /// <param name="mask">要清零的标志位掩码。</param>
+        public void ClearFlag(T mask) =>
+            value &= ~mask;
+
+        /// <summary>
+        ///     根据指定状态设置或清除掩码中的标志位，并直接修改整数变量。
+        /// </summary>
+        /// <param name="mask">要更新的标志位掩码。</param>
+        /// <param name="enabled">是否将指定标志位置位。</param>
+        public void UpdateFlag(T mask, bool enabled) =>
+            value = enabled ?
+                        value | mask :
+                        value & ~mask;
+    }
+
     private static bool IsValidFormatLanguage
     (
         Language language
@@ -18,10 +55,10 @@ public static class NumericExtension
         language switch
         {
             Language.ChineseSimplified or
-            Language.ChineseTraditional or
-            Language.Japanese or
-            Language.TraditionalChinese or
-            Language.Korean => true,
+                Language.ChineseTraditional or
+                Language.Japanese or
+                Language.TraditionalChinese or
+                Language.Korean => true,
             _ => false
         };
 
@@ -34,9 +71,9 @@ public static class NumericExtension
         )
         {
             if (!IsValidFormatLanguage(GameState.ClientLanguage) || T.IsZero(number))
-                return [with(number.ToString())];
+                return new ReadOnlySeString(number.ToString());
 
-            string strZhao = "兆";
+            var    strZhao = "兆";
             string strYi   = "亿", strWan = "万", strZero = "零";
 
             switch (GameState.ClientLanguage)
@@ -272,15 +309,21 @@ public static class NumericExtension
             ReadOnlySpan<char> source = sourceBuffer[..charsWritten];
 
             var decimalPointIndex = source.IndexOf('.');
-            var isNegative        = source.Length > 0 && source[0] == '-' ? 1 : 0;
+            var isNegative = source.Length > 0 && source[0] == '-' ?
+                                 1 :
+                                 0;
 
-            var integerEndIndex = decimalPointIndex >= 0 ? decimalPointIndex : charsWritten;
-            var integerLength   = integerEndIndex - isNegative;
+            var integerEndIndex = decimalPointIndex >= 0 ?
+                                      decimalPointIndex :
+                                      charsWritten;
+            var integerLength = integerEndIndex - isNegative;
 
             const int GROUP_SIZE = 4;
 
-            var separatorCount = integerLength > 0 ? (integerLength - 1) / GROUP_SIZE : 0;
-            var finalLength    = charsWritten + separatorCount;
+            var separatorCount = integerLength > 0 ?
+                                     (integerLength - 1) / GROUP_SIZE :
+                                     0;
+            var finalLength = charsWritten + separatorCount;
 
             return string.Create
             (
@@ -390,7 +433,9 @@ public static class NumericExtension
 
                 if (i == s.Length) return 0;
 
-                return Int128.TryParse(s[i..], NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ? result : Int128.Zero;
+                return Int128.TryParse(s[i..], NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ?
+                           result :
+                           Int128.Zero;
             }
         }
     }
