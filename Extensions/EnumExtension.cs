@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
+using System.Resources;
 using System.Runtime.CompilerServices;
 
 namespace OmenTools.Extensions;
@@ -13,12 +15,17 @@ public static class EnumExtension
     ///     获取枚举成员上通过 <see cref="DescriptionAttribute" /> 声明的描述文本。
     /// </summary>
     /// <param name="value">要获取描述文本的枚举值。</param>
+    /// <param name="resourceManager">用于将描述文本解析为本地化文本的资源管理器。</param>
+    /// <param name="culture">解析本地化文本使用的区域性。</param>
     /// <returns>枚举成员的描述文本；未声明特性或找不到对应成员时返回其名称。</returns>
     public static string GetDescription
     (
-        this Enum value
-    ) =>
-        DescriptionAttributeCache.GetValue(value.GetType(), static _ => []).GetOrAdd
+        this Enum        value,
+        ResourceManager? resourceManager = null,
+        CultureInfo?     culture         = null
+    )
+    {
+        var description = DescriptionAttributeCache.GetValue(value.GetType(), static _ => []).GetOrAdd
         (
             value,
             v =>
@@ -30,6 +37,12 @@ public static class EnumExtension
                 return attribute?.Description ?? v.ToString();
             }
         );
+
+        return resourceManager is not null &&
+               culture is not null ?
+                   resourceManager.GetString(description, culture) ?? description :
+                   description;
+    }
 
     extension<T>
     (
