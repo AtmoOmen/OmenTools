@@ -132,6 +132,9 @@ public sealed class DService
             Sheets.CNWorlds.Clear();
 
             LGBAssets.ZoneLineExitRanges.Clear();
+            
+            AtkUldPartExtension.FileExistsCache.Clear();
+            AtkUldPartExtension.ThemeTexturePaths.Clear();
         }
         catch (Exception ex)
         {
