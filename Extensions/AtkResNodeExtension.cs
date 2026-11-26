@@ -7,10 +7,273 @@ using OmenTools.Interop.Game.Models;
 
 namespace OmenTools.Extensions;
 
-public static unsafe class AtkResNodeExtension
+public static unsafe partial class AtkResNodeExtension
 {
-    extension(scoped ref AtkResNode node)
+    extension
+    (
+        scoped ref AtkResNode node
+    )
     {
+        /// <summary>
+        ///     获取或设置节点的局部位置，设置时更新节点状态。
+        /// </summary>
+        public Vector2 Position
+        {
+            get => new(node.X, node.Y);
+            set => node.SetPositionFloat(value.X, value.Y);
+        }
+
+        /// <summary>
+        ///     获取节点的屏幕位置。
+        /// </summary>
+        public Vector2 ScreenPosition
+            => new(node.ScreenX, node.ScreenY);
+
+        /// <summary>
+        ///     获取或设置节点的局部尺寸，设置时更新节点状态。
+        /// </summary>
+        public Vector2 Size
+        {
+            get => new(node.GetWidth(), node.GetHeight());
+            set
+            {
+                node.SetWidth((ushort)value.X);
+                node.SetHeight((ushort)value.Y);
+            }
+        }
+
+        /// <summary>
+        ///     获取节点在父节点坐标系中的矩形边界。
+        /// </summary>
+        public Bounds Bounds => new()
+        {
+            TopLeft     = node.Position,
+            BottomRight = node.Position + node.Size
+        };
+
+        /// <summary>
+        ///     获取节点在父节点坐标系中的中心位置。
+        /// </summary>
+        public Vector2 Center
+            => node.Position + (node.Size / 2.0f);
+
+        /// <summary>
+        ///     获取或设置节点的局部缩放，设置时更新节点状态。
+        /// </summary>
+        public Vector2 Scale
+        {
+            get => new(node.GetScaleX(), node.GetScaleY());
+            set => node.SetScale(value.X, value.Y);
+        }
+
+        /// <summary>
+        ///     获取或设置节点的旋转角度，单位为度，设置时将角度归入一周范围。
+        /// </summary>
+        public float RotationDegrees
+        {
+            get => node.GetRotationDegrees();
+            set => node.SetRotationDegrees(value - ((int)(value / 360.0f) * 360.0f));
+        }
+
+        /// <summary>
+        ///     获取或设置节点的变换原点，设置时更新节点状态。
+        /// </summary>
+        public Vector2 Origin
+        {
+            get => new(node.OriginX, node.OriginY);
+            set => node.SetOrigin(value.X, value.Y);
+        }
+
+        /// <summary>
+        ///     获取或设置节点自身的可见状态。
+        /// </summary>
+        public bool Visible
+        {
+            get => node.IsVisible();
+            set => node.ToggleVisibility(value);
+        }
+
+        /// <summary>
+        ///     获取或设置节点的 RGBA 颜色，各分量使用归一化数值。
+        /// </summary>
+        public Vector4 ColorVector
+        {
+            get => node.Color.ToVector4();
+            set => node.Color = value.ToByteColor();
+        }
+
+        /// <summary>
+        ///     获取或设置节点的 HSVA 颜色。
+        /// </summary>
+        /// <remarks>
+        ///     与 RGBA 颜色相互转换时可能产生舍入误差。
+        /// </remarks>
+        public ColorHelpers.HsvaColor ColorHsva
+        {
+            get => ColorHelpers.RgbaToHsv(node.ColorVector);
+            set => node.Color = ColorHelpers.HsvToRgb(value).ToByteColor();
+        }
+
+        /// <summary>
+        ///     获取或设置节点的加算颜色。
+        /// </summary>
+        /// <remarks>
+        ///     各分量使用 0 到 1 之间的归一化数值。
+        /// </remarks>
+        public Vector3 AddColor
+        {
+            get => new Vector3(node.AddRed, node.AddGreen, node.AddBlue) / 255.0f;
+            set
+            {
+                node.AddRed   = (short)(value.X * 255);
+                node.AddGreen = (short)(value.Y * 255);
+                node.AddBlue  = (short)(value.Z * 255);
+            }
+        }
+
+        /// <summary>
+        ///     获取或设置加算颜色的 HSVA 表示。
+        /// </summary>
+        /// <remarks>
+        ///     与 RGBA 颜色相互转换时可能产生舍入误差。
+        /// </remarks>
+        public ColorHelpers.HsvaColor AddColorHsva
+        {
+            get => ColorHelpers.RgbaToHsv(node.AddColor.AsVector4());
+            set => node.AddColor = ColorHelpers.HsvToRgb(value).AsVector3();
+        }
+
+        /// <summary>
+        ///     获取或设置节点的乘算颜色。
+        /// </summary>
+        /// <remarks>
+        ///     各分量使用 0 到 1 之间的归一化数值。
+        /// </remarks>
+        public Vector3 MultiplyColor
+        {
+            get => new Vector3(node.MultiplyRed, node.MultiplyGreen, node.MultiplyBlue) / 100.0f;
+            set
+            {
+                node.MultiplyRed   = (byte)(value.X * 100.0f);
+                node.MultiplyGreen = (byte)(value.Y * 100.0f);
+                node.MultiplyBlue  = (byte)(value.Z * 100.0f);
+            }
+        }
+
+        /// <summary>
+        ///     获取或设置乘算颜色的 HSVA 表示。
+        /// </summary>
+        /// <remarks>
+        ///     与 RGBA 颜色相互转换时可能产生舍入误差。
+        /// </remarks>
+        public ColorHelpers.HsvaColor MultiplyColorHsva
+        {
+            get => ColorHelpers.RgbaToHsv(node.MultiplyColor.AsVector4());
+            set => node.MultiplyColor = ColorHelpers.HsvToRgb(value).AsVector3();
+        }
+
+        /// <summary>
+        ///     检查节点自身及全部父节点，获取节点是否实际可见。
+        /// </summary>
+        public bool IsActuallyVisible
+        {
+            get
+            {
+                if (!node.Visible)
+                    return false;
+
+                var targetNode = node.ParentNode;
+
+                while (targetNode is not null)
+                {
+                    if (!targetNode->Visible)
+                        return false;
+                    targetNode = targetNode->ParentNode;
+                }
+
+                return true;
+            }
+        }
+
+        /// <summary>
+        ///     将指定标志加入节点标志集合。
+        /// </summary>
+        public void AddNodeFlag
+        (
+            params ReadOnlySpan<NodeFlags> flags
+        )
+        {
+            foreach (var flag in flags)
+                node.NodeFlags |= flag;
+        }
+
+        /// <summary>
+        ///     从节点标志集合中移除指定标志。
+        /// </summary>
+        public void RemoveNodeFlag
+        (
+            params ReadOnlySpan<NodeFlags> flags
+        )
+        {
+            foreach (var flag in flags)
+                node.NodeFlags &= ~flag;
+        }
+
+        /// <summary>
+        ///     将指定标志加入节点绘制标志集合。
+        /// </summary>
+        public void AddDrawFlag
+        (
+            params ReadOnlySpan<DrawFlags> flags
+        )
+        {
+            foreach (var flag in flags)
+                node.DrawFlags |= (uint)flag;
+        }
+
+        /// <summary>
+        ///     从节点绘制标志集合中移除指定标志。
+        /// </summary>
+        public void RemoveDrawFlag
+        (
+            params ReadOnlySpan<DrawFlags> flags
+        )
+        {
+            foreach (var flag in flags)
+                node.DrawFlags &= ~(uint)flag;
+        }
+
+        /// <summary>
+        ///     使用整数坐标检查与节点的碰撞，可选择是否包含边界。
+        /// </summary>
+        public bool CheckCollision
+        (
+            short x,
+            short y,
+            bool  inclusive = true
+        )
+            => node.CheckCollisionAtCoords(x, y, inclusive);
+
+        /// <summary>
+        ///     使用向量坐标检查与节点的碰撞，可选择是否包含边界。
+        /// </summary>
+        public bool CheckCollision
+        (
+            Vector2 position,
+            bool    inclusive = true
+        )
+            => node.CheckCollisionAtCoords((short)position.X, (short)position.Y, inclusive);
+
+        /// <summary>
+        ///     使用原生鼠标事件中的坐标检查与节点的碰撞，可选择是否包含边界。
+        /// </summary>
+        public bool CheckCollision
+        (
+            AtkEventData* eventData,
+            bool          inclusive = true
+        )
+            => node.CheckCollisionAtCoords(eventData->MouseData.PosX, eventData->MouseData.PosY, inclusive);
+
         /// <remarks>
         ///     会自动移除节点本身设置位置的时间线，对于很多界面很有效。
         /// </remarks>
@@ -54,7 +317,9 @@ public static unsafe class AtkResNodeExtension
                      (
                          position,
                          position + size,
-                         nodeVisible ? KnownColor.Lime.ToUInt() : KnownColor.CadetBlue.ToUInt()
+                         nodeVisible ?
+                             KnownColor.Lime.ToUInt() :
+                             KnownColor.CadetBlue.ToUInt()
                      );
             }
         }
@@ -331,9 +596,9 @@ public static unsafe class AtkResNodeExtension
         {
             fixed (AtkResNode* nodePtr = &node)
             {
-                if (nodePtr == null) return null;
-
-                return RaptureAtkUnitManager.Instance()->GetAddonByNode(nodePtr);
+                return nodePtr == null ?
+                           null :
+                           RaptureAtkUnitManager.Instance()->GetAddonByNode(nodePtr);
             }
         }
     }
