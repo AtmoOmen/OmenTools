@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -6,6 +8,28 @@ namespace OmenTools.Extensions;
 
 public static class CommonExtension
 {
+    /// <summary>
+    ///     比较两个值；引用类型按对象身份比较，值类型按内存内容比较。
+    /// </summary>
+    /// <typeparam name="T">参与比较的数据类型。</typeparam>
+    /// <param name="left">左侧值。</param>
+    /// <param name="right">右侧值。</param>
+    /// <returns>引用相同或值类型内存内容相同时返回真。</returns>
+    public static bool AreEqual<T>(this T? left, T? right)
+    {
+        if (default(T) == null)
+            return ReferenceEquals(left, right);
+
+        if (left  == null ||
+            right == null)
+            return left  == null &&
+                   right == null;
+
+        var leftSpan  = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<T, byte>(ref left),  Unsafe.SizeOf<T>());
+        var rightSpan = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<T, byte>(ref right), Unsafe.SizeOf<T>());
+        return leftSpan.SequenceEqual(rightSpan);
+    }
+
     extension<T>(T config) where T : class
     {
         public string ToJSONBase64() =>
@@ -17,19 +41,15 @@ public static class CommonExtension
 
     extension(string textData)
     {
-        public T? FromJSON<T>() where T : class
-        {
-            if (string.IsNullOrEmpty(textData)) return null;
+        public T? FromJSON<T>() where T : class =>
+            string.IsNullOrEmpty(textData) ?
+                null :
+                JsonConvert.DeserializeObject<T>(textData, JsonSerializerSettings.GetShared());
 
-            return JsonConvert.DeserializeObject<T>(textData, JsonSerializerSettings.GetShared());
-        }
-
-        public T? FromJSONBase64<T>() where T : class
-        {
-            if (string.IsNullOrEmpty(textData)) return null;
-
-            return Encoding.UTF8.GetString(Convert.FromBase64String(textData)).FromJSON<T>();
-        }
+        public T? FromJSONBase64<T>() where T : class =>
+            string.IsNullOrEmpty(textData) ?
+                null :
+                Encoding.UTF8.GetString(Convert.FromBase64String(textData)).FromJSON<T>();
     }
 
     extension(byte[] haystack)
@@ -58,6 +78,6 @@ public static class CommonExtension
         }
 
         public bool TryFindBytes(string needle, out int pos) =>
-            haystack.TryFindBytes(needle.Split(" ").Select(x => byte.Parse(x, NumberStyles.HexNumber)).ToArray(), out pos);
+            haystack.TryFindBytes([.. needle.Split(" ").Select(x => byte.Parse(x, NumberStyles.HexNumber))], out pos);
     }
 }
