@@ -11,10 +11,11 @@ public static class BossModIPC
     
     public const string REBORN_INTERNAL_NAME = "BossModReborn";
 
-    public static bool IsPluginEnabled() => 
-        IDalamudPluginInterface.Instance().IsPluginEnabled(INTERNAL_NAME) ||
-        IDalamudPluginInterface.Instance().IsPluginEnabled(REBORN_INTERNAL_NAME);
-    
+    public static bool IsPluginEnabled(bool onlyReborn = true) =>
+        onlyReborn ?
+            IDalamudPluginInterface.Instance().IsPluginEnabled(REBORN_INTERNAL_NAME) :
+            IDalamudPluginInterface.Instance().IsPluginEnabled(INTERNAL_NAME) ||
+            IDalamudPluginInterface.Instance().IsPluginEnabled(REBORN_INTERNAL_NAME);
 
     [IPCSubscriber("BossMod.HasModuleByDataId", DefaultValue = "false")]
     private static IPCSubscriber<uint, bool>? HasModuleByDataID;
