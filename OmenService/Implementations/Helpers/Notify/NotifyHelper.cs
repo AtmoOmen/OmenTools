@@ -370,20 +370,22 @@ public class NotifyHelper : OmenServiceBase<NotifyHelper>
         XivChatType       chatType = XivChatType.SystemMessage
     )
     {
-        using var rented  = new RentedSeStringBuilder();
-        var       builder = rented.Builder;
-
-        AppendPrefix(builder, prefix);
-        builder.Append(message);
-
         var chat = IChatGui.Instance();
 
         chat.Print
         (
             new XivChatEntry
             {
-                Message = builder.ToReadOnlySeString().ToDalamudString(),
-                Type    = chatType
+                Message = SeStringBuilder.Build
+                (
+                    (message, prefix),
+                    static (builder, state) =>
+                    {
+                        AppendPrefix(builder, state.prefix);
+                        builder.Append(state.message);
+                    }
+                ).ToDalamudString(),
+                Type = chatType
             }
         );
     }

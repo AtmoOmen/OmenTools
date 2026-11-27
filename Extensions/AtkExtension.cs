@@ -1,5 +1,4 @@
 using System.Numerics;
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace OmenTools.Extensions;
@@ -51,8 +50,6 @@ public static unsafe class AtkExtension
         {
             fixed (AtkTextNode* ptr = &node)
             {
-                using var builder = new RentedSeStringBuilder();
-
                 ushort sizeX = 0;
                 ushort sizeY = 0;
 

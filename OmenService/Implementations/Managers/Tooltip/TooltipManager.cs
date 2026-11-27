@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using System.Runtime.InteropServices;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Utility;
@@ -9,11 +8,10 @@ using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using InteropGenerator.Runtime;
-using Lumina.Data;
+using Lumina.Text;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
 using OmenTools.Info.Game.Data;
-using OmenTools.Interop.Game.Models;
 using OmenTools.OmenService.Abstractions;
 
 namespace OmenTools.OmenService;
@@ -269,8 +267,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             var index = (int)target;
             if ((uint)index >= (uint)itemOriginalTexts.Length) continue;
 
-            using var rentedBuilder = new RentedSeStringBuilder();
-            var       builder       = rentedBuilder.Builder;
+            using var _ = SeStringBuilder.Rent(out var builder);
 
             var hasText = false;
 
@@ -404,7 +401,7 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
         var addon = (AddonItemDetail*)ItemDetail;
 
         addon->DescriptionText->Width = 350;
-        
+
         if (addon->MaterializeText->Width != 350)
         {
             addon->MaterializeText->Width       =  350;
@@ -516,10 +513,8 @@ public unsafe class TooltipManager : OmenServiceBase<TooltipManager>
             var index = (int)target;
             if ((uint)index >= (uint)actionOriginalTexts.Length) continue;
 
-            using var rentedBuilder = new RentedSeStringBuilder();
-
-            var builder = rentedBuilder.Builder;
-            var hasText = false;
+            using var _       = SeStringBuilder.Rent(out var builder);
+            var       hasText = false;
 
             foreach (var modification in targetModifications.Prepend)
             {

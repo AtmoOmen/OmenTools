@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Globalization;
-using Dalamud.Utility;
 using Lumina.Data;
+using Lumina.Text;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
 using OmenTools.Localization;
@@ -495,12 +495,8 @@ public sealed class LocalizationManager : OmenServiceBase<LocalizationManager>
     private static ReadOnlySeString CreatePlainSeString
     (
         string text
-    )
-    {
-        using var rented = new RentedSeStringBuilder();
-        rented.Builder.Append(text);
-        return rented.Builder.ToReadOnlySeString();
-    }
+    ) =>
+        SeStringBuilder.Build(text, static (builder, value) => builder.Append(value));
 
     private static string LogMissingKeyAndReturnKey
     (

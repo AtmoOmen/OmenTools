@@ -93,9 +93,8 @@ public static class SeStringFormatExtension
             if (restored == null)
                 return message;
 
-            using var rented  = new RentedSeStringBuilder();
-            var       builder = rented.Builder;
-            var       start   = 0;
+            using var _     = LSeStringBuilder.Rent(out var builder);
+            var       start = 0;
 
             while (start < message.Length)
             {
@@ -154,10 +153,9 @@ public static class SeStringFormatExtension
 
         var template = value.AsSpan();
 
-        using var rented  = new RentedSeStringBuilder();
-        var       builder = rented.Builder;
-        var       start   = 0;
-        var       index   = 0;
+        using var _     = LSeStringBuilder.Rent(out var builder);
+        var       start = 0;
+        var       index = 0;
 
         while (index < template.Length)
         {

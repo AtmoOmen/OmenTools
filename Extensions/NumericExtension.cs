@@ -2,8 +2,8 @@ using System.Globalization;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Dalamud.Utility;
 using Lumina.Data;
+using Lumina.Text;
 using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Extensions;
@@ -111,8 +111,7 @@ public static class NumericExtension
             var wan  = remY          / valWan;
             var ge   = remY          % valWan;
 
-            using var rented  = new RentedSeStringBuilder();
-            var       builder = rented.Builder;
+            using var _ = SeStringBuilder.Rent(out var builder);
 
             if (isNegative)
             {

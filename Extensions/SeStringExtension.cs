@@ -314,17 +314,16 @@ public static class SeStringExtension
             ReadOnlySeString   text
         )
         {
-            using var rented  = new RentedSeStringBuilder();
-            var       builder = rented.Builder;
-
             var message = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [text]);
 
-            builder
-                .AppendDalamudSeString(link)
-                .Append(message)
-                .PopLink();
-
-            return builder.ToReadOnlySeString();
+            return LSeStringBuilder.Build
+            (
+                (link, message),
+                static (builder, state) => builder
+                                           .AppendDalamudSeString(state.link)
+                                           .Append(state.message)
+                                           .PopLink()
+            );
         }
 
         public static ReadOnlySeString CreatePlayerLink
@@ -336,20 +335,16 @@ public static class SeStringExtension
         {
             ArgumentNullException.ThrowIfNull(playerName);
 
-            using var builder = new RentedSeStringBuilder();
+            var displayName = displayNameOverride ?? ReadOnlySeString.CreatePlayer(playerName, worldID);
 
-            if (displayNameOverride is { } displayName)
-            {
-                // ignored
-            }
-            else
-                displayName = ReadOnlySeString.CreatePlayer(playerName, worldID);
-
-            builder.PushLinkCharacter(playerName, worldID)
-                   .Append(displayName)
-                   .PopLink();
-
-            return builder.ToReadOnlySeString();
+            return LSeStringBuilder.Build
+            (
+                (playerName, worldID, displayName),
+                static (builder, state) => builder
+                                           .PushLinkCharacter(state.playerName, state.worldID)
+                                           .Append(state.displayName)
+                                           .PopLink()
+            );
         }
 
         /// <summary>
@@ -363,7 +358,7 @@ public static class SeStringExtension
         {
             ArgumentNullException.ThrowIfNull(playerName);
 
-            using var builder = new RentedSeStringBuilder();
+            using var _ = LSeStringBuilder.Rent(out var builder);
 
             builder.Append(playerName);
 
@@ -388,22 +383,17 @@ public static class SeStringExtension
             if (!LuminaGetter.TryGetRow<Achievement>(achievementID, out var achievementRow))
                 throw new InvalidDataException("无效的 Achievement。");
 
-            using var builder = new RentedSeStringBuilder();
-
-            if (displayNameOverride is { } displayName)
-            {
-                // ignored
-            }
-            else
-                displayName = achievementRow.Name;
-
+            var displayName = displayNameOverride ?? achievementRow.Name;
             displayName = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [displayName]);
 
-            builder.PushLinkAchievement(achievementID)
-                   .Append(displayName)
-                   .PopLink();
-
-            return builder.ToReadOnlySeString();
+            return LSeStringBuilder.Build
+            (
+                (achievementID, displayName),
+                static (builder, state) => builder
+                                           .PushLinkAchievement(state.achievementID)
+                                           .Append(state.displayName)
+                                           .PopLink()
+            );
         }
 
         public static ReadOnlySeString CreateMapLink
@@ -432,7 +422,7 @@ public static class SeStringExtension
             if (mapRow.TerritoryType.RowId != territoryType)
                 throw new InvalidDataException("Map 对应的 TerritoryType 与传入的 TerritoryType 不一致。");
 
-            using var builder = new RentedSeStringBuilder();
+            using var _ = LSeStringBuilder.Rent(out var builder);
 
             var mapPosition = PositionHelper.WorldToMap(worldPosition, mapRow);
 
@@ -503,16 +493,15 @@ public static class SeStringExtension
             var textColor     = ItemUtil.GetItemRarityColorType(rawID);
             var textEdgeColor = textColor + 1u;
 
-            using var rssb    = new RentedSeStringBuilder();
-            var       builder = rssb.Builder;
+            using var _ = LSeStringBuilder.Rent(out var builder);
 
-            var itemName = rssb.Builder
-                               .PushColorType(textColor)
-                               .PushEdgeColorType(textEdgeColor)
-                               .Append(displayName)
-                               .PopEdgeColorType()
-                               .PopColorType()
-                               .ToReadOnlySeString();
+            var itemName = builder
+                           .PushColorType(textColor)
+                           .PushEdgeColorType(textEdgeColor)
+                           .Append(displayName)
+                           .PopEdgeColorType()
+                           .PopColorType()
+                           .ToReadOnlySeString();
 
             itemName = ISeStringEvaluator.Instance().EvaluateFromAddon(371, [itemName]);
 
@@ -562,17 +551,16 @@ public static class SeStringExtension
             var textColor     = ItemUtil.GetItemRarityColorType(rawID);
             var textEdgeColor = textColor + 1u;
 
-            using var rssb = new RentedSeStringBuilder();
-
-            var itemName = rssb.Builder
-                               .PushColorType(textColor)
-                               .PushEdgeColorType(textEdgeColor)
-                               .Append(displayName)
-                               .PopEdgeColorType()
-                               .PopColorType()
-                               .ToReadOnlySeString();
-
-            return itemName;
+            return LSeStringBuilder.Build
+            (
+                (textColor, textEdgeColor, displayName),
+                static (builder, state) => builder
+                                           .PushColorType(state.textColor)
+                                           .PushEdgeColorType(state.textEdgeColor)
+                                           .Append(state.displayName)
+                                           .PopEdgeColorType()
+                                           .PopColorType()
+            );
         }
     }
 

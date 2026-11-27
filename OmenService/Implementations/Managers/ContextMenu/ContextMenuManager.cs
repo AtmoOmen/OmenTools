@@ -3,11 +3,11 @@ using System.Collections.Immutable;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Hooking;
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using InteropGenerator.Runtime;
+using Lumina.Text;
 using Lumina.Text.ReadOnly;
 using OmenTools.Dalamud;
 using OmenTools.Interop.Game.Lumina;
@@ -973,14 +973,14 @@ public unsafe partial class ContextMenuManager : OmenServiceBase<ContextMenuMana
         if (prefix is null)
             return item.Name;
 
-        using var rented  = new RentedSeStringBuilder();
-        var       builder = rented.Builder;
-
-        return builder
-               .Append(prefix.Value)
-               .Append(' ')
-               .Append(item.Name)
-               .ToReadOnlySeString();
+        return SeStringBuilder.Build
+        (
+            (prefix.Value, item.Name),
+            static (builder, state) => builder
+                                       .Append(state.Value)
+                                       .Append(' ')
+                                       .Append(state.Name)
+        );
     }
 
     private static void SetManagedStringValue

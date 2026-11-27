@@ -1,8 +1,8 @@
 using System.Numerics;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Utility;
-using Dalamud.Utility;
 using Lumina.Text.ReadOnly;
+using SeStringBuilder = Lumina.Text.SeStringBuilder;
 
 namespace OmenTools.ImGuiOm;
 
@@ -34,16 +34,13 @@ public static partial class ImGuiOm
             RenderedPlayerInfos.GetOrAdd
             (
                 (name, world),
-                _ =>
-                {
-                    using var rented = new RentedSeStringBuilder();
-
-                    return rented.Builder
-                                 .Append($"{name}")
-                                 .AppendIcon((uint)BitmapFontIcon.CrossWorld)
-                                 .Append($"{world}")
-                                 .ToReadOnlySeString();
-                }
+                static key => SeStringBuilder.Build
+                (
+                    key,
+                    static (b, k) => b.Append($"{k.Item1}")
+                                      .AppendIcon(BitmapFontIcon.CrossWorld)
+                                      .Append($"{k.Item2}")
+                )
             )
         );
     }

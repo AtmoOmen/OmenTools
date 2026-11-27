@@ -1,9 +1,9 @@
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.System.String;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.Interop;
 using Lumina.Excel.Sheets;
+using Lumina.Text;
 using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Extensions;
@@ -71,12 +71,12 @@ public static unsafe class LogMessageExtension
                     logModule->RaptureTextModule->SetGlobalTempEntity2(name, item.TargetSex, item.TargetObjStrId);
                 }
 
-                using var rssb = new RentedSeStringBuilder();
+                using var _ = SeStringBuilder.Rent(out var builder);
 
                 using var utf8 = new Utf8String();
                 logModule->RaptureTextModule->FormatString
                 (
-                    rssb.Builder.Append(item.LogMessageId.ToLuminaRowRef<LogMessage>().Value.Text).GetViewAsSpan(),
+                    builder.Append(item.LogMessageId.ToLuminaRowRef<LogMessage>().Value.Text).GetViewAsSpan(),
                     &ptr->Parameters,
                     &utf8
                 );

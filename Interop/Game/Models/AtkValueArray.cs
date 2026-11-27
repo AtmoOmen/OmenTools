@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using Lumina.Text;
 using Lumina.Text.ReadOnly;
 
 namespace OmenTools.Interop.Game.Models;
@@ -59,10 +59,9 @@ public unsafe class AtkValueArray : IDisposable
             }
             case ReadOnlySeString readOnlySeString:
             {
-                using var rented = new RentedSeStringBuilder();
-                var stringBytes = rented.Builder.Append(readOnlySeString).GetViewAsSpan().ToArray();
+                var stringBytes = SeStringBuilder.Use(readOnlySeString, static (b, s) => b.Append(s).GetViewAsSpan().ToArray());
                 var stringAlloc = Marshal.AllocHGlobal(stringBytes.Length);
-                
+
                 Marshal.Copy(stringBytes, 0, stringAlloc, stringBytes.Length);
                 Pointer[index] = new AtkValue { Type = AtkValueType.String, String = (byte*)stringAlloc };
             }
