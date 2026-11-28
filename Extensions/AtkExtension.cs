@@ -46,6 +46,25 @@ public static unsafe class AtkExtension
 
     extension(scoped ref AtkTextNode node)
     {
+        /// <summary>
+        ///     测量文本节点当前文本在当前字体、字号与排版设置下的绘制尺寸。
+        /// </summary>
+        /// <param name="considerScale">
+        ///     是否计入节点渲染变换矩阵（<see cref="AtkResNode.Transform" />）的累积缩放（包含节点自身缩放、父级与窗口缩放及全局界面缩放），默认为 <see langword="false" />。
+        ///     <list type="bullet">
+        ///         <item>
+        ///             <description>
+        ///                 <see langword="false" />：返回节点本地逻辑坐标系下的未缩放尺寸，适用于绝大多数原生界面内部布局计算（如设置节点逻辑宽高、排布同级节点相对坐标、计算窗口内容尺寸，或与节点逻辑尺寸比较以裁剪或缩减字号）。
+        ///             </description>
+        ///         </item>
+        ///         <item>
+        ///             <description>
+        ///                 <see langword="true" />：返回乘以累积缩放倍率后的屏幕实际绘制像素尺寸，适用于需要与屏幕像素坐标对齐的外部绘制或边界计算（如 ImGui 覆盖层叠加绘制、屏幕空间命中检测等；节点尚未挂入已渲染界面树或变换矩阵未刷新时可能未反映最终缩放）。
+        ///             </description>
+        ///         </item>
+        ///     </list>
+        /// </param>
+        /// <returns>当前文本的绘制宽高。</returns>
         public Vector2 GetTextDrawSize(bool considerScale = false)
         {
             fixed (AtkTextNode* ptr = &node)
