@@ -2,7 +2,13 @@
 
 OmenTools 是一套面向 [Dalamud](https://github.com/goatcorp/Dalamud) 插件开发的综合性工具库，封装大量可复用的基础设施。
 
-※ 需要同时引用 [FFXIVClientStructs.Expansion](https://github.com/AtmoOmen/FFXIVClientStructs.Expansion) 项目并置于同一级才可以正确加载。
+> [!NOTE]
+> 需要同时引用 [FFXIVClientStructs.Expansion](https://github.com/AtmoOmen/FFXIVClientStructs.Expansion) 项目并置于同一级才可以正确加载。
+
+> [!WARNING]
+> 本项目的根本性质是个人开发工具箱，服务于个人开发需求。
+> 本人不会乱删能力，但会快速迭代任何我认为可以修改、优化或重构的能力，其中可能会移除过时的能力、重命名、调整命名空间或重新组织结构。
+> 若无法接受，不建议引用本项目，而是自由挑选其中你真的需要的能力合并到你自己的项目中。
 
 ---
 
@@ -10,46 +16,48 @@ OmenTools 是一套面向 [Dalamud](https://github.com/goatcorp/Dalamud) 插件�
 
 ### 1. 初始化与卸载
 
-在插件入口类中通过 `DService` 完成一键初始化和资源回收：
+在插件入口类中通过 `DService` 完成一键初始化和资源回收。
 
 ```csharp
-public class MyPlugin : IDalamudPlugin
+public class MyPlugin : IAsyncDalamudPlugin
 {
+    private IDalamudPluginInterface PI { get; init; }
+
     public MyPlugin(IDalamudPluginInterface pluginInterface)
     {
-        // 基础初始化
-        DService.Init(pluginInterface);
-
-        // 可选：禁用不需要的服务
-        // DService.Init(pluginInterface, () => new DServiceInitOptions()
-        //     .Disable<GamePacketManager>()
-        //     .Disable<TooltipManager>());
+        // 获取 IDalamudPluginInterface
+        PI = pluginInterface;
     }
 
-    public void Dispose()
+    public async Task LoadAsync
+    (
+        CancellationToken cancellationToken
+    )
     {
-        DService.Uninit(); // 自动释放所有追踪资源
+        // 基础初始化
+        await DService.InitAsync(pluginInterface, cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await DService.UninitAsync().ConfigureAwait(false);
     }
 }
 ```
 
-`DService` 会自动完成以下工作：
-- 通过 Dalamud 的依赖注入获取全部原生服务
-- 自动扫描并实例化所有继承自 `OmenServiceBase` 的自定义服务
-- 注册服务生命周期（按发现顺序 `Init`，按逆序 `Uninit`）
-- 追踪所有 `TaskHelper`、`MemoryPatch` 和 `IDalamudHook`，在卸载时统一释放
+### 2. 添加全局引用
 
-### 2. 引入全局 Using（强烈推荐）
-
-将 `Global/GlobalUsing.OmenTools.cs` 复制到项目中，可省去大量重复引用：
+将 `Global/GlobalUsing.OmenTools.cs` 复制到项目中，可省去大量重复引用。
 
 ---
 
-## 扩展项目
+## 配套项目
 
-### [OmenTools.AddonToolkit](https://github.com/AtmoOmen/OmenTools.AddonToolkit)
+### [AddonToolkit](https://github.com/AtmoOmen/AddonToolkit)
 
-提供 AddonToolkit 绘制的原生界面、节点扩展。
+高效、安全、现代化且完善的游戏原生界面组件的 C# 封装库，用于制作各种原生界面与组件。
+
+---
 
 ## 许可证
 
