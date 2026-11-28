@@ -4,7 +4,7 @@ using OmenTools.Interop.Game.Lumina;
 
 namespace OmenTools.Extensions;
 
-public static class BitMapFontIconExtension
+public static class BitmapFontIconExtension
 {
     extension(BitmapFontIcon icon)
     {
